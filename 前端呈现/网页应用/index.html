@@ -69,24 +69,46 @@
           判据：<code>项目文档/设计文档/程序文本格式.md</code>。
         </p>
         <p class="提示">
-          案例根 <code>测试验证/案例/</code>：每个案例一个目录，里面有 <code>案例.json</code> ·
-          <code>输入.程序文本</code> · <code>期望.json</code>；每次跑完<b>追加</b>一行到
-          <code>测试验证/案例/运行回执.jsonl</code>。
-        </p>
-        <p class="提示 坏">
-          <b>缺口（实测）：<code>GET /接口/案例</code> 与 <code>POST /接口/案例/跑</code> 是 §七 的工具族旁路端点，
-          本页<b>还没接它们</b>（端点表见「变量表」）。</b>
-          所以这里<b>不列案例、不跑案例</b>，只留一个通用同源只读口 —— 摆一个按不动的按钮就是假成功。
+          <b>案例族</b>（<code>GET /接口/案例</code> · <code>POST /接口/案例/跑</code>）：列案例 ·
+          跑案例 · 回执都在应答里（清单每项带「最新回执」，跑完带回「回执」）。判定在后端：
+          案例根读不到回 <code>9002</code>、回执缺失回 <code>9003</code> —— 本页原样摆结构化回执，不吞错。
         </p>
         <div class="行">
-          <input id="读件路" class="路" type="text" placeholder="仓内相对路径，例如 测试验证/案例/运行回执.jsonl">
+          <button id="案例列按钮" class="次">列案例</button>
+          <input id="案例标识" class="路" type="text" placeholder="案例标识（一个目录名）">
+          <button id="案例跑按钮" class="次">跑案例</button>
+          <span id="案例状态" class="状态"></span>
         </div>
+        <div id="案例果" class="果"></div>
+        <p class="提示">
+          <b>程序文本</b>（<code>POST /接口/程序文本</code>，体 <code>{"动作":"读"|"写"}</code>）：后端此刻一律回
+          <code>9006 程序文本路径未定</code> —— 本页<b>如实显示</b>这个回执，不假装成功。
+        </p>
         <div class="行">
-          <button id="读件按钮" class="次">同源只读取回原文</button>
-          <button id="载入读件" class="次">载入到编辑器</button>
-          <span id="读件状态" class="状态"></span>
+          <button id="程序文本读" class="次">读</button>
+          <button id="程序文本写" class="次">写</button>
+          <span id="程序文本状态" class="状态"></span>
         </div>
-        <div id="读件果" class="果"></div>
+        <div id="程序文本果" class="果"></div>
+        <details class="折">
+          <summary>通用同源只读口（静态件，不是端点）</summary>
+          <div class="折体">
+            <p class="提示">
+              案例根 <code>测试验证/案例/</code>：每案例一个目录（<code>案例.json</code> ·
+              <code>输入.程序文本</code> · <code>期望.json</code>），跑完追加一行到
+              <code>测试验证/案例/运行回执.jsonl</code>。静态托管只托管前端自己的件，仓内别处一律 404。
+            </p>
+            <div class="行">
+              <input id="读件路" class="路" type="text" placeholder="仓内相对路径，例如 测试验证/案例/运行回执.jsonl">
+            </div>
+            <div class="行">
+              <button id="读件按钮" class="次">同源只读取回原文</button>
+              <button id="载入读件" class="次">载入到编辑器</button>
+              <span id="读件状态" class="状态"></span>
+            </div>
+            <div id="读件果" class="果"></div>
+          </div>
+        </details>
       </div>
     </div>
 
@@ -184,6 +206,18 @@
         <div id="诊断果" class="果"></div>
       </div>
     </details>
+    <details class="折" id="折_菜单命令">
+      <summary>菜单命令 · 结构化回执（POST /接口/菜单命令）</summary>
+      <div class="折体">
+        <p class="提示">
+          点菜单栏里任一<b>非编译族</b>命令，本页真发 <code>POST /接口/菜单命令</code>（体 <code>{"编号":"0x…"}</code>），
+          把后端的<b>结构化回执</b>摆在这里。此刻后端一律回 <code>9001 端点未实现</code>（命令没有后端落点）——
+          <b>如实显示</b>，不自己编一句「未接线」。
+        </p>
+        <div class="行"><span id="菜单命令状态" class="状态"></span></div>
+        <div id="菜单命令果" class="果"></div>
+      </div>
+    </details>
   </div>
 
   <div class="底格" id="底格_输出">
@@ -263,16 +297,23 @@
       <button id="探出口按钮" class="主">真调一次 · 探导出前提</button>
       <span id="出口状态" class="状态"></span>
     </div>
-    <p class="提示 坏">
-      <b>本页没有「导出」按钮</b>：<code>POST /接口/导出</code> 是 §七 的工具族旁路端点（端点表见
-      「变量表」），<b>本页还没接它</b>。做得出按钮、接不上端点，那按钮就是假成功，所以不做 ——
-      接这一路属另一批活，本页不替它假装。
+    <p class="提示">
+      <b>触发导出</b>：真发 <code>POST /接口/导出</code>（体 <code>{"目标":"…"}</code>，§七 旁路端点），
+      把结构化回执（<code>程序</code> · <code>参数</code> · <code>退出码</code> · <code>标准输出</code> ·
+      <code>标准错误</code>，或真错误码 <code>9004</code> / <code>9005</code>）原样摆出来 —— <b>不假装成功</b>。
+      <code>标识</code> 可省（填了走装配器的只读检查，不填就是一次真构建）。
     </p>
+    <div class="行">
+      <input id="导出标识" class="路" type="text" placeholder="标识（可省，形如 &lt;提交12位&gt;-&lt;指纹16位&gt;）">
+      <button id="导出按钮" class="主">触发导出</button>
+      <span id="导出状态" class="状态"></span>
+    </div>
+    <div id="导出果" class="果"></div>
     <div id="出口卡" class="出口卡"></div>
     <p class="提示 警">
-      上面那个按钮<b>不导出任何东西</b>：它真调编译链（链上有哪几步、各叫什么，实时取自
-      <code>GET /接口</code>，吃编辑器里那份文本），把「死在哪一步 · HTTP 几 · 码几」
-      原样摆出来 —— 导出要先把声明与最小代码编成产物。下面是<b>此刻真调回来的</b>读数。
+      上面那个「真调一次」按钮<b>不导出任何东西</b>：它真调编译链（链上有哪几步、各叫什么，实时取自
+      <code>GET /接口</code>，吃编辑器里那份文本），把「死在哪一步 · HTTP 几 · 码几」原样摆出来 ——
+      导出要先把声明与最小代码编成产物。下面是<b>此刻真调回来的</b>读数。
     </p>
     <div id="出口探果" class="果"></div>
   </div>

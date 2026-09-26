@@ -43,6 +43,10 @@ name = "v1-contract"
 version = "0.1.0"
 
 [[package]]
+name = "v1-dataroot"
+version = "0.1.0"
+
+[[package]]
 name = "v1-dispatch"
 version = "0.1.0"
 dependencies = [
