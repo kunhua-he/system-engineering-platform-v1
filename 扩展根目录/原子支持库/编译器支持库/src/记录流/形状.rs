@@ -1,0 +1,181 @@
+//! 形状 —— 段数据头 · 段体头 · 支持库表 · 记录流（常量与偏移表也在这里）。
+
+/// 段数据头长度（字节）。
+pub const 段数据头长度: usize = 56;
+
+/// 段体魔数（段数据偏移 0x3C 起的 u32）。实测 1456/1456 唯一值。
+pub const 段体魔数: u32 = 0x030B_EF3F;
+
+/// 支持库引用串的字段分隔符（`0x0D`，即 CR）。
+pub const 引用分隔符: u8 = 0x0D;
+
+/// 支持库引用串的字段名，**顺序即盘面顺序**。
+pub const 引用字段名: [&str; 5] = ["库文件名", "GUID", "版本甲", "版本乙", "中文名"];
+
+/// 段数据头内各字段的相对偏移。
+pub mod 头偏移 {
+    /// u32 段序号（1 基）。
+    pub const 段序号: usize = 0x00;
+    /// u32 保留，恒 0。
+    pub const 保留: usize = 0x04;
+    /// u32 段数据校验值。算法未证实，原样搬运。
+    pub const 校验值: usize = 0x08;
+    /// u32 体长 = 段数据长 − 56。
+    pub const 体长: usize = 0x0C;
+    /// 40 字节补零，恒全零。
+    pub const 补零: usize = 0x10;
+    /// 补零区长度。
+    pub const 补零长度: usize = 40;
+    /// u32 段体甲。
+    pub const 体甲: usize = 0x38;
+    /// u32 段体魔数 `0x030BEF3F`。
+    pub const 体魔数: usize = 0x3C;
+}
+
+/// 段数据头（56 字节，逐字段对齐原文）。
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct 段数据头 {
+    /// u32 段序号（1 基）。实测取值 3 / 4 / 5。
+    pub 段序号: u32,
+    /// u32 保留。实测恒 0。
+    pub 保留: u32,
+    /// u32 段数据校验值。**算法未证实**：反解原样读、生成原样写，绝不重算。
+    pub 校验值: u32,
+    /// u32 体长 = 段数据长 − 56。**反解侧快照**：生成由内容重算，不读本字段。
+    pub 体长: u32,
+    /// 40 字节补零。实测恒全零，反解与生成都按「必须全零」处理。
+    pub 补零: [u8; 40],
+}
+
+/// 段体头（段体前 8 字节）。
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct 段体头 {
+    /// u32 段体甲（段数据偏移 0x38）。实测高 16 位 ∈ {1,2,3,7,10}，低 16 位可变。
+    pub 甲: u32,
+}
+
+/// 一条支持库引用记录。盘面是「u32 串长 + 串长字节」，本结构把它切成字段表。
+///
+/// `字段` 是**按 `0x0D` 切**的结果；生成时**按 `0x0D` 拼回**，故段数任意都逐字节一致。
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct 支持库引用 {
+    /// 按 `0x0D` 切出的字段。至少 1 段（空串切成 `[""]`）。
+    pub 字段: Vec<Vec<u8>>,
+}
+
+impl 支持库引用 {
+    /// 由字段表建一条引用记录。字段表为空时补一个空段（与空串同构）。
+    pub fn 由字段(字段: Vec<Vec<u8>>) -> Self {
+        if 字段.is_empty() {
+            Self { 字段: vec![Vec::new()] }
+        } else {
+            Self { 字段 }
+        }
+    }
+
+    /// 字段数。5 段时与 [`引用字段名`] 一一对应。
+    pub fn 字段数(&self) -> usize {
+        self.字段.len()
+    }
+
+    /// 取第 `序号` 段。
+    pub fn 取(&self, 序号: usize) -> Option<&[u8]> {
+        self.字段.get(序号).map(Vec::as_slice)
+    }
+
+    /// 盘面串长（不含长度字段本身）：各段字节和 + 段间分隔符数。
+    pub fn 串长(&self) -> usize {
+        self.字段.iter().map(Vec::len).sum::<usize>() + self.字段.len().saturating_sub(1)
+    }
+
+    /// 按 `0x0D` 拼回盘面原文。与 [`支持库引用::字段`] 互为逆运算。
+    pub fn 原文(&self) -> Vec<u8> {
+        let mut 出 = Vec::with_capacity(self.串长());
+        for (序, 段) in self.字段.iter().enumerate() {
+            if 序 > 0 {
+                出.push(引用分隔符);
+            }
+            出.extend_from_slice(段);
+        }
+        出
+    }
+
+    /// 5 段时取 `库文件名`。
+    pub fn 库文件名(&self) -> Option<&[u8]> {
+        self.五段()?.first().map(Vec::as_slice)
+    }
+    /// 5 段时取 `GUID`。
+    pub fn GUID(&self) -> Option<&[u8]> {
+        self.五段()?.get(1).map(Vec::as_slice)
+    }
+    /// 5 段时取 `版本甲`。
+    pub fn 版本甲(&self) -> Option<&[u8]> {
+        self.五段()?.get(2).map(Vec::as_slice)
+    }
+    /// 5 段时取 `版本乙`。
+    pub fn 版本乙(&self) -> Option<&[u8]> {
+        self.五段()?.get(3).map(Vec::as_slice)
+    }
+    /// 5 段时取 `中文名`。6 段（`.npk` 类库）时返回 `None`，不做猜测。
+    pub fn 中文名(&self) -> Option<&[u8]> {
+        self.五段()?.get(4).map(Vec::as_slice)
+    }
+
+    fn 五段(&self) -> Option<&Vec<Vec<u8>>> {
+        if self.字段.len() == 引用字段名.len() { Some(&self.字段) } else { None }
+    }
+}
+
+/// 支持库表：三个带字节长度前缀的索引数组 + 支持库数 + 引用记录表。
+///
+/// 三个数组的元素数**必须相等**，且等于 `支持库数`；四处在盘面上是独立编码，互为校验。
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct 支持库表 {
+    /// 数组甲：N × u32，盘面字节长度前缀 = `4N`。
+    pub 数组甲: Vec<u32>,
+    /// 数组乙：N × u16，盘面字节长度前缀 = `2N`。
+    pub 数组乙: Vec<u16>,
+    /// 数组丙：N × u16，盘面字节长度前缀 = `2N`。
+    pub 数组丙: Vec<u16>,
+    /// 支持库引用记录，条数 = N。
+    pub 引用表: Vec<支持库引用>,
+}
+
+/// 记录流：段数据头 + 段体头 + 支持库表 + 其余载荷。
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct 记录流 {
+    /// 段数据头（56 字节）。
+    pub 头: 段数据头,
+    /// 段体头。
+    pub 体头: 段体头,
+    /// 支持库表。
+    pub 支持库: 支持库表,
+    /// **声明记录区**：程序集 / 子程序 / DLL 命令 / 常量 / 语句字节码。
+    ///
+    /// 本模块**原样搬运**（实测占段数据 99.78%）。见模块注释「明确没吃透的部分」。
+    pub 其余载荷: Vec<u8>,
+}
+
+impl 记录流 {
+    /// 记录条数：段数据头 1 + 段体头 1 + 支持库表 1 + 支持库引用 N + 其余载荷 0/1。
+    pub fn 记录条数(&self) -> u64 {
+        3 + self.支持库.引用表.len() as u64 + u64::from(!self.其余载荷.is_empty())
+    }
+
+    /// 已结构化的字节数（= 段数据长 − 其余载荷长）。
+    pub fn 结构化字节(&self) -> u64 {
+        段数据头长度 as u64 + 体长实算(self) - self.其余载荷.len() as u64
+    }
+
+    /// 按当前内容重算 `体长`（生成前自检用；`生成` 本来就会重算，故不是必需步骤）。
+    pub fn 重算体长(&mut self) {
+        self.头.体长 = u32::try_from(体长实算(self)).unwrap_or(u32::MAX);
+    }
+}
+
+/// 体长实算：段数据头之后应有的字节数。**只由内容决定**，与 `头.体长` 字段无关。
+pub fn 体长实算(流: &记录流) -> u64 {
+    let n = 流.支持库.数组甲.len() as u64;
+    let 引用: u64 = 流.支持库.引用表.iter().map(|引用| 4 + 引用.串长() as u64).sum();
+    8 + (4 + 4 * n) + (4 + 2 * n) + (4 + 2 * n) + 2 + 引用 + 流.其余载荷.len() as u64
+}

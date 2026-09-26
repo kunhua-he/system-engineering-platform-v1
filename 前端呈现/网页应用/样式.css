@@ -1,0 +1,368 @@
+/* 样式 —— 手写 CSS，零依赖、零框架、零外链（离线可跑）。
+ *
+ * 布局按 IDE 来（判据：`项目文档/决策记录/2026-09-26_前端是网页版编译器.md` §五）：
+ *   页头（现状说明）· 工具条 · 主区（编辑器 + 侧栏）· 坞（诊断 | 运行结果）· 调试 · 页脚。
+ * 深浅色随系统（prefers-color-scheme），不做手写切换器。
+ * 视觉全部落在这里：JS 只摆数据，不用 JS 堆 DOM 骨架。
+ */
+
+:root {
+  --底: #ffffff;
+  --面板: #f6f6f8;
+  --板二: #ececf1;
+  --线: #d8d8de;
+  --文: #1b1b1f;
+  --灰: #6c6c76;
+  --主: #2f6fd0;
+  --主文: #ffffff;
+  --好: #1a7f37;
+  --坏: #b42318;
+  --警: #8a6100;
+  --等宽: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  --无衬线: system-ui, -apple-system, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --底: #121216;
+    --面板: #1a1a1f;
+    --板二: #23232a;
+    --线: #2f2f38;
+    --文: #e7e7ec;
+    --灰: #9a9aa6;
+    --主: #5b9bf5;
+    --主文: #0a0a0c;
+    --好: #4ac26b;
+    --坏: #ff7b72;
+    --警: #e3b341;
+  }
+}
+
+* { box-sizing: border-box; }
+
+html, body { height: 100%; margin: 0; }
+
+body {
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr) auto auto auto;
+  height: 100vh;
+  background: var(--底);
+  color: var(--文);
+  font: 14px/1.5 var(--无衬线);
+  overflow: hidden;
+}
+
+/* ── 页头 ─────────────────────────────────────────────────────────────── */
+.页头 {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 14px;
+  align-items: center;
+  padding: 10px 16px;
+  background: var(--面板);
+  border-bottom: 1px solid var(--线);
+}
+
+.牌 { display: flex; align-items: baseline; gap: 10px; white-space: nowrap; }
+
+.徽 {
+  font: 11px/1.6 var(--等宽);
+  letter-spacing: .08em;
+  color: var(--灰);
+  border: 1px solid var(--线);
+  border-radius: 3px;
+  padding: 1px 6px;
+}
+
+.牌 h1 { margin: 0; font-size: 17px; font-weight: 650; letter-spacing: .01em; }
+
+.现状 { display: flex; gap: 12px; align-items: flex-start; min-width: 0; }
+
+.现状文 { font-size: 12.5px; color: var(--灰); }
+.现状文 b { color: var(--文); }
+.现状文 code { color: var(--文); }
+
+/* ── 工具条 ───────────────────────────────────────────────────────────── */
+.工具条 {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  padding: 8px 16px;
+  background: var(--底);
+  border-bottom: 1px solid var(--线);
+}
+
+.工具条 label { display: flex; gap: 6px; align-items: center; font-size: 12.5px; color: var(--灰); }
+
+.工具条 select, .工具条 input[type="text"] {
+  font: 12.5px/1.4 var(--等宽);
+  color: var(--文);
+  background: var(--面板);
+  border: 1px solid var(--线);
+  border-radius: 4px;
+  padding: 5px 7px;
+  max-width: 420px;
+}
+
+button {
+  font: 13px/1.2 var(--无衬线);
+  color: var(--文);
+  background: var(--板二);
+  border: 1px solid var(--线);
+  border-radius: 5px;
+  padding: 6px 12px;
+  cursor: pointer;
+}
+
+button:hover { border-color: var(--主); }
+button:active { transform: translateY(1px); }
+button:disabled { opacity: .5; cursor: not-allowed; }
+
+button.主 { background: var(--主); color: var(--主文); border-color: var(--主); font-weight: 600; }
+button.次 { background: transparent; color: var(--灰); }
+button.小 { padding: 3px 8px; font-size: 12px; }
+
+.状态 { font: 12px/1.6 var(--等宽); color: var(--灰); }
+.状态.好 { color: var(--好); }
+.状态.坏 { color: var(--坏); }
+.状态.警 { color: var(--警); }
+
+.灰 { color: var(--灰); }
+.读数 { font: 12px/1.6 var(--等宽); color: var(--灰); white-space: nowrap; }
+
+/* ── 主区：编辑器 + 侧栏 ─────────────────────────────────────────────── */
+.主区 {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 360px);
+  min-height: 0;
+  border-bottom: 1px solid var(--线);
+}
+
+.编辑器区 { display: grid; grid-template-rows: auto minmax(0, 1fr); min-height: 0; }
+
+.区头 {
+  display: flex;
+  gap: 12px;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 7px 14px;
+  background: var(--面板);
+  border-bottom: 1px solid var(--线);
+}
+
+.区头 h2 { margin: 0; font-size: 13px; font-weight: 650; letter-spacing: .02em; }
+.区头 .灰 { font-size: 11.5px; }
+
+.编辑框 {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  min-height: 0;
+  overflow: hidden;
+}
+
+.行号 {
+  margin: 0;
+  padding: 10px 8px 10px 12px;
+  text-align: right;
+  color: var(--灰);
+  background: var(--面板);
+  border-right: 1px solid var(--线);
+  font: 13px/1.55 var(--等宽);
+  white-space: pre;
+  overflow: hidden;
+  user-select: none;
+}
+
+.编辑区 {
+  margin: 0;
+  padding: 10px 12px;
+  border: 0;
+  outline: none;
+  resize: none;
+  background: var(--底);
+  color: var(--文);
+  font: 13px/1.55 var(--等宽);
+  white-space: pre;
+  overflow: auto;
+  tab-size: 4;
+}
+
+/* ── 侧栏 ─────────────────────────────────────────────────────────────── */
+.侧栏 {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  min-height: 0;
+  border-left: 1px solid var(--线);
+  background: var(--面板);
+}
+
+.侧栏体 { overflow: auto; min-height: 0; padding: 0 10px 14px; }
+
+.折 { border: 1px solid var(--线); border-radius: 6px; background: var(--底); margin-top: 10px; overflow: hidden; }
+
+.折 > summary {
+  cursor: pointer;
+  padding: 8px 10px;
+  font-size: 12.5px;
+  font-weight: 600;
+  background: var(--板二);
+  list-style: none;
+}
+
+.折 > summary::marker { content: ""; }
+.折 > summary::before { content: "▸ "; color: var(--灰); }
+.折[open] > summary::before { content: "▾ "; }
+
+.折体 { padding: 10px; }
+
+.提示 { margin: 0 0 8px; font-size: 12px; color: var(--灰); line-height: 1.6; }
+.提示.坏 { color: var(--坏); }
+.提示.警 { color: var(--警); }
+.提示 b { color: var(--文); }
+.提示 code { font: 12px var(--等宽); color: var(--文); }
+
+.行 { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 8px 0; }
+.行 label { display: flex; gap: 5px; align-items: center; font-size: 12px; color: var(--灰); }
+
+.行 input, .纵 input, .纵 textarea {
+  font: 12.5px/1.45 var(--等宽);
+  color: var(--文);
+  background: var(--面板);
+  border: 1px solid var(--线);
+  border-radius: 4px;
+  padding: 5px 7px;
+}
+
+.行 input.号 { width: 84px; }
+.行 input.长 { width: 120px; }
+.行 input.路 { width: 100%; }
+
+.纵 { display: grid; gap: 4px; font-size: 12px; color: var(--灰); margin: 8px 0; }
+.纵 textarea.正文 { width: 100%; font-size: 12.5px; }
+
+/* ── 坞：诊断 | 运行结果 ─────────────────────────────────────────────── */
+.坞 {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+  max-height: 46vh;
+  min-height: 0;
+  border-bottom: 1px solid var(--线);
+}
+
+.诊断区, .结果区 { display: grid; grid-template-rows: auto minmax(0, 1fr); min-height: 0; }
+.诊断区 { border-right: 1px solid var(--线); }
+
+.诊断体 { overflow: auto; min-height: 0; padding: 10px 14px 14px; }
+
+.步列表 { display: grid; gap: 8px; }
+
+.步卡 { border: 1px solid var(--线); border-radius: 6px; background: var(--面板); overflow: hidden; }
+
+.步卡头 {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: baseline;
+  padding: 7px 10px;
+  border-bottom: 1px solid var(--线);
+  background: var(--板二);
+}
+
+.步名 { font-weight: 650; font-size: 12.5px; }
+.步号, .步时 { font: 11.5px/1.6 var(--等宽); color: var(--灰); }
+
+.步卡.坏 .步名 { color: var(--坏); }
+.步卡.好 .步名 { color: var(--好); }
+.步卡.未送 { opacity: .6; }
+
+.步体 { padding: 8px 10px; }
+.步体 .行内 { margin-bottom: 6px; }
+
+.徽标 {
+  font: 11px/1.6 var(--等宽);
+  border: 1px solid currentColor;
+  border-radius: 3px;
+  padding: 0 6px;
+}
+.徽标.好 { color: var(--好); }
+.徽标.坏 { color: var(--坏); }
+.徽标.灰 { color: var(--灰); }
+
+/* ── 摆出来的 JSON（只看值的类型）───────────────────────────────────── */
+.果 { font: 12.5px/1.55 var(--等宽); }
+
+.应答头 { margin-bottom: 6px; }
+
+.键值行 { display: grid; grid-template-columns: minmax(72px, max-content) minmax(0, 1fr); gap: 8px; padding: 1px 0; }
+.键 { color: var(--灰); }
+.内 { min-width: 0; overflow-wrap: anywhere; }
+
+.数组项 { border-left: 2px solid var(--线); padding-left: 8px; margin: 4px 0; }
+.位 { font-size: 11px; color: var(--灰); }
+
+.空 { color: var(--灰); font-style: italic; }
+.真 { color: var(--好); }
+.假 { color: var(--坏); }
+.数 { color: var(--主); }
+.文 { overflow-wrap: anywhere; }
+
+.体盒.有假 { border-left: 3px solid var(--坏); padding-left: 8px; }
+
+.原文盒 { margin-top: 8px; }
+.原文盒 summary { cursor: pointer; font-size: 11.5px; color: var(--灰); }
+
+pre.原文 {
+  margin: 6px 0 0;
+  padding: 8px;
+  max-height: 260px;
+  overflow: auto;
+  background: var(--面板);
+  border: 1px solid var(--线);
+  border-radius: 4px;
+  font: 11.5px/1.5 var(--等宽);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.行内 { font: 12px/1.6 var(--等宽); }
+.行内 .对 { margin-right: 12px; white-space: nowrap; }
+.行内 .键 { margin-right: 4px; }
+
+/* ── 空状态 ───────────────────────────────────────────────────────────── */
+.空状态 { padding: 16px; font-size: 12.5px; color: var(--灰); }
+.空状态 b { display: block; margin-bottom: 6px; color: var(--文); font-size: 13.5px; }
+.空状态 p { margin: 0 0 8px; line-height: 1.7; }
+.空状态 code { font: 12px var(--等宽); color: var(--文); }
+
+/* ── 调试（调用 · 声明）──────────────────────────────────────────────── */
+.调试区 { background: var(--面板); border-bottom: 1px solid var(--线); }
+.调试区 > .折 { margin: 8px 14px; }
+
+.调网格 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; }
+
+.值行表头, .值行 {
+  display: grid;
+  grid-template-columns: 44px 92px minmax(0, 1fr) 44px;
+  gap: 6px;
+  align-items: center;
+  padding: 2px 0;
+}
+
+.值行表头 { font-size: 11px; color: var(--灰); }
+.值行 .序 { font: 12px var(--等宽); color: var(--灰); text-align: right; }
+.值行 input { width: 100%; }
+
+.体预览 { margin-top: 8px; }
+.体预览 summary { cursor: pointer; font-size: 11.5px; color: var(--灰); }
+
+/* ── 页脚 ─────────────────────────────────────────────────────────────── */
+.页脚 { padding: 8px 16px; font-size: 11.5px; color: var(--灰); background: var(--面板); }
+.页脚 code { font: 11.5px var(--等宽); }
+
+@media (max-width: 1080px) {
+  .主区 { grid-template-columns: minmax(0, 1fr); }
+  .侧栏 { border-left: 0; border-top: 1px solid var(--线); }
+  .坞 { grid-template-columns: minmax(0, 1fr); max-height: none; }
+  .调网格 { grid-template-columns: minmax(0, 1fr); }
+}

@@ -1,0 +1,314 @@
+//! 表达式 —— 记号区间 → 表达式草稿（1102 的表达式层，号 41–50）。
+//!
+//! # 文法（按 `程序文本格式.md` §二 的实测读数写成，不含任何没实测到的东西）
+//!
+//! ```text
+//! 表达式 := 一元 ( 运算符 一元 )*        // 全角；左结合；**不分优先级**
+//! 一元   := '&' 一元 | 后置              // 实测只有取地址 `&`（半角）
+//! 后置   := 主 ( '.' 成员 | '[' 表达式 ']' | '(' 实参表 ')' )*
+//! 主     := 文本字面量 | 数值字面量 | 常量引用 | 标识符 | '(' 表达式 ')'
+//! 实参表 := ( 表达式 | 空位 ) ( ',' ( 表达式 | 空位 ) )*
+//! ```
+//!
+//! # 三条设计选择（都有理由，不是随手）
+//!
+//! 1. **运算符集合不写表**：`记号种类::运算符` 已经是 1101 的判定结果 —— 只要种类是
+//!    `运算符` 就当二元运算符用。于是「完整运算符集合未定」（待办 4）不落在 1102 身上，
+//!    实测的 `－`(U+FF0D) `＞`(U+FF1E) 也不用单独补表。
+//! 2. **不分优先级**：语料里 `_启动窗口.宽度 － 图片按钮EX1.宽度 － 20` 是左结合；
+//!    优先级（`＋` 与 `×` 谁先）**语料 0 例**（`语言面形状.md` 待办 4）。故一律左结合。
+//! 3. **只有 `主` 会失败**，且失败时**一个草稿都没压进草稿表**。于是「失败要回滚」
+//!    这套机制完全不需要（草稿是自由的树，扁平化时才落成节点表，孤儿节点无从产生）。
+//!    链式扩展（`.`/`[`/`(`）任何一步接不上就**停在原地**，剩下的字节由父节点自己认领
+//!    （`语言面形状.md` §4.3：不要求子节点铺满父区间）。
+//!
+//! **兜底**：33 种节点种类里**没有「未知 / 原始文本」这一类**（形状冻结，只增不复用，
+//! 本腿不许动）。遇到解不出的记号串，本实现包一个 `标识符引用` 叶 ——
+//! 这是**兜底选择**，不是实测结论，已逐条写进返回说明。
+
+use super::草稿::草稿表;
+use crate::语言面::{记号, 记号种类};
+
+#[path = "表达式/实参.rs"]
+mod 实参;
+
+/// 递归深度上限。超出即停止下潜（**不 panic、不爆栈**）。
+const 深度上限: u32 = 32;
+
+/// 兜底叶的种类：解不出的记号串包成一个叶子。
+pub(crate) const 兜底种类: 节点种类 = 节点种类::标识符引用;
+
+use crate::语言面::节点种类;
+
+pub(crate) struct 分析器<'a> {
+    pub(super) 原文: &'a [u8],
+    pub(super) 记号表: &'a [记号],
+    pub(super) 草稿: &'a mut 草稿表,
+    /// 当前记号下标。
+    pub(super) 游标: usize,
+    /// 本次解析的上界（不含）。
+    pub(super) 止: usize,
+    pub(super) 深度: u32,
+}
+
+impl<'a> 分析器<'a> {
+    pub(crate) fn 新(
+        原文: &'a [u8],
+        记号表: &'a [记号],
+        草稿: &'a mut 草稿表,
+    ) -> Self {
+        Self { 原文, 记号表, 草稿, 游标: 0, 止: 记号表.len(), 深度: 0 }
+    }
+
+    pub(super) fn 文(&self, t: 记号) -> &'a [u8] {
+        self.原文.get(t.起 as usize..t.止 as usize).unwrap_or(&[])
+    }
+
+    pub(super) fn 当前(&self) -> Option<记号> {
+        if self.游标 < self.止 {
+            self.记号表.get(self.游标).copied()
+        } else {
+            None
+        }
+    }
+
+    pub(super) fn 是界符(&self, 文: &[u8]) -> bool {
+        match self.当前() {
+            Some(t) => t.种类 == 记号种类::界符 && self.文(t) == 文,
+            None => false,
+        }
+    }
+
+    pub(super) fn 跳过空白(&mut self) {
+        while self.游标 < self.止 && self.记号表[self.游标].种类 == 记号种类::空白 {
+            self.游标 += 1;
+        }
+    }
+
+    /// 从 `游标`（停在开界符上）找配对的闭界符下标。认不出返回 `None`。
+    pub(super) fn 配对(&self, 开: &[u8], 闭: &[u8]) -> Option<usize> {
+        let mut 深 = 0i32;
+        let mut i = self.游标;
+        while i < self.止 {
+            let t = self.记号表[i];
+            if t.种类 == 记号种类::界符 {
+                let 文 = self.文(t);
+                if 文 == 开 {
+                    深 += 1;
+                } else if 文 == 闭 {
+                    深 -= 1;
+                    if 深 == 0 {
+                        return Some(i);
+                    }
+                }
+            }
+            i += 1;
+        }
+        None
+    }
+
+    /// 把 `[游标, 止)` 里还没消费的记号包成一个兜底叶（有内容才包）。
+    pub(super) fn 兜底到(&mut self, 止: usize) -> Option<u32> {
+        if self.游标 >= 止 {
+            return None;
+        }
+        let 起 = self.记号表[self.游标].起;
+        let 终 = self.记号表[止 - 1].止;
+        self.游标 = 止;
+        Some(self.草稿.叶(兜底种类, 起, 终))
+    }
+
+    /// 公开口：在 `[起, 止)` 上解一个表达式（供行层调用）。
+    ///
+    /// `None` = 一个记号都没解出（此时草稿表**一个都没多**）。解出但有余下记号时，
+    /// 余下的包一个兜底叶。
+    pub(crate) fn 解析区间(&mut self, 起: usize, 止: usize) -> Option<u32> {
+        let 保存游标 = self.游标;
+        let 保存止 = self.止;
+        self.游标 = 起;
+        self.止 = 止;
+        let 果 = match self.二元() {
+            Some(n) => {
+                self.兜底到(止);
+                Some(n)
+            }
+            None => self.兜底到(止),
+        };
+        self.止 = 保存止;
+        self.游标 = 保存游标;
+        果
+    }
+
+    pub(super) fn 二元(&mut self) -> Option<u32> {
+        if self.深度 >= 深度上限 {
+            return None;
+        }
+        self.深度 += 1;
+        let 果 = self.二元体();
+        self.深度 -= 1;
+        果
+    }
+
+    /// 左结合链：`a ＋ b ＋ c` ⇒ `二元运算(二元运算(a,b), c)`。
+    ///
+    /// 草稿是自由的树，左结合**不会**撞上节点表的布局约束（那条约束只在扁平化时生效，
+    /// 由 `草稿::扁平化` 统一处理）—— 这正是要草稿这一层的原因。
+    fn 二元体(&mut self) -> Option<u32> {
+        let mut 左 = self.一元()?;
+        loop {
+            let 保存 = self.游标;
+            self.跳过空白();
+            let 是运算符 = matches!(self.当前(), Some(t) if t.种类 == 记号种类::运算符);
+            if !是运算符 {
+                self.游标 = 保存;
+                return Some(左);
+            }
+            self.游标 += 1;
+            match self.一元() {
+                Some(右) => {
+                    let 区间 = (self.草稿.起(左), self.草稿.止(右));
+                    左 = self.草稿.节点(节点种类::二元运算, 区间, vec![左, 右]);
+                }
+                None => return Some(左),
+            }
+        }
+    }
+
+    fn 一元(&mut self) -> Option<u32> {
+        self.跳过空白();
+        if self.是界符(b"&") {
+            let t = self.当前()?;
+            self.游标 += 1;
+            let 操作数 = self.一元();
+            let 止 = 操作数.map(|n| self.草稿.止(n)).unwrap_or(t.止);
+            let 子 = match 操作数 {
+                Some(n) => vec![n],
+                None => Vec::new(),
+            };
+            return Some(self.草稿.节点(节点种类::一元运算, (t.起, 止), 子));
+        }
+        self.后置()
+    }
+
+    fn 后置(&mut self) -> Option<u32> {
+        let mut 基 = self.主()?;
+        loop {
+            let 保存 = self.游标;
+            self.跳过空白();
+            if self.是界符(b".") {
+                self.游标 += 1;
+                self.跳过空白();
+                match self.当前() {
+                    Some(m) if m.种类 == 记号种类::标识符 => {
+                        self.游标 += 1;
+                        let 成员 = self.草稿.叶(节点种类::标识符引用, m.起, m.止);
+                        let 区间 = (self.草稿.起(基), m.止);
+                        基 = self.草稿.节点(节点种类::成员访问, 区间, vec![基, 成员]);
+                    }
+                    _ => {
+                        self.游标 = 保存;
+                        return Some(基);
+                    }
+                }
+            } else if self.是界符(b"[") {
+                let Some(闭) = self.配对(b"[", b"]") else {
+                    self.游标 = 保存;
+                    return Some(基);
+                };
+                let 开 = self.游标;
+                let 下标 = self.子区间(开 + 1, 闭);
+                self.游标 = 闭 + 1;
+                let Some(下标) = 下标 else {
+                    self.游标 = 保存;
+                    return Some(基);
+                };
+                let 区间 = (self.草稿.起(基), self.记号表[闭].止);
+                基 = self.草稿.节点(节点种类::下标访问, 区间, vec![基, 下标]);
+            } else if self.是界符(b"(") {
+                let Some(闭) = self.配对(b"(", b")") else {
+                    self.游标 = 保存;
+                    return Some(基);
+                };
+                let 开 = self.游标;
+                let 实参 = self.实参表在(开, 闭);
+                self.游标 = 闭 + 1;
+                let 止 = self.记号表[闭].止;
+                match self.草稿.种类(基) {
+                    节点种类::标识符引用 => {
+                        // `名 (实参表)` ⇒ 命令调用：子 = [名, 实参…]
+                        let mut 子 = Vec::with_capacity(实参.len() + 1);
+                        子.push(基);
+                        子.extend(实参);
+                        基 = self.草稿.节点(节点种类::命令调用, (self.草稿.起(基), 止), 子);
+                    }
+                    节点种类::成员访问 => {
+                        // 成员调用：实参追加为成员访问的子（`成员访问` 自己覆盖调用形状）。
+                        let mut 子: Vec<u32> = self.草稿.子(基).to_vec();
+                        子.extend(实参);
+                        let 起 = self.草稿.起(基);
+                        基 = self.草稿.节点(节点种类::成员访问, (起, 止), 子);
+                    }
+                    _ => {
+                        // `f ()()` 之类：实参挂在基节点之下，基的种类不动。
+                        let mut 子: Vec<u32> = self.草稿.子(基).to_vec();
+                        子.extend(实参);
+                        let 起 = self.草稿.起(基);
+                        基 = self.草稿.节点(self.草稿.种类(基), (起, 止), 子);
+                    }
+                }
+            } else {
+                self.游标 = 保存;
+                return Some(基);
+            }
+        }
+    }
+
+    fn 主(&mut self) -> Option<u32> {
+        self.跳过空白();
+        let t = self.当前()?;
+        match t.种类 {
+            记号种类::文本字面量 => {
+                self.游标 += 1;
+                Some(self.草稿.叶(节点种类::文本字面量, t.起, t.止))
+            }
+            记号种类::数值字面量 => {
+                self.游标 += 1;
+                Some(self.草稿.叶(节点种类::数值字面量, t.起, t.止))
+            }
+            记号种类::常量引用 => {
+                self.游标 += 1;
+                Some(self.草稿.叶(节点种类::常量引用, t.起, t.止))
+            }
+            记号种类::标识符 => {
+                self.游标 += 1;
+                Some(self.草稿.叶(节点种类::标识符引用, t.起, t.止))
+            }
+            记号种类::界符 if self.文(t) == b"(" => {
+                let 闭 = self.配对(b"(", b")")?;
+                let 开 = self.游标;
+                let 内 = self.子区间(开 + 1, 闭);
+                self.游标 = 闭 + 1;
+                内
+            }
+            _ => None,
+        }
+    }
+
+    /// 在 `[起, 止)` 上解一个表达式；解不出或有余下记号就补兜底叶。成功返回草稿下标。
+    pub(super) fn 子区间(&mut self, 起: usize, 止: usize) -> Option<u32> {
+        let 保存游标 = self.游标;
+        let 保存止 = self.止;
+        self.游标 = 起;
+        self.止 = 止;
+        let 果 = match self.二元() {
+            Some(n) => {
+                self.兜底到(止);
+                Some(n)
+            }
+            None => self.兜底到(止),
+        };
+        self.止 = 保存止;
+        self.游标 = 保存游标;
+        果
+    }
+}

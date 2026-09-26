@@ -1,0 +1,58 @@
+//! 生成 —— 记录流 → 段数据字节（必须与反解构成往返一致）。
+
+use super::形状::{段体魔数, 段数据头长度, 体长实算, 记录流};
+use super::错误::生成错误;
+
+/// 生成：记录流 → 段数据字节。**必须与 `反解段数据` 构成往返一致**。
+pub fn 生成段数据(流: &记录流) -> Result<Vec<u8>, 生成错误> {
+    let 甲 = 流.支持库.数组甲.len() as u64;
+    let 乙 = 流.支持库.数组乙.len() as u64;
+    let 丙 = 流.支持库.数组丙.len() as u64;
+    let 引用 = 流.支持库.引用表.len() as u64;
+    if 甲 != 乙 || 甲 != 丙 || 甲 != 引用 {
+        return Err(生成错误::支持库数组长度不一致 { 甲, 乙, 丙, 引用表: 引用 });
+    }
+    for (序号, 一条) in 流.支持库.引用表.iter().enumerate() {
+        if 一条.字段.is_empty() {
+            return Err(生成错误::支持库引用字段为空 { 第几条: 序号 as u32 });
+        }
+    }
+    if let Some(位) = 流.头.补零.iter().position(|&字节| 字节 != 0) {
+        return Err(生成错误::补零非零 { 第几字节: 位 as u32 });
+    }
+
+    let 体长 = 体长实算(流);
+    let mut 出 = Vec::with_capacity(段数据头长度 + 体长 as usize);
+
+    出.extend_from_slice(&流.头.段序号.to_le_bytes());
+    出.extend_from_slice(&流.头.保留.to_le_bytes());
+    出.extend_from_slice(&流.头.校验值.to_le_bytes());
+    // 体长由内容重算后写回，不读 `头.体长`（见模块注释「一处与容器层同源的口径」）。
+    出.extend_from_slice(&(体长 as u32).to_le_bytes());
+    出.extend_from_slice(&流.头.补零);
+
+    出.extend_from_slice(&流.体头.甲.to_le_bytes());
+    出.extend_from_slice(&段体魔数.to_le_bytes());
+
+    出.extend_from_slice(&((4 * 甲) as u32).to_le_bytes());
+    for 值 in &流.支持库.数组甲 {
+        出.extend_from_slice(&值.to_le_bytes());
+    }
+    出.extend_from_slice(&((2 * 甲) as u32).to_le_bytes());
+    for 值 in &流.支持库.数组乙 {
+        出.extend_from_slice(&值.to_le_bytes());
+    }
+    出.extend_from_slice(&((2 * 甲) as u32).to_le_bytes());
+    for 值 in &流.支持库.数组丙 {
+        出.extend_from_slice(&值.to_le_bytes());
+    }
+    出.extend_from_slice(&(甲 as u16).to_le_bytes());
+
+    for 一条 in &流.支持库.引用表 {
+        出.extend_from_slice(&(一条.串长() as u32).to_le_bytes());
+        出.extend_from_slice(&一条.原文());
+    }
+
+    出.extend_from_slice(&流.其余载荷);
+    Ok(出)
+}
