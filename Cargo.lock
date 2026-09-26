@@ -9,6 +9,7 @@ dependencies = [
  "v1-contract",
  "v1-dispatch",
  "v1-loader",
+ "v1-notify",
  "v1-registry",
 ]
 
