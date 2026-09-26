@@ -1,0 +1,226 @@
+.版本 2
+
+.程序集 程序集
+.程序集变量 IDirect3DDevice9Func, IDirect3DDevice9Func
+.程序集变量 EndScene_hook, D3D_Hook
+.程序集变量 Present_hook, D3D_Hook
+.程序集变量 SetStreamSource_hook, D3D_Hook
+.程序集变量 SetTexture_hook, D3D_Hook
+.程序集变量 Reset_hook, D3D_Hook
+.程序集变量 GetRenderTargetData_Hook, D3D_Hook
+.程序集变量 CreateOffscreenPlainSurface_Hook, D3D_Hook
+.程序集变量 D3DDev, IDirect3DDevice9
+.程序集变量 Text, ID3DXFont, , "4"
+.程序集变量 TextRect, RECT, , "4"
+.程序集变量 TextColor, 整数型
+.程序集变量 Viewport, D3DVIEWPORT9
+.程序集变量 Viewport2, D3DVIEWPORT9
+.程序集变量 ScreenCX, 小数型
+.程序集变量 ScreenCY, 小数型
+.程序集变量 GetModuleHandleA, 整数型
+.程序集变量 GetModuleHandleA_hook, D3D_Hook
+
+.子程序 _启动子程序, 整数型, , By 轻飘飘的风
+
+.如果真 (D3D_GetIDirect3DDevice9Func (IDirect3DDevice9Func))
+    EndScene_hook.Install (IDirect3DDevice9Func.EndScene, &EndScene_hook)
+    Present_hook.Install (IDirect3DDevice9Func.Present, &Present_hook)
+    SetStreamSource_hook.Install (IDirect3DDevice9Func.SetStreamSource, &SetStreamSource_hook)
+    SetTexture_hook.Install (IDirect3DDevice9Func.SetTexture, &SetTexture_hook)
+    Reset_hook.Install (IDirect3DDevice9Func.Reset, &Reset_hook)
+    GetRenderTargetData_Hook.Install (IDirect3DDevice9Func.GetRenderTargetData, &GetRenderTargetData_Hook)
+    CreateOffscreenPlainSurface_Hook.Install (IDirect3DDevice9Func.CreateOffscreenPlainSurface, &CreateOffscreenPlainSurface_Hook)
+    GetModuleHandleA ＝ GetProcAddress (GetModuleHandle (“kernel32.dll”), “GetModuleHandleA”)
+    GetModuleHandleA_hook.Install (GetModuleHandleA, &GetModuleHandleA_hook)
+    GetModuleHandle (“Hook.dll”)
+.如果真结束
+返回 (0)
+
+
+.子程序 ZJZDXHook, , 公开
+
+
+
+.子程序 GetModuleHandleA_hook, 整数型
+.参数 lpModuleName, 文本型
+
+OutputDebugString (“GetModuleHandleA_hook -> ” ＋ lpModuleName)
+返回 (D3D_HookCall (GetModuleHandleA, _Text_ (lpModuleName), , , , , , , , , , , , , , ))
+
+
+.子程序 EndScene_hook, 整数型
+.参数 pDevice, 整数型
+
+.如果真 (D3DDev.this () ＝ 0)
+    D3DDev.this (pDevice)
+    D3DDev.GetViewport (Viewport)
+    ScreenCX ＝ Viewport.Width ÷ 2
+    ScreenCY ＝ Viewport.Height ÷ 2
+    OutputDebugString (“D3DDev.GetViewport----------------------”)
+    DeBugText ＝ “Viewport.X -> ” ＋ 到文本 (Viewport.X)
+    OutputDebugString (DeBugText)
+    DeBugText ＝ “Viewport.Y -> ” ＋ 到文本 (Viewport.Y)
+    OutputDebugString (DeBugText)
+    DeBugText ＝ “Viewport.MinZ -> ” ＋ 到文本 (Viewport.MinZ)
+    OutputDebugString (DeBugText)
+    DeBugText ＝ “Viewport.MaxZ -> ” ＋ 到文本 (Viewport.MaxZ)
+    OutputDebugString (DeBugText)
+    DeBugText ＝ “Viewport.Width -> ” ＋ 到文本 (Viewport.Width)
+    OutputDebugString (DeBugText)
+    DeBugText ＝ “Viewport.Height -> ” ＋ 到文本 (Viewport.Height)
+    OutputDebugString (DeBugText)
+    OutputDebugString (“ACall-----------------------------------”)
+    D3D_Call (IDirect3DDevice9Func.GetViewport, pDevice, _D3DVIEWPORT9_ (Viewport2), , , , , , , , , , , , , )  ' 测试ACall ACall用于调用没被Hook的函数
+    DeBugText ＝ “Viewport2.X -> ” ＋ 到文本 (Viewport2.X)
+    OutputDebugString (DeBugText)
+    DeBugText ＝ “Viewport2.Y -> ” ＋ 到文本 (Viewport2.Y)
+    OutputDebugString (DeBugText)
+    DeBugText ＝ “Viewport2.MinZ -> ” ＋ 到文本 (Viewport2.MinZ)
+    OutputDebugString (DeBugText)
+    DeBugText ＝ “Viewport2.MaxZ -> ” ＋ 到文本 (Viewport2.MaxZ)
+    OutputDebugString (DeBugText)
+    DeBugText ＝ “Viewport2.Width -> ” ＋ 到文本 (Viewport2.Width)
+    OutputDebugString (DeBugText)
+    DeBugText ＝ “Viewport2.Height -> ” ＋ 到文本 (Viewport2.Height)
+    OutputDebugString (DeBugText)
+    Text [1].CreateA (D3DDev, 36, 0, 0, 1000, #FALSE, #DEFAULT_CHARSET, #OUT_DEFAULT_PRECIS, #DEFAULT_QUALITY, 0, “微软雅黑”)
+    Text [2].CreateA (D3DDev, 36, 0, 0, 1000, #FALSE, #DEFAULT_CHARSET, #OUT_DEFAULT_PRECIS, #DEFAULT_QUALITY, 0, “微软雅黑”)
+    Text [3].CreateA (D3DDev, 36, 0, 0, 1000, #FALSE, #DEFAULT_CHARSET, #OUT_DEFAULT_PRECIS, #DEFAULT_QUALITY, 0, “微软雅黑”)
+    Text [4].CreateA (D3DDev, 36, 0, 0, 1000, #FALSE, #DEFAULT_CHARSET, #OUT_DEFAULT_PRECIS, #DEFAULT_QUALITY, 0, “微软雅黑”)
+    SetRect (TextRect [1], 50, 50, 400, 100)
+    SetRect (TextRect [2], 50, 100, 400, 150)
+    SetRect (TextRect [3], 50, 150, 400, 200)
+    SetRect (TextRect [4], 50, 200, 400, 250)
+    TextColor ＝ D3DCOLOR_RGBA (255, 0, 255, 255)
+.如果真结束
+Text [1].DrawText (, “夜中不能寐，起坐弹鸣琴。”, -1, TextRect [1], 位或 (#DT_TOP, #DT_LEFT), TextColor)
+Text [2].DrawText (, “薄帷鉴明月，清风吹我襟。”, -1, TextRect [2], 位或 (#DT_TOP, #DT_LEFT), TextColor)
+Text [3].DrawText (, “孤鸿号外野，翔鸟鸣北林。”, -1, TextRect [3], 位或 (#DT_TOP, #DT_LEFT), TextColor)
+Text [4].DrawText (, “徘徊将何见？忧思独伤心。”, -1, TextRect [4], 位或 (#DT_TOP, #DT_LEFT), TextColor)
+返回 (D3D_HookCall (IDirect3DDevice9Func.EndScene, pDevice, , , , , , , , , , , , , , ))
+
+.子程序 Present_hook, 整数型
+.参数 pDevice, 整数型
+.参数 pSourceRect, 整数型
+.参数 pDestRect, 整数型
+.参数 hDestWindowOverride, 整数型
+.参数 pDirtyRegion, 整数型
+
+
+返回 (D3D_HookCall (IDirect3DDevice9Func.Present, pDevice, pSourceRect, pDestRect, hDestWindowOverride, pDirtyRegion, , , , , , , , , , ))
+
+
+.子程序 SetStreamSource_hook, 整数型
+.参数 pDevice, 整数型
+.参数 StreamNumber, 整数型
+.参数 pStreamData, 整数型
+.参数 OffsetInBytes, 整数型
+.参数 sStride, 整数型
+
+
+
+返回 (D3D_HookCall (IDirect3DDevice9Func.SetStreamSource, pDevice, StreamNumber, pStreamData, OffsetInBytes, sStride, , , , , , , , , , ))
+
+
+.子程序 SetTexture_hook, 整数型
+.参数 pDevice, 整数型
+.参数 Sampler, 整数型
+.参数 pTexture, 整数型
+
+
+
+返回 (D3D_HookCall (IDirect3DDevice9Func.SetTexture, pDevice, Sampler, pTexture, , , , , , , , , , , , ))
+
+
+.子程序 Reset_hook, 整数型
+.参数 pDevice, 整数型
+.参数 pPresentationParameters, 整数型
+
+
+
+返回 (D3D_HookCall (IDirect3DDevice9Func.Reset, pDevice, pPresentationParameters, , , , , , , , , , , , , ))
+
+
+.子程序 GetRenderTargetData_Hook, 整数型
+.参数 pDevice, 整数型
+.参数 pRenderTarget, 整数型
+.参数 pDestSurface, 整数型
+
+
+
+返回 (D3D_HookCall (IDirect3DDevice9Func.GetRenderTargetData, pDevice, pRenderTarget, pDestSurface, , , , , , , , , , , , ))
+
+
+.子程序 CreateOffscreenPlainSurface_Hook, 整数型
+.参数 pDevice, 整数型
+.参数 Width, 整数型
+.参数 Height, 整数型
+.参数 Format, 整数型
+.参数 Pool, 整数型
+.参数 ppSurface, 整数型
+.参数 pSharedHandle, 整数型
+
+
+
+返回 (D3D_HookCall (IDirect3DDevice9Func.CreateOffscreenPlainSurface, pDevice, Width, Height, Format, Pool, ppSurface, pSharedHandle, , , , , , , , ))
+
+
+.子程序 _D3DVIEWPORT9_, 整数型
+.参数 _D3DVIEWPORT9_, D3DVIEWPORT9, 参考
+
+置入代码 ({ 139, 69, 8, 139, 0, 137, 236, 93, 194, 4, 0 })
+' mov eax,[ebp+8]
+' mov eax,[eax]
+' mov esp,ebp
+' pop ebp
+' retn 4
+返回 (0)
+
+
+.子程序 _Text_, 整数型
+.参数 _Text_, 文本型, 参考
+
+置入代码 ({ 139, 69, 8, 139, 0, 137, 236, 93, 194, 4, 0 })
+' mov eax,[ebp+8]
+' mov eax,[eax]
+' mov esp,ebp
+' pop ebp
+' retn 4
+返回 (0)
+
+.版本 2
+
+.全局变量 DeBugText, 文本型
+
+.版本 2
+
+.数据类型 D3DTLVERTEX
+    .成员 X, 小数型
+    .成员 Y, 小数型
+    .成员 X2, 小数型
+    .成员 Y2, 小数型
+    .成员 Color, 整数型
+
+.版本 2
+
+.DLL命令 SetRect, 逻辑型, "user32.dll", "SetRect"
+    .参数 lpRect, RECT
+    .参数 X1, 整数型
+    .参数 Y1, 整数型
+    .参数 X2, 整数型
+    .参数 Y2, 整数型
+
+.DLL命令 OutputDebugString, , "kernel32.dll", "OutputDebugStringA"
+    .参数 lpOutputString, 文本型
+
+.DLL命令 GetModuleHandle, 整数型, "kernel32.dll", "GetModuleHandleA"
+    .参数 lpModuleName, 文本型
+
+.DLL命令 GetProcAddress, 整数型, "kernel32.dll", "GetProcAddress"
+    .参数 hModule, 整数型
+    .参数 lpProcName, 文本型
+
+.版本 2
+
+.常量 OUT_DEFAULT_PRECIS, "0"
+.常量 DEFAULT_QUALITY, "0"

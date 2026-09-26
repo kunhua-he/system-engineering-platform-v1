@@ -3,6 +3,16 @@
 version = 4
 
 [[package]]
+name = "v1-adapter"
+version = "0.1.0"
+dependencies = [
+ "v1-contract",
+ "v1-dispatch",
+ "v1-loader",
+ "v1-registry",
+]
+
+[[package]]
 name = "v1-alloc"
 version = "0.1.0"
 dependencies = [
@@ -19,6 +29,14 @@ version = "0.1.0"
 dependencies = [
  "v1-contract",
  "v1-registry",
+]
+
+[[package]]
+name = "v1-gateway"
+version = "0.1.0"
+dependencies = [
+ "v1-adapter",
+ "v1-loader",
 ]
 
 [[package]]
@@ -42,6 +60,15 @@ version = "0.1.0"
 dependencies = [
  "v1-contract",
  "v1-slot",
+]
+
+[[package]]
+name = "v1-resource-gateway"
+version = "0.1.0"
+dependencies = [
+ "v1-contract",
+ "v1-dispatch",
+ "v1-trace",
 ]
 
 [[package]]

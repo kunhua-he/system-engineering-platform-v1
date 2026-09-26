@@ -1,0 +1,3924 @@
+.版本 2
+
+.DLL命令 取消文档打印_, 整数型, "gdi32.dll", "AbortDoc", , 返回值大于零表示成功，返回SP_ERROR表示失败
+    .参数 设备场景句柄, 整数型, , hdc,设备场景的句柄
+
+.DLL命令 取消路径_, 整数型, "gdi32.dll", "AbortPath", , 非零表示成功，零表示失败
+    .参数 设备场景句柄, 整数型, , hdc,设备场景的句柄
+
+.DLL命令 删除缓冲文件_, 整数型, "winspool.drv", "AbortPrinter", , 非零表示成功，零表示失败
+    .参数 打印机句柄, 整数型, , hPrinter,参见相关帮助
+
+.DLL命令 激活键盘布局_, 整数型, "user32.dll", "ActivateKeyboardLayout", , 如执行成功，返回前一个键盘布局的句柄；零表示失败
+    .参数 键盘布局句柄, 整数型, , HKL,指定一个键盘布局的句柄
+    .参数 键盘位置, 整数型, , flags,将指定的键盘移至内部键盘布局列表的起始处
+
+.DLL命令 添加字体资源_, 整数型, "gdi32.dll", "AddFontResourceA", , 添加的字体数量，零表示失败
+    .参数 资源文件名, 文本型, , lpFileName,字体资源文件的文件名
+
+.DLL命令 添加打印机新表单_, 整数型, "spoolss.dll", "AddFormA", , 非零表示成功，零表示失败
+    .参数 打印机句柄, 整数型, , hPrinter,打印机句柄
+    .参数 固定值, 整数型, , Level,设为1
+    .参数 表单结构, 表单结构_, , 对表单进行描述的一个结构
+
+.DLL命令 获取路径_, 整数型, "winspool.drv", "AddJobA", , 非零表示成功，零表示失败
+    .参数 打印机句柄, 整数型, , hPrinter,打印机句柄
+    .参数 固定值, 整数型, , Level,设为1
+    .参数 路径结构, 路径结构_, , pData,缓冲区会引用一个ADDJOB_INFO_1结构
+    .参数 路径结构的大小, 整数型, , cdBuf,pData缓冲区中的字符数量
+    .参数 变量指针, 整数型, , pcbNeeded,参见相关帮助
+
+.DLL命令 添加打印机监视器_, 整数型, "winspool.drv", "AddMonitorA", , 非零表示成功，零表示失败
+    .参数 服务器名称, 文本型, , pName,参见相关帮助
+    .参数 固定值, 整数型, , Level,设为2
+    .参数 结构首字节, 字节型, , pMonitors,参见相关帮助
+
+.DLL命令 启动添加端口对话框_, 整数型, "winspool.drv", "AddPortA", , 非零表示成功，零表示失败
+    .参数 服务器名字, 文本型, , pName,参见相关帮助
+    .参数 父窗口句柄, 整数型, , hwnd,指定AddPort对话框的父窗口的句柄
+    .参数 监视器名称, 文本型, , pMonitorName,用于指定端口的一个监视器的名称
+
+.DLL命令 添加打印机_, 整数型, "winspool.drv", "AddPrinterA", , 如执行成功，返回一台新打印机的句柄；零表示失败
+    .参数 服务器名字, 文本型, , pName,欲在其中安装打印机的一个服务器的名字
+    .参数 固定值, 整数型, , Level,设为2
+    .参数 缓冲区, , , pPrinter,指定一个缓冲区的第一个条目
+
+.DLL命令 连接打印机_, 整数型, "winspool.drv", "AddPrinterConnectionA", , 非零表示成功，零表示失败
+    .参数 打印机名字, 文本型, , pName,网络上的一台打印机的名字
+
+.DLL命令 添加打印驱动程序_, 整数型, "winspool.drv", "AddPrinterDriverA", , 非零表示成功，零表示失败
+    .参数 服务器名字, 文本型, , pName,参见相关帮助
+    .参数 固定值, 整数型, , Level,2或3（2仅适用于NT 3.51）
+    .参数 缓冲区, , , pDriverInfo,指定一个缓冲区，参见相关帮助
+
+.DLL命令 添加打印处理器_, 整数型, "winspool.drv", "AddPrintProcessorA", , 非零表示成功，零表示失败
+    .参数 服务器名字, 文本型, , pName,参见相关帮助
+    .参数 添加环境, 文本型, , pEnvironment,参见相关帮助
+    .参数 处理器文件名, 文本型, , pPathName,参见相关帮助
+    .参数 处理器名字, 文本型, , pPrintProcessorName,打印处理器的名字
+
+.DLL命令 添加打印供应商_, 整数型, "winspool.drv", "AddPrintProvidorA", , 非零表示成功，零表示失败
+    .参数 服务器名字, 文本型, , pName,参见相关帮助
+    .参数 固定值, 整数型, , Level,设为1
+    .参数 供应商结构, 供应商结构_, , pProvidorInfo,包含了一个PROVIDOR_INFO_1结构的缓冲区
+
+.DLL命令 计算矩形大小_, 整数型, "user32.dll", "AdjustWindowRect", , 如执行成功，则返回非零值；如失败，返回零值
+    .参数 客户区, 矩形_, , lpRect,最初包含要求的客户区
+    .参数 窗口样式, 整数型, , dwStyle,窗口样式
+    .参数 窗口菜单, 整数型, , bMenu,如窗口有菜单，则设为TRUE（非零）
+
+.DLL命令 计算扩展矩形大小_, 整数型, "user32.dll", "AdjustWindowRectEx", , 如执行成功，则返回非零值；如失败，返回零值
+    .参数 客户区, 矩形_, , lpRect,最初包含要求的客户区
+    .参数 窗口样式, 整数型, , dwStyle,窗口样式
+    .参数 窗口菜单, 整数型, , bMenu,如窗口有菜单，则设为TRUE（非零）
+    .参数 扩展窗口样式, 整数型, , dwEsStyle,扩展窗口样式（只适用于AdjustWindowRectEx）
+
+.DLL命令 打印文档设置框_, 整数型, "winspool.drv", "AdvancedDocumentPropertiesA", , 非零表示成功，零表示失败
+
+.DLL命令 连接弧画直线_, 整数型, "gdi32.dll", "AngleArc", , 非零表示成功，零表示失败
+    .参数 设备场景句柄, 整数型, , hdc,要在其中作图的设备场景
+    .参数 圆心横坐标, 整数型, , x,对弧进行描述的一个圆的中心点横坐标
+    .参数 圆心纵坐标, 整数型, , y,对弧进行描述的一个圆的中心点纵坐标
+    .参数 圆半径, 整数型, , dwRadius,圆的半径
+    .参数 线角度, 小数型, , eStartAngle,线同圆连接时的角度（以度数为单位）
+    .参数 弧度, 小数型, , eSweepAngle,弧在圆上占据的范围（以度数为单位）
+
+.DLL命令 判断弹出式窗口_, 整数型, "user32.dll", "AnyPopup", , 如存在弹出式菜单，则返回TRUE（非零）
+
+.DLL命令 画圆弧_, 整数型, "gdi32.dll", "Arc", , 非零表示成功，零表示失败
+    .参数 设备场景句柄, 整数型, , hdc,一个显示场景的句柄
+    .参数 矩形左上角横坐标, 整数型, , x1,围绕椭圆的矩形的左上角位置横坐标
+    .参数 矩形左上角纵坐标, 整数型, , y1,围绕椭圆的矩形的左上角位置纵坐标
+    .参数 矩形右下角横坐标, 整数型, , x2,围绕椭圆的矩形的右下角位置横坐标
+    .参数 矩形右下角纵坐标, 整数型, , y2,围绕椭圆的矩形的右下角位置纵坐标
+    .参数 圆弧起点横坐标, 整数型, , x3,指定圆弧起点横坐标
+    .参数 圆弧起点纵坐标, 整数型, , y3,指定圆弧起点纵坐标
+    .参数 圆弧终点横坐标, 整数型, , x4,指定圆弧终点横坐标
+    .参数 圆弧终点纵坐标, 整数型, , y4,指定圆弧终点纵坐标
+
+.DLL命令 排列最小化子窗口_, 整数型, "user32.dll", "ArrangeIconicWindows", , 图标行的高度；如失败，则返回零
+    .参数 父窗口句柄, 整数型, , hwnd,父窗口的句柄
+
+.DLL命令 生成声音_, 整数型, "kernel32.dll", "Beep", , Beep,用于生成简单的声音
+    .参数 声音频率, 整数型, , dwFreq,声音频率（从37Hz到32767Hz）
+    .参数 声音持续时间, 整数型, , dwDuration,参见相关帮助
+
+.DLL命令 构建窗口过程_, 整数型, "user32.dll", "BeginDeferWindowPos", , BeginDeferWindowPos,参见相关帮助
+    .参数 初始窗口数量, 整数型, , nNumWindows,在结构中欲为其分配空间的初始窗口数量
+
+.DLL命令 启动路径分支_, 整数型, "gdi32.dll", "BeginPath", , BeginPath,启动一个路径分支
+    .参数 设备场景句柄, 整数型, , hdc,欲在其中记录的设备场景
+
+.DLL命令 复制场景位图_, 整数型, "gdi32.dll", "BitBlt", , 
+    .参数 目标设备场景, 整数型, , hDestDC,目标设备场景
+    .参数 目标横坐标, 整数型, , x,对目标设备场景中目标矩形左上角位置进行描述的那个点
+    .参数 目标纵坐标, 整数型, , y,对目标设备场景中目标矩形左上角位置进行描述的那个点
+    .参数 传输图像宽度, 整数型, , nWidth,欲传输图象的宽度
+    .参数 传输图像高度, 整数型, , nHeight,欲传输图象的高度
+    .参数 源设备场景, 整数型, , hSrcDC,源设备场景。如光栅运算未指定源，则应设为0
+    .参数 源横坐标, 整数型, , xSrc,对源设备场景中源矩形左上角位置进行描述的那个点
+    .参数 源纵坐标, 整数型, , ySrc,对源设备场景中源矩形左上角位置进行描述的那个点
+    .参数 光栅运算方式, 整数型, , dwRop,传输过程要执行的光栅运算
+
+.DLL命令 窗口置顶_, 整数型, "user32.dll", "BringWindowToTop", , 
+    .参数 窗口句柄, 整数型, , hwnd,欲带至顶部的那个窗口的句柄
+
+.DLL命令 消息广播_, 整数型, "user32.dll", "BroadcastSystemMessage", , BroadcastSystemMessage,将一条系统消息广播给系统中所有的顶级窗口
+    .参数 常量值1, 整数型, , dw,具体常量请查看常量表
+    .参数 常量值2, 整数型, , pdw,具体常量请查看常量表
+    .参数 消息编号, 整数型, , un,消息编号
+    .参数 消息值1, 整数型, , wParam,由消息决定
+    .参数 消息值2, 整数型, , lParam,由消息决定
+
+.DLL命令 调用管道_, 整数型, "kernel32.dll", "CallNamedPipeA", , 
+    .参数 管道名称, 文本型, , lpNamedPipeName，欲打开管道的名称
+    .参数 lpInBuffer, , 传址, 此参数的类型为Any，请按实际应用情况修改
+    .参数 nInBufferSize, 整数型
+    .参数 lpOutBuffer, , 传址, 此参数的类型为Any，请按实际应用情况修改
+    .参数 nOutBufferSize, 整数型
+    .参数 lpBytesRead, 整数型, 传址
+    .参数 nTimeOut, 整数型
+
+.DLL命令 终止线程绘图操作_, 整数型, "gdi32.dll", "CancelDC", , 非零表示成功，零表示失败
+    .参数 设备场景句柄, 整数型, , hdc，要在其中取消绘图操作的设备场景
+
+.DLL命令 取消记时器记时_, 整数型, "kernel32.dll", "CancelWaitableTimer", , 非零表示成功，零表示失败。会设置GetLastError
+    .参数 记时器句柄, 整数型, , hTimer，可等待计时器的句柄
+
+.DLL命令 层叠方式排列窗口_, 整数型, "user32.dll", "CascadeWindows", , 
+    .参数 hWndParent, 整数型
+    .参数 wHow, 整数型
+    .参数 lpRect, 矩形_
+
+.DLL命令 转换到OEM码_, 整数型, "user32.dll", "CharToOemA", , 
+    .参数 欲转换的字串, 文本型, , lpszSrc，欲转换的字串
+    .参数 结果, 文本型, , lpszDst，结果
+
+.DLL命令 复选菜单_, 整数型, "user32.dll", "CheckMenuItem", , 
+    .参数 菜单句柄, 整数型, , hMenu，菜单句柄
+    .参数 菜单标识, 整数型, , wIDCheckItem，菜单条目的标识符
+    .参数 参数, 整数型, , wCheck，根据参数而定
+
+.DLL命令 使用符号选中_, 整数型, "user32.dll", "CheckMenuRadioItem", , 非零表示成功，零表示失败。会设置GetLastError
+    .参数 菜单句柄, 整数型, , hMenu，菜单句柄
+    .参数 起始位置, 整数型, , un1，组内第一个位置或菜单ID
+    .参数 结束位置, 整数型, , un2，组内最后一个位置或菜单ID
+    .参数 选中位置, 整数型, , un3，欲复选的位置或菜单ID
+    .参数 参数, 整数型, , un4，指定un1、un2、un3、使用的是菜单ID或位置
+
+.DLL命令 取子窗口句柄_, 整数型, "user32.dll", "ChildWindowFromPoint", , 
+    .参数 父窗口句柄, 整数型
+    .参数 坐标, 坐标_
+
+.DLL命令 画弦_, 整数型, "gdi32.dll", "Chord", , Long，非零表示成功，零表示失败。会设置GetLastError
+    .参数 设备场景句柄, 整数型, , hdc，一个显示场景的句柄
+    .参数 矩形左上角横坐标, 整数型, , x1，指定围绕椭圆的一个矩形的左上角位置的横坐标
+    .参数 矩形左上角纵坐标, 整数型, , y1，指定围绕椭圆的一个矩形的左上角位置的纵坐标
+    .参数 矩形右下角横坐标, 整数型, , x2，指定围绕椭圆的一个矩形的右下角位置的横坐标
+    .参数 矩形右下角纵坐标, 整数型, , y2，指定围绕椭圆的一个矩形的右下角位置的纵坐标
+    .参数 线段起点横坐标, 整数型, , x3，指定与椭圆相交的一条线的一个点的横坐标
+    .参数 线段起点纵坐标, 整数型, , y3，指定与椭圆相交的一条线的一个点的纵坐标
+    .参数 线段终点横坐标, 整数型, , x4，指定与椭圆相交的一条线的另一个点的横坐标
+    .参数 线段终点纵坐标, 整数型, , y4，指定与椭圆相交的一条线的另一个点的纵坐标
+
+.DLL命令 取窗口区域位置_, 整数型, "user32.dll", "ClientToScreen", , 非零表示成功，零表示失败
+    .参数 窗口句柄, 整数型, , hwnd，要取出区域坐标的窗口句柄
+    .参数 位置变量, 坐标_, , lpPoint，参见相关帮助
+
+.DLL命令 限制指针活动区域_, 整数型, "user32.dll", "ClipCursor", , 非零表示成功，零表示失败
+    .参数 矩形区域, 矩形_, 传址, lpRect，指定一个矩形，用像素屏幕坐标系统表示
+
+.DLL命令 关闭增强图元设备场景_, 整数型, "gdi32.dll", "CloseEnhMetaFile", , 指向增强型图元文件的一个句柄，0为出错
+    .参数 设备场景句柄, 整数型, , hdc
+
+.DLL命令 描绘路径时关闭当前图形_, 整数型, "gdi32.dll", "CloseFigure", , 非零表示成功，零表示失败
+    .参数 设备场景句柄, 整数型, , hdc，包含了一个打开的Path分支的设备场景
+
+.DLL命令 关闭图元文件设备场景_, 整数型, "gdi32.dll", "CloseMetaFile", , 指向图元文件的一个句柄。零表示出错
+    .参数 图元文件设备场景, 整数型, , hMF，图元文件设备场景
+
+.DLL命令 关闭一个打印机对象_, 整数型, "winspool.drv", "ClosePrinter", , 非零表示成功，零表示失败。
+    .参数 打印机句柄, 整数型, , hPrinter，一个打开的打印机对象的句柄
+
+.DLL命令 最小化窗口_, 整数型, "user32.dll", "CloseWindow", , 非0表示成功，0表示失败
+    .参数 窗口句柄, 整数型, , hwnd，欲最小化窗口的窗口句柄
+
+.DLL命令 合并区域_, 整数型, "gdi32.dll", "CombineRgn", , 
+    .参数 新区域句柄, 整数型, , hDestRgn，包含组合结果的区域句柄
+    .参数 源区域1, 整数型, , hSrcRgn1，源区域1
+    .参数 源区域2, 整数型, , hSrcRgn2，源区域2
+    .参数 组合方式, 整数型, , nCombineMode，组合方式
+
+.DLL命令 驱动世界转换_, 整数型, "gdi32.dll", "CombineTransform", , 
+    .参数 保存转换结果, 转换数据_, 传址, lpxformResult，保存转换结果的结构
+    .参数 第一个结构, 转换数据_, 传址, lpxform1，按顺序的第一个结构
+    .参数 第二个结构, 转换数据_, 传址, lpxform2，按顺序的第二个结构
+
+.DLL命令 比较文件时间_, 整数型, "kernel32.dll", "CompareFileTime", , 
+    .参数 欲比较时间1, 文件时间_, 传址, lpFileTime1，欲比较时间1
+    .参数 欲比较时间2, 文件时间_, 传址, lpFileTime2，欲比较时间2
+
+.DLL命令 指定端口配置框_, 整数型, "winspool.drv", "ConfigurePortA", , 
+    .参数 被配置的服务器名, 文本型, , pName，参见相关帮助
+    .参数 窗口句柄, 整数型, , hwnd，对话框父窗口的句柄
+    .参数 端口名, 文本型, , pPortName，端口名
+
+.DLL命令 管道连接_, 整数型, "kernel32.dll", "ConnectNamedPipe", , 
+    .参数 管道句柄, 整数型
+    .参数 监视连接, 重叠操作_, 传址
+
+.DLL命令 连接打印机对话框_, 整数型, "winspool.drv", "ConnectToPrinterDlg", , 已连接或选择的打印机的句柄
+    .参数 父窗口句柄, 整数型, , hwnd，在哪个窗口中调用的那个窗口的窗口句柄
+    .参数 保留参数, 整数型, , flags，保留参数，设为0既可
+
+.DLL命令 地方标识到地方ID_, 整数型, "KERNEL32.dll", "ConvertDefaultLocale", , 
+    .参数 地方设置, 整数型
+
+.DLL命令 拷贝增强图元文件_, 整数型, "gdi32.dll", "CopyEnhMetaFileA", , 如执行成功，返回副本的句柄。零表示失败
+    .参数 源图元文件句柄, 整数型, , hemfSrc，欲复制的增强型图元文件的句柄
+    .参数 副本文件名, 文本型, , lpszFile，参见相关帮助
+
+.DLL命令 复制文件_, 整数型, "kernel32.dll", "CopyFileA", , 
+    .参数 源文件名, 文本型, , lpExistingFileName，被复制的文件名
+    .参数 目标文件名, 文本型, , lpNewFileName，目标文件名
+    .参数 是否覆盖, 整数型, , bFailIfExists，非0不覆盖，0覆盖
+
+.DLL命令 复制图标_, 整数型, "user32.dll", "CopyIcon", , 
+    .参数 图标句柄, 整数型, , hIcon，欲复制的图标或指针的句柄
+
+.DLL命令 复制图片_, 整数型, "user32.dll", "CopyImage", , 
+    .参数 源资源句柄, 整数型, , handle，欲复制的图象的句柄
+    .参数 资源类型, 整数型, , un1，根据资源而定
+    .参数 目标宽度, 整数型, , n1，副本以像素表示的宽度
+    .参数 目标高度, 整数型, , n2，副本以像素表示的高度
+    .参数 处理参数, 整数型, , un2，复制过程中所做的处理，根据参数不同而作用不同
+
+.DLL命令 拷贝标准图元文件_, 整数型, "gdi32.dll", "CopyMetaFileA", , 如执行成功，则返回副本的句柄。零表示失败
+    .参数 源图元文件句柄, 整数型, , hMF，指向欲复制的图元文件的句柄
+    .参数 新图元文件名, 文本型, , lpFileName，新图元文件的文件名
+
+.DLL命令 拷贝矩形结构_, 整数型, "user32.dll", "CopyRect", , 
+    .参数 目标矩形, 矩形_, 传址, lpDestRect，目标矩形结构
+    .参数 源矩形, 矩形_, 传址, lpSourceRect，源矩形结构
+
+.DLL命令 按格式创建位图_, 整数型, "gdi32.dll", "CreateBitmap", , 
+    .参数 位图宽度, 整数型, , nWidth，位图宽度，以像素为单位
+    .参数 位图高度, 整数型, , nHeight，位图高度，以像素为单位
+    .参数 色层数量, 整数型, , nPlanes，色层数量
+    .参数 像素位数, 整数型, , nBitCount，每像素的位数
+    .参数 初始化处理, 短整数型, 传址, lpBits，可设为零，表示不对位图进行初始化
+
+.DLL命令 创建设备有关位图_, 整数型, "gdi32.dll", "CreateBitmapIndirect", , 
+    .参数 位图信息, 位图结构_, 传址, lpBitmap，位图信息
+
+.DLL命令 创建插入符_, 整数型, "user32.dll", "CreateCaret", , CreateCaret，根据指定的信息创建一个插入符（光标），并将它选定为指定窗口的默认插入符。插入符可以是一根短线、一个方块或者一幅位图。通常用插入符指示文字在文字框中的插入位置
+    .参数 窗口句柄, 整数型, , hwnd，窗口句柄
+    .参数 位图句柄, 整数型, , hBitmap，位图句柄
+    .参数 宽度, 整数型, , nWidth，宽度
+    .参数 高度, 整数型, , nHeight，高度
+
+.DLL命令 创建鼠标指针_, 整数型, "user32.dll", "CreateCursor", , 
+    .参数 实例句柄, 整数型, , hInstance，准备拥有新指针的实例句柄
+    .参数 指针横位置, 整数型, , nXhotspot，指针图象中代表准确指针位置的横坐标
+    .参数 指针纵位置, 整数型, , nYhotspot，指针图象中代表准确指针位置的纵坐标
+    .参数 指针图象宽度, 整数型, , nWidth，指针图象宽度
+    .参数 指针图象高度, 整数型, , nHeight，指针图象高度
+    .参数 AND位图指针, 字节型, 传址, lpANDbitPlane，指向AND位图数据的指针
+    .参数 XOR位图指针, 字节型, 传址, lpXORbitPlane，指向XOR位图数据的指针
+
+.DLL命令 创建设备场景_, 整数型, "gdi32.dll", "CreateDCA", , 
+    .参数 驱动名称, 文本型, , lpDriverName，根据参数值而定
+    .参数 设备名称, 文本型, , lpDeviceName，所要创建的设备场景名称
+    .参数 参数, 文本型, , lpOutput，一般情况下为空
+    .参数 场景结构, 设备初始设置_, 传址, lpInitData，0为使用默认设置
+
+.DLL命令 无关位图创建到有关位图_, 整数型, "gdi32.dll", "CreateDIBitmap", , 
+    .参数 设备场景句柄, 整数型
+    .参数 设备无关位图, 设备无关位图_, 传址
+    .参数 初始化位图, 整数型
+    .参数 位图指针, , 传址
+    .参数 设备有关位图, 位图信息_, 传址
+    .参数 颜色常数, 整数型
+
+.DLL命令 创建样式刷子_, 整数型, "gdi32.dll", "CreateDIBPatternBrush", , 
+    .参数 内存地址, 整数型
+    .参数 常数, 整数型
+
+.DLL命令 创建GDI对象_, 整数型, "gdi32.dll", "CreateDIBSection", , 
+    .参数 设备场景句柄, 整数型
+    .参数 pBitmapInfo, 位图信息_, 传址
+    .参数 常数, 整数型
+    .参数 内存地址, 整数型
+    .参数 文件映射句柄, 整数型
+    .参数 偏移量, 整数型
+
+.DLL命令 创建目录_, 整数型, "kernel32.dll", "CreateDirectoryA", , 
+    .参数 模板目录, 文本型
+    .参数 新目录名称, 文本型, , lpNewDirectory，新目录名称
+    .参数 目录安全性结构, 安全性结构_, , lpSecurityAttributes，这个结构定义了目录的安全特性
+
+.DLL命令 创建内切矩形的椭圆_, 整数型, "gdi32.dll", "CreateEllipticRgnIndirect", , 
+    .参数 矩形信息, 矩形_, 传址, lpRect，定义要创建的椭圆区域尺寸的矩形
+
+.DLL命令 创建增强图元文件设备场景_, 整数型, "gdi32.dll", "CreateEnhMetaFileA", , 
+    .参数 参考设备场景, 整数型, , hdcRef，参考设备场景
+    .参数 图元文件名, 文本型, , lpFileName，图元文件的磁盘文件名
+    .参数 约束矩形, 矩形_, 传址, lpRect，约束矩形
+    .参数 图元文件说明, 文本型, , lpDescription，对图元文件的一段说明
+
+.DLL命令 创建事件对象_, 整数型, "kernel32.dll", "CreateEventA", , 
+    .参数 安全性结构, 安全性结构_, 传址, lpEventAttributes，参见相关帮助
+    .参数 人工或自动事件, 整数型, , bManualReset，参见相关帮助
+    .参数 是否内部触发, 整数型, , bInitialState，参见相关帮助
+    .参数 事件对象名, 文本型, , lpName，指定事件对象的名字
+
+.DLL命令 创建文件_, 整数型, "kernel32.dll", "CreateFileA", , CreateFileA
+    .参数 打开文件名, 文本型, , lpFileName，要打开的文件的名字
+    .参数 访问权限, 整数型, , dwDesiredAccess，访问权限
+    .参数 共享方式, 整数型, , dwShareMode，共享方式
+    .参数 安全特性, 安全性结构_, 传址, lpSecurityAttributes，安全特性信息
+    .参数 创建方式, 整数型, , dwCreationDisposition，创建方式
+    .参数 文件属性, 整数型, , dwFlagsAndAttributes，参见相关帮助
+    .参数 从文件复制文件属性, 整数型, , hTemplateFile，参见相关帮助
+
+.DLL命令 创建文件映射对象_, 整数型, "kernel32.dll", "CreateFileMappingA", , 
+    .参数 文件映射句柄, 整数型, , hFile，指定欲在其中创建映射的一个文件句柄
+    .参数 安全对象, 安全性结构_, 传址, lpFileMappigAttributes，参见相关帮助
+    .参数 打开映射方式, 整数型, , flProtect，参见相关帮助
+    .参数 文件映射最大长度, 整数型, , dwMaximumSizeHigh，文件映射的最大长度
+    .参数 文件映射的最小长度, 整数型, , dwMaximumSizeLow，文件映射的最小长度
+    .参数 映射对象名, 文本型, , lpName，指定文件映射对象的名字
+
+.DLL命令 用指定属性创建逻辑字体_, 整数型, "gdi32.dll", "CreateFontA", , 执行成功则返回逻辑字体的句柄，零表示失败
+    .参数 字体高度, 整数型, , Height，字体高度
+    .参数 字体宽度, 整数型, , Width，字体宽度
+    .参数 旋转, 整数型, , Escapement，旋转
+    .参数 Orientation, 整数型, , Orientation
+    .参数 加粗, 整数型, , Weight，加粗
+    .参数 倾斜, 整数型, , Italic，倾斜
+    .参数 下划线, 整数型, , Underline，下划线
+    .参数 删除线, 整数型, , StrikeOut，删除线
+    .参数 内码, 整数型, , CharSet，内码
+    .参数 OutputPrecision, 整数型, , OutputPrecision
+    .参数 CP, 整数型, , ClipPrecision
+    .参数 输出质量, 整数型, , Quality，输出质量
+    .参数 PAF, 整数型, , PitchAndFamily
+    .参数 新字体名, 文本型, , FaceName，新字体名
+
+.DLL命令 使用指定属性创建逻辑字体_, 整数型, "gdi32.dll", "CreateFontIndirectA", , 执行成功则返回逻辑字体句柄，零表示失败
+    .参数 字体结构信息, 逻辑字体_, 传址, lpLogFont，字体结构信息
+
+.DLL命令 创建阴影刷子_, 整数型, "gdi32.dll", "CreateHatchBrush", , CreateHatchBrush
+    .参数 刷子阴影类型, 整数型, , nIndex，请查看此参数的常量
+    .参数 指定刷子的RGB前景色, 整数型, , crColor，指定刷子的前景颜色值
+
+.DLL命令 专用设备创建信息场景_, 整数型, "gdi32.dll", "CreateICA", , 执行成功为信息场景句柄，失败则为零
+    .参数 设备驱动名, 文本型, , lpDriverName，参见相关帮助
+    .参数 专用设备名称, 文本型, , lpDeviceName，参见相关帮助
+    .参数 空, 文本型, , lpOutput，传递“”
+    .参数 初始化值, 设备初始设置_, 传址, lpInitData，这个结构保存初始值
+
+.DLL命令 创建图标_, 整数型, "user32.dll", "CreateIconIndirect", , 
+    .参数 图标信息, 图标信息_, 传址, piconinfo，图标结构信息
+
+.DLL命令 创建邮路_, 整数型, "kernel32.dll", "CreateMailslotA", , 
+    .参数 邮路名, 文本型, , lpName，参见相关帮助
+    .参数 邮路消息长度, 整数型, , nMaxMessageSize，指定一个邮路消息的最大长度
+    .参数 超时时间, 整数型, , lReadTimeout，参见相关帮助
+    .参数 安全性结构, 安全性结构_, 传址, lpSecurityAttributes，0代表不使用安全特性
+
+.DLL命令 创建空白菜单_, 整数型, "user32.dll", "CreateMenu", , 
+
+.DLL命令 创建图元文件设备场景_, 整数型, "gdi32.dll", "CreateMetaFileA", , 
+    .参数 容纳图元文件的文件名, 文本型, , lpString，参见相关帮助
+
+.DLL命令 创建一个互斥体_, 整数型, "kernel32.dll", "CreateMutexA", , 
+    .参数 互斥体结构, 安全性结构_, 传址
+    .参数 拥有互斥体, 整数型
+    .参数 互斥体对象的名字, 文本型
+
+.DLL命令 创建命名管道_, 整数型, "kernel32.dll", "CreateNamedPipeA", , 
+    .参数 指定管道名, 文本型
+    .参数 管道传输常数, 整数型
+    .参数 管道数据常数, 整数型
+    .参数 管道最大实例数量, 整数型
+    .参数 输出缓冲区长度, 整数型
+    .参数 输入缓冲区长度, 整数型
+    .参数 管道默认等待超时, 整数型
+    .参数 管道安全, 安全性结构_, 传址
+
+.DLL命令 使用位图创建刷子_, 整数型, "gdi32.dll", "CreatePatternBrush", , 如执行成功，则返回新刷子的一个句柄；否则返回零
+    .参数 位图句柄, 整数型, , hBitmap，指向一幅位图的句柄
+
+.DLL命令 创建多点围成的区域_, 整数型, "gdi32.dll", "CreatePolygonRgn", , 
+    .参数 坐标组, 坐标_, 传址, lpPoint，坐标组中第一个坐标
+    .参数 多边形点数, 整数型, , nCount，多边形点数
+    .参数 填充模式, 整数型, , nPolyFillMode，填充模式
+
+.DLL命令 创建多边形区域_, 整数型, "gdi32.dll", "CreatePolyPolygonRgn", , 
+    .参数 第一个点坐标, 坐标_, 传址
+    .参数 坐标地址, 整数型, 传址
+    .参数 多边形的点数, 整数型
+    .参数 多边形填充模式, 整数型
+
+.DLL命令 创建空白弹出式菜单_, 整数型, "user32.dll", "CreatePopupMenu", , 
+
+.DLL命令 创建进程_, 整数型, "kernel32.dll", "CreateProcessA", , 
+    .参数 要执行的程序名, 整数型, , lpApplicationName，参见相关帮助
+    .参数 要执行的命令行, 文本型, , lpCommandLine，参见相关帮助
+    .参数 安全特性参数1, 整数型, , lpProcessAttributes，参见相关帮助
+    .参数 安全特性参数2, 整数型, , lpThreadAttributes，参见相关帮助
+    .参数 允许新进程继承当前进程的句柄, 逻辑型, , bInheritHandles，参见相关帮助
+    .参数 参数1, 整数型, , dwCreationFlags，赋0即可
+    .参数 环境指针, 文本型, , lpEnvironment，赋0即可
+    .参数 新进程当前目录路径, 整数型, , lpCurrentDriectory，参见相关帮助
+    .参数 创建进程时附加信息, 进程启动信息_, , lpStartupInfo，创建进程时附加信息
+    .参数 新进程的进程和线程标识符, 安全性结构_, , lpProcessInformation，参见相关帮助
+
+.DLL命令 用矩形信息创建矩形区域_, 整数型, "gdi32.dll", "CreateRectRgnIndirect", , 执行成功为区域句柄，失败则为零
+    .参数 矩形结构信息, 矩形_, 传址, lpRect，用来创建区域的矩形
+
+.DLL命令 创建圆角矩形区域_, 整数型, "gdi32.dll", "CreateRoundRectRgn", , 
+    .参数 左上横坐标, 整数型, , X1，矩形左上角横坐标
+    .参数 左上纵坐标, 整数型, , Y1，矩形左上角纵坐标
+    .参数 右下横坐标, 整数型, , X2，矩形右下角横坐标
+    .参数 右下纵坐标, 整数型, , Y2，矩形右下角纵坐标
+    .参数 圆角椭圆的宽, 整数型, , X3，参见相关帮助
+    .参数 圆角椭圆的高, 整数型, , Y3，参见相关帮助
+
+.DLL命令 创建TureType字体文件_, 整数型, "gdi32.dll", "CreateScalableFontResourceA", , 
+    .参数 字体资源类型, 整数型
+    .参数 资源文件的名字, 文本型
+    .参数 TureType字体文件的文件名, 文本型
+    .参数 TureType字体文件路径, 文本型
+
+.DLL命令 创建信号机_, 整数型, "kernel32.dll", "CreateSemaphoreA", , 
+    .参数 信号机安全特性, 安全性结构_, 传址
+    .参数 信号机初始计数, 整数型
+    .参数 信号机最大计数, 整数型
+    .参数 信号机对象的名称, 文本型
+
+.DLL命令 创建纯色刷子_, 整数型, "gdi32.dll", "CreateSolidBrush", , 
+    .参数 颜色值, 整数型, , crColor，颜色值
+
+.DLL命令 创建计时器对象_, 整数型, "kernel32.dll", "CreateWaitableTimerA", , 
+    .参数 计时器对象安全特性, 安全性结构_, 传址
+    .参数 重设计时器, 整数型
+    .参数 计时器对象的名称, 文本型
+
+.DLL命令 创建矩形区域_, 整数型, "gdi32.dll", "CreateRectRgn", , CreateRectRgn
+    .参数 左上横坐标, 整数型, , X1，矩形左上角横坐标
+    .参数 左上纵坐标, 整数型, , Y1，矩形左上角纵坐标
+    .参数 右下横坐标, 整数型, , X2，矩形右下角横坐标
+    .参数 右下纵坐标, 整数型, , Y2，矩形右下角纵坐标
+
+.DLL命令 更新窗口列表_, 整数型, "user32.dll", "DeferWindowPos", , 
+    .参数 内部结构句柄, 整数型, , hWinPosInfo,参见相关帮助
+    .参数 窗口句柄, 整数型, , hwnd,欲定位的窗口
+    .参数 插入位置, 整数型, , hWndInsertSfter,改变窗口列表位置
+    .参数 水平坐标, 整数型, , x,窗口新的x坐标
+    .参数 垂直坐标, 整数型, , y,窗口新的y坐标
+    .参数 窗口宽度, 整数型, , cx,指定新窗口宽度
+    .参数 窗口高度, 整数型, , xy,指定新窗口高度
+    .参数 标志, 整数型, , wFlags,包含了旗标的一个整数
+
+.DLL命令 删除设备场景_, 整数型, "gdi32.dll", "DeleteDC", , 
+    .参数 设备场景句柄, 整数型, , hdc，将要删除的设备场景
+
+.DLL命令 删除增强图元文件_, 整数型, "gdi32.dll", "DeleteEnhMetaFile", , 删除指定的增强型图元文件
+    .参数 增强型图元文件句柄, 整数型, , hemf,增强型图元文件的句柄
+
+.DLL命令 删除文件_, 整数型, "Kernel32.dll", "DeleteFileA", , 删除指定文件
+    .参数 文件名, 文本型, , lpFileName,欲删除文件的名字
+
+.DLL命令 删除表单_, 整数型, "winspool.drv", "DeleteFormA", , 从打印机可用表单列表中删除一个表单
+    .参数 打印机句柄, 整数型, , hPrinter,一个打开的打印机的名字（用OpenPrinter获得）
+    .参数 表单名, 文本型, , pFormName,欲删除的表单的名字
+
+.DLL命令 删除菜单条目_, , "user32.dll", "DeleteMenu", , 删除指定的菜单条目
+    .参数 菜单句柄, 整数型, , hMenu,菜单句柄
+    .参数 标志索引, 整数型, , nPosition,参见相关帮助
+    .参数 标识符, 整数型, , wFlags,参见相关帮助
+
+.DLL命令 删除图元文件_, 整数型, "gdi32.dll", "DeleteMetaFile", , 
+    .参数 图元文件句柄, 整数型, , hMF,图元文件的句柄
+
+.DLL命令 删除打印监视_, 整数型, "winspool.drv", "DeleteMonitorA", , 删除指定的打印监视器
+    .参数 监视器服务器名称, 文本型, , pName,监视器所在的服务器的名字
+    .参数 要监视器所在环境, 文本型, , pEnvironment,欲在其中删除监视器的环境
+    .参数 要删除的监视器名称, 文本型, , pMonitorName,欲删除监视器的名字
+
+.DLL命令 删除对象_, 整数型, "gdi32.dll", "DeleteObject", , DeleteObject
+    .参数 对象句柄, 整数型, , hObject,一个GDI对象的句柄
+
+.DLL命令 删除端口对话框_, , "winspool.drv", "DeletePortA", , 
+    .参数 所在服务器名字, 文本型, , pName,欲在其中删除端口的服务器的名字
+    .参数 弹出对话框的窗口句柄, 整数型, , hwnd,DeletePort对话框的父窗口的句柄
+    .参数 端口的名称, 文本型, , pPortName,欲删除的端口的名字
+
+.DLL命令 删除打印连接_, 整数型, "winspool.drv", "DeletePrinterConnectionA", , 删除与指定打印机的连接
+    .参数 连接的名称, 文本型, , pName,要删除的打印机连接
+
+.DLL命令 删除打印驱动_, , "winspool.drv", "DeletePrinterDriver", , 
+    .参数 服务器, 文本型, , pName,服务器的名字
+    .参数 环境, 文本型, , pEnvironment,参见相关帮助
+    .参数 驱动程序, 文本型, , pDriverName,要删除的驱动程序的名字
+
+.DLL命令 删除打印处理器_, 整数型, "winspool.drv", "DeletePrintProcessorA", , 从指定系统删除一个打印处理器
+    .参数 服务器, 文本型, , pName,服务器的名字
+    .参数 环境, 文本型, , pEnvironment,参见相关帮助
+    .参数 供应商, 文本型, , pPrintProvessorName,要删除的打印供应商的名字
+
+.DLL命令 清除插入符_, 整数型, "user32.dll", "DestroyCaret", , 清除（破坏）一个插入符
+
+.DLL命令 清除指针_, 整数型, "user32.dll", "DestroyCursor", , 
+    .参数 鼠标指针句柄, 整数型, , hCursor,欲清除的指针对象的句柄
+
+.DLL命令 清除图标_, 整数型, "user32.dll", "DestroyIcon", , 清除图标
+    .参数 图标句柄, 整数型, , hIcon,图标句柄
+
+.DLL命令 清除菜单_, 整数型, "user32.dll", "DestroyMenu", , 
+    .参数 预删除的菜单, 整数型, , hMenu,欲删除菜单的句柄
+
+.DLL命令 清除窗口_, 整数型, "user32.dll", "DestroyWindow", , 
+    .参数 窗口句柄, 整数型, , hwnd,预清除的窗口的句柄
+
+.DLL命令 获取设备能力信息_, , "Winspool.drv", "DeviceCapabilitiesA", , 
+    .参数 设备名, 文本型, , lpDeviceName,设备名
+    .参数 端口, 文本型, , lpPort,指定连接了指定设备的那个端口
+    .参数 测试能力, 文本型, , iIndex,欲测试的能力
+    .参数 缓冲区地址, 文本型, , lpOutput,参见相关帮助
+    .参数 DEVMODE结构地址, 设备初始设置_, , lpDevMode,一个DEVMODE结构的地址，或者为零
+
+.DLL命令 设备操作_, 整数型, "kernel32.dll", "DeviceIoControl", , 
+    .参数 设备句柄, 整数型, , hDevice,设备句柄 
+    .参数 控制参数, 整数型, , dwIoControlCode,带有 FSCTL_ 前缀的常数
+    .参数 参数一, 整数型, , lpInBuffer,具体取决于dwIoControlCode参数
+    .参数 参数二, 整数型, , nInBufferSize,输入缓冲区的长度 
+    .参数 参数三, , , lpOutBuffer Any，具体取决于dwIoControlCode参数
+    .参数 参数四, 整数型, , nOutBufferSize,输出缓冲区的长度 
+    .参数 缓冲区字节数, 整数型, , lpBytesReturned ,实际装载到输出缓冲区的字节数量 
+    .参数 OVERLAPPED结构地址, 重叠操作_, , lpOverlapped,这个结构用于重叠操作
+
+.DLL命令 断开管道_, 整数型, "kernel32.dll", "DisconnectNamedPipe", , 
+    .参数 管道句柄, 整数型, , hNamedPipe,管道的句柄
+
+.DLL命令 打印配置_, 整数型, "winspool.dll", "DocumentPropertiesA", , 
+    .参数 父窗体, 整数型, , hwnd,对话框父窗口的句柄。这通常是当前的活动窗体
+    .参数 打印机句柄, 整数型, , hPrinter,一个已打开的打印机对象的句柄
+    .参数 打印机名称, 文本型, , pDeviceName,打印机的名字
+    .参数 输出方式, 设备初始设置_, , pDevModeOutput,指向一个DEVMODE数据结构的指针
+    .参数 输入方式, 设备初始设置_, , pDevModeInput,指向一个DEVMODE数据结构的指针
+    .参数 标志, 整数型, , fMode,决定这个函数运作模式的一个标志
+
+.DLL命令 取页码信息_, 整数型, "kernel32", "GetCPInfo", , 取得与指定代码页有关的信息
+    .参数 页码标识, 整数型, , CodePage Long，欲为其载入信息的代码页的标识符
+    .参数 页码信息, 页码信息_, 传址, lpCPInfo CPINFO，用于容纳代码页信息的一个结构 
+
+.DLL命令 取系统默认色_, 整数型, "user32", "GetSysColor", , 
+    .参数 类型, 整数型
+
+.DLL命令 取文字语言信息_, 整数型, "gdi32", "GetFontLanguageInfo", , 
+    .参数 设备场景, 整数型
+
+.DLL命令 设置位图高宽_, , "gdi32", "SetBitmapDimensionEx", , 
+    .参数 位图句柄, 整数型
+    .参数 建议宽度, 整数型
+    .参数 建议高度, 整数型
+    .参数 尺寸, 尺寸_
+
+.DLL命令 取前台窗口_, 整数型, "user32", "GetForegroundWindow", , 
+
+.DLL命令 取临时文件名_, 整数型, "kernel32", "GetTempFileNameA", , 创建
+    .参数 所在目录, 文本型
+    .参数 前缀, 文本型
+    .参数 索引, 整数型
+    .参数 缓冲区, 文本型
+
+.DLL命令 临时文件源路径_, 整数型, "kernel32", "GetTempPathA", , 
+    .参数 缓冲区长度, 整数型
+    .参数 缓冲区, 文本型
+
+.DLL命令 取文本对其标志_, 整数型, "gdi32", "GetTextAlign", , 
+    .参数 设备场景, 整数型
+
+.DLL命令 判断字符间距_, 整数型, "gdi32", "GetTextCharacterExtra", , 
+    .参数 设备场景句柄, 整数型
+
+.DLL命令 设置字符间距_, 整数型, "gdi32", "SetTextCharacterExtra", , 
+    .参数 设备场景, 整数型
+    .参数 间距, 整数型
+
+.DLL命令 设置前景色_, 整数型, "gdi32", "SetTextColor", , 
+    .参数 设备场景, 整数型
+    .参数 颜色, 整数型
+
+.DLL命令 取字符集标识符_, 整数型, "gdi32", "GetTextCharset", , 
+    .参数 场景句柄, 整数型
+
+.DLL命令 取字符集信息_, 整数型, "gdi32", "GetTextCharsetInfo", , 
+    .参数 设备场景, 整数型
+    .参数 字符集信息, 字符集信息_
+    .参数 标志, 整数型, , 0
+
+.DLL命令 取前景色_, 整数型, "gdi32", "GetTextColor", , 
+    .参数 设备场景句柄, 整数型
+
+.DLL命令 取字串尺寸_, 整数型, "gdi32", "GetTextExtentPointA", , 
+    .参数 设备场景, 整数型
+    .参数 字串, 文本型
+    .参数 字符数, 整数型
+    .参数 尺寸, 尺寸_
+
+.DLL命令 取字体样式_, 整数型, "gdi32", "GetTextFaceA", , 
+    .参数 设备场景, 整数型
+    .参数 字符数, 整数型
+    .参数 缓冲区, 文本型
+
+.DLL命令 取得物理字体信息_, 整数型, "gdi32", "GetTextMetricsA", , 
+    .参数 设备场景, 整数型
+    .参数 属性信息, 物理字体属性信息_
+
+.DLL命令 取绘画类型_, 整数型, "gdi32", "GetROP2", , 
+    .参数 设备场景句柄, 整数型
+
+.DLL命令 取对象属性_, 整数型, "gdi32", "GetObjectA", , 
+    .参数 对象句柄, 整数型
+    .参数 数据尺寸, 整数型
+    .参数 属性, 位图结构_
+
+.DLL命令 取文件属性_, 整数型, "kernel32", "GetFileAttributesA", , 
+    .参数 文件名, 文本型
+
+.DLL命令 取文件信息_, 整数型, "kernel32", "GetFileInformationByHandle", , 
+    .参数 文件句柄, 整数型
+    .参数 信息, 文件信息_
+
+.DLL命令 取文件尺寸_, 整数型, "kernel32", "GetFileSize", , 
+    .参数 文件句柄, 整数型
+    .参数 尺寸大小, 整数型
+
+.DLL命令 取文件时间_, 整数型, "kernel32", "GetFileTime", , 
+    .参数 文件句柄, 整数型
+    .参数 创建时间, 文件时间_, 传址
+    .参数 前次访问时间, 文件时间_, 传址
+    .参数 前次修改时间, 文件时间_, 传址
+
+.DLL命令 取文件类型_, 整数型, "kernel32", "GetFileType", , 
+    .参数 文件句柄, 整数型
+
+.DLL命令 取版本信息_, 整数型, "version.dll", "GetFileVersionInfoA", , 
+    .参数 文件名, 文本型
+    .参数 句柄, 整数型, , 0
+    .参数 尺寸, 尺寸_
+    .参数 数据, 字节型
+
+.DLL命令 判断版本大小_, 整数型, "version.dll", "GetFileVersionInfoSizeA", , 
+    .参数 文件名, 文本型
+    .参数 句柄, 整数型, , 0
+
+.DLL命令 拷贝内存09_, 整数型, "kernel32", "RtlMoveMemory", , 
+    .参数 pBlock, 修改的文件信息_, 传址
+    .参数 缓冲区, 整数型
+    .参数 尺寸, 尺寸_
+
+.DLL命令 从版本资源中获取信息_, 整数型, "Version.dll", "VerQueryValueA", , 
+    .参数 信息, 字节型
+    .参数 提取的信息, 文本型
+    .参数 缓冲区, 整数型
+    .参数 缓冲区尺寸, 整数型
+
+.DLL命令 取对象类型_, 整数型, "gdi32", "GetObjectType", , 
+    .参数 对象句柄, 整数型
+
+.DLL命令 DOS时间到WIN32时间_, 整数型, "kernel32.dll", "DosDateTimeToFileTime", , 
+    .参数 日期值, 整数型, , wFatDate,16位DOS日期值 
+    .参数 时间值, 整数型, , wFatTime,16位DOS时间值 
+    .参数 文件时间, 文件时间_, , lpFileTime,用于装载win32时间的一个结构 
+
+.DLL命令 转为逻辑坐标_, 整数型, "gdi32.dll", "DPtoLP", , 将点阵从设备坐标转换到专用设备场景逻辑坐标
+    .参数 设备场景句柄, 整数型, , hdc,确定逻辑坐标系统的设备场景句柄 
+    .参数 入口点, 坐标_, , lpPoint,参见相关帮助
+    .参数 入口数, 整数型, , nCount,lpPoint阵列中的入口数 
+
+.DLL命令 动态矩形_, 整数型, "user32.dll", "DrawAnimatedRects", , 
+    .参数 描绘窗口句柄, 整数型, , hwnd,要在其中描绘矩形的窗口
+    .参数 识别号码, 整数型, , idAni,windows 95要设为0 
+    .参数 起始位置, 矩形_, , lprcFrom,原始矩形 
+    .参数 到达目标, 矩形_, , lprcTo,目标矩形 
+
+.DLL命令 描绘边框_, 整数型, "user32.dll", "DrawEdge", , 用指定的样式描绘一个矩形的边框
+    .参数 设备场景句柄, 整数型, , hdc,要在其中绘图的设备场景
+    .参数 矩形轮廓, 矩形_, , qrc,要为其描绘边框的矩形
+    .参数 样式, 整数型, , edge,带有前缀BDR_的两个常数的组合
+    .参数 状态, 整数型, , grfFlags,带有BF_前缀的常数的组合
+
+.DLL命令 实现非GDI可画图设备_, 整数型, "gdi32.dll", "DrawEscape", , 换码（Escape）函数将数据直接发至显示设备驱动程序
+    .参数 设备场景句柄, 整数型, , hdc,显示设备的设备场景 
+    .参数 标识, 整数型, , nEscape,指定欲执行的换码的一个常数 
+    .参数 缓冲区长度, 整数型, , cbInput,输入缓冲区的长度 
+    .参数 缓冲区, 文本型, , lpszInData ,输入字串或缓冲区 
+
+.DLL命令 画焦点矩形_, , "user32.dll", "DrawFocusRect", , 画一个焦点矩形
+    .参数 设备场景句柄, 整数型, , hdc,设备场景的句柄 
+    .参数 矩形轮廓, 矩形_, , lpRect,要在逻辑坐标中描绘的矩形 
+
+.DLL命令 描绘标准组件_, 整数型, "user32.dll", "DrawFrameControl", , 这个函数用于描绘一个标准组件
+    .参数 设备场景, 整数型, , hDC,要在其中作画的设备场景 
+    .参数 矩形轮廓, 矩形_, , lpRect,指定帧的位置及大小的一个矩形 
+    .参数 外貌, 整数型, , un1,指定帧类型的一个常数
+    .参数 状态, 整数型, , un2,一个常数，指定欲描绘的帧的状态
+
+.DLL命令 画图标_, 整数型, "user32.dll", "DrawIcon", , 在指定的位置画一个图标  非零表示成功，零表示失败。会设置GetLastError
+    .参数 设备场景句柄, 整数型, , hdc Long，设备场景 
+    .参数 横坐标, 整数型, , x,y Long，想描绘图标的位置（逻辑坐标） 
+    .参数 纵坐标, 整数型, , 同上
+    .参数 图标句柄, 整数型, , hIcon Long，欲描绘图标的句柄 
+
+.DLL命令 画图标扩展_, 整数型, "user32.dll", "DrawIconEx", , 描绘一个图标或鼠标指针
+    .参数 设备场景句柄, 整数型, , hdc，要在其中画图的一个设备场景的句柄 
+    .参数 左边尽头, 整数型, , xLeft,yTop，图标左上角的位置，用逻辑坐标表示 
+    .参数 顶边尽头, 整数型
+    .参数 图标句柄, 整数型, , hIcon，要描绘的图标的句柄 
+    .参数 描绘宽度, 整数型, , cxWidth,cyWidth，希望的图标宽度和高度
+    .参数 描绘高度, 整数型
+    .参数 描绘的帧, 整数型, , istepIfAniCur，参见相关帮助
+    .参数 刷子句柄, 整数型, , hbrFlickerFreeDraw，参见相关帮助
+    .参数 描绘标志, 整数型, , diFlags
+
+.DLL命令 重画菜单_, 整数型, "user32.dll", "DrawMenuBar", , 为指定的窗口重画菜单
+    .参数 窗口句柄, 整数型, , hwnd,要重画菜单栏的窗口的句柄 
+
+.DLL命令 设置图象效果_, 整数型, "user32.dll", "DrawStateA", , 这个函数可为一幅图象或绘图操作应用各式各样的效果
+    .参数 设备场景句柄, 整数型, , hDC,要在其中绘图的设备场景 
+    .参数 刷子句柄, 整数型, , hBrush,参见相关帮助
+    .参数 指针, 整数型, , lpDrawStateProc,指向一个函数地址的指针
+    .参数 参数一, 整数型, , lParam,由图象的类型决定 
+    .参数 参数二, 整数型, , wParam由图象的类型决定 
+    .参数 水平点, 整数型, , n1,图象的水平位置 
+    .参数 垂直点, 整数型, , n2,图象的垂直位置 
+    .参数 需求宽度, 整数型, , n3,图象的宽度
+    .参数 需求高度, 整数型, , n4,图象的高度
+    .参数 需求效果, 整数型, , un,图象类型和状态的一个组合 
+
+.DLL命令 描绘矩形文本_, 整数型, "user32.dll", "DrawTextA", , 将文本描绘到指定的矩形中
+    .参数 设备场景句柄, 整数型, , hdc,欲在其中显示文字的一个设备场景的句柄 
+    .参数 描绘的字串, 文本型, , lpStr,欲描绘的文本字串 
+    .参数 描绘的字串数量, 整数型, , n,欲描绘的字符数量
+    .参数 描绘文本区域, 矩形_, , lpRect,指定用于绘图的一个格式化矩形（采用逻辑坐标） 
+    .参数 格式, 整数型, , wFormat,一个标志位数组，决定了以何种形式执行绘图 
+
+.DLL命令 矩形内文本扩展_, 整数型, "user32.dll", "DrawTextEx", , 与DrawText相似，只是加入了更多的功能
+    .参数 设备场景句柄, 整数型, , hDC,要在其中绘图的一个设备场景的句柄 
+    .参数 描绘的字串, 文本型, , lpsz,欲描绘的文本字串 
+    .参数 描绘的字串数量, 整数型, , n,欲描绘的字符数量
+    .参数 描绘文本区域, 矩形_, , lpRect,指定用于绘图的一个格式化矩形（采用逻辑坐标） 
+    .参数 描绘的标志, 整数型, , un Long，一个标志位。决定了以何种形式执行绘图
+    .参数 文字输入定义, 文字区_, , lpDrawTextParams,这个结构包含了附加的绘图参数 
+
+.DLL命令 转换日期时间_, 整数型, "kernel32.dll", "FileTimeToDosDateTime", , 
+    .参数 时间结构, 文件时间_, , lpFileTime,包含了欲转换时间的一个结构
+    .参数 DOS日期值1, 整数型, , lpFatDate,16位DOS日期值
+    .参数 DOS日期值2, 整数型, , lpFatTime,16位DOS日期值
+
+.DLL命令 判断ASCII码_, 整数型, "user32.dll", "OemKeyScan", , 
+    .参数 ASCII码, 整数型
+
+.DLL命令 OEM字符集串到ANSI字符集_, 整数型, "user32.dll", "OemToCharA", , 
+    .参数 转换的字串, 文本型
+    .参数 结果字串, 文本型
+    .参数 要转换的字符数量, 整数型
+
+.DLL命令 移动区域_, 整数型, "gdi32.dll", "OffsetRgn", , 区域状态
+    .参数 区域句柄, 整数型, , hRgn，区域句柄
+    .参数 横向移动量, 整数型, , x，以逻辑坐标表示的水平偏移量
+    .参数 纵向移动量, 整数型, , y，以逻辑坐标表示的垂直偏移量
+
+.DLL命令 移动设备场景_, 整数型, "gdi32.dll", "OffsetViewportOrgEx", , 执行成功为非零值，失败为0
+    .参数 设备场景句柄, 整数型, , hdc，设备场景句柄
+    .参数 横向移动量, 整数型, , nX，横向移动量
+    .参数 纵向移动量, 整数型, , nY，纵向移动量
+    .参数 源设备场景起始位置, 坐标_, 传址, lpPoint，原先的起点的结构
+
+.DLL命令 移动设备场景起始位置_, 整数型, "gdi32.dll", "OffsetWindowOrgEx", , 
+    .参数 设备场景句柄, 整数型, , hdc，设备场景句柄
+    .参数 横向移动量, 整数型, , nX，横向移动量
+    .参数 纵向移动量, 整数型, , nY，纵向移动量
+    .参数 源起始位置, 坐标_, 传址, lpPoint，源起始位置
+
+.DLL命令 打开文件_, 整数型, "kernel32.dll", "OpenFile", , 
+    .参数 文件名, 文本型, , lpFileName，欲打开文件的名字
+    .参数 文件操作结果, 文件结构信息_, 传址, lpReOpenBuff，文件操作结果
+    .参数 操作方式, 整数型, , wStyle，操作方式
+
+.DLL命令 打开文件映射对象_, 整数型, "kernel32.dll", "OpenFileMappingA", , 
+    .参数 常数, 整数型
+    .参数 进程继承, 整数型
+    .参数 文件映射对象名称, 文本型
+
+.DLL命令 恢复窗口_, 整数型, "user32.dll", "OpenIcon", , 
+    .参数 窗口句柄, 整数型, , hwnd，窗口句柄
+
+.DLL命令 打开打印机_, 整数型, "winspool.drv", "OpenPrinterA", , 
+    .参数 打印机名称, 文本型, , pPrinterName，要打开的打印机的名字
+    .参数 打印机句柄, 整数型, 传址, phPrinter，用于装载打印机的句柄
+    .参数 打印机信息, 打印默认_, 传址, pDefault，PRINTER_DEFAULTS，这个结构保存要载入的打印机信息
+
+.DLL命令 完整路径_, 整数型, "kernel32", "GetFullPathNameA", , 
+    .参数 文件名, 文本型
+    .参数 缓冲长度, 整数型
+    .参数 缓冲区, 文本型
+    .参数 文件名起始, 文本型
+
+.DLL命令 取增强图元文件说明_, 整数型, "gdi32", "GetEnhMetaFileDescriptionA", , 获取说明
+    .参数 图元文件句柄, 整数型
+    .参数 缓冲区大小, 整数型
+    .参数 字串缓冲区, 文本型
+
+.DLL命令 复制增强图元文件到缓存_, 整数型, , "GetEnhMetaFileBits", , 
+    .参数 增强图元文件的句柄, 整数型
+    .参数 缓冲区的长度, 整数型
+    .参数 缓冲区的头一个字节, 字节型
+
+.DLL命令 取系统颜色刷子_, 整数型, "user32", "GetSysColorBrush", , 
+    .参数 索引, 整数型
+
+.DLL命令 取系统语言ID_, 整数型, "kernel32", "GetSystemDefaultLangID", , 
+
+.DLL命令 取系统地方ID_, 整数型, "kernel32", "GetSystemDefaultLCID", , 
+
+.DLL命令 取系统目录_, 整数型, "kernel32", "GetSystemDirectoryA", , 
+    .参数 缓冲区, 文本型
+    .参数 缓冲区长度, 整数型
+
+.DLL命令 取低层平台信息_, 整数型, "kernel32", "GetSystemInfo", , 
+    .参数 系统信息, 系统信息_
+
+.DLL命令 取环境信息_, 整数型, "user32", "GetSystemMetrics", , 
+    .参数 索引, 整数型
+
+.DLL命令 获得电源状态_, 整数型, "kernel32", "GetSystemPowerStatus", , 
+    .参数 电源状态, 电源状态信息_
+
+.DLL命令 取系统时间_, 整数型, "kernel32", "GetSystemTime", , 
+    .参数 时间格式, 系统时间_
+
+.DLL命令 取磁盘信息_, 整数型, "kernel32", "GetVolumeInformationA", , 
+    .参数 卷根路径, 文本型
+    .参数 卷名, 文本型, 传址
+    .参数 卷名字符长度, 整数型, 传址
+    .参数 磁盘卷序列号, 整数型, 传址
+    .参数 文件夹名长度, 整数型, 传址
+    .参数 标志, 整数型
+    .参数 文件系统名称, 文本型, 传址
+    .参数 名称长度, 整数型
+
+.DLL命令 取鼠标位置_, 整数型, "user32", "GetCursorPos", , 
+    .参数 位置, 坐标_
+
+.DLL命令 取当前指针句柄_, 整数型, "user32", "GetCursor", , 
+
+.DLL命令 设当前指针_, 整数型, "user32", "SetCursor", , 
+    .参数 指针句柄, 整数型
+
+.DLL命令 当前剪裁区_, 整数型, "gdi32", "GetClipRgn", , 
+    .参数 设备场景句柄, 整数型
+    .参数 区域句柄, 整数型, 传址
+
+.DLL命令 置剪裁区_, 整数型, "gdi32", "SelectClipRgn", , 
+    .参数 设备场景句柄, 整数型
+    .参数 区域, 整数型
+
+.DLL命令 平移剪裁区_, 整数型, "gdi32", "OffsetClipRgn", , 
+    .参数 设备场景句柄, 整数型
+    .参数 水平偏移量, 整数型
+    .参数 垂直偏移量, 整数型
+
+.DLL命令 可否用TureType字体_, 整数型, "gdi32", "GetRasterizerCaps", , 
+    .参数 结构缓冲区, 安全性结构_, 传址
+    .参数 缓冲区字符数, 整数型
+
+.DLL命令 播放系统声音_, 整数型, "user32.dll", "MessageBeep", , 
+    .参数 声音常量, 整数型, , wType,参见相关帮助
+
+.DLL命令 改变菜单条目_, 整数型, "user32.dll", "ModifyMenuA", , 
+    .参数 菜单句柄, 整数型, , hMenu，菜单句柄
+    .参数 标识符, 整数型, , nPosition，欲改变的菜单条目的标识符
+    .参数 常数标志, 整数型, , wFlags，一系列常数标志的组合
+    .参数 新命令ID, 整数型, , wIDNewItem，指定菜单条目的新命令ID
+    .参数 标志, , , any，位图句柄或菜单文本
+
+.DLL命令 模拟鼠标_, , "user32.dll", "mouse_event", , mouse_event,模拟一次鼠标事件
+    .参数 标志组合, 整数型, , dwFlags，一系列标志的组合
+    .参数 水平方向, 整数型, , dx，参见相关帮助
+    .参数 垂直方向, 整数型, , dy，参见相关帮助
+    .参数 数据信息, 整数型, , cButtons，未使用
+    .参数 扩展数据信息, 整数型, , dwExtraInfo，通常未用的一个值
+
+.DLL命令 移动文件_, 整数型, "kernel32.dll", "MoveFileA", , MoveFileA,移动文件
+    .参数 文件名, 文本型, , lpExistingFileName，欲移动的文件名
+    .参数 新文件名, 文本型, , lpNewFileName，新文件名
+
+.DLL命令 增强移动文件_, 整数型, "kernel32.dll", "MoveFileExA", , MoveFileA,移动文件
+    .参数 文件名, 文本型, , lpExistingFileName，欲移动的文件名
+    .参数 新文件名, 文本型, , lpNewFileName，新文件名
+    .参数 常数, 整数型, , dwFlags，一个或多个常数
+
+.DLL命令 指定画笔位置_, 整数型, "gdi32.dll", "MoveToEx", , 
+    .参数 设备场景, 整数型, , hdc，指向一个设备场景的句柄
+    .参数 横坐标, 整数型, , x，采用逻辑坐标表示的新画笔位置
+    .参数 纵坐标, 整数型, , y，采用逻辑坐标表示的新画笔位置
+    .参数 画笔位置, 坐标_, , lpPoint，用于保存前一个画笔位置
+
+.DLL命令 改变窗口_, 整数型, "user32.dll", "MoveWindow", , 
+    .参数 窗口句柄, 整数型, , hwnd，欲移动窗口的句柄
+    .参数 左侧位置, 整数型, , x，窗口新的左侧位置
+    .参数 顶部位置, 整数型, , y，窗口新的顶部位置
+    .参数 新宽度, 整数型, , nWidth，窗口的新宽度
+    .参数 高宽度, 整数型, , nHeight，窗口的高宽度
+    .参数 是否重画, 整数型, , bRepaint，如窗口此时应重画，则设为TRUE（非零）
+
+.DLL命令 关闭指定文件_, 整数型, "kernel32.dll", "_lclose", , 关闭指定的文件
+    .参数 文件句柄, 整数型, , hFile,欲关闭的一个文件的句柄
+
+.DLL命令 枚举线段中的点_, 整数型, "gdi32.dll", "LineDDA", , 枚举指定线段中的所有点
+    .参数 起点横坐标, 整数型, , n1,线段的起点横坐标
+    .参数 起点纵坐标, 整数型, , n2,线段的起点纵坐标
+    .参数 终点横坐标, 整数型, , n3,线段的终点横坐标
+    .参数 终点纵坐标, 整数型, , n4,线段的终点纵坐标
+    .参数 函数地址, 子程序指针, , lpLineDDAProc,vb5中的一个函数地址
+    .参数 返回值, 整数型, , lParam,枚举过程中传递给回调函数的用户自定义值
+
+.DLL命令 画直线_, 整数型, "gdi32.dll", "LineTo", , 用当前画笔画一条线，从当前位置连到一个指定的点
+    .参数 设备场景句柄, 整数型, , hdc,设备场景的句柄
+    .参数 终点横坐标, 整数型, , x,线段终点位置，采用逻辑坐标表示
+    .参数 终点纵坐标, 整数型, , y,线段终点位置，采用逻辑坐标表示
+
+.DLL命令 设置当前读写位置_, 整数型, "kernel32.dll", "_llseek", , 设置文件中进行读写的当前位置
+    .参数 文件句柄, 整数型, , hFile,系统文件句柄
+    .参数 偏移量, 整数型, , lOffset,字节偏移量
+    .参数 偏移常数, 整数型, , iOrigin,
+
+.DLL命令 载入位图_, 整数型, "user32.dll", "LoadBitmapA", , 从指定的模块或应用程序实例中载入一幅位图
+    .参数 实例句柄, 整数型, , hInstance,参见相关帮助
+    .参数 位图标识, , , lpBitmapName,参见相关帮助
+
+.DLL命令 载入鼠标指针_, 整数型, "user32.dll", "LoadCursorA", , 从指定的模块或应用程序实例中载入一个鼠标指针
+    .参数 实例句柄, 整数型, , hInstance,参见相关帮助
+    .参数 鼠标指针标识, , , lpCursorName,参见相关帮助
+
+.DLL命令 创建指针_, 整数型, "user32.dll", "LoadCursorFromFileA", , 
+    .参数 文件名, 文本型, , lpFileName,包含指针的那个文件的名字
+
+.DLL命令 载入图标_, 整数型, "user32.dll", "LoadIconA", , 从指定的模块或应用程序实例中载入一个图标
+    .参数 实例句柄, 整数型, , hInstance,参见相关帮助
+    .参数 图标标识, , , lpIconName,作为一个字串，指定欲载入的图标资源
+
+.DLL命令 载入图象_, 整数型, "user32.dll", "LoadImageA", , 载入一个位图、图标或指针
+    .参数 实例句柄, 整数型, , hInst,要从其中载入图象的DLL或应用程序模块或实例句柄
+    .参数 图象标志符, 文本型, , lpsz,欲载入图象的名字
+    .参数 图象类型, 整数型, , un1,指定了欲载入的图象类型
+    .参数 图象宽度, 整数型, , n1,要求的图象宽度
+    .参数 图象高度, 整数型, , n2,要求的图象高度
+    .参数 常数组合, 整数型, , un2,常数的任意组合
+
+.DLL命令 载入键盘布局_, 整数型, "user32.dll", "LoadKeyboardLayoutA", , 载入一个键盘布局
+    .参数 键盘布局名称, 文本型, , pwszKLID,键盘布局的名称
+    .参数 常数组合, 整数型, , flags,常数的任何一种组合
+
+.DLL命令 载入动态链接库_, 整数型, "kernel32.dll", "LoadLibraryA", , 载入指定的动态链接库，并将它映射到当前进程使用的地址空间
+    .参数 动态链接库名称, 文本型, , lpLibFileName,指定要载入的动态链接库的名称
+
+.DLL命令 载入菜单_, 整数型, "user32.dll", "LoadMenuA", , 从指定的模块或应用程序实例中载入一个菜单
+    .参数 模块句柄, 整数型, , hInstance,一个动态链接库的模块句柄
+    .参数 菜单标识, , , lpString,参见相关帮助
+
+.DLL命令 载入结构菜单_, 整数型, "user32.dll", "LoadMenuIndirectA", , 
+    .参数 结构指针, 整数型, , lpMenuTemplate,参见相关帮助
+
+.DLL命令 载入应用程序_, 整数型, "kernel32.dll", "LoadModule", , 载入一个windows应用程序，并在指定的环境中执行
+    .参数 程序名, 文本型, , lpModuleName,要装载的可执行程序的名字
+    .参数 程序参数, , , lpParameterBlock,参见相关帮助
+
+.DLL命令 锁定文件_, 整数型, "kernel32.dll", "LockFile", , 锁定文件
+    .参数 文件句柄, 整数型, , hFile,欲锁定文件的句柄
+    .参数 锁定起始处的低32位地址, 整数型, , dwFileOffsetLow,参见相关帮助
+    .参数 锁定起始处的高32位地址, 整数型, , dwFileOffsetHigh,参见相关帮助
+    .参数 锁定字符数量的低32位值, 整数型, , nNumberOfBytesToLockLow,参见相关帮助
+    .参数 锁定字符数量的高32位值, 整数型, , nNumberOfBytesToLockHigh,参见相关帮助
+
+.DLL命令 锁住文件_, 整数型, "kernel32.dll", "LockFileEx", , 与LockFile相似，只是它提供了更多的功能
+    .参数 文件句柄, 整数型, , hFile,欲锁定文件的句柄
+    .参数 常数组合, 整数型, , dwFlags,常数
+    .参数 固定值, 整数型, , dwReserved,未使用，设为零
+    .参数 锁定字符数的低32位, 整数型, , nNumberOfBytesToLockLow,参见相关帮助
+    .参数 锁定字符数的高32位, 整数型, , nNumberOfBytesToLockHigh,参见相关帮助
+    .参数 偏移量, 重叠操作_, , lpOverlapped,参见相关帮助
+
+.DLL命令 锁定窗口_, 整数型, "user32.dll", "LockWindowUpdate", , 锁定指定窗口，禁止它更新。同时只能有一个窗口处于锁定状态
+    .参数 窗口句柄, 整数型, , hwndLock,欲锁定窗口的句柄。如设为零，则对窗口解锁
+
+.DLL命令 打开二进制文件_, 整数型, "kernel32.dll", "_lopen", , 
+    .参数 文件名, 文本型, , lpPathName,欲打开文件的名字
+    .参数 访问权限, 整数型, , iReadWrite,访问模式和共享模式常数的一个组合
+
+.DLL命令 转换坐标_, 整数型, "gdi32.dll", "LPtoDP", , 将点阵从指定设备场景逻辑坐标转换为设备坐标
+    .参数 设备场景句柄, 整数型, , hdc,定义了逻辑坐标系统的设备场景句柄
+    .参数 坐标入口, 坐标_, , lpPoint,参见相关帮助
+    .参数 入口数, 整数型, , nCount,lpPoint阵列中的入口数
+
+.DLL命令 读入缓存_, 整数型, "kernel32.dll", "_lread", , 
+    .参数 文件句柄, 整数型, , hFile,文件句柄
+    .参数 内存指针, 子程序指针, , lpBuffer,指定一个内存块的指针，数据将读入这个内存块
+    .参数 读入字节数, 整数型, , wBytes,要读入的字节数
+
+.DLL命令 写出缓存_, 整数型, "kernel32.dll", "_lwrite", , 将数据从内存缓冲区写入一个文件
+    .参数 文件句柄, 整数型, , hFile,文件句柄
+    .参数 内存指针, 文本型, , lpBuffer,参见相关帮助
+    .参数 写出字节数, 整数型, , wBytes,要写入的字节数
+
+.DLL命令 关闭LZ文件_, , "lz32.dll", "LZClose", , 关闭由LZOpenFile 或 LZInit函数打开的一个文件
+    .参数 文件句柄, 整数型, , hfFile,欲关闭的句柄
+
+.DLL命令 复制LZ文件_, 整数型, "lz32.dll", "LZCopy", , 
+    .参数 源文件句柄, 整数型, , hfSource,指定源文件句柄
+    .参数 目标文件句柄, 整数型, , hfDest,指定目标文件句柄
+
+.DLL命令 初始化LZ缓冲区_, 整数型, "lz32.dll", "LZInit", , 
+    .参数 文件的句柄, 整数型, , hfSrc,文件的句柄
+
+.DLL命令 打开LZ文件_, 整数型, "lz32.dll", "LZOpenFileA", , 
+    .参数 文件名, 文本型, , lpszFile,欲打开的文件名
+    .参数 文件数据, 文件结构信息_, , lpOf,参见相关帮助
+    .参数 标志常数组合, 整数型, , style,处理方式标志常数的一种组合
+
+.DLL命令 读入LZ文件到缓存_, 整数型, "lz32.dll", "LZRead", , 
+    .参数 源文件特殊句柄, 整数型, , hfFile,源文件的特殊句柄
+    .参数 内存指针, 文本型, , lpvBuf,一个内存块的指针，数据将读入这个内存块
+    .参数 缓存长度, 整数型, , cbread,指定lpvBuf缓冲区的长度
+
+.DLL命令 设置LZ文件读写位置_, 整数型, "lz32.dll", "LZSeek", , 设置一个文件中进行读写的当前位置
+    .参数 源文件特殊句柄, 整数型, , hfFile,源文件的特殊句柄
+    .参数 偏移量, 整数型, , lOffset,以字节数表示的偏移量
+    .参数 偏移常数, 整数型, , nOrigin,常数值
+
+.DLL命令 隐藏光标_, 整数型, "user32.dll", "HideCaret", , 在指定的窗口隐藏插入符（光标）
+    .参数 窗口句柄, 整数型, , hwnd,包含了插入符的窗口的句柄
+
+.DLL命令 菜单条目加亮_, 整数型, "user32.dll", "HiliteMenuItem", , 
+    .参数 窗口句柄, 整数型, , hwnd,拥有顶级菜单的一个窗口的句柄
+    .参数 菜单句柄, 整数型, , hMenu,hwnd窗口的顶级菜单的句柄
+    .参数 标识符, 整数型, , wIDHiliteItem,欲加亮或撤消加亮的菜单条目的标识符
+    .参数 常数标志, 整数型, , wHilite,一系列常数标志的组合
+
+.DLL命令 读入16位缓存_, 整数型, "kernel32.dll", "_hread", , 
+    .参数 文件句柄, 整数型, , hFile,文件句柄
+    .参数 内存块指针, 子程序指针, , lpBuffer,参见相关帮助
+    .参数 字节数, 整数型, , wBytes,要读入的字节数
+
+.DLL命令 写出16位缓存_, 整数型, "kernel32.dll", "_hwrite", , 将数据从内存缓冲区写入一个文件
+    .参数 文件句柄, 整数型, , hFile,文件句柄
+    .参数 内存块指针, 子程序指针, , lpBuffer,参见相关帮助
+    .参数 字节数, 整数型, , wBytes,要写入的字节数
+
+.DLL命令 修改矩形_, 整数型, "user32.dll", "InflateRect", , 用于增大或减小一个矩形的大小
+    .参数 修改的矩形, 矩形_, , lpRect,欲修改的矩形
+    .参数 修改的宽度, 整数型, , x,用这个数字修改宽度
+    .参数 修改的高度, 整数型, , y,用这个数字修改高度
+
+.DLL命令 插入菜单条目_, 整数型, "user32.dll", "InsertMenuA", , 
+    .参数 菜单句柄, 整数型, , hMenu,菜单的句柄
+    .参数 插入点标志符, 整数型, , nPosition,参见相关帮助
+    .参数 常数标志, 整数型, , wFlags,常数标志的组合,参考ModifyMenu
+    .参数 新条目ID, 整数型, , wIDNewItem,指定菜单条目的新菜单ID
+    .参数 条目内容, , , lpNewItem,由wFlags参数决定
+
+.DLL命令 插入指定菜单条目_, 整数型, "user32.dll", "InsertMenuItemA", , 
+    .参数 菜单句柄, 整数型, , hMenu,菜单的句柄
+    .参数 菜单条目, 整数型, , un,菜单条目的菜单ID
+    .参数 菜单条目标志, 逻辑型, , bool,参见相关帮助
+    .参数 指定菜单条目结构, 菜单条目结构_, , lpcMenuItemInfo,用于设置指定菜单条目的特征
+
+.DLL命令 定义剪裁区_, 整数型, "gdi32.dll", "IntersectClipRect", , 
+    .参数 设备场景句柄, 整数型, , hdc,设备场景
+    .参数 矩形左上角横坐标, 整数型, , x1,矩形左上角X坐标
+    .参数 矩形左上角纵坐标, 整数型, , y1,矩形左上角Y坐标
+    .参数 矩形右下角横坐标, 整数型, , x2,矩形右下角X坐标
+    .参数 矩形右下角纵坐标, 整数型, , y2,矩形右下角Y坐标
+
+.DLL命令 载入矩形_, 整数型, "user32.dll", "IntersectRect", , 
+    .参数 目标矩形, 矩形_, , lpDestRect,目标矩形
+    .参数 源矩形1, 矩形_, , lpSrc1Rect,第一个源矩形
+    .参数 源矩形2, 矩形_, , lpSrc2Rect,第二个源矩形
+
+.DLL命令 屏蔽窗口矩形_, 整数型, "user32.dll", "InvalidateRect", , 这个函数屏蔽一个窗口客户区的全部或部分区域
+    .参数 窗口句柄, 整数型, , hwnd,待屏蔽窗口的句柄
+    .参数 屏蔽矩形, 矩形_, , lpRect,用于描述待屏蔽矩形部分的一个矩形结构
+    .参数 重画前删除, 整数型, , bErase,TRUE（非零）导致指定的区域在重画前先删除
+
+.DLL命令 刷新窗口禁止区域_, 整数型, "user32.dll", "InvalidateRgn", , 
+    .参数 窗口句柄, 整数型, , hwnd,窗口句柄
+    .参数 不活动区域句柄, 整数型, , hRgn,不活动区域句柄，该区域以窗口客户坐标定义
+    .参数 重画前删除, 整数型, , bErase,为非零值则表示要在刷新前擦除
+
+.DLL命令 反转矩形_, 整数型, "user32.dll", "InvertRect", , 
+    .参数 设备场景句柄, 整数型, , hdc,设备场景的句柄
+    .参数 要反转的矩形, 矩形_, , lpRect,要反转的矩形，用逻辑坐标指定
+
+.DLL命令 反转区域_, 整数型, "gdi32.dll", "InvertRgn", , 
+    .参数 设备场景句柄, 整数型, , hdc,设备场景句柄
+    .参数 将反转的区域, 整数型, , hRgn,将反转的设备区域
+
+.DLL命令 判断子窗口_, 整数型, "user32.dll", "IsChild", , 判断一个窗口是否为另一窗口的子或隶属窗口
+    .参数 父窗口句柄, 整数型, , hWndParent,父窗口的句柄
+    .参数 欲测试的窗口句柄, 整数型, , hwnd,欲测试的窗口的句柄
+
+.DLL命令 判断窗口最小化_, 整数型, "user32.dll", "IsIconic", , 判断窗口是否已最小化
+    .参数 窗口句柄, 整数型, , hwnd,待检测窗口的句柄
+
+.DLL命令 判断菜单句柄_, 整数型, "user32.dll", "IsMenu", , 判断指定的句柄是否为一个菜单的句柄
+    .参数 菜单句柄, 整数型, , hMenu,欲测试的菜单的句柄
+
+.DLL命令 判断矩形_, 整数型, "user32.dll", "IsRectEmpty", , 判断一个矩形是否为空
+    .参数 要检查的矩形, 矩形_, , lpRect,要检查的矩形
+
+.DLL命令 判断代码页_, 整数型, "kernel32.dll", "IsValidCodePage", , 判断一个代码页是否有效
+    .参数 代码页标识符, 整数型, , CodePage,一个代码页的标识符
+
+.DLL命令 判断地方标识符_, 整数型, "KERNEL32.dll", "IsValidLocale", , 判断地方标识符是否有效
+    .参数 地方标识符, 整数型, , Locale,要检查的地方标识符
+    .参数 常数标志, 整数型, , dwFlags,常数之一
+
+.DLL命令 判断窗口句柄_, 整数型, "user32.dll", "IsWindow", , 判断一个窗口句柄是否有效
+    .参数 窗口句柄, 整数型, , hwnd,待检查窗口的句柄
+
+.DLL命令 判断窗口状态_, 整数型, "user32.dll", "IsWindowEnabled", , 判断窗口是否处于活动状态
+    .参数 窗口句柄, 整数型, , hwnd,待检测窗口的句柄
+
+.DLL命令 判断Unicode窗口_, 整数型, "user32.dll", "IsWindowUnicode", , 判断一个窗口是否为Unicode窗口
+    .参数 窗口句柄, 整数型, , hwnd,窗口句柄
+
+.DLL命令 判断窗口可见性_, 整数型, "user32.dll", "IsWindowVisible", , 判断窗口是否可见
+    .参数 窗口句柄, 整数型, , hwnd,要测试的那个窗口的句柄
+
+.DLL命令 判断窗口最大化_, 整数型, "user32.dll", "IsZoomed", , 判断窗口是否最大化
+    .参数 窗口句柄, 整数型, , hwnd,欲测试的窗口的句柄
+
+.DLL命令 模拟键盘行动_, 整数型, "user32.dll", "keybd_event", , 这个函数模拟了键盘行动
+    .参数 键代码, 整数型, , bVk,欲模拟的虚拟键码
+    .参数 键扫描码, 整数型, , bScan,键的OEM扫描码
+    .参数 标志值, 整数型, , dwFlags,标志常数
+    .参数 特定值, 整数型, , dwExtraInfo,通常不用的一个值
+
+.DLL命令 添加注释消息_, 整数型, "gdi32", "GdiComment", , 
+    .参数 设备场景句柄, 整数型, , hdc Long，目标增强型图元文件设备场景的句柄
+    .参数 数据尺寸, 整数型, , cbSize Long，欲嵌入图元文件的数据长度 
+    .参数 数据, 字节型, , lpData Byte，参见相关帮助
+
+.DLL命令 取得GDI数量_, 整数型, , "GdiGetBatchLimit", , 判断有多少个GDI绘图命令位于队列中
+
+.DLL命令 绘图补充_, 整数型, "gdi32.dll", "GdiFlush", , 执行任何未决的绘图操作
+
+.DLL命令 限定GDI数量_, 整数型, "gdi32", "GdiSetBatchLimit", , 指定有多少个GDI绘图命令能够进入队列
+    .参数 数量, 整数型, , dwLimit Long，参见相关帮助
+
+.DLL命令 取得生效ANSI代码页_, 整数型, "kernel32", "GetACP", , 判断目前正在生效的ANSI代码页
+
+.DLL命令 取活动窗口句柄_, 整数型, "user32", "GetActiveWindow", , 获得活动窗口的句柄
+
+.DLL命令 判断弧绘制方向_, 整数型, "gdi32", "GetArcDirection", , 画圆弧的时候，判断当前采用的绘图方向
+    .参数 设备场景句柄, 整数型, , hdc Long，要查询的设备场景 
+
+.DLL命令 纵横比_, 整数型, "gdi32", "GetAspectRatioFilterEx", , 
+    .参数 设备场景句柄, 整数型
+    .参数 纵横比结构尺寸, 尺寸_, 传址
+
+.DLL命令 测试虚拟键_, 整数型, "user32", "GetAsyncKeyState", , 
+    .参数 键代码, 整数型, , vKey Long，欲测试的虚拟键的键码 
+
+.DLL命令 文件可否运行_, 整数型, "kernel32", "GetBinaryTypeA", , 判断文件是否可以执行
+    .参数 文件路径, 文本型, , lpApplicationName String，欲测试文件的完整路径名 
+    .参数 文件类型, 整数型, , lpBinaryType Long，参见相关帮助
+
+.DLL命令 取图片高宽_, 整数型, "gdi32", "GetBitmapDimensionEx", , 
+    .参数 位图句柄, 整数型
+    .参数 尺寸, 尺寸_, 传址
+
+.DLL命令 复制二进制位图_, , "gdi32", "GetBitmapBits", , 
+    .参数 位图句柄, 整数型
+    .参数 字节限制, 整数型
+    .参数 缓冲区, 字节集, 传址
+
+.DLL命令 时间结构转换_, 整数型, "kernel32.dll", "FileTimeToSystemTime", , 
+    .参数 文件时间结构, 文件时间_, , lpFileTime，包含了文件时间的一个结构
+    .参数 系统时间结构, 系统时间_, , lpSystemTime，用于装载系统时间信息的一个结构
+
+.DLL命令 关闭图形_, 整数型, "gdi32.dll", "FillPath", , FillPath,关闭路径中任何打开的图形，并用当前刷子填充
+    .参数 设备场景句柄, 整数型, , hdc，欲在其中操作的设备场景
+
+.DLL命令 填充矩形_, 整数型, "user32.dll", "FillRect", , FillRect,用指定的刷子填充一个矩形
+    .参数 设备场景, 整数型, , hdc，设备场景的句柄
+    .参数 填充区域, 矩形_, , lpRect，对填充区域进行描述的一个矩形，采用逻辑坐标
+    .参数 刷子句柄, 整数型, , hBrush，欲使用的刷子的句柄
+
+.DLL命令 取得图标信息_, 整数型, "user32", "GetIconInfo", , 
+    .参数 图标句柄, 整数型
+    .参数 图标信息, 图标信息_
+
+.DLL命令 取得类信息_, 整数型, "user32", "GetClassLongA", , 
+    .参数 窗口句柄, 整数型
+    .参数 值, 整数型
+
+.DLL命令 取得类名称_, 整数型, "user32", "GetClassNameA", , 
+    .参数 窗口句柄, 整数型
+    .参数 缓冲区, 文本型, 传址
+    .参数 缓冲区长度, 整数型
+
+.DLL命令 取得进程优先级_, 整数型, "kernel32", "GetPriorityClass", , 
+    .参数 进程句柄, 整数型
+
+.DLL命令 设定进程优先级别_, 整数型, "kernel32", "SetPriorityClass", , 
+    .参数 进程句柄, 整数型
+    .参数 级别, 整数型
+
+.DLL命令 取得近似色_, 整数型, "gdi32", "GetNearestColor", , 
+    .参数 设备场景, 整数型
+    .参数 颜色, 整数型
+
+.DLL命令 取得剪裁区_, 整数型, "gdi32", "GetClipBox", , 
+    .参数 设备场景句柄, 整数型
+    .参数 剪裁区, 矩形_, 传址
+
+.DLL命令 取得边界矩形_, 整数型, "gdi32", "GetBoundsRect", , 
+    .参数 设备场景句柄, 整数型, , hdc Long，边界矩形对应的设备场景 
+    .参数 装载矩形, 矩形_, 传址, lprcBounds RECT，装载设备场景hdc的当前边界矩形 
+    .参数 标识, 整数型, , flags Long，参见相关帮助
+
+.DLL命令 取当前目录_, 整数型, "kernel32", "GetCurrentDirectoryA", , 
+    .参数 缓冲区长度, 整数型
+    .参数 缓冲区, 文本型
+
+.DLL命令 取背景色_, 整数型, "gdi32", "GetBkColor", , 取得指定设备场景当前的背景颜色
+    .参数 设备场景句柄, 整数型, , hdc Long，欲查询背景颜色的一个设备场景
+
+.DLL命令 取OEM转换页_, 整数型, "user32", "GetKBCodePage", , 
+
+.DLL命令 驱动器类型_, 整数型, "kernel32", "GetDriveTypeA", , 
+    .参数 路径, 文本型
+
+.DLL命令 逻辑驱动器字母_, 整数型, "kernel32", "GetLogicalDrives", , 
+
+.DLL命令 获取逻辑驱动器字串_, 整数型, "kernel32", "GetLogicalDriveStringsA", , 
+    .参数 缓冲器长度, 整数型
+    .参数 缓冲区, 文本型
+
+.DLL命令 判断存在事件_, 整数型, "user32", "GetInputState", , 
+
+.DLL命令 判断伸缩模式_, 整数型, "gdi32", "GetStretchBltMode", , 
+    .参数 设备场景句柄, 整数型
+
+.DLL命令 设置弧描绘方向_, 整数型, "gdi32", "SetArcDirection", , 设置圆弧的描绘方向
+    .参数 设备场景句柄, 整数型
+    .参数 方向, 整数型
+
+.DLL命令 命令行缓冲区_, 整数型, "kernel32", "GetCommandLineA", , 
+
+.DLL命令 取中断进程退出代码_, 整数型, "kernel32", "GetExitCodeProcess", , 
+    .参数 进程句柄, 整数型
+    .参数 退出代码, 整数型, 传址
+
+.DLL命令 取中止线程退出代码_, 整数型, "kernel32", "GetExitCodeThread", , 
+    .参数 线程句柄, 整数型
+    .参数 退出代码, 整数型, 传址
+
+.DLL命令 退出进程_, 整数型, "kernel32", "ExitProcess", , 
+    .参数 进程句柄, 整数型
+
+.DLL命令 退出线程_, 整数型, "kernel32", "ExitThread", , 
+    .参数 线程句柄, 整数型
+
+.DLL命令 创建刷子_, 整数型, "gdi32", "CreateBrushIndirect", , 
+    .参数 格式, 刷子结构_
+
+.DLL命令 清空矩形_, 整数型, "user32", "SetRectEmpty", , 
+    .参数 区域, 矩形_
+
+.DLL命令 设置矩形_, 整数型, "user32", "SetRect", , 
+    .参数 矩形, 矩形_
+    .参数 左边, 整数型
+    .参数 顶边, 整数型
+    .参数 右边, 整数型
+    .参数 底边, 整数型
+
+.DLL命令 获取最小矩形_, 整数型, "gdi32", "GetRgnBox", , 
+    .参数 区域, 整数型
+    .参数 矩形区域, 矩形_
+
+.DLL命令 偏移矩形_, 整数型, "user32", "OffsetRect", , 
+    .参数 目标矩形, 矩形_
+    .参数 水平偏移量, 整数型
+    .参数 垂直偏移量, 整数型
+
+.DLL命令 关闭搜索句柄_, 整数型, "kernel32.dll", "FindClose", , FindClose,关闭由FindFirstFile函数创建的一个搜索句柄
+    .参数 搜索句柄, 整数型, , hFindFile，由FindFirstFile函数提供的搜索句柄
+
+.DLL命令 关闭通知对象_, 整数型, "kernel32.dll", "FindCloseChangeNotification", , FindCloseChangeNotification
+    .参数 对象句柄, 整数型, , hChangeHandle，要关闭的那个文件改动通知对象的句柄
+
+.DLL命令 关闭通告对象_, 整数型, "winspool.drv", "FindClosePrinterChangeNotification", , FindClosePrinterChangeNotification
+    .参数 对象句柄, 整数型, , hChange，欲关闭的打印机通告对象句柄
+
+.DLL命令 查找关联文件名_, 整数型, "shell32.dll", "FindExecutableA", , 
+    .参数 程序名, 文本型, , lpFile，参见相关帮助
+    .参数 完整路径, 文本型, , lpDirectory，要使用的默认目录的完整路径
+    .参数 字串缓冲区, 文本型, , lpResult，参见相关帮助
+
+.DLL命令 取对象句柄_, 整数型, "gdi32", "GetStockObject", , 
+    .参数 类型, 整数型
+
+.DLL命令 取得指针剪裁区_, 整数型, "user32", "GetClipCursor", , 
+    .参数 矩形, 矩形_
+
+.DLL命令 取得压缩文件全名_, 整数型, "lz32.dll", "GetExpandedNameA", , 取得一个压缩文件的全名
+    .参数 文件名, 文本型
+    .参数 缓冲区, 文本型
+
+.DLL命令 创建文件通知对象_, 整数型, "kernel32.dll", "FindFirstChangeNotificationA", , 
+    .参数 目录名, 文本型, , lpPathName，要监视的目录
+    .参数 是否包括子目录, 整数型, , bWatchSubtree，参见相关帮助
+    .参数 条件, 整数型, , dwNotifyFilter，参见相关帮助
+
+.DLL命令 查找文件_, 整数型, "kernel32.dll", "FindFirstFileA", , 
+    .参数 文件名, 文本型, , lpFileName，欲搜索的文件名
+    .参数 文件信息, 查找的文件信息_, , lpFindFileData，参见相关帮助
+
+.DLL命令 重设文件改变通知对象_, 整数型, "kernel32.dll", "FindNextChangeNotification", , 
+    .参数 对象句柄, 整数型, , hChangeHandle，参见相关帮助
+
+.DLL命令 查找下一个文件_, 整数型, "kernel32.dll", "FindNextFileA", , 
+    .参数 搜索句柄, 整数型, , hFindFile，参见相关帮助
+    .参数 文件有关信息, 查找的文件信息_, , lpFindFileData，参见相关帮助
+
+.DLL命令 寻找顶级窗口_, 整数型, "user32.dll", "FindWindowA", , FindWindow,寻找窗口列表中第一个符合指定条件的顶级窗口
+    .参数 窗口类名, 文本型, , lpClassName，参见相关帮助
+    .参数 窗口文本, 文本型, , lpWindowName，参见相关帮助
+
+.DLL命令 闪烁显示指定窗口_, 整数型, "user32.dll", "FlashWindow", , FlashWindow,闪烁显示指定窗口
+    .参数 窗口句柄, 整数型, , hwnd，要闪烁显示的窗口的句柄
+    .参数 状态, 整数型, , bInvert，参见相关帮助
+
+.DLL命令 曲线转换线段_, 整数型, "gdi32.dll", "FlattenPath", , FlattenPath,将一个路径中的所有曲线都转换成线段
+    .参数 设备场景句柄, 整数型, , hdc，包含了路径的设备场景
+
+.DLL命令 指定填充区域_, 整数型, "gdi32.dll", "FloodFill", , FloodFill,用当前选定的刷子在指定的设备场景中填充一个区域
+    .参数 设备场景, 整数型, , hdc，设备场景的句柄
+    .参数 横坐标, 整数型, , x，开始填充的那个点，用逻辑坐标表示
+    .参数 纵坐标, 整数型, , y，开始填充的那个点，用逻辑坐标表示
+    .参数 边界颜色, 整数型, , crColor，欲使用的边界颜色
+
+.DLL命令 刷新文件缓冲区_, 整数型, "kernel32.dll", "FlushFileBuffers", , FlushFileBuffers,针对指定的文件句柄，刷新内部文件缓冲区
+    .参数 文件句柄, 整数型, , hFile，文件句柄
+
+.DLL命令 数据刷新到磁盘_, 整数型, "kernel32.dll", "FlushViewOfFile", , FlushViewOfFile
+    .参数 刷新基本地址, 整数型, , lpBaseAddress，参见相关帮助
+    .参数 刷新字节数, 整数型, , dwNumberOfBytesToFlush，欲刷新的字节数
+
+.DLL命令 画矩形边框_, 整数型, "user32.dll", "FrameRect", , 
+    .参数 设备场景, 整数型, , hdc，设备场景的句柄
+    .参数 矩形, 矩形_, , lpRect，对要描绘的边框进行描述的一个矩形
+    .参数 刷子句柄, 整数型, , hBrush，欲使用的刷子的句柄
+
+.DLL命令 画区域外框_, 整数型, "gdi32.dll", "FrameRgn", , FrameRgn,用指定刷子围绕指定区域画一个外框
+    .参数 设备场景, 整数型, , hdc，设备场景句柄
+    .参数 区域句柄, 整数型, , hRgn，将数据设备坐标填充的区域句柄
+    .参数 刷子句柄, 整数型, , hBrush，将用的刷子句柄
+    .参数 垂直边框宽度, 整数型, , nWidth，垂直边框宽度（以设备单元为单位）
+    .参数 水平边框高度, 整数型, , nHeight，水平边框高度（以设备单元为单位）
+
+.DLL命令 翻译环境字串块_, 整数型, "kernel32.dll", "FreeEnvironmentStringsA", , 
+    .参数 内存块句柄, 整数型, , lpsz，参见相关帮助
+
+.DLL命令 释放缓冲区_, 整数型, "winspool.drv", "FreePrinterNotifyInfo", , 
+    .参数 缓冲区地址, 整数型, , addr，参见相关帮助
+
+.DLL命令 复制对象句柄_, 整数型, "kernel32.dll", "DuplicateHandle", , 
+    .参数 源进程句柄, 整数型, , hSourceProcessHandle,参见相关帮助
+    .参数 现句柄, 整数型, , hSourceHandle,指定对象的现有句柄
+    .参数 新进程句柄, 整数型, , hTargetProcessHandle,参见相关帮助
+    .参数 转载句柄变量, 整数型, , lpTargetHandle,指定用于装载新句柄的长整型变量
+    .参数 新句柄安全访问级别, 整数型, , dwDesiredAccess,新句柄要求的安全访问级别
+    .参数 继承句柄, 整数型, , bInheritHandle Long，参见相关帮助
+    .参数 复选项, 整数型, , dwOptions
+
+.DLL命令 画椭圆_, 整数型, "gdi32.dll", "Ellipse", , 描绘一个椭圆，由指定的矩形围绕
+    .参数 设备场景句柄, 整数型, , hdc,设备场景的句柄
+    .参数 矩形左上角位置横坐标, 整数型, , X1,约束矩形采用逻辑坐标的左上角位置
+    .参数 矩形左上角位置纵坐标, 整数型, , Y1,约束矩形采用逻辑坐标的左上角位置
+    .参数 矩形右下角位置横坐标, 整数型, , X2,约束矩形采用逻辑坐标的右下角位置
+    .参数 矩形右下角位置纵坐标, 整数型, , Y2,约束矩形采用逻辑坐标的右下角位置
+
+.DLL命令 禁止菜单_, 整数型, "user32.dll", "EnableMenuItem", , 允许或禁止指定的菜单条目
+    .参数 菜单句柄, 整数型, , hMenu，菜单句柄
+    .参数 标识符, 整数型, , wIDEnableItem，欲允许或禁止的一个菜单条目的标识符
+    .参数 常数标志, 整数型, , wEnable，参见相关帮助
+
+.DLL命令 禁止窗口_, 整数型, "user32.dll", "EnableWindow", , 在指定的窗口里允许或禁止所有鼠标及键盘输入
+    .参数 窗口句柄, 整数型, , hwnd，窗口句柄
+    .参数 标识符, 整数型, , fEnable，非零允许，零禁止
+
+.DLL命令 更新窗口_, 整数型, "user32.dll", "EndDeferWindowPos", , 同时更新DeferWindowPos调用时指定的所有窗口的位置及状态
+    .参数 结构句柄, 整数型, , hWinPosInfo,参见相关帮助
+
+.DLL命令 结束打印_, 整数型, "gdi32.dll", "EndDoc", , 结束一个成功的打印作业
+    .参数 设备场景句柄, 整数型, , hDC,设备场景的句柄
+
+.DLL命令 结束文档打印_, 整数型, "winspool.drv", "EndDocPrinter", , 在后台打印程序的级别指定一个文档的结束
+    .参数 打印机句柄, 整数型, , hPrinter,一个已打开的打印机的句柄
+
+.DLL命令 继续打印_, 整数型, "gdi32.dll", "EndPage", , 用这个函数完成一个页面的打印，并准备设备场景，以便打印下一个页
+    .参数 设备场景句柄, 整数型, , hdc,设备场景的句柄
+
+.DLL命令 指定打印结尾_, 整数型, "winspool.drv", "EndPagePrinter", , 指定一个页在打印作业中的结尾
+    .参数 打印机句柄, 整数型, , hPrinter,一个已打开的打印机对象的句柄
+
+.DLL命令 结束路径分支_, 整数型, "gdi32.dll", "EndPath", , 停止定义一个路径
+    .参数 设备场景句柄, 整数型, , hdc,设备场景句柄
+
+.DLL命令 枚举日历信息_, 整数型, "kernel32.dll", "EnumCalendarInfoA", , 枚举在指定“地方”环境中可用的日历信息
+    .参数 函数指针, 子程序指针, , lpCalInfoEnumProc,参见相关帮助
+    .参数 地方设置, 整数型, , Locale,用于决定具体枚举日历的“地方”设置
+    .参数 枚举日历类型, 整数型, , Calendar,参见相关帮助
+    .参数 枚举信息类型, 整数型, , CalType,CAL_函数之一，指示欲枚举的信息类型
+
+.DLL命令 枚举子窗口_, 整数型, "user32.dll", "EnumChildWindows", , 为指定的父窗口枚举子窗口
+    .参数 父窗口句柄, 整数型, , hWndParent,欲枚举子窗口的父窗口的句柄
+    .参数 函数指针, 子程序指针, , lpEnumFunc,为每个子窗口调用的函数的指针
+    .参数 自定义值, 整数型, , lParam,参见相关帮助
+
+.DLL命令 枚举日期格式_, 整数型, "KERNEL32.dll", "EnumDateFormats", , 列举指定的“当地”设置中可用的长、短日期格式
+    .参数 函数指针, 子程序指针, , lpDateFmtEnumProc,参见相关帮助
+    .参数 地方设置, 整数型, , Locale,用于决定具体枚举格式的“地方”的设置
+    .参数 列举类型, 整数型, , dwFlags,参见相关帮助
+
+.DLL命令 枚举增强图元文件记录_, 整数型, "gdi32.dll", "EnumEnhMetaFile", , 针对一个增强型图元文件，列举其中单独的图元文件记录
+    .参数 设备场景句柄, 整数型, , hdc,参见相关帮助
+    .参数 图元文件句柄, 整数型, , hemf,欲列举的一个增强型图元文件的句柄
+    .参数 函数指针, 子程序指针, , lpEnhMetaFunc,参见相关帮助
+    .参数 自定义数据, , , lpData,用户自定义的值
+    .参数 图元文件边框, 矩形_, , lpRect,定义图元文件边框的一个矩形
+
+.DLL命令 枚举字体_, 整数型, "gdi32.dll", "EnumFontFamiliesA", , 列举指定设备可用的字体
+    .参数 设备场景句柄, 整数型, , hdc,设备场景的句柄
+    .参数 枚举的字体资源, 文本型, , lpszFamily,欲枚举的字体家族
+    .参数 函数地址, 子程序指针, , lpEnumFontFamProc,欲调用的函数地址
+    .参数 自定义值, 整数型, , lParam,指定希望传递给回调函数的一个用户自定义值
+
+.DLL命令 枚举指定字体_, 整数型, "gdi32.dll", "EnumFontFamiliesExA", , 根据一个LOGFONT结构提供的信息，列举指定设备可用的字体
+    .参数 设备场景句柄, 整数型, , hdc,设备场景的句柄
+    .参数 枚举字体, 逻辑字体_, , lpLogFont,这个结构指定了欲枚举的字体
+    .参数 函数地址, 子程序指针, , lpEnumFontFamProc,欲调用的函数地址
+    .参数 自定义值, 整数型, , lParam,指定希望传递给回调函数的一个用户自定义值
+    .参数 保留值, 整数型, , dw,保留，设为零
+
+.DLL命令 枚举可用字体_, 整数型, "gdi32.dll", "EnumFontsA", , 列举指定设备可用的字体
+    .参数 设备场景句柄, 整数型, , hdc,设备场景的句柄
+    .参数 枚举的字体资源, 文本型, , lpszFamily,欲枚举的字体家族
+    .参数 函数地址, 子程序指针, , lpEnumFontFamProc,欲调用的函数地址
+    .参数 自定义值, 整数型, , lParam,指定希望传递给回调函数的一个用户自定义值
+
+.DLL命令 枚举表单_, 整数型, "winspool.drv", "EnumFormsA", , 枚举一台打印机可用的表单
+    .参数 打印机句柄, 整数型, , hPrinter,一个已打开的打印机对象的句柄
+    .参数 固定值, 整数型, , Level,设为1
+    .参数 缓冲区地址, 字节型, , pForm,一个包含FORM_INFO_1结构的缓冲区
+    .参数 缓冲区大小, 整数型, , cbBuf,pForm缓冲区中的字符数量
+    .参数 变量指针, 整数型, , pcbNeeded,参见相关帮助
+    .参数 结构数量, 整数型, , pcReturned,载入缓冲区的结构数量（用于能返回多个结构的函数）
+
+.DLL命令 枚举作业_, 整数型, "winspool.drv", "EnumJobsA", , 枚举打印队列中的作业
+    .参数 打印机句柄, 整数型, , hPrinter,参见相关帮助
+    .参数 作业索引, 整数型, , FirstJob,参见相关帮助
+    .参数 作业数量, 整数型, , NoJobs,要枚举的作业数量
+    .参数 固定值, 整数型, , Level,1或2
+    .参数 缓冲区地址, 字节型, , pJob,包含 JOB_INFO_1 或 JOB_INFO_2 结构的缓冲区
+    .参数 缓冲区大小, 整数型, , cbBuf,pJob缓冲区中的字符数量
+    .参数 变量指针, 整数型, , pcbNeeded,参见相关帮助
+    .参数 结构数量, 整数型, , pcReturned,参见相关帮助
+
+.DLL命令 枚举标准图元文件记录_, 整数型, "gdi32.dll", "EnumMetaFile", , 为一个标准的windows图元文件枚举单独的图元文件记录
+    .参数 设备场景句柄, 整数型, , hDC,用于输出的设备场景的句柄
+    .参数 图元文件句柄, 整数型, , hMetafile,欲列举的一个标准图元文件的句柄
+    .参数 函数指针, 整数型, , lpMFEnumProc,参见相关帮助
+    .参数 自定义数据, 整数型, , lParam,用户自定义的值
+
+.DLL命令 枚举打印监视器_, 整数型, "winspool.drv", "EnumMonitorsA", , 枚举可用的打印监视器
+    .参数 服务器名字, 文本型, , pName,服务器的名字。用vbNullString指定本地系统
+    .参数 固定值, 整数型, , Level,设为1
+    .参数 缓冲区地址, 字节型, , pMonitors,包含MONINTOR_INFO_1结构的缓冲区
+    .参数 缓冲区大小, 整数型, , cbBuf,pMonitors缓冲区中的字符数量
+    .参数 变量指针, 整数型, , pcbNeeded,参见相关帮助
+    .参数 结构数量, 整数型, , pcReturned,参见相关帮助
+
+.DLL命令 枚举画笔和刷子_, 整数型, "gdi32.dll", "EnumObjects", , 枚举可随同指定设备场景使用的画笔和刷子
+    .参数 设备场景句柄, 整数型, , hDC,设备场景的句柄
+    .参数 枚举类型, 整数型, , n,欲枚举的对象的类型
+    .参数 GDI对象指针, 整数型, , lpGOBJEnumProc,指向为每个GDI对象调用的指针
+    .参数 回调函数值, 整数型, , lpVoid,枚举过程中传递给回调函数的值
+
+.DLL命令 枚举端口_, 整数型, "winspool.drv", "EnumPortsA", , 枚举一个系统可用的端口
+    .参数 服务器名字, 文本型, , pName,指定服务器的名字。用vbNullString指定本地系统
+    .参数 端口信息类型, 整数型, , Level,参见相关帮助
+    .参数 缓冲区地址, 整数型, , lpbPorts,包含PORT_INFO_1 或 PORT_INFO_2结构的缓冲区
+    .参数 缓冲区大小, 整数型, , cbBuf,lpbPorts缓冲区中的字符数量
+    .参数 变量指针, 整数型, , pcbNeeded,参见相关帮助
+    .参数 结构数量, 整数型, , pcReturned,参见相关帮助
+
+.DLL命令 枚举打印机驱动程序_, 整数型, "winspool.drv", "EnumPrinterDriversA", , 枚举指定系统中已安装的打印机驱动程序
+    .参数 服务器名字, 文本型, , pName,指定服务器的名字
+    .参数 枚举环境, 文本型, , pEnvironment,参见相关帮助
+    .参数 端口信息类型, 整数型, , Level,1，2或3（3仅适用于Windows 95和NT 4.0）
+    .参数 缓冲区地址, 整数型, , pDriverInfo,参见相关帮助
+    .参数 缓冲区大小, 整数型, , cbBuf,pDriverInfo缓冲区中的字符数量
+    .参数 变量指针, 整数型, , pcbNeeded,参见相关帮助
+    .参数 结构数量, 整数型, , pcReturned,参见相关帮助
+
+.DLL命令 枚举打印机_, 整数型, "winspool.drv", "EnumPrintersA", , 枚举系统中安装的打印机
+    .参数 标志, 整数型, , flags,一个或多个标志的组合
+    .参数 欲枚举打印机, 文本型, , name,vbNullString表示枚举同本机连接的打印机
+    .参数 枚举类型, 整数型, , Level,参见相关帮助
+    .参数 缓冲区, 字节型, , pPrinterEnum,参见相关帮助
+    .参数 缓冲区大小, 整数型, , cbBuf,pPrinterEnum缓冲区中的字符数量
+    .参数 变量指针, 整数型, , pcbNeeded,参见相关帮助
+    .参数 结构数量, 整数型, , pcReturned,参见相关帮助
+
+.DLL命令 枚举数据类型_, 整数型, "winspool.drv", "EnumPrintProcessorDatatypesA", , 枚举由一个打印处理器支持的数据类型
+    .参数 服务器名字, 文本型, , pName,指定服务器的名字
+    .参数 打印处理器名字, 文本型, , pPrintProcessorName,参见相关帮助
+    .参数 固定值, 整数型, , Level,设为1
+    .参数 缓冲区, 字节型, , pDatatypes,包含DATATYPES_INFO_1结构的缓冲区
+    .参数 缓冲区大小, 整数型, , cbBuf,pDatatypes缓冲区中的字符数量
+    .参数 变量指针, 整数型, , pcbNeeded,参见相关帮助
+    .参数 结构数量, 整数型, , pcReturned,参见相关帮助
+
+.DLL命令 枚举打印处理器_, 整数型, "winspool.drv", "EnumPrintProcessorsA", , 枚举系统中可用的打印处理器
+    .参数 服务器名字, 文本型, , pName,指定服务器的名字
+    .参数 枚举环境, 文本型, , pEnvironment,参见相关帮助
+    .参数 固定值, 整数型, , Level,设为1
+    .参数 缓冲区, 字节型, , pPrintProcessorInfo,参见相关帮助
+    .参数 缓冲区大小, 整数型, , cbBuf,pPrintProcessorInfo缓冲区中的字符数量
+    .参数 变量指针, 整数型, , pcbNeeded,参见相关帮助
+    .参数 结构数量, 整数型, , pcReturned,参见相关帮助
+
+.DLL命令 枚举代码页_, 整数型, "KERNEL32.dll", "EnumSystemCodePages", , 枚举系统中已安装或支持的代码页
+    .参数 函数指针, 子程序指针, , lpCodePageEnumProc,参见相关帮助
+    .参数 代码页标志, 整数型, , dwFlags,参见相关帮助
+
+.DLL命令 枚举地方设置_, 整数型, "KERNEL32.dll", "EnumSystemLocales", , 枚举系统已经安装或提供支持的“地方”设置
+    .参数 函数指针, 子程序指针, , lpLocaleEnumProc,参见相关帮助
+    .参数 地方标志, 整数型, , dwFlags,参见相关帮助
+
+.DLL命令 枚举任务窗口_, 整数型, "user32.dll", "EnumThreadWindows", , 枚举与指定任务相关的窗口
+    .参数 线程标识符, 整数型, , dwThreadId,线程的标识符，它的窗口将被枚举
+    .参数 函数指针, 子程序指针, , lpfn,参见相关帮助
+    .参数 自定义数值, 整数型, , lParam,参见相关帮助
+
+.DLL命令 枚举时间格式_, 整数型, "KERNEL32.dll", "EnumTimeFormats", , 枚举一个指定的地方适用的时间格式
+    .参数 函数指针, 子程序指针, , lpTimeFmtEnumProc,参见相关帮助
+    .参数 地方设置, 整数型, , Locale,用于决定具体枚举格式的“地方”设置
+    .参数 保留值, 整数型, , dwFlags,未用，设为零
+
+.DLL命令 枚举父窗口_, 整数型, "user32.dll", "EnumWindows", , 枚举窗口列表中的所有父窗口（顶级和被所有窗口）
+    .参数 函数指针, 子程序指针, , lpEnumFunc,指向为每个子窗口都调用的一个函数的指针
+    .参数 自定义数值, 整数型, , lParam,参见相关帮助
+
+.DLL命令 判断矩形结构_, 整数型, "user32.dll", "EqualRect", , 判断两个矩形结构是否相同
+    .参数 矩形1, 矩形_, , lpRect1,要比较的矩形
+    .参数 矩形2, 矩形_, , lpRect2,要比较的矩形
+
+.DLL命令 判断区域_, 整数型, "gdi32.dll", "EqualRgn", , 确定两个区域是否相等
+    .参数 区域1句柄, 整数型, , hSrcRgn1,一个区域的句柄
+    .参数 区域2句柄, 整数型, , hSrcRgn2,另一个区域的句柄
+
+.DLL命令 设备控制_, 整数型, "gdi32.dll", "Escape", , 一个灵活的设备控制函数
+    .参数 设备场景句柄, 整数型, , hdc,设备场景的句柄
+    .参数 换码数量, 整数型, , nEscape,参见相关帮助
+    .参数 缓冲区大小, 整数型, , nCount,lpInData缓冲区的大小，用字节数表示
+    .参数 缓冲区指针, 文本型, , lpInData,由换码类型决定
+    .参数 输出缓冲区, , , lpOutData,参见相关帮助
+
+.DLL命令 剪裁矩形区_, 整数型, "gdi32.dll", "ExcludeClipRect", , 
+    .参数 设备场景句柄, 整数型, , hdc,要修改的设备场景
+    .参数 被剪裁矩形区左上角的横坐标, 整数型, , X1,矩形（逻辑坐标）左上角的横坐标
+    .参数 被剪裁矩形区左上角的纵坐标, 整数型, , Y1，矩形（逻辑坐标）左上角的纵坐标
+    .参数 被剪裁矩形区右下角的横坐标, 整数型, , X2，参见相关帮助
+    .参数 被剪裁矩形区右下角的纵坐标, 整数型, , Y2，参见相关帮助
+
+.DLL命令 去掉刷新区域_, 整数型, "user32.dll", "ExcludeUpdateRgn", , 从专用设备场景剪裁区去掉指定窗口的刷新区域
+    .参数 设备场景句柄, 整数型, , hdc,参见相关帮助
+    .参数 刷新窗口句柄, 整数型, , hwnd,窗口句柄
+
+.DLL命令 关闭系统_, 整数型, "user32.dll", "ExitWindowsEx", , 退出windows，并用特定的选项重新启动
+    .参数 标志, 整数型, , uFlags,指定一个或多个标志的组合
+    .参数 保留值, 整数型, , dwReserved,保留，设为零
+
+.DLL命令 扩充环境字串_, 整数型, "kernel32.dll", "ExpandEnvironmentStringsA", , 扩充环境字串
+    .参数 扩充前字串, 文本型, , lpSrc,欲扩充的字串
+    .参数 扩充后字串, 文本型, , lpDst,扩充过后的字串
+    .参数 扩充后字串长度, 整数型, , nSize,
+
+.DLL命令 转换区域_, 整数型, "gdi32.dll", "ExtCreateRegion", , 根据世界转换修改区域
+    .参数 转换的区域, 转换数据_, , lpXform,将用于由lpRgnData指定区域的转换
+    .参数 缓冲区大小, 整数型, , nCount,lpRgnData数据结构或缓冲区的字节数
+    .参数 区域结构, 区域数据_, , lpRgnData,用GetRegionData定义区域时载入的一个结构
+
+.DLL命令 填充区域_, 整数型, "gdi32.dll", "ExtFloodFill", , 在指定的设备场景里，用当前选择的刷子填充一个区域
+    .参数 设备场景句柄, 整数型, , hdc,设备场景的句柄
+    .参数 填充点横坐标, 整数型, , x,开始填充的一个点横坐标，采用逻辑坐标表示
+    .参数 填充点纵坐标, 整数型, , y,开始填充的一个点纵坐标，采用逻辑坐标表示
+    .参数 边界颜色, 整数型, , crColor,要使用的边界颜色
+    .参数 填充类型, 整数型, , wFillType,欲执行的填充类型
+
+.DLL命令 判断文件图标_, 整数型, "shell32.dll", "ExtractAssociatedIconA", , 
+    .参数 程序句柄, 整数型, , hInst,当前应用程序的实例句柄
+    .参数 文件名, 文本型, , lpIconPath,指定一个文件名，准备从该文件中提取图标
+    .参数 标识符, 整数型, 传址, lpiIcon,在其中装载图标在可执行文件中的资源标识符
+
+.DLL命令 提取文件图标_, 整数型, "shell32.dll", "ExtractIconA", , 判断一个可执行文件或DLL中是否有图标存在，并将其提取出来
+    .参数 程序句柄, 整数型, , hInst,当前应用程序的实例句柄
+    .参数 文件名, 文本型, , lpszExeFileName,在其中提取图标的那个程序的全名
+    .参数 图标索引, 整数型, , nIconIndex,欲获取的图标的索引
+
+.DLL命令 区域组合_, 整数型, "gdi32.dll", "ExtSelectClipRgn", , 将指定区域组合到设备场景的当前剪裁区
+    .参数 设备场景句柄, 整数型, , hdc,剪裁区将被修改的设备场景的句柄
+    .参数 区域句柄, 整数型, , hRgn,源区域句柄。若fnMode为RGN_COPY，它可为NULL
+    .参数 组合方式, 整数型, , fnMode,常数之一
+
+.DLL命令 扩展文本描绘_, 整数型, "gdi32.dll", "ExtTextOutA", , 经过扩展的文本描绘函数
+    .参数 设备场景句柄, 整数型, , hdc,设备场景的句柄
+    .参数 起点横坐标, 整数型, , X,以逻辑坐标表示的一个点，指定了绘图起点横坐标
+    .参数 起点纵坐标, 整数型, , Y,以逻辑坐标表示的一个点，指定了绘图起点纵坐标
+    .参数 标志常数, 整数型, , wOptions,标志常数的任意组合
+    .参数 描绘的范围, 矩形_, , lpRect,指定一个矩形，用于对文本进行格式化处理
+    .参数 欲描绘的文本, 文本型, , lpString,欲描绘的字串
+    .参数 文本长度, 整数型, , nCount,字串中要显示出来的字符数
+    .参数 间距, 整数型, , lpDx,参见相关帮助
+
+.DLL命令 程序键盘布局_, 整数型, "user32", "GetKeyboardLayout", , 
+    .参数 线程标志, 整数型
+
+.DLL命令 取活动键盘布局_, 整数型, "user32", "GetKeyboardLayoutNameA", , 
+    .参数 布局名称, 文本型
+
+.DLL命令 虚拟键状态_, 整数型, "user32", "GetKeyboardState", , 
+    .参数 键代码, 整数型
+
+.DLL命令 键盘有关信息_, 整数型, "user32", "GetKeyboardType", , 
+    .参数 标志, 整数型
+
+.DLL命令 取键名_, 整数型, "user32", "GetKeyNameTextA", , 
+    .参数 参数一, 整数型
+    .参数 缓冲区, 文本型, , 缓冲区长度+1
+    .参数 缓冲区长度, 整数型
+
+.DLL命令 刷子起点_, 整数型, "gdi32", "GetBrushOrgEx", , 
+    .参数 设备场景句柄, 整数型
+    .参数 点, 坐标_
+
+.DLL命令 取错误信息_, 整数型, "kernel32", "GetLastError", , 
+
+.DLL命令 逻辑刷子对象_, 整数型, "gdi32", "UnrealizeObject", , 
+    .参数 刷子句柄, 整数型
+
+.DLL命令 设置刷子起点_, 整数型, "gdi32", "SetBrushOrgEx", , 
+    .参数 设备场景句柄, 整数型
+    .参数 定义起点x, 整数型
+    .参数 定义起点y, 整数型
+    .参数 装载结构, 坐标_, 传址
+
+.DLL命令 鼠标双击时间_, 整数型, "user32", "GetDoubleClickTime", , 
+
+.DLL命令 是否允许增强图形模式_, 整数型, "gdi32", "GetGraphicsMode", , 
+    .参数 设备场景句柄, 整数型
+
+.DLL命令 取运行时间_, 整数型, "kernel32", "GetTickCount", , 
+
+.DLL命令 取系统时区设置_, 整数型, "kernel32", "GetTimeZoneInformation", , 
+    .参数 时区结构设置, 时区信息_
+
+.DLL命令 取设备场景扩展_, 整数型, "user32", "GetDCEx", , 
+    .参数 窗口句柄, 整数型
+    .参数 剪裁区, 整数型
+    .参数 复选项, 整数型
+
+.DLL命令 取设备场景起点_, 整数型, "gdi32", "GetDCOrgEx", , 
+    .参数 设备场景, 整数型
+    .参数 起点, 坐标_, 传址
+
+.DLL命令 取屏幕句柄_, 整数型, "user32", "GetDesktopWindow", , 
+
+.DLL命令 取设备场景信息_, 整数型, "gdi32", "GetDeviceCaps", , 
+    .参数 设备场景, 整数型
+    .参数 值, 整数型
+
+.DLL命令 当前线程标志符_, 整数型, "kernel32", "GetCurrentThreadId", , 
+
+.DLL命令 背景色填充模式_, 整数型, "gdi32", "GetBkMode", , 
+    .参数 设备场景, 整数型, , hdc Long，设备场景的句柄 
+
+.DLL命令 取菜单_, 整数型, "user32", "GetMenu", , 
+    .参数 窗口句柄, 整数型
+
+.DLL命令 取菜单复选大小_, 整数型, "user32", "GetMenuCheckMarkDimensions", , 
+
+.DLL命令 取菜单的帮助场景ID_, 整数型, "user32", "GetMenuContextHelpId", , 
+    .参数 菜单句柄, 整数型
+
+.DLL命令 设置菜单帮助场景_, 整数型, "user32", "SetMenuContextHelpId", , 
+    .参数 菜单句柄, 整数型
+    .参数 设备场景ID, 整数型
+
+.DLL命令 取双击操作条目_, 整数型, "user32", "GetMenuDefaultItem", , 
+    .参数 菜单句柄, 整数型
+    .参数 位置, 整数型
+    .参数 标志, 整数型
+
+.DLL命令 取条目数量_, 整数型, "user32", "GetMenuItemCount", , 
+    .参数 菜单句柄, 整数型
+
+.DLL命令 取条目ID_, 整数型, "user32", "GetMenuItemID", , 
+    .参数 菜单句柄, 整数型
+    .参数 位置, 整数型
+
+.DLL命令 光标闪烁率_, 整数型, "user32", "GetCaretBlinkTime", , 判断插入符光标的闪烁频率
+
+.DLL命令 取点_, 整数型, "gdi32.dll", "GetPixel", , 
+    .参数 设备场景句柄, 整数型
+    .参数 x坐标, 整数型
+    .参数 y坐标, 整数型
+
+.DLL命令 创建内存场景_, 整数型, "Gdi32", "CreateCompatibleDC", , 
+    .参数 设备场景句柄, 整数型
+
+.DLL命令 创建设备位图_, 整数型, "gdi32", "CreateCompatibleBitmap", , 
+    .参数 设备场景句柄, 整数型
+    .参数 宽度, 整数型
+    .参数 高度, 整数型
+
+.DLL命令 取环境变量值_, 整数型, "kernel32", "GetEnvironmentVariableA", , 
+    .参数 环境字串名称, 文本型
+    .参数 缓冲区, 文本型
+    .参数 缓冲区长度, 整数型
+
+.DLL命令 置环境变量值_, 整数型, "kernel32", "SetEnvironmentVariableA", , 
+    .参数 环境字串名称, 文本型
+    .参数 价值, 文本型
+
+.DLL命令 取画笔位置_, 整数型, "gdi32", "GetCurrentPositionEx", , 
+    .参数 设备场景句柄, 整数型
+    .参数 位置, 坐标_
+
+.DLL命令 创建画笔扩展_, 整数型, "gdi32", "ExtCreatePen", , 
+    .参数 笔风格, 整数型
+    .参数 笔尖宽度, 整数型
+    .参数 笔刷定义结构, 刷子结构_
+    .参数 自定义段数, 整数型
+    .参数 自定义线, 整数型
+
+.DLL命令 默认光栅运算_, 整数型, "gdi32", "SetROP2", , 
+    .参数 设备场景, 整数型
+    .参数 光栅运算方式, 整数型
+
+.DLL命令 重画窗口_, 整数型, "user32", "RedrawWindow", , 
+    .参数 窗口句柄, 整数型
+    .参数 矩形, 矩形_
+    .参数 区域, 整数型
+    .参数 清楚模式, 整数型
+
+.DLL命令 释放鼠标_, 整数型, "user32", "ReleaseCapture", , 
+
+.DLL命令 俘获鼠标_, 整数型, "user32", "SetCapture", , 
+    .参数 窗口句柄, 整数型
+
+.DLL命令 取窗口矩形_, 整数型, "user32", "GetWindowRect", , 
+    .参数 窗口句柄, 整数型
+    .参数 矩形区域, 矩形_
+
+.DLL命令 取客户区矩形_, 整数型, "user32", "GetClientRect", , 
+    .参数 窗口句柄, 整数型
+    .参数 矩形区域, 矩形_
+
+.DLL命令 创建画笔_, 整数型, "gdi32", "CreatePen", , 
+    .参数 风格, 整数型
+    .参数 宽度, 整数型
+    .参数 颜色, 整数型
+
+.DLL命令 到货币格式文本_, 整数型, "kernel32", "GetCurrencyFormatA", , 
+    .参数 格式ID, 整数型, , Locale Long，用于决定格式的地方ID
+    .参数 地方参数, 整数型
+    .参数 欲格式化的数字, 文本型
+    .参数 地方信息, 整数型, , 0
+    .参数 缓冲区, 文本型
+    .参数 缓冲区长度, 整数型
+
+.DLL命令 当前选定对象_, 整数型, "gdi32", "GetCurrentObject", , 
+    .参数 设备场景句柄, 整数型
+    .参数 对象类型, 整数型
+
+.DLL命令 取得地方有关信息_, 整数型, "kernel32", "GetLocaleInfoA", , 
+    .参数 地方ID, 整数型
+    .参数 类型, 整数型
+    .参数 数据, 文本型
+    .参数 数据尺寸, 整数型
+
+.DLL命令 取现行时间_, 整数型, "kernel32", "GetLocalTime", , 
+    .参数 系统时间格式, 系统时间_, 传址
+
+.DLL命令 取磁盘容量_, 整数型, "kernel32", "GetDiskFreeSpaceA", , 
+    .参数 根路径, 文本型
+    .参数 簇内扇区容量, 整数型, 传址
+    .参数 扇区内字节容量, 整数型, 传址
+    .参数 剩余簇, 整数型, 传址
+    .参数 总簇, 整数型, 传址
+
+.DLL命令 取初始化文件整数变量_, 整数型, "kernel32", "GetPrivateProfileIntA", , 
+    .参数 小节名, 文本型
+    .参数 项目名, 文本型
+    .参数 默认返回值, 整数型
+    .参数 文件名, 文本型
+
+.DLL命令 写初始化文件_, 整数型, "kernel32", "WritePrivateProfileStringA", , 
+    .参数 小节名, 文本型
+    .参数 项目名, 文本型
+    .参数 数值, 文本型
+    .参数 文件名, 文本型
+
+.DLL命令 取得初始化文件条目字串_, 整数型, "kernel32", "GetPrivateProfileStringA", , 
+    .参数 小节名, 文本型
+    .参数 条目名, 文本型
+    .参数 默认返回值, 文本型
+    .参数 缓冲区, 文本型
+    .参数 缓冲区尺寸, 整数型
+    .参数 文件名, 文本型
+
+.DLL命令 取配置数值_, 整数型, "kernel32", "GetProfileIntA", , 
+    .参数 小节名, 文本型
+    .参数 条目名, 文本型
+    .参数 默认返回, 整数型
+
+.DLL命令 取配置字串_, 整数型, "kernel32", "GetProfileStringA", , 
+    .参数 小节名, 文本型
+    .参数 条目名, 文本型
+    .参数 默认返回, 整数型
+    .参数 缓冲区, 文本型
+    .参数 缓冲区尺寸, 整数型
+
+.DLL命令 插入符位置_, 整数型, "user32", "GetCaretPos", , 
+    .参数 位置, 坐标_, 传址
+
+.DLL命令 取菜单条目信息_, 整数型, "user32", "GetMenuItemInfoA", , 
+    .参数 菜单句柄, 整数型
+    .参数 位置, 整数型
+    .参数 查找方式, 逻辑型
+    .参数 菜单信息, 菜单条目结构_, 传址
+
+.DLL命令 取菜单条目尺寸_, 整数型, "user32", "GetMenuItemRect", , 
+    .参数 窗口句柄, 整数型
+    .参数 菜单句柄, 整数型
+    .参数 位置, 整数型
+    .参数 矩形位置, 矩形_, 传址
+
+.DLL命令 取菜单状态_, 整数型, "user32", "GetMenuState", , 
+    .参数 菜单句柄, 整数型
+    .参数 ID, 整数型
+    .参数 标志, 整数型
+
+.DLL命令 取条目字串_, 整数型, "user32", "GetMenuStringA", , 
+    .参数 菜单句柄, 整数型
+    .参数 条目位置, 整数型
+    .参数 缓冲区, 文本型
+    .参数 缓冲区长度, 整数型
+    .参数 标志, 整数型
+
+.DLL命令 取帮助场景ID_, 整数型, "user32", "GetWindowContextHelpId", , 
+    .参数 窗口句柄, 整数型
+
+.DLL命令 创建匿名管道_, 整数型, "kernel32", "CreatePipe", , 
+    .参数 读入端口, 整数型
+    .参数 写入端口, 整数型
+    .参数 管道归因, 安全性结构_
+    .参数 管道大小, 整数型
+
+.DLL命令 获取启动信息_, 整数型, "kernel32", "GetStartupInfoA", , 
+    .参数 启动信息, 进程启动信息_, 传址
+
+.DLL命令 设置窗口标题_, 整数型, "user32", "SetWindowTextA", , 
+    .参数 窗口句柄, 整数型
+    .参数 窗口标题, 文本型
+
+.DLL命令 读入数据_, 整数型, "kernel32", "ReadFile", , 
+    .参数 文件句柄, 整数型
+    .参数 数据缓冲区, , , 通用
+    .参数 字符数, 整数型
+    .参数 实际读入字符数, 整数型, 传址
+    .参数 异步过程, 整数型, 传址
+
+.DLL命令 取列表顶级窗口_, 整数型, "user32", "GetTopWindow", , 
+    .参数 寻找位置, 整数型
+
+.DLL命令 取需更新区域_, 整数型, "user32", "GetUpdateRect", , 
+    .参数 窗口句柄, 整数型
+    .参数 区域, 矩形_
+    .参数 清除, 逻辑型
+
+.DLL命令 确定窗口刷新对象区域_, 整数型, "user32", "GetUpdateRgn", , 
+    .参数 窗口句柄, 整数型
+    .参数 对象区域, 整数型, 传址
+    .参数 刷新, 逻辑型
+
+.DLL命令 取默认语言ID_, 整数型, "kernel32", "GetUserDefaultLangID", , 
+
+.DLL命令 取默认地方设置_, 整数型, "kernel32", "GetUserDefaultLCID", , 
+
+.DLL命令 获取进程经过时间_, 整数型, "kernel32", "GetProcessTimes", , 
+    .参数 进程句柄, 整数型
+    .参数 创建时间, 文件时间_
+    .参数 中止时间, 文件时间_
+    .参数 系统经过时间, 文件时间_
+    .参数 用户经过时间, 文件时间_
+
+.DLL命令 到本地时间_, 整数型, "kernel32.dll", "FileTimeToLocalFileTime", , 
+    .参数 文件时间, 文件时间_
+    .参数 所在文件时间, 文件时间_, 传址
+
+.DLL命令 设置帮助场景ID_, 整数型, "user32", "SetWindowContextHelpId", , 
+    .参数 窗口句柄, 整数型
+    .参数 帮助场景ID, 整数型
+
+.DLL命令 取得窗口_, 整数型, "user32.dll", "GetWindow", , 
+    .参数 源窗口, 整数型
+    .参数 关系, 整数型
+
+.DLL命令 取窗口全部设备场景_, 整数型, "user32.dll", "GetWindowDC", , 
+    .参数 窗口句柄, 整数型
+
+.DLL命令 取得场景窗口范围_, 整数型, "gdi32.dll", "GetWindowExtEx", , 
+    .参数 场景句柄, 整数型
+    .参数 尺寸, 尺寸_
+
+.DLL命令 取窗口情况_, 整数型, "user32.dll", "GetWindowPlacement", , 
+    .参数 窗口句柄, 整数型
+    .参数 情况, 窗口放置_
+
+.DLL命令 取得窗口区域_, 整数型, "user32.dll", "GetWindowRgn", , 
+    .参数 窗口句柄, 整数型
+    .参数 区域, 整数型, 传址
+
+.DLL命令 设置窗口区域_, 整数型, "user32.dll", "SetWindowRgn", , 
+    .参数 窗口句柄, 整数型
+    .参数 区域, 整数型
+    .参数 自动刷新, 逻辑型
+
+.DLL命令 取得Win目录_, 整数型, "kernel32.dll", "GetWindowsDirectoryA", , 
+    .参数 缓冲区, 文本型
+    .参数 尺寸, 整数型
+
+.DLL命令 取标题文本长度_, 整数型, "user32.dll", "GetWindowTextLengthA", , 
+    .参数 窗口句柄, 整数型
+
+.DLL命令 取得窗口结构信息_, 整数型, "user32.dll", "GetWindowWord", , 
+    .参数 窗口句柄, 整数型
+    .参数 结构, 整数型
+
+.DLL命令 灰色文本_, 整数型, "user32.dll", "GrayStringA", , 
+    .参数 场景句柄, 整数型
+    .参数 刷子句柄, 整数型
+    .参数 函数的指针, 整数型
+    .参数 文本, 文本型
+    .参数 文本大小, 整数型
+    .参数 约束框左边, 整数型
+    .参数 约束框顶边, 整数型
+    .参数 约束框宽度, 整数型
+    .参数 约束框高度, 整数型
+
+.DLL命令 创建内切椭圆_, 整数型, "gdi32.dll", "CreateEllipticRgn", , 
+    .参数 左上角横坐标, 整数型
+    .参数 左上角纵坐标, 整数型
+    .参数 右下角横坐标, 整数型
+    .参数 右下角纵坐标, 整数型
+
+.DLL命令 消息列队是否存在待决事件_, 整数型, "user32", "GetQueueStatus", , 
+    .参数 标志, 整数型
+
+.DLL命令 压缩文件字节数_, 整数型, "kernel32", "GetCompressedFileSizeA", , 
+    .参数 文件名, 文本型
+    .参数 字节高位, 整数型
+
+.DLL命令 取前次处理鼠标移动_, 整数型, "user32", "GetMessagePos", , 
+
+.DLL命令 取启动时间_, 整数型, "user32", "GetMessageTime", , 
+
+.DLL命令 取子菜单句柄_, 整数型, "user32", "GetSubMenu", , 
+    .参数 菜单句柄, 整数型
+    .参数 位置, 整数型
+
+.DLL命令 被捕获窗口_, 整数型, "user32", "GetCapture", , 
+
+.DLL命令 枚举网络共享_, 整数型, "netapi32.dll", "NetShareEnum", , 
+    .参数 服务名称, 整数型, , servername
+    .参数 级别, 整数型, , level
+    .参数 缓冲区, 整数型, 传址, bufptr
+    .参数 缓冲区长度, 整数型, 传址, prefmaxlen
+    .参数 读取数量, 整数型, 传址, entriesread
+    .参数 总数量, 整数型, 传址, totalentries
+    .参数 返回句柄, 整数型, , resume_handle
+
+.DLL命令 释放变量指针_, 整数型, "netapi32.dll", "NetApiBufferFree", , 
+    .参数 指针地址, 整数型
+
+.DLL命令 拷贝内存10_, , "kernel32.dll", "RtlMoveMemory", , 
+    .参数 共享资源信息, 共享资源信息_, 传址, any
+    .参数 缓冲区, 整数型, , any
+    .参数 缓冲区尺寸, 整数型
+
+.DLL命令 取字节长度_, 整数型, "kernel32.dll", "lstrlenW", , 
+    .参数 待取参数, 整数型, , lpString
+
+.DLL命令 双字节到宽字符1_, 整数型, "SHLWAPI", "#217", , SHUnicodeToAnsi
+    .参数 双字节文本, 字节集, 传址, lpMultiBVytestyr
+    .参数 宽字符文本, 文本型, , lpWideCharStr
+    .参数 宽字符文本长度, 整数型, , cchWideChar
+
+.DLL命令 枚举本地网络组_, 整数型, "netapi32.dll", "NetLocalGroupEnum", , 
+    .参数 服务名称, 整数型, , servername
+    .参数 级别, 整数型, , Level
+    .参数 缓冲区, 整数型, 传址, buff
+    .参数 缓冲区长度, 整数型, 传址, buffsize
+    .参数 读取数量, 整数型, 传址, entriesread
+    .参数 总数量, 整数型, 传址, totalentries
+    .参数 返回句柄, 整数型, , resumehandle
+
+.DLL命令 拷贝内存01_, , "kernel32.dll", "RtlMoveMemory", , 
+    .参数 目标, 整数型, 传址, any
+    .参数 缓冲区, 整数型, , any
+    .参数 尺寸, 整数型
+
+.DLL命令 双字节转宽字符_, 整数型, "SHLWAPI", "#218", ,  SHUnicodeToAnsiCp
+    .参数 长度, 整数型, , CodePage
+    .参数 双字节文本, 字节集, 传址, lpMultiBVytestyr
+    .参数 宽字符文本, 文本型, , lpWideCharStr
+    .参数 cchWide宽字符文本长度Char, 整数型, , cchWideChar
+
+.DLL命令 取工作组配置信息_, 整数型, "netapi32.dll", "NetWkstaGetInfo", , 
+    .参数 计算机名称, 整数型, , servername，计算机名称变量指针地址，易语言中给0
+    .参数 级别, 整数型, , level
+    .参数 缓冲区指针, 整数型, 传址, bufptr
+
+.DLL命令 枚举网络工作组用户_, 整数型, "netapi32.dll", "NetWkstaUserEnum", , 
+    .参数 计算机名称, 整数型, , servername，计算机名称变量指针地址，易语言中给0
+    .参数 级别, 整数型, , level
+    .参数 缓冲区指针, 整数型, 传址, bufptr
+    .参数 最大长度, 整数型, 传址, prefmaxlen
+    .参数 读取个数, 整数型, 传址, entriesread
+    .参数 总个数, 整数型, 传址, totalentries
+    .参数 恢复_句柄, 整数型, , resume_handle
+
+.DLL命令 释放缓冲区指针_, 整数型, "netapi32.dll", "NetApiBufferFree", , 
+    .参数 缓冲区指针, 整数型, , Buffer
+
+.DLL命令 拷贝内存05_, , "kernel32.dll", "RtlMoveMemory", , 
+    .参数 工作站环境信息, 工作站环境信息_, 传址
+    .参数 缓冲区, 整数型
+    .参数 尺寸, 整数型
+
+.DLL命令 宽字符到双字节_, , "kernel32.dll", "WideCharToMultiByte", , 
+    .参数 代码页, 整数型, , CodePage
+    .参数 标志, 整数型, , dwFlags
+    .参数 宽字符文本, 字节集, , lpWideCharStr
+    .参数 宽字符文本长度, 整数型, , cchWideChar
+    .参数 双字节文本, 字节集, , lpMultiByteStr
+    .参数 双字节文本长度, 整数型, , cchMultiByte
+    .参数 默认文本, 整数型, , lpDefaultChar
+    .参数 使用默认文本, 逻辑型, , lpUsedDefaultChar
+
+.DLL命令 宽字符到双字节1_, 整数型, "kernel32.dll", "WideCharToMultiByte", , 
+    .参数 代码页, 整数型, , CodePage
+    .参数 标志, 整数型, , dwFlags
+    .参数 宽字符文本, 字节集, , lpWideCharStr
+    .参数 宽字符文本长度, 整数型, , cchWideChar
+    .参数 双字节文本, 整数型, , lpMultiByteStr
+    .参数 双字节文本长度, 整数型, , cchMultiByte
+    .参数 默认文本, 整数型, , lpDefaultChar
+    .参数 使用默认文本, 整数型, , lpUsedDefaultChar
+
+.DLL命令 修饰路径_, , "shlwapi.dll", "PathUndecorateA", , 
+    .参数 路径文本, 文本型, , pszPath
+
+.DLL命令 是否相对路径_, 整数型, "shlwapi.dll", "PathIsRelativeA", , 
+    .参数 路径文本, 文本型, , pszPath
+
+.DLL命令 是否网络共享资源目录_, 整数型, "shlwapi.dll", "PathIsUNCServerShareA", , 
+    .参数 路径文本, 文本型, , pszPath
+
+.DLL命令 设置目录系统属性_, 整数型, "shlwapi.dll", "PathMakeSystemFolderA", , 
+    .参数 目录, 文本型, , pszPath
+
+.DLL命令 目录是否系统属性_, 整数型, "shlwapi.dll", "PathIsSystemFolderA", , 
+    .参数 目录, 文本型, , pszPath
+    .参数 属性标志, 整数型, 传址, dwAttrb
+
+.DLL命令 取消目录系统属性_, 整数型, "shlwapi.dll", "PathUnmakeSystemFolderA", , 
+    .参数 目录, 文本型, , pszPath
+
+.DLL命令 路径是否文件格式_, 整数型, "shlwapi.dll", "PathIsFileSpecA", , 
+    .参数 路径文本, 文本型, , pszPath
+
+.DLL命令 路径是否通用命名标准_, 整数型, "shlwapi.dll", "PathIsUNCA", , 
+    .参数 路径文本, 文本型, , pszPath
+
+.DLL命令 关联路径_, 整数型, "shlwapi.dll", "PathRelativePathToA", , 
+    .参数 缓冲区文本, 文本型, , pszPath
+    .参数 源路径, 文本型, , pszFrom
+    .参数 源属性标志, 整数型, , dwAttrFrom
+    .参数 目标路径, 文本型, , pszTo
+    .参数 目标属性标志, 整数型, , dwAttrTo
+
+.DLL命令 置网络通讯操作_, 整数型, "ws2_32.dll", "setsockopt", , 
+    .参数 网络通讯标识符, 整数型
+    .参数 级别, 整数型
+    .参数 操作名称, 整数型
+    .参数 操作结构, 空闲_
+    .参数 操作结构长度, 整数型
+
+.DLL命令 取网络通讯操作_, 整数型, "ws2_32.dll", "getsockopt", , 
+    .参数 网络通讯标识符, 整数型
+    .参数 级别, 整数型
+    .参数 操作名称, 整数型
+    .参数 操作结构, 空闲_
+    .参数 操作结构长度, 整数型, 传址
+
+.DLL命令 取网络通讯最后错误_, 整数型, "ws2_32.dll", "WSAGetLastError", , 
+
+.DLL命令 设置窗口信息_, 整数型, "user32", "SetWindowLongA", , 在窗口结构中为指定的窗口设置信息  指定数据的前一个值
+    .参数 窗口句柄, 整数型, , hwnd，欲为其取得信息的窗口的句柄
+    .参数 窗口信息值, 整数型, , nIndex，请参考GetWindowLong函数的nIndex参数的说明
+    .参数 窗口信息新值, 整数型, , dwNewLong，由nIndex指定的窗口信息的新值
+
+.DLL命令 网络通讯是否阻塞_, 整数型, "ws2_32.dll", "WSAIsBlocking", , 
+
+.DLL命令 清除网络通讯_, 整数型, "ws2_32.dll", "WSACleanup", , 
+
+.DLL命令 网络通讯发送数据_, 整数型, "ws2_32.dll", "send", , 
+    .参数 网络通讯标识符, 整数型, , s
+    .参数 缓冲区, 文本型, , buf
+    .参数 缓冲区长度, 整数型, , lLen
+    .参数 标志, 整数型, , flags
+
+.DLL命令 网络通讯接收数据_, 整数型, "ws2_32.dll", "recv", , 
+    .参数 网络通讯标识符, 整数型, , s
+    .参数 缓冲区, 字节型, 传址, buf
+    .参数 缓冲区长度, 整数型, , lLen
+    .参数 标志, 整数型, , flags
+
+.DLL命令 网络通讯启动_, 整数型, "ws2_32.dll", "WSAStartup", , 
+    .参数 必需版本, 整数型, , wVersionRequired
+    .参数 网络通讯数据结构, 套接字信息_, , lpWSAData
+
+.DLL命令 网络通讯主机转换_, 短整数型, "ws2_32.dll", "htons", , 
+    .参数 十六位主机命令, 短整数型, , hostshort
+
+.DLL命令 网络通讯网络转换_, 短整数型, "ws2_32.dll", "ntohs", , 
+    .参数 十六位网络命令, 短整数型, , netshort
+
+.DLL命令 查询执行频率_, 整数型, "kernel32", "QueryPerformanceFrequency", , 可以得到定时器的当前值
+    .参数 频率, 长整数型_, , LARGE_INTEGER，此参数的意思请看msdn帮助
+
+.DLL命令 到客户区坐标_, 整数型, "user32.dll", "ScreenToClient", , ScreenToClient，Long，非零表示成功，零表示失败
+    .参数 窗口句柄, 整数型, , hwnd，Long，一个窗口的句柄，该窗口定义了要使用的客户区坐标系统
+    .参数 点, 坐标_, , POINTAPI，屏幕坐标系统中包含了屏幕点的结构。这个函数会随同相应的客户区坐标（由hwnd决定）载入结构
+
+.DLL命令 释放设备场景_, 整数型, "user32", "ReleaseDC", , ReleaseDC
+    .参数 窗口句柄, 整数型, , hwnd，要释放的设备场景相关的窗口句柄
+    .参数 设备场景, 整数型, , hdc，要释放的设备场景句柄
+
+.DLL命令 画圆角矩形_, 整数型, "gdi32", "RoundRect", , 用当前选定的画笔画一个圆角矩形，并用当前选定的刷子在其中填充。X3和Y3定义了用于生成圆角的椭圆；非零表示成功，零表示失败。
+    .参数 设备场景句柄, 整数型, , hdc，用于绘图的设备场景
+    .参数 启始横坐标, 整数型, , X1，对矩形左上角位置进行说明的X，Y坐标
+    .参数 启始纵坐标, 整数型, , Y1，
+    .参数 结束横坐标, 整数型, , X2，对矩形右下角位置进行说明的X，Y坐标
+    .参数 结束纵坐标, 整数型, , Y2，
+    .参数 椭圆宽度, 整数型, , X3，用于生成圆角效果的一个椭圆的宽度。取值范围从零（表示不加圆角），一直到矩形的宽度（全圆）
+    .参数 椭圆高度, 整数型, , Y3，
+
+.DLL命令 选入设备场景_, 整数型, "gdi32.dll", "SelectObject", , SelectObject
+    .参数 场景句柄, 整数型, , hdc
+    .参数 对象句柄, 整数型, , hobject
+
+.DLL命令 删除菜单_, 整数型, "user32", "RemoveMenu", , RemoveMenu，非零表示成功，零表示失败。会设置GetLastError
+    .参数 菜单句柄, 整数型, , hmenu，菜单的句柄
+    .参数 标识符, 整数型, , nPosition，欲改变的菜单条目的标识符。如在wFlags参数中指定了MF_BYCOMMAND，这个参数就代表欲改变的菜单条目的命令ID。如设置的是MF_BYPOSITION，这个参数就代表菜单条目在菜单中的位置（第一个条目的位置为零）
+    .参数 标识符类型, 整数型, , wflags，常数MF_BYCOMMAND或MF_BYPOSITION，取决于nPosition参数
+
+.DLL命令 滚动窗口_, 整数型, "user32", "ScrollWindow", , ScrollWindow，非零表示成功，零表示失败。会设置GetLastError
+    .参数 窗口句柄, 整数型, , hwnd，待滚动窗口的句柄
+    .参数 水平滚动距离, 整数型, , XAmount，水平滚动的距离。正值向右滚动，负值向左滚动
+    .参数 垂直滚动距离, 整数型, , YAmount，垂直滚动的距离。正值向下滚动，负值向上滚动
+    .参数 客户区矩形, 整数型, , lpRect，用客户区坐标表示的一个矩形，它定义了客户区要滚动的一个部分。如设为NULL，则滚动整个客户区。在NULL的情况下，子窗口和控件的位置也会随同任何无效区域移动。否则，子窗口和无效区域不会一起移动。因此，在滚动之前，如指定了lpRect，一个明智的做法是先调用UpdateWindow函数
+    .参数 剪切区域, 整数型, , lpClipRect，指定剪切区域。只有这个矩形的区域才可能滚动。该矩形优先于lpRect。可设为NULL
+
+.DLL命令 删除指定目录_, 整数型, "kernel32.dll", "RemoveDirectoryA", , RemoveDirectory，删除指定目录，在调用这个函数前，目录必须为空
+    .参数 目录的名字, 文本型, , lppatename，String，要删除的那个目录的名字
+
+.DLL命令 创建一个新项_, 整数型, "advapi32", "RegCreateKeyA", , RegCreateKey，在指定的项下创建一个新项。如指定的项已经存在，那么函数会打开现有的项
+    .参数 项句柄, 整数型, , hkey，Long，要打开项的句柄，或者一个标准项名
+    .参数 项文本, 文本型, , lpsubkey，String，欲创建的新子项。可同时创建多个项，只需用反斜杠将它们分隔开即可。例如level1\level2\newkey
+    .参数 返回项句柄, 整数型, 传址, phkresult，Long，指定一个变量，用于装载新子项的句柄
+
+.DLL命令 删除指定注册表项_, 整数型, "advapi32.dll", "RegDeleteKeyA", , RegDeleteKey，零（ERROR_SUCCESS）表示成功。其他任何值都代表一个错误代码
+    .参数 标准项名或项句柄, 整数型, , hkey，一个已打开项的句柄，或者标准项名之一
+    .参数 删除项的名字, 文本型, , lpsubkey，要删除项的名字。这个项的所有子项也会删除
+
+.DLL命令 写出注册表缓存_, 整数型, "advapi32.dll", "RegFlushKey", , RegFlushKey，零（ERROR_SUCCESS）表示成功。其他任何值都代表一个错误代码
+    .参数 标准项名或项句柄, 整数型, , hKey，Long，欲刷新的一个项的句柄，或指定一个标准项名
+
+.DLL命令 枚举指定项的子项_, 整数型, "advapi32", "RegEnumKeyA", , RegEnumKey，零（ERROR_SUCCESS）表示成功。其他任何值都代表一个错误代码
+    .参数 标准项名或项句柄, 整数型, , hkey，Long，一个已打开项的句柄，或者指定一个标准项名
+    .参数 子项, 整数型, , dwindex，Long，欲获取的子项的索引。第一个子项的索引编号为零
+    .参数 装载项名, 文本型, , lpanme，String，用于装载指定索引处项名的一个缓冲区
+    .参数 装载项名长度, 整数型, , cdname，Long，lpName缓冲区的长度
+
+.DLL命令 创建注册表项_, 整数型, "advapi32", "RegCreateKeyA", , RegCreateKey，在指定的项下创建一个新项。如指定的项已经存在，那么函数会打开现有的项
+    .参数 项句柄, 整数型, , hKey，Long，要打开项的句柄，或者一个标准项名
+    .参数 项文本, 文本型, , lpSubKey，String，欲创建的新子项。可同时创建多个项，只需用反斜杠将它们分隔开即可。例如level1\level2\newkey
+    .参数 返回项句柄, 整数型, 传址, phkResult，Long，指定一个变量，用于装载新子项的句柄
+
+.DLL命令 设置指定项或子项默认值_, 整数型, "advapi32", "RegSetValueA", , RegSetValue，零（ERROR_SUCCESS）表示成功。其他任何值都代表一个错误代码
+    .参数 项句柄, 整数型, , hkey，Long，一个已打开项的句柄，或指定一个标准项名
+    .参数 子项名字, 文本型, 传址, lpSubKey，String，欲对它的值进行设置的一个子项的名字。如指定vbNullString，表示设置hKey的默认值。如指定的子项不存在，则会创建它
+    .参数 类型, 整数型, , dwType，Long，必须是REG_SZ
+    .参数 新值, 文本型, 传址, lpData，String，新值
+    .参数 新值长度, 整数型, , cbData，Long，指定lpData的长度，不包括空中止字符
+
+.DLL命令 访问远程注册表_, 整数型, "advapi32", "RegConnectRegistryA", , RegConnectRegistry，零（ERROR_SUCCESS）表示成功。其他任何值都代表一个错误代码
+    .参数 欲连接的系统, 文本型, , lpMachineName，欲连接的系统。采用“\\计算机名”的形式
+    .参数 项句柄, 整数型, , hKey，HKEY_LOCAL_MACHINE 或 HKEY_USERS
+    .参数 指定项句柄, 整数型, 传址, phkResult,用于装载指定项句柄的一个变量
+
+.DLL命令 打开SC管理服务_, 整数型, "advapi32.dll", "OpenSCManagerA", , 
+    .参数 机器名称, 文本型, , lpMachineName
+    .参数 数据库名, 整数型, , lpDatabaseName
+    .参数 数据库, 整数型, , dwDesiredAccess
+
+.DLL命令 关闭SC服务管理句柄_, 整数型, "advapi32.dll", "CloseServiceHandle", , 
+    .参数 SC对象句柄, 整数型
+
+.DLL命令 枚举网络用户_, 整数型, "netapi32.dll", "NetServerEnum", , 
+    .参数 服务名称, 整数型, , servername
+    .参数 级别, 整数型, , level
+    .参数 缓冲区, 整数型, 传址, buf
+    .参数 缓冲区长度, 整数型, 传址, prefmaxlen
+    .参数 读取数量, 整数型, 传址, entriesread
+    .参数 总数量, 整数型, 传址, totalentries
+    .参数 服务类型, 整数型, , servertype
+    .参数 范围, 整数型, , domain
+    .参数 返回句柄, 整数型, , resume_handle
+
+.DLL命令 释放指定内存_, 整数型, "netapi32.dll", "NetApiBufferFree", , 
+    .参数 缓冲区, 整数型, , Buffer
+
+.DLL命令 拷贝内存02_, , "kernel32.dll", "RtlMoveMemory", , 
+    .参数 目的变量, 服务器信息_, 传址, pTo
+    .参数 源, 整数型, , uFrom
+    .参数 尺寸, 整数型, , lSize
+
+.DLL命令 复制字符串_, 整数型, "kernel32.dll", "lstrcpyA", , lstrcpyA
+    .参数 文本1, 字节型, 传址, RetVal
+    .参数 文本2, 整数型, , Ptr
+
+.DLL命令 取文本内容长度_, 整数型, "kernel32.dll", "lstrlenA", , lstrlenA
+    .参数 文本, 整数型, , Ptr
+
+.DLL命令 枚举SC管理器服务列表_, 整数型, "advapi32.dll", "EnumServicesStatusA", , 
+    .参数 SC管理者句柄, 整数型, , hSCManager
+    .参数 服务类型, 整数型, , dwServiceType
+    .参数 服务状态, 整数型, , dwServiceState
+    .参数 服务, 整数型, , any，lpServices
+    .参数 缓冲区大小, 整数型, , cbBufSize
+    .参数 需求字节数, 整数型, 传址, pcbBytesNeeded
+    .参数 返回服务名, 整数型, 传址, lpServicesReturned
+    .参数 返回句柄, 整数型, , lpResumeHandle
+
+.DLL命令 枚举SC管理器服务列表1_, 整数型, "advapi32.dll", "EnumServicesStatusA", , 
+    .参数 SC管理者句柄, 整数型, , hSCManager
+    .参数 服务类型, 整数型, , dwServiceType
+    .参数 服务状态, 整数型, , dwServiceState
+    .参数 服务, 字节集, 传址, lpServices,any
+    .参数 缓冲区大小, 整数型, , cbBufSize
+    .参数 需求字节数, 整数型, 传址, pcbBytesNeeded
+    .参数 返回服务名, 整数型, 传址, lpServicesReturned
+    .参数 返回句柄, 整数型, 传址, lpResumeHandle
+
+.DLL命令 取本机工作组信息_, 整数型, "Netapi32.dll", "NetGetJoinInformation", , 
+    .参数 本机名称, 整数型, , lpServer，易语言中给0
+    .参数 工作组名称, 整数型, 传址, lpNameBuffer
+    .参数 工作组类型, 整数型, 传址, BufferType
+
+.DLL命令 取当前进程标识符_, 整数型, "kernel32.dll", "GetCurrentProcessId", , 获取当前进程一个唯一的标识符
+
+.DLL命令 取创建32位帮助工具快照_, 整数型, "kernel32.dll", "CreateToolhelp32Snapshot", , 取进程信息
+    .参数 标志, 整数型, , lFlags
+    .参数 进程标识符, 整数型, , lProcessID
+
+.DLL命令 寻找第一个32位模块_, 整数型, "kernel32.dll", "Module32First", , 
+    .参数 快照句柄, 整数型, , hSnapshot
+    .参数 模块进程结构, 模块地址_, 传址, uProcess
+
+.DLL命令 寻找下一个32位模块_, 整数型, "kernel32.dll", "Module32Next", , 
+    .参数 快照句柄, 整数型, , hSnapshot
+    .参数 模块进程结构, 模块地址_, 传址, uProcess
+
+.DLL命令 取混音设备数量_, 整数型, "winmm.dll", "mixerGetNumDevs", , 获取当前混合设备数量
+
+.DLL命令 打开混合设备_, 整数型, "winmm.dll", "mixerOpen", , 打开混合设备
+    .参数 混音设备句柄, 整数型, 传址, phmx，返回混音设备句柄 
+    .参数 混音设备标识符, 整数型, , uMxId
+    .参数 回调函数地址, 整数型, , dwCallback
+    .参数 实例句柄, 整数型, , dwInstance
+    .参数 打开句柄, 整数型, , fdwOpen
+
+.DLL命令 关闭混合设备_, 整数型, "winmm.dll", "mixerClose", , 
+    .参数 混音设备句柄, 整数型, , phmx
+
+.DLL命令 关闭MIDI输出设备_, 整数型, "winmm.dll", "midiOutClose", , 
+    .参数 MIDI输出设备句柄, 整数型, , hMidiOut
+
+.DLL命令 打开MIDI输出设备_, 整数型, "winmm.dll", "midiOutOpen", , 
+    .参数 MIDI输出设备句柄, 整数型, 传址, lphMidiOut，返回MIDI输出设备句柄
+    .参数 设备标识符, 整数型, , uDeviceID
+    .参数 回调函数地址, 整数型, , dwCallback
+    .参数 实例句柄, 整数型, , dwInstance
+    .参数 标志, 整数型, , dwFlags
+
+.DLL命令 发送MIDI输出设备短消息_, 整数型, "winmm.dll", "midiOutShortMsg", , 
+    .参数 MIDI输出设备句柄, 整数型, , hMidiOut
+    .参数 消息值, 整数型, , dwMsg
+
+.DLL命令 取MIDI输出设备错误文本_, 整数型, "winmm.dll", "midiOutGetErrorTextA", , 返回MIDI输出出错文本
+    .参数 错误代码, 整数型, , err
+    .参数 错误文本, 文本型, 传址, lpText
+    .参数 错误文本长度, 整数型, , uSize
+
+.DLL命令 取MIDI输出设备数量_, 整数型, "winmm.dll", "midiOutGetNumDevs", , 
+
+.DLL命令 取MIDI输出设备标识符_, 整数型, "winmm.dll", "midiOutGetID", , 
+    .参数 MIDI输出设备句柄, 整数型, , hMidiOut
+    .参数 设备标识符, 整数型, 传址, lpuDeviceID
+
+.DLL命令 取MIDI输出设备性能_, 整数型, "winmm.dll", "midiOutGetDevCapsA", , 
+    .参数 设备标识符, 整数型, , uDeviceID
+    .参数 性能结构, MIDI输出设备性能_, 传址, lpCaps
+    .参数 结构大小, 整数型, , uSize
+
+.DLL命令 取字节数据地址_, 整数型, "kernel32.dll", "lstrcpyn", , 
+    .参数 数据1, 字节型, 传址, lpString1
+    .参数 数据2, 字节型, 传址, lpString2
+    .参数 数据长度, 整数型, , iMaxLength
+
+.DLL命令 预备MIDI输出设备数据块_, 整数型, "winmm.dll", "midiOutPrepareHeader", , 
+    .参数 MIDI输出设备句柄, 整数型, , hMidiOut
+    .参数 输出设备结构, MIDI数据块_, , lpMidiOutHdr
+    .参数 结构大小, 整数型, , uSize
+
+.DLL命令 清除预备MIDI输出头_, 整数型, "winmm.dll", "midiOutUnprepareHeader", , 
+    .参数 MIDI输出设备句柄, 整数型, , hMidiOut
+    .参数 输出设备结构, MIDI数据块_, , lpMidiOutHdr
+    .参数 结构大小, 整数型, , uSize
+
+.DLL命令 停止MIDI输出设备_, 整数型, "winmm.dll", "midiOutReset", , 
+    .参数 MIDI输出设备句柄, 整数型, , hMidiOut
+
+.DLL命令 打开声音输出设备_, 整数型, "winmm.dll", "waveOutOpen", , 
+    .参数 声音输出设备句柄, 整数型, 传址, lphWaveOut
+    .参数 设备ID, 整数型, , uDeviceID
+    .参数 声音格式结构, 波形数据格式_, , lpFormat
+    .参数 回调函数, 整数型, , dwCallback
+    .参数 实例句柄, 整数型, , dwInstance
+    .参数 标志, 整数型, , dwFlags
+
+.DLL命令 预备声音回放数据块_, 整数型, "winmm.dll", "waveOutPrepareHeader", , 
+    .参数 声音输出设备句柄, 整数型, , hWaveOut
+    .参数 声音输出设备头结构, 波形数据块_, , lpWaveOutHdr
+    .参数 结构长度, 整数型, , uSize
+
+.DLL命令 关闭声音输出设备_, 整数型, "winmm.dll", "waveOutClose", , 
+    .参数 声音输出设备句柄, 整数型, , hWaveOut
+
+.DLL命令 清除预备声音数据块_, 整数型, "winmm.dll", "waveOutUnprepareHeader", , 
+    .参数 声音输出设备句柄, 整数型, , hWaveOut
+    .参数 声音输出设备头结构, 波形数据块_, , lpWaveInHdr
+    .参数 结构长度, 整数型, , uSize
+
+.DLL命令 写入声音输出设备_, 整数型, "winmm.dll", "waveOutWrite", , 
+    .参数 声音输出设备句柄, 整数型, , hWaveOut
+    .参数 声音输出设备头结构, 波形数据块_, , lpWaveOutHdr
+    .参数 结构长度, 整数型, , uSize
+
+.DLL命令 停止声音输入设备工作_, 整数型, "winmm.dll", "waveOutReset", , 
+    .参数 声音输出设备句柄, 整数型, , hWaveOut
+
+.DLL命令 中断声音输出循环_, 整数型, "winmm.dll", "waveOutBreakLoop", , 
+    .参数 声音输出设备句柄, 整数型, , hWaveOut
+
+.DLL命令 获取声音输出设备性能_, 整数型, "winmm.dll", "waveOutGetDevCapsA", , 
+    .参数 设备ID, 整数型, , uDeviceID
+    .参数 设备性能信息结构, 波形输出设备性能_, 传址, lpCaps
+    .参数 结构长度, 整数型, , uSize
+
+.DLL命令 获取声音出错文本_, 整数型, "winmm.dll", "waveOutGetErrorTextA", , 
+    .参数 错误值, 整数型, , err
+    .参数 文本, 文本型, 传址, lpText
+    .参数 结构长度, 整数型, , uSize
+
+.DLL命令 获取声音输出设备ID_, 整数型, "winmm.dll", "waveOutGetID", , 
+    .参数 声音输出设备句柄, 整数型, , hWaveOut，声音设备句柄
+    .参数 设备ID, 整数型, 传址, lpuDeviceID，返回打开的声音设备句柄对应的ID
+
+.DLL命令 获取声音输出设备数量_, 整数型, "winmm.dll", "waveOutGetNumDevs", , 
+
+.DLL命令 获取声音音量_, 整数型, "winmm.dll", "waveOutGetVolume", , 
+    .参数 设备ID, 整数型, , uDeviceID
+    .参数 声音值, 字节集, 传址, lpdwVolume
+
+.DLL命令 暂停声音回放_, 整数型, "winmm.dll", "waveOutPause", , 
+    .参数 声音输出设备句柄, 整数型, , hWaveOut
+
+.DLL命令 重开始声音回放_, 整数型, "winmm.dll", "waveOutRestart", , 
+    .参数 声音输出设备句柄, 整数型, , hWaveOut
+
+.DLL命令 设置输出设备音量_, 整数型, "winmm.dll", "waveOutSetVolume", , 
+    .参数 设备ID, 整数型, , uDeviceID
+    .参数 声音值, 整数型, , dwVolume
+
+.DLL命令 打开声音输入设备_, 整数型, "winmm.dll", "waveInOpen", , 
+    .参数 波形设备句柄, 整数型, 传址, lphWaveIn，返回打开波形设备的句柄
+    .参数 输入设备ID, 整数型, , uDeviceID，输入设备ID
+    .参数 录音格式指针, 波形数据格式_, , lpFormat，录音格式指针
+    .参数 回调函数, 子程序指针, , dwCallbac，处理MM_WIM_***消息的回调函数或窗口句柄或线程ID
+    .参数 实例句柄, 整数型, , dwInstance
+    .参数 标志, 整数型, , dwFlags，处理消息方式的符号位
+
+.DLL命令 预备声音输入缓冲区_, 逻辑型, "winmm.dll", "waveInPrepareHeader", , 
+    .参数 波形设备句柄, 整数型, , hWaveIn
+    .参数 声音输入设备头结构, 波形数据块_, , lpWaveInHdr
+    .参数 结构长度, 整数型, , uSize
+
+.DLL命令 清除预备声音文件头_, 整数型, "winmm.dll", "waveInUnprepareHeader", , 
+    .参数 波形设备句柄, 整数型, , hWaveIn
+    .参数 声音输入设备头结构, 波形数据块_, , lpWaveInHdr
+    .参数 结构长度, 整数型, , uSize
+
+.DLL命令 增加声音输入设备缓冲区_, 逻辑型, "winmm.dll", "waveInAddBuffer", , 
+    .参数 波形设备句柄, 整数型, , hWaveIn
+    .参数 声音输入设备头结构, 波形数据块_, , lpWaveInHdr
+    .参数 结构长度, 整数型, , uSize
+
+.DLL命令 开始录音_, 逻辑型, "winmm.dll", "waveInStart", , 
+    .参数 波形设备句柄, 整数型, , hWaveIn
+
+.DLL命令 停止录音_, 整数型, "winmm.dll", "waveInReset", , 
+    .参数 波形设备句柄, 整数型, , hWaveIn
+
+.DLL命令 关闭声音输入设备_, 整数型, "winmm.dll", "waveInClose", , 
+    .参数 波形设备句柄, 整数型, , hWaveIn
+
+.DLL命令 取内存变量地址2_, 整数型, "kernel32.dll", "lstrcpyn", , 
+    .参数 数据1, 字节型, 传址, lpString1
+    .参数 数据2, 字节型, 传址, lpString2
+    .参数 数据长度, 整数型, , iMaxLength
+
+.DLL命令 取声音输入设备性能_, 整数型, "winmm.dll", "waveInGetDevCapsA", , 获取声音输入设备性能
+    .参数 设备ID, 整数型, , uDeviceID
+    .参数 设备性能信息结构, 波形输入设备性能_, 传址, lpCaps
+    .参数 结构长度, 整数型, , uSize
+
+.DLL命令 取声音出错信息文本_, 整数型, "winmm.dll", "waveInGetErrorTextA", , 获取声音出错的信息文本
+    .参数 错误代码, 整数型, , err
+    .参数 缓冲区, 文本型, , lpText
+    .参数 缓冲区大小, 整数型, , uSize
+
+.DLL命令 取声音输入设备ID_, 整数型, "winmm.dll", "waveInGetID", , 
+    .参数 波形设备句柄, 整数型, , hWaveIn
+    .参数 设备ID, 整数型, 传址, lpuDeviceID
+
+.DLL命令 取声音输入设备数量_, 整数型, "winmm.dll", "waveInGetNumDevs", , 返回声音输入设备数量
+
+.DLL命令 停止声音输入_, 整数型, "winmm.dll", "waveInStop", , 停止声音输入
+    .参数 波形设备句柄, 整数型, , hWaveIn
+
+.DLL命令 启动打印机属性对话框_, 整数型, "winspool.drv", "PrinterProperties", , 
+    .参数 父窗口句柄, 整数型, , hwnd，对话框的父窗口
+    .参数 打印机句柄, 整数型, , hPrinter，一个已打开的打印机的句柄
+
+.DLL命令 建立查找文本对话框_, 整数型, "comdlg32.dll", "FindTextA", , FindText
+    .参数 结构地址, 整数型, , pFindreplace
+
+.DLL命令 获取消息编号_, 整数型, "user32", "RegisterWindowMessageA", , 获取分配给一个字串标识符的消息编号  &C000 到 &FFFF之间的一个消息编号。零意味着出错
+    .参数 消息名称, 文本型, , lpString，注册消息的名字。
+
+.DLL命令 清空回收站_, 整数型, "shell32.dll", "SHEmptyRecycleBinA", , SHEmptyRecycleBin
+    .参数 窗口句柄, 整数型, , hwnd
+    .参数 根路径, 文本型, , pszRootPath
+    .参数 标志, 整数型, , dwFlags
+
+.DLL命令 更新回收站图标_, 整数型, "shell32.dll", "SHUpdateRecycleBinIcon", , SHUpdateRecycleBinIcon
+
+.DLL命令 回收站询问_, 整数型, "shell32.dll", "SHQueryRecycleBinA", , SHQueryRecycleBin
+    .参数 根路径, 文本型, , pszRootPath
+    .参数 回收站询问信息, 回收站信息_, , pSHQueryRBInfo
+
+.DLL命令 创建扩展线程_, 整数型, "shlwapi.dll", "SHCreateThread", , SHCreateThread
+    .参数 线程地址, 整数型, , pfnThreadProc
+    .参数 数据, 整数型, , pData，Any
+    .参数 标志, 整数型, , dwFlags
+    .参数 返回信息, 整数型, , pfnCallback
+
+.DLL命令 改变系统编辑框_, , "shlwapi.dll", "SHAutoComplete", , SHAutoComplete
+    .参数 编辑框句柄, 整数型, , hwndEdit
+    .参数 标志, 整数型, , dwFlags
+
+.DLL命令 交换鼠标按钮_, 整数型, "user32.dll", "SwapMouseButton", , SwapMouseButton，Long，TRUE（非零）表示鼠标按钮的功能在调用这个函数之前已经互换；否则返回零
+    .参数 鼠标按钮方式, 整数型, , bSwap，Long，倘若为TRUE（非零），则互换两个鼠标按钮的功能。FALSE则恢复正常状态
+
+.DLL命令 异步显示窗口_, 整数型, "user32", "ShowWindowAsync", , ShowWindowAsync
+    .参数 窗口句柄, 整数型, , hwnd，欲接收ShowWindow命令的窗口
+    .参数 可视性类型, 整数型, , nCmdShow，与ShowWindow相同
+
+.DLL命令 设置背景颜色_, 整数型, "gdi32.dll", "SetBkColor", , SetBkColor，背景颜色用于填充阴影刷子、虚线画笔以及字符（如背景模式为OPAQUE）中的空隙。也在位图颜色转换期间使用。参考SetBkMode,Long，前一个背景色，CLR_INVALID表示出错
+    .参数 设备场景句柄, 整数型, , hdc，设备场景的句柄
+    .参数 RGB颜色值, 整数型, , crColor，新背景颜色的RGB颜色值
+
+.DLL命令 设置背景模式_, 整数型, "gdi32", "SetBkMode", , SetBkMode，Long，前一个背景模式的值
+    .参数 设备场景句柄, 整数型, , hdc，设备场景的句柄
+    .参数 方式, 整数型, , nBkMode，下述常数之一：OPAQUE用当前的背景色填充虚线画笔、阴影刷子以及字符的空隙TRANSPARENT透明处理，即不作上述填充
+
+.DLL命令 画矩形_, 整数型, "gdi32.dll", "Rectangle", , Rectangle
+    .参数 设备场景句柄, 整数型, , hdc
+    .参数 左上角横坐标, 整数型, , X
+    .参数 左上角纵坐标, 整数型, , Y
+    .参数 右下角横坐标, 整数型, , X1
+    .参数 右下角纵坐标, 整数型, , Y1
+
+.DLL命令 发送通报消息_, 整数型, "user32.dll", "SendNotifyMessageA", , SendNotifyMessage，向窗口发送一条消息。如目标窗口位于同调用方相同的线程内，则这个函数会表现为SendMessage函数。而且除非消息得到处理，否则函数不会返回。如目标窗口从属于一个不同的线程，则函数会立即返回Long，TRUE表示成功，FALSE表示出错。会设置GetLastError
+    .参数 窗口句柄, 整数型, , hwnd，用于接收消息的一个窗口的句柄
+    .参数 标识符, 整数型, , wmsg，消息的标识符
+    .参数 消息1, 整数型, , wParam，具体由消息决定
+    .参数 消息2, 整数型, , lParam，具体由消息决定
+
+.DLL命令 同步发送消息_, 整数型, "user32.dll", "SendMessageTimeoutA", , SendMessageTimeout，Long，成功时返回TRUE，失败时返回FALSE。会设置GetLastError
+    .参数 窗口句柄, 整数型, , hwnd，要接收消息的一个窗口的句柄
+    .参数 标识符, 整数型, , msg，消息的标识符
+    .参数 消息1, 整数型, , wparam，由消息决定
+    .参数 消息2, 整数型, , lparam，由消息决定
+    .参数 类型, 整数型, , fuflags，下述常数的一个或多个SMTO_ABORTIFHUNG如目标进程挂起，则函数立即返回
+    .参数 超时值, 整数型, , utimeout，超时值，采用毫秒为单位
+    .参数 结果, 整数型, , lpdwresult，用于装载函数结果的一个变量
+
+.DLL命令 发送消息返回_, 整数型, "user32.dll", "SendMessageCallbackA", , SendMessageCallback，该函数最大的特定是可以立即返回。目标窗口函数执行完毕后，会用回调函数的形式将结果返回Long，TRUE表示成功，FALSE表示失败。会设置GetLastError
+    .参数 窗口句柄, 整数型, , hwnd，要接收消息的那个窗口的句柄
+    .参数 消息标识符, 整数型, , wmsg，消息的标识符
+    .参数 消息1, 整数型, , wParam，取决于消息
+    .参数 消息2, 整数型, , lParam，取决于消息
+    .参数 指定函数地址, 整数型, , lpResultCallBack，指定函数地址。在vb5中可用AddressOf操作符获得
+    .参数 自定义值, 整数型, , dwData，用户自定义值
+
+.DLL命令 查找指定文件_, 整数型, "kernel32.dll", "SearchPathA", , SearchPath，Long，装载到lpBuffer缓冲区的字符数。如缓冲区长度不足，则返回缓冲区必要的长度。零表示失败。会设置GetLastError
+    .参数 搜索路径, 文本型, , lppath，欲搜索的路径。如果为vbNullString，则采用windows搜索路径。参考OpenFile函数的OFSTRUCT结构中对OF_SEARCH标志搜索顺序的介绍
+    .参数 欲查找文件名, 文本型, , lpfilename，要查找的文件名
+    .参数 文件扩展名, 文本型, , lpextinsion，文件扩展名。必须用一个句点符号起头。如文件没有扩展名，或者lpFileName包括了扩展名，则设为vbNullString
+    .参数 字串长度, 整数型, , nbufferlength，lpBuffer字串的长度
+    .参数 字符串内容, 文本型, , lpbuffer，用于装载文件名的一个字串
+    .参数 地址, 整数型, , lpfilepart，指定一个长整数变量，用于装载缓冲文件名部分的地址。在vb中不是特别有用
+
+.DLL命令 高级滚动窗口_, 整数型, "user32.dll", "ScrollWindowEx", , ScrollWindowEx，根据附加的选项，滚动窗口客户区的全部或部分，返回值为常数值SIMPLEREGION，COMPLEXREGION，或NULLREGION，它们描述了无效区域的类型
+    .参数 窗口句柄, 整数型, , hwnd，Long，欲滚动的窗口的句柄
+    .参数 水平滚动距离, 整数型, , dx，Long，水平滚动的距离。正值向右滚动，负值向左滚动
+    .参数 垂直滚动距离, 整数型, , dy，Long，垂直滚动的距离。正值向下滚动，负值向上滚动
+    .参数 客户区矩形, 整数型, , lprcScroll，RECT，用客户区坐标表示的一个矩形，它定义了客户区要滚动的一个部分。如设为零，则滚动整个客户区
+    .参数 指定剪切矩形, 整数型, , lprcClip，RECT，指定一个剪切矩形。只有这个矩形的内容才可能滚动。该矩形优先于lpRect。可能为零，表示不进行剪切处理（原文：Clipping rectangle. Only the area within this rectangle may be scrolled. This rectangle takes priority over lpRect. May be zero, in which case no clipping takes place.）
+    .参数 无效区域, 整数型, , hrgnUpdate，Long，滚动过程中随同无效区域载入的一个“区”。可能是零
+    .参数 矩形结构, 整数型, , lprcUpdate，RECT，随同一个矩形载入的矩形结构，该矩形定义了滚动过程中无效的区域。可能是零
+    .参数 标志值, 整数型, , fuScroll，Long，对滚动进行控制的旗标。可以是下述任何常数的组合SW_ERASE清除新无效区域的背景SW_INVALDATE使滚动时未覆盖的区域无效SW_SCROLLCHILDREN滚动区域内的子窗口进行等量移动。为避免得到无效的结果，在使用这个函数的时候，请确定子窗口或控件要么完全在滚动区域中，要么完全在滚动区域外
+
+.DLL命令 乘除计算_, 整数型, "kernel32.dll", "MulDiv", , 
+    .参数 乘数1, 整数型, , nNumber
+    .参数 乘数2, 整数型, , nNumerator
+    .参数 除数, 整数型, , nDenominator
+
+.DLL命令 读入文件数据_, 整数型, "kernel32", "ReadFileEx", , 
+    .参数 文件句柄, 整数型, , hfile，文件的句柄
+    .参数 数据缓冲区, 字节型, 数组, lpbuffer，指定容纳读入数据的一个缓冲区。除非读操作执行完毕，否则不要访问这个缓冲区
+    .参数 读入长度, 整数型, , nnumberofbytestoread，要读入的字节数
+    .参数 异步操作结构, 重叠操作_, , lpoverlapped，定义了一个异步操作的结构。使用这个函数时，结构中的hEvent字段会被忽略
+    .参数 回调函数返回值, 整数型, , lpcompletionroutine，回调函数的返回值
+
+.DLL命令 取进程堆栈句柄_, 整数型, "kernel32", "GetProcessHeap", , 获取调用过程堆句柄
+
+.DLL命令 拷贝内存07_, , "kernel32.dll", "RtlMoveMemory", , 
+    .参数 目的变量, 查找替换_, 传址, pTo
+    .参数 源, 整数型, , uFrom
+    .参数 尺寸, 整数型, , lSize
+
+.DLL命令 释放堆栈内存_, 整数型, "kernel32", "HeapFree", , HeapFree，释放从堆中分配的内存
+    .参数 堆栈句柄, 整数型, , hHeap
+    .参数 标志, 整数型, , dwFlags
+    .参数 内存块句柄, 整数型, , any，lpMem
+
+.DLL命令 确定消息是否用于对话框_, 整数型, "user32.dll", "IsDialogMessage", , 
+    .参数 窗口句柄, 整数型, , hwnd
+    .参数 消息结构, 消息_, 传址, wmsg
+
+.DLL命令 解释消息_, 整数型, "user32.dll", "TranslateMessage", , 
+    .参数 消息结构, 消息_, , lpMsg
+
+.DLL命令 分派消息_, , "user32.dll", "DispatchMessageA", , 
+    .参数 消息结构, 消息_, , lpMsg
+
+.DLL命令 取内存变量地址3_, 整数型, "kernel32", "lstrcpynA", , 
+    .参数 数据1, 字节集, , lpString1
+    .参数 数据2, 字节集, , lpString2
+    .参数 数据长度, 整数型, , iMaxLength
+
+.DLL命令 打印窗口_, 整数型, "user32.dll", "PrintWindow", , PrintWindow可以实现不会被其他窗口遮挡的抓图
+    .参数 窗口句柄, 整数型, , hWnd，要打印窗口的窗口句柄
+    .参数 设备场景句柄, 整数型, , hdcBlt，在其中显示的设备场景
+    .参数 标识符, 整数型, , nFlags，给0即可
+
+.DLL命令 取窗口标题_, 整数型, "user32", "GetWindowTextA", , 取得一个窗体的标题（caption）文字，或者一个控件的内容（在vb里使用：使用vb窗体或控件的caption或text属性）  复制到lpString的字串长度；不包括空中止字符。会设置GetLastError
+    .参数 窗口句柄, 整数型, , 欲获取文字的那个窗口的句柄
+    .参数 缓冲区, 文本型, , 预定义的一个缓冲区，至少有cch+1个字符大小；随同窗口文字载入
+    .参数 缓冲尺寸, 整数型, , lp缓冲区的长度;
+
+.DLL命令 寻找子窗口_, 整数型, "user32", "FindWindowExA", , 在窗口列表中寻找与指定条件相符的第一个子窗口  找到的窗口的句柄。如未找到相符窗口，则返回零。会设置GetLastError
+    .参数 窗口句柄1, 整数型, , 在其中查找子的父窗口。如设为零，表示使用桌面窗口（通常说的顶级窗口都被认为是桌面的子窗口，所以也会对它们进行查找）
+    .参数 窗口句柄2, 整数型, , 从这个窗口后开始查找。这样便可利用对FindWindowEx的多次调用找到符合条件的所有子窗口。如设为零，表示从第一个子窗口开始搜索
+    .参数 欲搜索的类名1, 文本型, , 欲搜索的类名。“”表示忽略
+    .参数 欲搜索的类名2, 文本型, , 欲搜索的类名。“”表示忽略;
+
+.DLL命令 建立文本替换对话框_, 整数型, "comdlg32.dll", "ReplaceTextA", , ReplaceText
+    .参数 结构地址, 整数型, , pFindreplace
+
+.DLL命令 返回出错数据_, 整数型, "comdlg32.dll", "CommDlgExtendedError", , 返回对话框出错数据代码
+
+.DLL命令 系统状态栏信息_, 整数型, "shell32.dll", "SHAppBarMessage", , SHAppBarMessage
+    .参数 信息值, 整数型, , dwMessage
+    .参数 数据结构, 系统状态栏信息_, , pData
+
+.DLL命令 设置文件时间_, 整数型, "kernel32.dll", "SetFileTime", , SetFileTime
+    .参数 系统文件句柄, 整数型, , hFile，系统文件句柄
+    .参数 创建时间, 文件时间_, , lpCreationTime，文件的创建时间
+    .参数 上一次访问时间, 文件时间_, , lpLastAccessTime，文件上一次访问的时间
+    .参数 最近一次修改时间, 文件时间_, , lpLastWriteTime，文件最近一次修改的时间
+
+.DLL命令 系统时间到文件时间_, 整数型, "kernel32.dll", "SystemTimeToFileTime", , SystemTimeToFileTime
+    .参数 系统时间结构, 系统时间_, , lpSystemTime
+    .参数 文件时间结构, 文件时间_, , lpFileTime
+
+.DLL命令 地方文件时间到文件时间_, 整数型, "kernel32.dll", "LocalFileTimeToFileTime", , LocalFileTimeToFileTime
+    .参数 地方文件时间结构, 文件时间_, , lpLocalFileTime
+    .参数 文件时间结构, 文件时间_, , lpFileTime
+
+.DLL命令 字节数据到文本_, 文本型, "oleaut32.dll", "SysAllocStringByteLen", , SysAllocStringByteLen
+    .参数 二进制数据, 字节型, 数组, m_pBase
+    .参数 二进制长度, 整数型, , FunctionCall
+
+.DLL命令 拷贝内存08_, 整数型, "kernel32", "RtlMoveMemory", , RtlMoveMemory
+    .参数 目标缓冲区, 文本型, , Destination
+    .参数 源缓冲区, 字节型, 传址 数组, Source
+    .参数 复制长度, 整数型, , Length
+
+.DLL命令 取Window和DOS版本_, 整数型, "kernel32", "GetVersion", , GetVersion
+
+.DLL命令 取当前进程伪句柄_, 整数型, "kernel32.dll", "GetCurrentProcess", , GetCurrentProcess
+
+.DLL命令 打开进程标志_, 整数型, "advapi32.dll", "OpenProcessToken", , OpenProcessToken
+    .参数 进程句柄, 整数型, , ProcessHandle
+    .参数 类型, 整数型, , DesiredAccess
+    .参数 进程标志句柄, 整数型, 传址, TokenHandle
+
+.DLL命令 调整特殊权限_, 整数型, "advapi32.dll", "AdjustTokenPrivileges", , AdjustTokenPrivileges
+    .参数 权限句柄, 整数型, , TokenHandle
+    .参数 禁制所有特权, 整数型, , DisableAllPrivileges
+    .参数 新状态, 整数型, , NewState
+    .参数 缓冲区长度, 整数型, , BufferLength
+    .参数 前一状态, 整数型, , PreviousState
+    .参数 返回值长度, 整数型, 传址, ReturnLength
+
+.DLL命令 查找权限值_, 整数型, "advapi32.dll", "LookupPrivilegeValueA", , LookupPrivilegeValue
+    .参数 系统名称, 文本型, , lpSystemName
+    .参数 权限名称, 文本型, , lpName
+    .参数 结构, LUID_, 传址, lpLuid/LUID_
+
+.DLL命令 呼叫下一钩子_, 整数型, "user32.dll", "CallNextHookEx", , CallNextHookEx
+    .参数 钩子句柄, 整数型, , hHook
+    .参数 代码值, 整数型, , ncode
+    .参数 附加参数1, 整数型, , wParam
+    .参数 附加参数2, 整数型, 传址, lParam
+
+.DLL命令 最近的输入虚拟键状态_, 整数型, "user32.dll", "GetKeyState", , GetKeyState，针对已处理过的按键，在最近一次输入信息时，判断指定虚拟键的状态
+    .参数 键代码, 整数型, , nVirtKey，欲测试的虚拟键键码。对字母、数字字符（A-Z、a-z、0-9），用它们实际的ASCII值
+
+.DLL命令 设置系统钩子_, 整数型, "user32.dll", "SetWindowsHookExA", , SetWindowsHookEx
+    .参数 钩子类型, 整数型, , idHook
+    .参数 回调函数地址, 整数型, , lpfn
+    .参数 实例句柄, 整数型, , hmod
+    .参数 线程ID, 整数型, , dwThreadId
+
+.DLL命令 释放系统钩子_, 整数型, "user32.dll", "UnhookWindowsHookEx", , UnhookWindowsHookEx
+    .参数 钩子句柄, 整数型, , hHook
+
+.DLL命令 取进程线程标识符_, 整数型, "user32.dll", "GetWindowThreadProcessId", , GetWindowThreadProcessId，获取与指定窗口关联在一起的一个线程和进程标识符
+    .参数 窗口句柄, 整数型, , hwnd，指定窗口句柄
+    .参数 进程标识符, 整数型, , lpdwProcessId，指定一个变量，用于装载拥有那个窗口的一个进程的标识符
+
+.DLL命令 播放声音_, 整数型, "winmm.dll", "sndPlaySoundA", , sndPlaySound
+    .参数 声音文件名, 文本型, , lpszSoundName
+    .参数 标志, 整数型, , uFlags
+
+.DLL命令 取波形输出设备数量_, 整数型, "winmm.dll", "waveOutGetNumDevs", , waveOutGetNumDevs
+
+.DLL命令 安装重命名错误提示_, 整数型, "setupapi.dll", "SetupRenameErrorA", , SetupRenameError
+    .参数 父窗口句柄, 整数型, , hwndParent
+    .参数 对话框标题, 文本型, , DialogTitle
+    .参数 源文件名, 文本型, , SourceFile
+    .参数 标签文件名, 文本型, , TargetFile
+    .参数 Win32错误代码, 整数型, , Win32ErrorCode
+    .参数 类型, 整数型, , Style
+
+.DLL命令 建立模板目录_, 整数型, "kernel32", "CreateDirectoryExA", , CreateDirectoryEx
+    .参数 模板目录路径, 文本型, , lpTemplateDirectory
+    .参数 新目录路径, 文本型, , lpNewDirectory
+    .参数 安全属性, 整数型, , lpSecurityAttributes
+
+.DLL命令 安装重启提示_, 整数型, "setupapi.dll", "SetupPromptReboot", , SetupPromptReboot
+    .参数 文件队列, 整数型, , FileQueue
+    .参数 窗口句柄, 整数型, , Owner
+    .参数 仅扫描, 整数型, , ScanOnly
+
+.DLL命令 分配本地唯一标识符_, 整数型, "advapi32", "AllocateLocallyUniqueId", , AllocateLocallyUniqueId
+    .参数 标识符结构, 长整数型_, , Luid
+
+.DLL命令 分配ADs内存_, 整数型, "activeds.dll", "AllocADsMem", , AllocADsMem
+    .参数 分配内存大小, 整数型, , cb
+
+.DLL命令 释放ADs内存_, 整数型, "activeds.dll", "FreeADsMem", , FreeADsMem
+    .参数 内存地址, 整数型, , pMem
+
+.DLL命令 分配ADs文本_, 整数型, "activeds.dll", "AllocADsStr", , AllocADsStr
+    .参数 文本, 文本型, 传址, pStr
+
+.DLL命令 拷贝内存_, 整数型, "kernel32", "RtlMoveMemory", , RtlMoveMemory
+    .参数 目标数据地址, 整数型, , lpvDest
+    .参数 源数据, 整数型, , lpvSource
+    .参数 尺寸, 整数型, , cbCopy
+
+.DLL命令 取ACM版本_, 整数型, "msacm32.dll", "acmGetVersion", , acmGetVersion
+
+.DLL命令 显示滚动条_, 整数型, "user32.dll", "ShowScrollBar", , ShowScrollBar
+    .参数 窗口句柄, 整数型, , hwnd
+    .参数 滚动条标志, 整数型, , wBar
+    .参数 显示标志, 整数型, , bShow
+
+.DLL命令 显示插入符_, 整数型, "user32.dll", "ShowCaret", , ShowCaret，在指定的窗口里显示插入符（光标）
+    .参数 窗口句柄, 整数型, , hwnd，包含了插入符的窗口的句柄。可以为零；此时，只有在插入符包含于由活动任务拥有的一个窗口时，它才会显示出来
+
+.DLL命令 取获取焦点窗口_, 整数型, "user32.dll", "GetFocus", , GetFocus，获得拥有输入焦点的窗口的句柄
+
+.DLL命令 取磁盘剩余空间_, 整数型, "shell32.dll", "SHGetDiskFreeSpaceA", , SHGetDiskFreeSpace
+    .参数 磁盘卷标, 文本型, , pszVolume
+    .参数 剩余空间1, 字节集, , pqwFreeCaller
+    .参数 总空间, 字节集, , pqwTot
+    .参数 剩余空间2, 字节集, , pqwFree
+
+.DLL命令 复制位图_, 整数型, "gdi32.dll", "StretchBlt", , StretchBlt，将一幅位图从一个设备场景复制到另一个。源和目标DC相互间必须兼容。这个函数会在设备场景中定义一个目标矩形，并在位图中定义一个源图象。源矩形会根据需要进行伸缩，以便与目标矩形的大小相符
+    .参数 目标设备场景句柄, 整数型, , hdc，目标设备场景
+    .参数 目标横坐标, 整数型, , x，目标矩形左上角的x,y坐标，以逻辑坐标表示
+    .参数 目标纵坐标, 整数型, , y，目标矩形左上角的x,y坐标，以逻辑坐标表示
+    .参数 目标宽度, 整数型, , nWidth，目标矩形的宽度和高度，以逻辑坐标表示
+    .参数 目标高度, 整数型, , nHeight，目标矩形的宽度和高度，以逻辑坐标表示
+    .参数 源设备场景句柄, 整数型, , hSrcDC，源设备场景。如光栅运算未指定一个源，则这个参数应为零
+    .参数 源横坐标, 整数型, , xSrc，用源DC的逻辑坐标表示的源矩形左上角位置
+    .参数 源纵坐标, 整数型, , ySrc，用源DC的逻辑坐标表示的源矩形左上角位置
+    .参数 源宽度, 整数型, , nSrcWidth，分别指定用逻辑单位（以源DC为基础）传输的一幅图象的宽度和高度。如其中有一个参数的符号（指正负号）与对应的目标参数不符，位图就会在对应的轴上作镜像转换处理
+    .参数 源高度, 整数型, , nSrcHeight，分别指定用逻辑单位（以源DC为基础）传输的一幅图象的宽度和高度。如其中有一个参数的符号（指正负号）与对应的目标参数不符，位图就会在对应的轴上作镜像转换处理
+    .参数 光栅运算, 整数型, , dwRop，传输过程中进行的光栅运算。如刷子属于光栅运算的一部分，就使用选入目标DC的刷子
+
+.DLL命令 描绘桌面墙纸_, 整数型, "user32.dll", "PaintDesktop", , PaintDesktop
+    .参数 设备场景句柄, 整数型, , hdc，要在其中填充的设备场景
+
+.DLL命令 扩展延迟时间_, 整数型, "kernel32.dll", "SleepEx", , SleepEx
+    .参数 延迟秒数, 整数型, , dwMilliseconds
+    .参数 特殊参数, 整数型, , bAlertable
+
+.DLL命令 延迟时间_, 整数型, "kernel32.dll", "Sleep", , Sleep
+    .参数 延迟秒数, 整数型, , dwMilliseconds
+
+.DLL命令 关机对话框_, 整数型, "shell32.dll", "#60", , #60
+    .参数 参数, 整数型, , YourGuess
+
+.DLL命令 重新启动系统设置_, 整数型, "shell32.dll", "#59", , #59
+    .参数 窗口句柄, 整数型, , hOwner
+    .参数 额外提示, 整数型, , sExtraPrompt
+    .参数 标志, 整数型, , uFlags
+
+.DLL命令 安装需要磁盘提示_, 整数型, "setupapi.dll", "SetupPromptForDiskA", , SetupPromptForDisk
+    .参数 父窗口句柄, 整数型, , hwndParent
+    .参数 对话框标题, 文本型, , DialogTitle
+    .参数 磁盘名称, 文本型, , DiskName
+    .参数 源路径, 文本型, , PathToSource
+    .参数 寻找文件名, 文本型, , FileSought
+    .参数 标签文件名, 文本型, , TagFile
+    .参数 磁盘提示类型, 整数型, , DiskPromptStyle
+    .参数 路径缓冲区, 文本型, , PathBuffer
+    .参数 缓冲区大小, 整数型, , PathBufferSize
+    .参数 路径需求大小, 整数型, , PathRequiredSize
+
+.DLL命令 安装复制错误提示_, 整数型, "setupapi.dll", "SetupCopyErrorA", , SetupCopyError
+    .参数 父窗口句柄, 整数型, , hwndParent
+    .参数 对话框标题, 文本型, , DialogTitle
+    .参数 磁盘名称, 文本型, , DiskName
+    .参数 源路径名, 文本型, , PathToSource
+    .参数 源文件名, 文本型, , SourceFile
+    .参数 标签文件路径, 文本型, , TargetPathFile
+    .参数 Win32错误代码, 整数型, , Win32ErrorCode
+    .参数 类型, 整数型, , Style
+    .参数 路径缓冲区, 文本型, , PathBuffer
+    .参数 缓冲区大小, 整数型, , PathBufferSize
+    .参数 路径需求大小, 整数型, , PathRequiredSize
+
+.DLL命令 判断矩形区域_, 整数型, "gdi32.dll", "RectInRegion", , RectInRegion，若矩形有部分在指定区域内为非零值，否则为0
+    .参数 区域句柄, 整数型, , Long，区域句柄
+    .参数 要测试的矩形结构, 矩形_, , RECT，要测试的矩形结构
+
+.DLL命令 安装删除错误信息_, , "setupapi.dll", "SetupDeleteErrorA", , SetupDeleteError
+    .参数 父窗口句柄, 整数型, , hwndParent
+    .参数 对话框标题, 文本型, , DialogTitle
+    .参数 文件路径, 文本型, , File
+    .参数 Win32错误代码, 整数型, , Win32ErrorCode
+    .参数 类型, 整数型, , Style
+
+.DLL命令 查询执行计数器_, 整数型, "kernel32", "QueryPerformanceCounter", , 可以得到定时器的当前值
+    .参数 计数器, 长整数型_, , 此参数的意思请看msdn帮助
+
+.DLL命令 从堆栈分配内存_, 整数型, "kernel32", "HeapAlloc", , HeapAlloc，从堆中分配内存
+    .参数 堆栈句柄, 整数型, , hHeap
+    .参数 标志, 整数型, , dwFlags
+    .参数 分配大小, 整数型, , dwBytes
+
+.DLL命令 拷贝内存06_, , "kernel32.dll", "RtlMoveMemory", , 
+    .参数 目的变量, 整数型, , pTo
+    .参数 源, 查找替换_, , uFrom
+    .参数 尺寸, 整数型, , lSize
+
+.DLL命令 获取消息_, 整数型, "user32.dll", "GetMessageA", , GetMessage
+    .参数 消息值, 消息_, , lpMsg
+    .参数 窗口句柄, 整数型, , hwnd
+    .参数 过滤消息最小值, 整数型, , wMsgFilterMin
+    .参数 过滤消息最大值, 整数型, , wMsgFilterMax
+
+.DLL命令 播放声音文件_, 整数型, "winmm.dll", "PlaySoundA", , 播放声音文件
+    .参数 声音文件名, 文本型, , lpszName
+    .参数 模块句柄, 整数型, , hModule
+    .参数 标志, 整数型, , dwFlags
+
+.DLL命令 运行网络控制块_, 整数型, "netapi32.dll", "Netbios", , 
+    .参数 网络控制块结构, 网络控制块_, 传址
+
+.DLL命令 拷贝内存11_, , "kernel32.dll", "RtlMoveMemory", , 
+    .参数 目标, 网络适配器状态_, 传址, pto
+    .参数 源, 整数型, , pfrom
+    .参数 尺寸, 整数型, , size
+
+.DLL命令 矩形是否可见_, 整数型, "gdi32.dll", "RectVisible", , RectVisible
+    .参数 设备场景, 整数型, , hdc，Long，设备场景句柄
+    .参数 矩形, 矩形_, , lprect，RECT，用于测试是否可见的矩形（用逻辑坐标）
+
+.DLL命令 创建网络通讯_, 整数型, "ws2_32.dll", "socket", , 
+    .参数 地址, 整数型, , af
+    .参数 类型, 整数型, , lType
+    .参数 协议, 整数型, , protocol
+
+.DLL命令 关闭网络通讯_, 整数型, "ws2_32.dll", "closesocket", , 
+    .参数 网络通讯标识符, 整数型
+
+.DLL命令 网络通讯连接_, 整数型, "ws2_32.dll", "connect", , 
+    .参数 网络通讯标识符, 整数型
+    .参数 名称结构, 套接字地址_
+    .参数 名称结构长度, 整数型
+
+.DLL命令 网络通讯异步选择_, 整数型, "ws2_32.dll", "WSAAsyncSelect", , 
+    .参数 网络通讯标识符, 整数型, , s
+    .参数 窗口句柄, 整数型, , hWnd
+    .参数 消息值, 整数型, , wMsg
+    .参数 事件, 整数型, , lEvent
+
+.DLL命令 网络通讯到网络地址_, 整数型, "ws2_32.dll", "inet_addr", , 
+    .参数 文本, 文本型, , cp
+
+.DLL命令 网络通讯取主机名称_, 整数型, "ws2_32.dll", "gethostbyname", , 
+    .参数 名称, 文本型, , name
+
+.DLL命令 拷贝内存12_, , "kernel32.dll", "RtlMoveMemory", , 
+    .参数 pBlock, 主机信息_, 传址
+    .参数 缓冲区, 整数型
+    .参数 尺寸, 整数型
+
+.DLL命令 拷贝内存04_, , "kernel32.dll", "RtlMoveMemory", , 
+    .参数 pBlock, 文本型, 传址
+    .参数 缓冲区, 整数型
+    .参数 尺寸, 整数型
+
+.DLL命令 网络通讯取消阻塞_, 整数型, "ws2_32.dll", "WSACancelBlockingCall", , 
+
+.DLL命令 调用帮助_, 整数型, "user32.dll", "WinHelpA", , 援引WINDOWSHELP
+    .参数 窗口句柄, 整数型, , hwnd
+    .参数 帮助文件, 文本型, , lpHelpFile
+    .参数 命令, 整数型, , wCommand
+    .参数 数据, 整数型, , dwData
+
+.DLL命令 取图标文件索引号_, 整数型, "shlwapi.dll", "PathParseIconLocationA", , 
+    .参数 图标文件, 文本型, , pszIconFile
+
+.DLL命令 寻找格式化路径_, 整数型, "shlwapi.dll", "PathSearchAndQualifyA", , 
+    .参数 路径文本, 文本型, , pszPath
+    .参数 缓冲区, 文本型, , pszBuf
+    .参数 缓冲区大小, 整数型, , cchBuf
+
+.DLL命令 改文件扩展名_, 整数型, "shlwapi.dll", "PathRenameExtensionA", , 
+    .参数 文件名, 文本型, , pszPath
+    .参数 扩展名, 文本型, , pszExt
+
+.DLL命令 是否为网络共享根路径_, 整数型, "shlwapi.dll", "PathIsUNCServerA", , 是返回1，不是返回0
+    .参数 文件名, 文本型, , lpName
+
+.DLL命令 路径是否属于驱动器_, 逻辑型, "shlwapi.dll", "PathIsPrefixA", , 属于返回真，不属于返回假
+    .参数 驱动器, 文本型, , pszPrefix
+    .参数 路径文本, 文本型, , pszPath
+
+.DLL命令 是否网络路径_, 整数型, "shlwapi.dll", "PathIsNetworkPathA", , 是返回1，不是返回0
+    .参数 文件名, 文本型, , lpName
+
+.DLL命令 是否长文件名_, 整数型, "shlwapi.dll", "PathIsLFNFileSpecA", , 是返回1，不是返回0
+    .参数 文件名, 文本型, , lpName
+
+.DLL命令 寻找路径后缀数组_, 整数型, "shlwapi.dll", "PathFindSuffixArrayA", , 
+    .参数 路径文本, 文本型, , pszPath
+    .参数 后缀数组, 文本型, 数组, apszSuffix
+    .参数 数组成员数, 整数型, , iArraySize
+
+.DLL命令 取根路径后文本_, 整数型, "shlwapi.dll", "PathFindNextComponentA", , PathFindNextComponent parses a path for the next path component
+    .参数 路径文本, 文本型, , pszPath
+
+.DLL命令 删除路径根目录_, 整数型, "shlwapi.dll", "PathSkipRootA", , 如："c:\windows\system32\user32.dll"返回"windows\system32\user32.dll"
+    .参数 路径文本, 文本型, , pszPath
+
+.DLL命令 删除路径文件名_, 整数型, "shlwapi.dll", "PathRemoveFileSpecA", , 如："c:\windows\boot.ini"返回"c:\windows"
+    .参数 路径文本, 文本型, , pszPath
+
+.DLL命令 删除扩展名_, , "shlwapi.dll", "PathRemoveExtensionA", , 
+    .参数 文件路径, 文本型, , pszPath
+
+.DLL命令 删文本首尾空_, , "shlwapi.dll", "PathRemoveBlanksA", , 删除文本首部尾部的空格
+    .参数 文本, 文本型, , pszPath
+
+.DLL命令 取空格前文本_, , "shlwapi.dll", "PathRemoveArgsA", , 
+    .参数 路径文本, 文本型, , pszPath
+
+.DLL命令 是否为相同盘符_, 逻辑型, "shlwapi.dll", "PathIsSameRootA", , 
+    .参数 路径文本1, 文本型, , pszPath1
+    .参数 路径文本2, 文本型, , pszPath2
+
+.DLL命令 目录是否为空_, 整数型, "shlwapi.dll", "PathIsDirectoryEmptyA", , 是返回非0，不存在或不是空目录返回0
+    .参数 路径文本, 文本型, , pszPath
+
+.DLL命令 取路径空格后文本_, 整数型, "shlwapi.dll", "PathGetArgsA", , 
+    .参数 路径文本, 文本型, , pszPath
+
+.DLL命令 取路径文件名_, 整数型, "shlwapi.dll", "PathFindFileNameA", , 成功返回路径文本指针地址
+    .参数 路径文本, 文本型, , pszPath
+
+.DLL命令 取文件扩展名_, 整数型, "shlwapi.dll", "PathFindExtensionA", , 无扩展名返回空
+    .参数 文件路径, 文本型, , pszPath
+
+.DLL命令 注册热键_, 整数型, "user32.dll", "RegisterHotKey", , 
+    .参数 窗口句柄, 整数型, , hWnd
+    .参数 热键id, 整数型, , id
+    .参数 功能键, 整数型, , fsModifiers
+    .参数 主热键, 整数型, , vk
+
+.DLL命令 取消热键注册_, 整数型, "user32.dll", "UnregisterHotKey", , 
+    .参数 窗口句柄, 整数型
+    .参数 热键id, 整数型
+
+.DLL命令 检查消息队列_, 整数型, "user32.dll", "PeekMessageA", , 
+    .参数 消息格式, 消息_, , lpMsg
+    .参数 窗口句柄, 整数型, , hWnd
+    .参数 消息最小过滤值, 整数型, , wMsgFilterMin
+    .参数 消息最大过滤值, 整数型, , wMsgFilterMax
+    .参数 删除消息, 整数型, , wRemoveMsg，是否取得消息后，从消息队列中删除该消息
+
+.DLL命令 等待消息_, 整数型, "user32.dll", "WaitMessage", , 
+
+.DLL命令 删除路径引号_, , "shlwapi.dll", "PathUnquoteSpacesA", , 
+    .参数 路径文本, 文本型, , lpsz
+
+.DLL命令 删除到根路径_, 逻辑型, "shlwapi.dll", "PathStripToRootA", , 
+    .参数 路径文本, 文本型, , pszPath
+
+.DLL命令 取线程时间_, 整数型, "kernel32.dll", "GetThreadTimes", , 
+    .参数 线程句柄, 整数型, , hThread
+    .参数 创建时间, 文件时间_, , lpCreationTime
+    .参数 退出时间, 文件时间_, , lpExitTime
+    .参数 核心时间, 文件时间_, , lpKernelTime
+    .参数 使用时间, 文件时间_, , lpUserTime
+
+.DLL命令 设置设备场景布局_, 整数型, "gdi32.dll", "SetLayout", , 
+    .参数 设备场景句柄, 整数型
+    .参数 设备场景布局, 整数型, , dwLayout
+
+.DLL命令 取设备场景_, 整数型, "user32", "GetDC", , 获取指定窗口的设备场景  指定窗口的设备场景句柄，出错则为0
+    .参数 窗口的句柄, 整数型, , 将获取其设备场景的窗口的句柄。若为0，则要获取整个屏幕的DC;
+
+.DLL命令 取设备场景布局_, 整数型, "gdi32.dll", "GetLayout", , 
+    .参数 设备场景句柄, 整数型
+
+.DLL命令 取操纵杆设备容量_, 整数型, "winmm.dll", "joyGetDevCapsA", , 
+    .参数 操纵杆id, 整数型, , id
+    .参数 容量结构, 操纵杆性能_, , lpCaps
+    .参数 结构大小, 整数型, , uSize
+
+.DLL命令 取操纵杆设备数量1_, 整数型, "winmm.dll", "joyGetNumDevs", , 
+
+.DLL命令 取操纵杆位置_, 整数型, "winmm.dll", "joyGetPos", , 
+    .参数 操纵杆id, 整数型, , uJoyID
+    .参数 操纵杆信息结构, 操纵杆信息_, , pji
+
+.DLL命令 代码页是否有效_, 整数型, "kernel32", "IsValidCodePage", , 
+    .参数 代码页的标识符, 整数型
+
+.DLL命令 取代码页_, 整数型, "kernel32", "GetOEMCP", , 
+
+.DLL命令 取指定点窗口句柄_, 整数型, "user32.dll", "WindowFromPoint", , 
+    .参数 横坐标, 整数型, , xPoint，x点值
+    .参数 纵坐标, 整数型, , yPoint，y点值
+
+.DLL命令 取文本范围_, 整数型, "gdi32", "GetTextExtentPoint32A", , 
+    .参数 设备场景句柄, 整数型, , hdc
+    .参数 文本, 文本型, , lpsz
+    .参数 文本长度, 整数型, , cbString
+    .参数 范围, 坐标_, , lpSize
+
+.DLL命令 初始化公共控件_, , "comctl32.dll", "InitCommonControls", , 
+
+.DLL命令 取选项掩码标记_, 整数型, "dbghelp.dll", "SymGetOptions", , 
+
+.DLL命令 取进程版本_, 整数型, "kernel32.dll", "GetProcessVersion", , 
+    .参数 进程标识符, 整数型, , ProcessId
+
+.DLL命令 取长路径名_, 整数型, "kernel32.dll", "GetLongPathNameA", , 
+    .参数 短路径文本, 文本型, , lpszShortPath
+    .参数 长路径文本, 文本型, , lpszLongPath
+    .参数 缓冲区大小, 整数型, , cchBuffer
+
+.DLL命令 当前是否为调试版_, 整数型, "kernel32.dll", "IsDebuggerPresent", , 
+
+.DLL命令 取库版本_, 整数型, "dbghelp.dll", "ImagehlpApiVersion", , 
+
+.DLL命令 启动Internet控制面板_, 整数型, "inetcpl.cpl", "LaunchInternetControlPanel", , 
+    .参数 父窗口句柄, 整数型, , hwndParent
+
+.DLL命令 启动连接对话框_, 整数型, "inetcpl.cpl", "LaunchConnectionDialog", , 
+    .参数 父窗口句柄, 整数型, , hwndParent
+
+.DLL命令 启动安全对话框_, 整数型, "inetcpl.cpl", "LaunchSecurityDialog", , 
+    .参数 父窗口句柄, 整数型, , hwndParent
+    .参数 保留参数, 整数型
+
+.DLL命令 启动证书对话框_, 整数型, "inetcpl.cpl", "LaunchSiteCertDialog", , 
+    .参数 父窗口句柄, 整数型, , hwndParent
+
+.DLL命令 取打开文件名_, 整数型, "msvfw32.dll", "GetOpenFileNamePreview", , 
+    .参数 格式, 打开文件名_
+
+.DLL命令 取保存文件名_, 整数型, "msvfw32.dll", "GetSaveFileNamePreviewA", , 
+    .参数 格式, 打开文件名_
+
+.DLL命令 取实例句柄_, 整数型, , "GetModuleHandleA", , 
+    .参数 程序名, 文本型
+
+.DLL命令 初始化公共控件扩展_, 整数型, "comctl32.dll", "InitCommonControlsEx", , 
+    .参数 控件扩展类型, 初始化组件扩展_
+
+.DLL命令 创建窗口_, 整数型, "user32.dll", "CreateWindowExA", , 
+    .参数 扩展风格, 整数型
+    .参数 类名, 文本型, , 刚才注册的类名
+    .参数 窗口标题, 文本型
+    .参数 风格, 整数型
+    .参数 屏幕横坐标, 整数型
+    .参数 屏幕纵坐标, 整数型
+    .参数 宽度, 整数型
+    .参数 高度, 整数型
+    .参数 父窗口句柄, 整数型, , 没有就写0
+    .参数 菜单句柄, 整数型
+    .参数 模块句柄, 整数型
+    .参数 参数, 整数型
+
+.DLL命令 置剪辑版预览_, 整数型, "user32.dll", "SetClipboardViewer", , 在CLIPBOARD浏览器链中加入窗口
+    .参数 窗口句柄, 整数型
+
+.DLL命令 改变剪辑版链_, 整数型, "user32.dll", "ChangeClipboardChain", , 从剪贴板查看窗口上删除一个窗口
+    .参数 窗口句柄, 整数型
+    .参数 下一个窗口句柄, 整数型
+
+.DLL命令 清空剪辑板_, 整数型, "user32.dll", "EmptyClipboard", , 
+
+.DLL命令 取剪贴板数据句柄_, 整数型, "user32.dll", "GetClipboardData", , 
+    .参数 剪贴板格式, 整数型, , wFormat
+
+.DLL命令 取剪辑版第一个格式_, 整数型, "user32.dll", "GetPriorityClipboardFormat", , 返回第一个CLIPBOARD格式
+    .参数 列表, 整数型, 传址, lpPriorityList
+    .参数 数量, 整数型, , nCount
+
+.DLL命令 打开剪贴板_, 整数型, "user32.dll", "OpenClipboard", , 打开CLIPBOARD
+    .参数 剪贴板句柄, 整数型
+
+.DLL命令 关闭剪辑板_, 整数型, "user32.dll", "CloseClipboard", , 
+
+.DLL命令 呼叫窗口函数地址_, 整数型, "user32.dll", "CallWindowProcA", , 
+    .参数 前一窗口函数地址, 整数型
+    .参数 窗口句柄, 整数型
+    .参数 消息值, 整数型
+    .参数 附加参数1, 整数型
+    .参数 附加参数2, 整数型
+
+.DLL命令 取剪辑版序号_, 整数型, "user32.dll", "GetClipboardSequenceNumber", , 
+
+.DLL命令 取计算机名_, 整数型, "kernel32", "GetComputerNameA", , TRUE（非零）表示成功，否则返回零。会设置GetLastError
+    .参数 字串缓冲区, 文本型, , lpBuffer，随同计算机名载入的字串缓冲区
+    .参数 缓冲区长度, 整数型, 传址, nSize，缓冲区的长度。这个变量随同返回计算机名的实际长度载入
+
+.DLL命令 枚举网络使用者_, 整数型, "netapi32", "NetUserEnum", , 
+    .参数 服务名, 字节型, 传址, servername
+    .参数 级别, 整数型, , level
+    .参数 过滤器, 整数型, , filter
+    .参数 缓冲区, 整数型, 传址, buff
+    .参数 缓冲区大小, 整数型, , buffsize
+    .参数 入口点, 整数型, 传址, entriesread
+    .参数 个数中级, 整数型, 传址, totalentries
+    .参数 句柄, 整数型, 传址, resumehandle
+
+.DLL命令 是否连接因特网_, 整数型, "url.dll", "InetIsOffline", , 
+    .参数 标志值, 整数型, , dwFlags,默认值为0
+
+.DLL命令 取16位低位_, 字节型, "TLBINF32.dll", "lobyte", , 获得16位整数的低位
+    .参数 十六位值, 整数型
+
+.DLL命令 取16位高位_, 字节型, "TLBINF32.dll", "hibyte", , 获得16位整数的高位
+    .参数 十六位值, 整数型
+
+.DLL命令 取32位低位_, 整数型, "TLBINF32.dll", "loword", , 取出32位值的低16位
+    .参数 三十二位值, 整数型
+
+.DLL命令 取32位高位_, 整数型, "TLBINF32.dll", "hiword", , 取出32位值的高16位
+    .参数 三十二位值, 整数型
+
+.DLL命令 自动交换32位数值_, 整数型, "kernel32.dll", "InterlockedExchange", , 变量的前一个值，非0表示成功
+    .参数 要设置的变量, 长整数型, 传址
+    .参数 变量的新值, 整数型
+
+.DLL命令 打开Internet_, 整数型, "wininet.dll", "InternetOpenA", , 
+    .参数 代理商名称, 文本型, , sAgent
+    .参数 存取类型, 整数型, , lAccessType
+    .参数 代理名称, 文本型, , sProxyName
+    .参数 代理地址, 文本型, , sProxyBypass
+    .参数 标志, 整数型, , lFlags
+
+.DLL命令 关闭Internet句柄_, 整数型, "wininet.dll", "InternetCloseHandle", , 
+    .参数 Internet句柄, 整数型, , hInet
+
+.DLL命令 读Internet文件_, 整数型, "wininet.dll", "InternetReadFile", , InternetReadFile*
+    .参数 Internet地址句柄, 整数型, , hFile
+    .参数 数据缓冲区, 文本型, , sBuffer
+    .参数 读取大小, 整数型, , lNumBytesToRead
+    .参数 读取首地址, 整数型, 传址, lNumberOfBytesRead
+
+.DLL命令 打开Internet地址_, 整数型, "wininet.dll", "InternetOpenUrlA", , InternetOpenUrl*
+    .参数 Internet句柄, 整数型, , hInternetSession
+    .参数 Url地址, 文本型, , lpszUrl
+    .参数 头文本, 文本型, , lpszHeaders
+    .参数 头文本长度, 整数型, , dwHeadersLength
+    .参数 标志, 整数型, , dwFlags
+    .参数 定义值, 整数型, , dwContext
+
+.DLL命令 切换用户_, , "user32.dll", "LockWorkStation", , 
+
+.DLL命令 函数分配缓冲区_, 整数型, "lz32.dll", "LZStart", , 
+
+.DLL命令 判断是否在局域网_, 整数型, "SENSAPI.DLL", "IsNetworkAlive", , 
+    .参数 标志, 整数型, 传址, lpdwFlags
+
+.DLL命令 是否为管理员_, 整数型, "advpack.dll", "IsNTAdmin", , 
+    .参数 参数1, 整数型, , dwReserved,默认0
+    .参数 参数2, 整数型, , lpdwReserved,默认0
+
+.DLL命令 取Internet连接类型_, 整数型, "wininet.dll", "InternetGetConnectedStateEx", , 
+    .参数 标志, 整数型, , lpdwFlags
+    .参数 连接名称, 文本型, , lpszConnectionName
+    .参数 名称长度, 整数型, , dwNameLen
+    .参数 返回值, 整数型, , dwReserved
+
+.DLL命令 取本地Tcp统计表_, 整数型, "iphlpapi", "GetTcpStatistics", , 
+    .参数 Tcp状态, 传输控制协议记录_
+
+.DLL命令 分配虚拟页_, 整数型, "kernel32.dll", "VirtualAlloc", , 保留虚拟页
+    .参数 分配文本地址, 整数型, , lpAddress
+    .参数 分配大小, 整数型, , dwSize
+    .参数 分配类型, 整数型, , flAllocationType
+    .参数 内存保护标志, 整数型, , flProtect
+
+.DLL命令 释放虚拟页_, 整数型, "kernel32.dll", "VirtualFree", , 释放虚拟页
+    .参数 分配文本地址, 整数型, , lpAddress
+    .参数 分配大小, 整数型, , dwSize
+    .参数 释放类型, 整数型, , dwFreeType
+
+.DLL命令 解除锁定虚拟页_, 整数型, "kernel32.dll", "VirtualUnlock", , 开锁虚拟页
+    .参数 分配文本地址, 整数型, , lpAddress
+    .参数 分配大小, 整数型, , dwSize
+
+.DLL命令 指针是否已读_, 整数型, "kernel32.dll", "IsBadReadPtr", , 确定进程是否有读动作
+    .参数 内存块首字节, 整数型, 传址, lp
+    .参数 内存块大小, 整数型, , ucb
+
+.DLL命令 指针是否已写_, 整数型, "kernel32.dll", "IsBadWritePtr", , 确定写指针的合法性
+    .参数 内存块首字节, 整数型, 传址, lp
+    .参数 内存块大小, 整数型, , ucb
+
+.DLL命令 文本指针是否有效_, 整数型, "kernel32.dll", "IsBadStringPtrA", , 确定字符串指针的合法性
+    .参数 文本指针, 整数型, , lpsz
+    .参数 文本最大长度, 整数型, , ucchMax
+
+.DLL命令 寻找第一个Url缓存入口_, 整数型, "wininet.dll", "FindFirstUrlCacheEntryA", , 
+    .参数 寻找样式, 文本型, , lpszUrlSearchPattern
+    .参数 第一个Url缓存入口信息, 整数型, , lpFirstCacheEntryInfo
+    .参数 第一个Url缓存入口信息大小, 整数型, 传址, lpdwFirstCacheEntryInfoBufferSize
+
+.DLL命令 寻找下一个Url缓存入口_, 整数型, "wininet.dll", "FindNextUrlCacheEntryA", , FindNextUrlCacheEntry
+    .参数 枚举句柄, 整数型, , hEnumHandle
+    .参数 下一个Url缓存入口信息, 整数型, , lpNextCacheEntryInfo
+    .参数 下一个Url缓存入口信息大小, 整数型, 传址, lpdwNextCacheEntryInfoBufferSize
+
+.DLL命令 关闭寻找缓存_, 整数型, "wininet.dll", "FindCloseUrlCache", , 
+    .参数 枚举句柄, 整数型, , hEnumHandle
+
+.DLL命令 删除Url缓存入口_, , "wininet.dll", "DeleteUrlCacheEntry", , 
+    .参数 Url名称, 文本型, , lpszUrlName
+
+.DLL命令 锁定虚拟页_, 整数型, "kernel32.dll", "VirtualLock", , 锁定虚拟页
+    .参数 内存块首字节, 整数型, , lpAddress
+    .参数 内存块大小, 整数型, , dwSize
+
+.DLL命令 取内存变量地址1_, 整数型, "kernel32", "lstrcpynA", , 
+    .参数 数据1, INTERNET高速缓存信息_, 传址, lpString1
+    .参数 数据2, INTERNET高速缓存信息_, 传址, lpString2
+    .参数 数据长度, 整数型, , iMaxLength
+
+.DLL命令 置进程优先级_, 整数型, "kernel32", "SetPriorityClass", , 设置一个进程的优先级别  进程的优先级，零表示失败。会设置GetLastError
+    .参数 进程句柄, 整数型
+    .参数 级别, 整数型
+
+.DLL命令 取线程优先级_, 整数型, "kernel32", "GetThreadPriority", , 
+    .参数 线程句柄, 整数型, , 线程句柄
+
+.DLL命令 取特定进程优先级_, 整数型, "kernel32", "GetPriorityClass", , 获取特定进程的优先级别  进程的优先级，零表示失败。会设置GetLastError
+    .参数 进程句柄, 整数型, , 进程句柄;
+
+.DLL命令 置线程优先级_, 整数型, "kernel32", "SetThreadPriority", , 设定线程的优先级别  非零表示成功，零表示失败。会设置GetLastError
+    .参数 线程句柄, 整数型, , hThread
+    .参数 优先权, 整数型, , nPriority
+
+.DLL命令 取当前线程伪句柄_, 整数型, "kernel32", "GetCurrentThread", , 获取当前线程的一个伪句柄  当前线程的伪句柄
+
+.DLL命令 尝试Internet连接_, 整数型, "wininet.dll", "InternetAttemptConnect", , 
+    .参数 返回值, 整数型, , dwReserved
+
+.DLL命令 检查Internet连接_, 整数型, "wininet.dll", "InternetCheckConnectionA", , 
+    .参数 Url地址, 文本型, , lpszUrl
+    .参数 标志, 整数型, , dwFlags
+    .参数 返回值, 整数型, , dwReserved
+
+.DLL命令 取模板完整路径_, 整数型, "kernel32.dll", "GetModuleFileNameA", , 获取一个已装载模板的完整路径名称  如执行成功，返回复制到lpFileName的实际字符数量；零表示失败。会设置GetLastError
+    .参数 模块句柄, 整数型, , 一个模块的句柄。可以是一个DLL模块，或者是一个应用程序的实例句柄
+    .参数 文件名缓冲区, 文本型, , 指定一个字串缓冲区，要在其中容纳文件的用NULL字符中止的路径名，hModule模块就是从这个文件装载进来的
+    .参数 缓冲区大小, 整数型, , 装载到缓冲区lpFileName的最大字符数量;
+
+.DLL命令 递增变量值_, 整数型, "kernel32.dll", "InterlockedIncrement", , 变量的上一个值
+    .参数 递增变量, 整数型, 传址
+
+.DLL命令 设置InternetSet拨号状态_, 整数型, "wininet.dll", "InternetSetDialState", , 
+    .参数 连接文本, 文本型, , lpszConnectoid
+    .参数 状态, 整数型, , dwState
+    .参数 保留参数, 整数型, , dwReserved
+
+.DLL命令 列表框从坐标取项目索引_, 整数型, "comctl32", "LBItemFromPt", , 
+    .参数 窗口句柄, 整数型, , hwnd
+    .参数 横向位置, 整数型, , ptx
+    .参数 纵向位置, 整数型, , pty
+    .参数 自动滚动, 逻辑型, , bAutoScroll
+
+.DLL命令 选择字体对话框_, 整数型, "comdlg32.dll", "ChooseFontA", , 建立一个字体选择对话框
+    .参数 字体对话框结构, 选择字体_
+
+.DLL命令 拷贝内存03_, 整数型, "kernel32", "RtlMoveMemory", , 
+    .参数 目的地址, 整数型, , any
+    .参数 源地址, 逻辑字体_, , any
+    .参数 复制尺寸, 整数型
+
+.DLL命令 锁住全局内存块_, 整数型, "kernel32.dll", "GlobalLock", , 
+    .参数 内存句柄, 整数型, , hMem
+
+.DLL命令 解锁全局内存块_, 整数型, "kernel32.dll", "GlobalUnlock", , 
+    .参数 内存句柄, 整数型, , hMem
+
+.DLL命令 全局内存分配_, 整数型, "kernel32", "GlobalFree", , 
+    .参数 内存句柄, 整数型
+
+.DLL命令 取Internet扩展连接状态_, 整数型, "wininet.dll", "InternetGetConnectedStateExA", , 
+    .参数 标志, 整数型, 传址, lpdwFlags
+    .参数 连接名称, 文本型, , lpszConnectionName
+    .参数 名称长度, 整数型, , dwNameLen
+    .参数 保留参数, 整数型, , dwReserved
+
+.DLL命令 取进程内存信息_, 整数型, "psapi.dll", "GetProcessMemoryInfo", , 
+    .参数 进程句柄, 整数型, , Process
+    .参数 进程内存结构, 进程内存统计_, , ppsmemCounters
+    .参数 结构大小, 整数型, , cb
+
+.DLL命令 查找账户名称_, 整数型, "advapi32", "LookupAccountNameA", , 
+    .参数 系统名称, 文本型, , lpSystemName
+    .参数 账户名称, 文本型, , lpAccountName
+    .参数 Sid结构, 字节型, 传址, Sid
+    .参数 Sid结构长度, 整数型, 传址, cbSid
+    .参数 范围名称, 文本型, , DomainName
+    .参数 范围名称长度, 整数型, 传址, cbDomainName
+    .参数 账户类型说明, 整数型, 传址, peUse
+
+.DLL命令 取CMM信息_, 整数型, "icm32.dll", "CMGetInfo", , 
+    .参数 信息常量, 整数型
+
+.DLL命令 关闭内核对象_, 整数型, "kernel32", "CloseHandle", , 关闭一个内核对象。其中包括文件、文件映射、进程、线程、安全和同步对象等。涉及文件处理时，这个函数通常与vb的close命令相似。应尽可能的使用close，因为它支持vb的差错控制。注意这个函数使用的文件句柄与vb的文件编号是完全不同的  非零表示成功，零表示失败。会设置GetLastError
+    .参数 对象句柄, 整数型, , 欲关闭的一个对象的句柄;
+
+.DLL命令 打开进程_, 整数型, "kernel32.dll", "OpenProcess", , 将句柄返回给过程对象
+    .参数 进程对象, 整数型, , dwDesiredAccess
+    .参数 继承句柄, 整数型, , bInheritHandle
+    .参数 进程标识符, 整数型, , dwProcessId
+
+.DLL命令 枚举进程_, 整数型, "psapi.dll", "EnumProcesses", , 
+    .参数 进程标识符, 整数型, 传址, lpidProcess
+    .参数 结构长度, 整数型, , cb
+    .参数 结构需要长度, 整数型, 传址, cbNeeded
+
+.DLL命令 取模块文件名扩展_, 整数型, "psapi.dll", "GetModuleFileNameExA", , 
+    .参数 进程句柄, 整数型, , hProcess
+    .参数 模块句柄, 整数型, , hModule
+    .参数 文件名缓冲区, 文本型, , lpFilename
+    .参数 缓冲区大小, 整数型, , nSize
+
+.DLL命令 枚举进程模块_, 整数型, "psapi.dll", "EnumProcessModules", , 
+    .参数 进程句柄, 整数型, , hProcess
+    .参数 模块句柄, 整数型, 传址, lphModule
+    .参数 结构大小, 整数型, , cb
+    .参数 需要结构大小, 整数型, 传址, lpcbNeeded
+
+.DLL命令 格式化软盘_, 整数型, "shell32.dll", "SHFormatDrive", , 
+    .参数 窗口句柄, 整数型, , hwndOwner
+    .参数 驱动器, 整数型, , iDrive
+    .参数 容量, 整数型, , iCapacity
+    .参数 格式化类型, 整数型, , iFormatType
+
+.DLL命令 创建目录1_, 整数型, "shell32.dll", "SHCreateDirectoryExA", , 
+    .参数 窗口句柄, 整数型, , hwnd
+    .参数 路径, 文本型, , pszPath
+    .参数 参数, 整数型, , psa，any
+
+.DLL命令 取Window和DOS版本扩展_, 整数型, "kernel32", "GetVersionExA", , 在一个OSVERSIONINFO结构中载入与平台和操作系统有关的版本信息  非零表示成功，零表示失败
+    .参数 版本, 版本信息_, , OSVERSIONINFO，用于装载版本信息的结构。在正式调用函数之前，必须先将这个结构的dwOSVersionInfoSize字段设为结构的大小（148）;
+
+.DLL命令 设置时钟_, 整数型, "user32.dll", "SetTimer", , 
+    .参数 窗口句柄, 整数型, , hwnd
+    .参数 事件标识符, 整数型, , nIDEvent
+    .参数 时钟周期, 整数型, , uElapse
+    .参数 回调函数地址, 整数型, , lpTimerFunc
+
+.DLL命令 销毁时钟_, 整数型, "user32.dll", "KillTimer", , 
+    .参数 窗口句柄, 整数型, , hwnd
+    .参数 事件标识符, 整数型, , nIDEvent
+
+.DLL命令 取最后激活句柄_, 整数型, "user32.dll", "GetLastActivePopup", , 获得在一个给定父窗口中最近激活过的弹出式窗口的句柄（在vb里使用：vb应用程序不用弹出式窗口，所以这个函数并非特别有用）  指向最近用过的弹出式窗口的句柄。如未发现弹出窗口。则返回hwndOwnder
+    .参数 父窗口句柄, 整数型, , 父窗口;
+
+.DLL命令 打开剪辑板_, 整数型, "user32.dll", "OpenClipboard", , 
+    .参数 剪辑板句柄, 整数型
+
+.DLL命令 取剪辑板窗口句柄_, 整数型, "user32.dll", "GetOpenClipboardWindow", , 返回打开CLIPBOARD的窗口句柄
+
+.DLL命令 取设备场景视口范围_, 整数型, "gdi32.dll", "GetViewportExtEx", , 获取设备场景视口（viewport）范围  执行成功为非零值，失败为0
+    .参数 设备场景句柄, 整数型, , hdc，设备场景句柄
+    .参数 尺寸结构, 尺寸_, , lpSize，装载DC视口水平和垂直范围（以设备单元表示）的结构;
+
+.DLL命令 取设备场景刷子颜色_, 整数型, "gdi32.dll", "GetDCBrushColor", , 
+    .参数 设备场景句柄, 整数型, , hdc
+
+.DLL命令 装载动态链接库_, 整数型, "kernel32", "LoadLibraryExA", , 装载指定的动态链接库，并为当前进程把它映射到地址空间。一旦载入，就可以访问库内保存的资源  成功则返回库模块的句柄，零表示失败。会设置GetLastError
+    .参数 动态链接库名称, 文本型, , 指定要载入的动态链接库的名称。采用与CreateProcess函数的lpCommandLine参数指定的同样的搜索顺序
+    .参数 常数值, 整数型, , 未用，设为零
+    .参数 常数组合, 整数型, , 指定下述常数的一个或多个DONT_RESOLVE_DLL_REFERENCES：不对DLL进行初始化，仅用于NTLOAD_LIBRARY_AS_DATAFILE：不准备DLL执行。如装载一个DLL只是为了访问它的资源，就可以改善一部分性能LOAD_WITH_ALTERED_SEARCH_PATH：指定搜索的路径;
+
+.DLL命令 释放动态链接库_, 整数型, "kernel32", "FreeLibrary", , 释放指定的动态链接库，它们早先是用LoadLibrary ;API函数装载的  非零表示成功，零表示失败。会设置GetLastError
+    .参数 库句柄, 整数型, , hLibModule，要释放的一个库句柄，在VB里使用只能用这个函数释放那些由应用程序明确装载的DLL。对LoadLibrary的每一次调用都应该有一个对应的FreeLibrary调用;
+
+.DLL命令 枚举资源名称_, 整数型, "kernel32.dll", "EnumResourceNamesA", , 列出资源名称
+    .参数 模块, 整数型, , hModule
+    .参数 类型, 整数型, , lpType
+    .参数 回调函数地址, 整数型, , lpEnumFunc
+    .参数 参数, 整数型, , lParam
+
+.DLL命令 梯度填充矩形_, 整数型, "gdi32.dll", "GdiGradientFill", , 用于矩形填充
+    .参数 设备场景句柄, 整数型, , hDC，设备场景
+    .参数 顶点数组, 整数型, 数组, pVertex，数组，用来存放各顶点的位置及颜色信息，顶点在TRIVERTEX中定义
+    .参数 顶点数组数量, 整数型, , dwNumVertex，表示顶点的个数
+    .参数 数组结构, 整数型, 传址, pMesh，一个数组结构，表示组成图形的各顶点顺序，表示一个矩形用两个顶点，三角形要用三个顶点
+    .参数 数组结构数量, 整数型, , dwNumMesh，表示矩形或三角形的个数
+    .参数 填充模式, 整数型, , dwMode，填充的模式：水平填充，垂直填充，三角形填充。
+
+.DLL命令 提取图标扩展_, 整数型, "shell32.dll", "ExtractIconExA", , 
+    .参数 文件名, 文本型, , lpszFile
+    .参数 图标索引, 整数型, , nIconIndex
+    .参数 大图标句柄, 整数型, 传址, phiconLarge
+    .参数 小图标句柄, 整数型, , phiconSmall
+    .参数 图标数量, 整数型, , nIcons
+
+.DLL命令 初始化配置项_, 整数型, "kernel32.dll", "WritePrivateProfileSectionA", , 
+    .参数 小节名, 文本型, , lpAppName，要设置的小节。这个字串不区分大小写
+    .参数 项目, 文本型, , lpString，项和值字串的一个列表。
+    .参数 配置项文件名, 文本型, , lpFileName，初始化文件的名字。
+
+.DLL命令 获取配置项列表_, 整数型, "kernel32", "GetPrivateProfileSectionA", , 
+    .参数 小节名, 文本型, , lpAppName
+    .参数 返回文本, 文本型, , lpReturnedString
+    .参数 返回文本大小, 整数型, , nSize
+    .参数 配置项文件名, 文本型, , lpFileName
+
+.DLL命令 取设备灰度斜坡_, 整数型, "gdi32.dll", "GetDeviceGammaRamp", , 获取显示器的辉度系数
+    .参数 设备场景句柄, 整数型, , hdc
+    .参数 结构缓冲区地址, 短整数型, 传址, lpv
+
+.DLL命令 置设备灰度斜坡_, 整数型, "gdi32.dll", "SetDeviceGammaRamp", , 设置辉等级
+    .参数 设备场景句柄, 整数型, , hdc
+    .参数 结构缓冲区地址, 短整数型, 传址, lpv
+
+.DLL命令 取当前用户名扩展_, 整数型, "secur32.dll", "GetUserNameExA", , 
+    .参数 用户名格式化, 整数型, , NameFormat
+    .参数 用户名缓冲区, 文本型, , lpNameBuffer
+    .参数 缓冲区大小, 整数型, 传址, nSize
+
+.DLL命令 取根窗口_, 整数型, "user32.dll", "GetAncestor", , 
+    .参数 窗口句柄, 整数型
+    .参数 标志, 整数型, , gaFlags
+
+.DLL命令 取父窗口_, 整数型, "user32", "GetParent", , 判断指定窗口的父窗口  父窗口的句柄。如窗口没有父，或遇到错误，则返回零。会设置GetLastError
+    .参数 窗口句柄, 整数型, , 欲测试的窗口的句柄;
+
+.DLL命令 取所有用户数据目录_, 逻辑型, "userenv.dll", "GetAllUsersProfileDirectoryA", , 
+    .参数 数据目录缓冲区, 文本型
+    .参数 数据目录缓冲区大小, 整数型, 传址
+
+.DLL命令 取默认用户数据目录_, 逻辑型, "userenv.dll", "GetDefaultUserProfileDirectoryA", , 
+    .参数 数据目录缓冲区, 文本型
+    .参数 数据目录缓冲区大小, 整数型, 传址
+
+.DLL命令 取数据目录_, 逻辑型, "userenv.dll", "GetProfilesDirectoryA", , 
+    .参数 数据目录缓冲区, 文本型
+    .参数 数据目录缓冲区大小, 整数型, 传址
+
+.DLL命令 取用户数据目录_, 逻辑型, "userenv.dll", "GetUserProfileDirectoryA", , 
+    .参数 进程标志句柄, 整数型
+    .参数 数据目录缓冲区, 文本型
+    .参数 数据目录缓冲区大小, 整数型, 传址
+
+.DLL命令 显示自定义帮助主题_, 整数型, "hhctrl.ocx", "HtmlHelpA", , 
+    .参数 窗口句柄, 整数型, , hwndCaller
+    .参数 文件路径, 文本型, , pszFile
+    .参数 命令, 整数型, , uCommand
+    .参数 数据, 整数型, , dwData
+
+.DLL命令 从列表id取路径_, 整数型, "shell32.dll", "SHGetPathFromIDListA", , 
+    .参数 结构指针, 整数型, , pIdl
+    .参数 路径, 文本型, 传址, pszPath
+
+.DLL命令 浏览文件夹对话框_, 整数型, "shell32.dll", "SHBrowseForFolderA", , 
+    .参数 浏览文件夹结构, 文件夹信息_
+
+.DLL命令 获取特别文件夹位置_, 整数型, "shell32.dll", "SHGetSpecialFolderLocation", , 
+    .参数 窗口句柄, 整数型, 传址, hwndOwner
+    .参数 文件夹位置, 整数型, 传址, nFolder
+    .参数 结构, 项目标识符列表_, , pIdl
+
+.DLL命令 释放分配内容_, , "ole32.dll", "CoTaskMemFree", , CoTaskMemFree
+    .参数 内存块指针, 整数型, , pv
+
+.DLL命令 取文件夹路径_, , "shell32.dll", "SHGetFolderPathA", , 
+    .参数 窗口句柄, 整数型, , hwnd
+    .参数 文件夹标识符, 整数型, , nFolder
+    .参数 标志句柄, 整数型, , hToken
+    .参数 标志, 整数型, , dwFlags
+    .参数 路径, 文本型, , pszPath
+
+.DLL命令 取文件夹特殊区域_, , "shell32.dll", "SHGetFolderLocation", , 
+    .参数 窗口句柄, 整数型, , hwnd
+    .参数 文件夹标识符, 整数型, , nFolder
+    .参数 标志句柄, 整数型, , hToken
+    .参数 标志, 整数型, , dwFlags
+    .参数 项目标识符列表结构, 项目标识符列表_, , ppidl
+
+.DLL命令 转换到线程_, 整数型, "kernel32.dll", "SwitchToThread", , 
+
+.DLL命令 设定执行文件_, 整数型, "shell32.dll", "ShellExecuteEx", , 
+    .参数 设定执行文件信息结构, 设定执行文件信息_
+
+.DLL命令 取文件信息1_, 整数型, "shell32.dll", "SHGetFileInfoA", , SHGetFileInfo
+    .参数 文件路径, 文本型, , pszPath
+    .参数 文件属性, 整数型, , dwFileAttributes
+    .参数 文件信息结构, 文件信息_, , psfi
+    .参数 文件信息结构大小, 整数型, , cbFileInfo
+    .参数 信息标志, 整数型, , uFlags
+
+.DLL命令 图像列表_绘画_, 整数型, "comctl32.dll", "ImageList_Draw", , 
+    .参数 图像列表句柄, 整数型, , himl
+    .参数 索引, 整数型, , i
+    .参数 目标设备场景句柄, 整数型, , hdcDst
+    .参数 横坐标, 整数型, , x
+    .参数 纵坐标, 整数型, , y
+    .参数 标志类型, 整数型, , fStyle
+
+.DLL命令 图像列表_绘画扩展_, 整数型, "comctl32.dll", "ImageList_DrawEx", , 
+    .参数 图像列表句柄, 整数型, , himl
+    .参数 索引, 整数型, , i
+    .参数 目标设备场景句柄, 整数型, , hdcDst
+    .参数 横坐标, 整数型, , x
+    .参数 纵坐标, 整数型, , y
+    .参数 宽度, 整数型, , dx
+    .参数 高度, 整数型, , dy
+    .参数 背景rgb, 整数型, , rgbBk
+    .参数 前景rgb, 整数型, , rgbFg
+    .参数 标志类型, 整数型, , fStyle
+
+.DLL命令 取线程信息_, 整数型, "user32.dll", "GetGUIThreadInfo", , 执行成功返回非0
+    .参数 线程id, 整数型, , idThread
+    .参数 线程结构, GUI线程信息_, , pgui
+
+.DLL命令 描绘一个多边形_, , "gdi32.dll", "Polygon", , 
+    .参数 设备场景, 整数型, , hdc，用于描绘的设备场景
+    .参数 POINTAPI结构, 整数型, 传址 数组, lpPoint，在nCount POINTAPI结构数组中的第一个POINTAPI结构
+    .参数 顶点数, 整数型, , nCount，多边形的总点数（顶点数）
+
+.DLL命令 刷子填充区域_, 整数型, "gdi32.dll", "FillRgn", , 用指定刷子填充指定区域
+    .参数 设备场景句柄, 整数型, , hdc，设备场景句柄
+    .参数 区域句柄, 整数型, , hRgn，以数据设备坐标填充的区域句柄
+    .参数 刷子句柄, 整数型, , hBrush，要用的刷子的句柄
+
+.DLL命令 内存清零_, , "kernel32.dll", "RtlZeroMemory", , ZeroMemory
+    .参数 目的内存, 文本型, , Destination
+    .参数 长度, 整数型, , Length
+
+.DLL命令 闪烁窗口扩展_, 逻辑型, "user32.dll", "FlashWindowEx", , 
+    .参数 闪烁信息结构, 闪烁信息_, , pfwi
+
+.DLL命令 填充内存_, , "kernel32.dll", "RtlFillMemory", , 
+    .参数 目的内存, 文本型, , Destination
+    .参数 长度, 整数型, , Length
+    .参数 填充内容, 字节型, , Fill
+
+.DLL命令 取系统性能信息_, 整数型, "Powrprof", "GetPwrCapabilities", , 执行成功返回非0
+    .参数 信息结构, 系统能源性能_, , lpSystemPowerCapabilities
+
+.DLL命令 置伸缩模式_, 整数型, "gdi32", "SetStretchBltMode", , 指定StretchBlt 和 StretchDIBits函数的伸缩模式。这种伸缩模式定义了Windows如何对伸缩过程中剔除的扫描线进行控制。对于VB窗体和控件，倘若在API绘图过程中使用这个函数，建议恢复原来的StretchBlt模式  上一次伸缩模式的值，零表示失败
+    .参数 设备场景句柄, 整数型, , hdc
+    .参数 伸缩模式, 整数型, , nStretchMode
+
+.DLL命令 取颜色调节器_, 整数型, "gdi32.dll", "GetColorAdjustment", , 获取设备描述表调整值
+    .参数 设备场景句柄, 整数型
+    .参数 颜色调节器结构, 颜色调节器_
+
+.DLL命令 置颜色调节器_, 整数型, "gdi32.dll", "SetColorAdjustment", , 调整颜色
+    .参数 设备场景句柄, 整数型, , hdc
+    .参数 颜色调节器结构, 颜色调节器_, , lpca
+
+.DLL命令 取环境变量文本_, 整数型, "kernel32", "GetEnvironmentStringsA", , 为包含了当前环境字串设置的一个内存块分配和返回一个句柄。这个内存块包含了所有环境字串。各字串间用一个NULL分隔；连续两个NULL标志着列表的结尾  指向包含了环境字串的一个内存块的地址。零表示失败。会设置GetLastError
+
+.DLL命令 释放环境变量文本_, 整数型, "kernel32", "FreeEnvironmentStringsA", , 翻译指定的环境字串块  非零表示成功，零表示失败。会设置GetLastError
+    .参数 内存块句柄, 文本型, , 指向一个内存块的句柄；那个内存块是以前通过GetEnvironments函数获得的;
+
+.DLL命令 取格式化日期, 整数型, "kernel32.dll", "GetDateFormatA", , 针对指定的“当地”格式，对一个系统日期进行格式化  格式化过后的字串的长度。零表示出错，会将GetLastError设置为下述值之一：ERROR_INSUFFICIENT_BUFFER，ERROR_INVALID_FLAGS，ERROR_INVALID_PARAMETER
+    .参数 地方ID, 整数型, , Locale，用于决定格式的地方ID。lpFormat参数中指定的任何信息（倘若不是NULL）都优先于特定于地方的信息
+    .参数 标志, 整数型, , dwFlags，如指定了lpFormat，那么该参数应该为零。否则，可设为LOCALE_NOUSEROVERRIDE，强制使用系统地方参数——即使它们已由用户取代。用DATE_SHORTDATE 或 DATE_LONGDATE选择不同的日期格式
+    .参数 日期结构, 系统时间_, 传址, lpDate，包含了一个系统日期的结构
+    .参数 格式化, 文本型, 传址, lpFormat，可设为NULL，使用特定于不同地方的值（用vbNull传递一个NULL）。否则包含一个日期格式字串。对d
+    .参数 缓冲区文本, 文本型, , lpDateStr，指定一个缓冲区，用于容纳格式化过后的字串。注意事先对字串进行初始化
+    .参数 缓冲区文本长度, 整数型, , cchDate，缓冲区的长度。如为零，表示函数会返回需要缓冲区的大小;
+
+.DLL命令 取网络Ip列表_, 整数型, "Iphlpapi", "GetIpNetTable", , 
+    .参数 网络Ip列表缓冲区, 字节型, 传址
+    .参数 缓冲区大小, 整数型, 传址
+    .参数 命令, 整数型
+
+.DLL命令 取组合框信息_, 整数型, "user32.dll", "GetComboBoxInfo", , 
+    .参数 组合框句柄, 整数型, , hwndCombo
+    .参数 组合框信息结构, 超级组合框信息_, , CBInfo
+
+.DLL命令 取本机网络参数_, 整数型, "iphlpapi.dll", "GetNetworkParams", , 
+    .参数 信息, 整数型, , any，pFixedInfo
+    .参数 输出缓冲区长度, 整数型, 传址, pOutBufLen
+
+.DLL命令 网络通讯到文本地址_, 整数型, "ws2_32.dll", "inet_ntoa", , 
+    .参数 网络地址, 整数型, , lIn
+
+.DLL命令 取格式化数字_, 整数型, "kernel32.dll", "GetNumberFormatA", , 
+    .参数 地方ID, 整数型, , Locale
+    .参数 标志, 整数型, , dwFlags
+    .参数 值, 文本型, , lpValue
+    .参数 格式化结构, 数值格式化_, , lpFormat
+    .参数 缓冲区文本, 文本型, , lpNumberStr
+    .参数 缓冲区文本长度, 整数型, , cchNumber
+
+.DLL命令 取磁盘剩余空间扩展_, 整数型, "kernel32.dll", "GetDiskFreeSpaceExA", , 
+    .参数 根路径名称, 文本型, , lpRootPathName
+    .参数 剩余空间, 长整数型, 传址, lpFreeBytesAvailableToCaller
+    .参数 总大小, 长整数型, 传址, lpTotalNumberOfBytes
+    .参数 总剩余空间, 长整数型, 传址, lpTotalNumberOfFreeBytes
+
+.DLL命令 取模块句柄_, 整数型, "kernel32.dll", "GetModuleHandleA", , 获取一个应用程序或动态链接库的模块句柄  如执行成功成功，则返回模块句柄。零表示失败。会设置GetLastError
+    .参数 模块名, 文本型, , lpModuleName，指定模块名，这通常是与模块的文件名相同的一个名字。例如，NOTEPAD.EXE程序的模块文件名就叫作NOTEPAD
+
+.DLL命令 取进程地址_, 整数型, "kernel32.dll", "GetProcAddress", , 
+    .参数 模块句柄, 整数型, , hModule
+    .参数 进程名称, 文本型, , lpProcName
+
+.DLL命令 设置多边形填充模式_, 整数型, "gdi32.dll", "SetPolyFillMode", , Long，如执行成功，返回前一种多边形填充模式。零表示出错
+    .参数 设备场景句柄, 整数型, , hdc，设备场景的句柄
+    .参数 填充类型, 整数型, , npolyfillmode，ALTERNATE交替填充WINDING根据绘图方向填充
+
+.DLL命令 取多边形填充模式_, 整数型, "gdi32", "GetPolyFillMode", , 针对指定的设备场景，获得多边形填充模式。关于填充模式见注解  常数ALTERNATE 或 WINDING。零表示失败
+    .参数 设备场景句柄, 整数型, , 设备场景的句柄
+
+.DLL命令 打开事件日志_, 整数型, "advapi32.dll", "OpenEventLogA", , 打开事件登记句柄
+    .参数 通用服务名称, 文本型, , lpUNCServerName
+    .参数 源名称, 文本型, , lpSourceName
+
+.DLL命令 关闭事件日志_, 整数型, "advapi32.dll", "CloseEventLog", , 关闭事件记录句柄
+    .参数 事件日志句柄, 整数型, , hEventLog
+
+.DLL命令 备份事件日志_, 整数型, "advapi32.dll", "BackupEventLogA", , 将事件记录保存至后备文件
+    .参数 事件日志句柄, 整数型, , hEventLog
+    .参数 备份文件名, 文本型, , lpBackupFileName
+
+.DLL命令 清除事件日志_, 整数型, "advapi32.dll", "ClearEventLogA", , 消除事件记录
+    .参数 事件日志句柄, 整数型, , hEventLog
+    .参数 备份文件名, 文本型, , lpBackupFileName
+
+.DLL命令 取事件日志记录数_, 整数型, "advapi32.dll", "GetNumberOfEventLogRecords", , 获取事件记录中的记录数
+    .参数 事件日志句柄, 整数型, , hEventLog
+    .参数 记录数, 整数型, , NumberOfRecords
+
+.DLL命令 取旧事件日志记录数_, 整数型, "advapi32.dll", "GetOldestEventLogRecord", , 返回最早的记录数
+    .参数 事件日志句柄, 整数型, , hEventLog
+    .参数 旧事件日志, 整数型, , OldestRecord
+
+.DLL命令 全局堆栈分配_, 整数型, "kernel32.dll", "GlobalAlloc", , 
+    .参数 标志, 整数型, , wFlags
+    .参数 字节, 整数型, , dwBytes
+
+.DLL命令 取标题栏信息_, 整数型, "user32.dll", "GetTitleBarInfo", , 
+    .参数 窗口句柄, 整数型, , hwnd
+    .参数 标题栏信息结构, 标题栏信息_, , pti
+
+.DLL命令 取全局内存状态_, 整数型, "kernel32", "GlobalMemoryStatus", , 
+    .参数 缓冲区结构, 内存状态_, , lpBuffer
+
+.DLL命令 取系统菜单句柄_, 整数型, "user32", "GetSystemMenu", , 取得指定窗口的系统菜单的句柄。在vb环境，“系统菜单”的正式名称为“控制菜单”，即单击窗口左上角的控制框时出现的菜单  如执行成功，返回系统菜单的句柄；零意味着出错。如bRevert设为TRUE，也会返回零（简单的恢复原始的系统菜单）
+    .参数 窗口句柄, 整数型, , 窗口的句柄
+    .参数 回复, 整数型, , 如设为TRUE，表示接收原始的系统菜单;
+
+.DLL命令 置菜单条目信息_, 整数型, "user32.dll", "SetMenuItemInfoA", , 为一个菜单条目设置指定的信息，具体信息保存于MENUITEMINFO结构中  TRUE（非零）表示成功，否则返回零。会设置GetLastError
+    .参数 菜单句柄, 整数型, , hMenu
+    .参数 菜单标识符或位置, 整数型, , un
+    .参数 标识符或位置, 逻辑型, , bool，如un指定了条目的位置，就为TRUE；如指定的是菜单ID，就为FALSE
+    .参数 菜单条目信息结构, 菜单条目结构_, , lpcMenuItemInfo
+
+.DLL命令 发送消息_, 整数型, "user32", "SendMessageA", , 调用一个窗口的窗口函数，将一条消息发给那个窗口。除非消息处理完毕，否则该函数不会返回。SendMessageBynum， ;    SendMessageByString是该函数的“类型安全”声明形式  由具体的消息决定
+    .参数 窗口句柄, 整数型, , 要接收消息的那个窗口的句柄
+    .参数 信息值, 整数型, , 消息的标识符
+    .参数 参数一, 逻辑型, , 具体取决于消息
+    .参数 参数二, 整数型, , 具体取决于消息;
+
+.DLL命令 取得窗口信息_, 整数型, "user32", "GetWindowLongA", , 从指定窗口的结构中取得信息  由nIndex决定。零表示出错。会设置GetLastError
+    .参数 窗口句柄, 整数型, , 欲为其获取信息的窗口的句柄
+    .参数 属性, 整数型, , 欲取回的信息，可以是下述任何一个常数：;GWL_EXSTYLE：扩展窗口样式;GWL_STYLE：窗口样式;GWL_WNDPROC：该窗口的窗口函数的地址;GWL_HINSTANCE：拥有窗口的实例的句柄;GWL_HWNDPARENT：该窗口之父的句柄。不要用SetWindowWord来改变这个值;GWL_ID：对话框中一个子窗口的标识符;GWL_USERDATA：含义由应用程序规定;DWL_DLGPROC：这个窗口的对话框函数地址;DWL_MSGRESULT：在对话框函数中处理的一条消息返回的值;DWL_USER：含义由应用程序规定;
+
+.DLL命令 设置窗口位置_, 整数型, "user32.dll", "SetWindowPos", , Long，非零表示成功，零表示失败。会设置GetLastError
+    .参数 窗口句柄, 整数型, , Long，欲定位的窗口
+    .参数 定位类型, 整数型, , Long，窗口句柄。在窗口列表中，窗口hwnd会置于这个窗口句柄的后面。HWND_BOTTOM将窗口置于窗口列表底部HWND_TOP将窗口置于Z序列的顶部；Z序列代表在分级结构中，窗口针对一个给定级别的窗口显示的顺序HWND_TOPMOST将窗口置于列表顶部，并位于任何最顶部窗口的前面HWND_NOTOPMOST将窗口置于列表顶部，并位于任何最顶部窗口的后面
+    .参数 窗口新横坐标, 整数型, , Long，窗口新的x坐标。如hwnd是一个子窗口，则x用父窗口的客户区坐标表示
+    .参数 窗口新纵坐标, 整数型, , Long，窗口新的y坐标。如hwnd是一个子窗口，则y用父窗口的客户区坐标表示
+    .参数 窗口新宽度, 整数型, , Long，指定新的窗口宽度
+    .参数 窗口新高度, 整数型, , Long，指定新的窗口高度
+    .参数 显示方式, 整数型, , Long，包含了旗标的一个整数SWP_DRAWFRAME围绕窗口画一个框SWP_HIDEWINDOW隐藏窗口等等
+
+.DLL命令 文本连接_, 整数型, "shlwapi.dll", "StrCatBuffA", , 
+    .参数 目标文本, 文本型, , pszDest
+    .参数 源文本, 文本型, , pszSrc
+    .参数 目标缓冲区大小, 整数型, , cchDestBuffSize
+
+.DLL命令 置文本对齐方式_, 整数型, "gdi32.dll", "SetTextAlign", , 设置文本对齐方式，并指定在文本输出过程中使用设备场景的当前位置
+    .参数 设备场景句柄, 整数型, , 设备场景的句柄
+    .参数 标志, 整数型, , 参考GetTextAlign函数的返回值列表
+
+.DLL命令 文本绘图_, 整数型, "gdi32.dll", "TextOutA", , Long，非零表示成功，零表示失败。会设置GetLastError
+    .参数 设备场景, 整数型, , hdc，设备场景的句柄
+    .参数 横, 整数型, , x，绘图的起点，采用逻辑坐标
+    .参数 纵, 整数型, , y，绘图的起点，采用逻辑坐标
+    .参数 内容, 文本型, , lpstring，欲描绘的字串
+    .参数 内容数量, 整数型, , ncount，字串中要描绘的字符数量
+
+.DLL命令 置系统时间_, 整数型, "kernel32.dll", "SetSystemTime", , 设置当前系统时间
+    .参数 系统时间结构, 系统时间_, , 这个结构指定了新的地方时间。其中的wDayOfWeek条目会被忽略
+
+.DLL命令 寻找文件完整路径_, 整数型, "imagehlp.dll", "SearchTreeForFile", , 
+    .参数 根目录, 文本型, , RootPath
+    .参数 文件名称, 文本型, , InputPathName
+    .参数 输出路径缓冲区, 文本型, , OutputPathBuffer
+
+.DLL命令 置悬挂状态_, 整数型, "Powrprof.dll", "SetSuspendState", , 
+    .参数 冬眠, 整数型, , Hibernate
+    .参数 强制, 整数型, , ForceCritical
+    .参数 不激发事件, 整数型, , DisableWakeEvent
+
+.DLL命令 文本到数值_, 整数型, "shlwapi.dll", "StrToInt64ExA", , 
+    .参数 转换文本, 文本型, , pszString
+    .参数 标志, 整数型, , dwFlags
+    .参数 返回值, 整数型, 传址, piRet
+
+.DLL命令 扩展_图标通报_, 逻辑型, "shell32.dll", "Shell_NotifyIconA", , 
+    .参数 消息值, 整数型, , dwMessage
+    .参数 图标通报结构, 工作状态区域信息_, , pnid
+
+.DLL命令 关闭注册表项_, 整数型, "advapi32.dll", "RegCloseKey", , 零（ERROR_SUCCESS）表示成功。其他任何值都代表一个错误代码
+    .参数 关闭项句柄, 整数型, , hKey，要关闭的项句柄
+
+.DLL命令 打开注册表项_, 整数型, "advapi32.dll", "RegOpenKeyA", , 打开一个现有的注册表项,零（ERROR_SUCCESS）表示成功。其他任何值都代表一个错误代码
+    .参数 标准项名或句柄, 整数型, , hKey，一个已打开项的句柄，或指定一个标准项名
+    .参数 项名, 字节集, , lpSubKey，要打开的项名
+    .参数 打开注册表项句柄, 整数型, 传址, phkResult，指定一个变量，用于装载（保存）打开注册表项的一个句柄
+
+.DLL命令 枚举注册项_, 整数型, "Advapi32.dll", "RegEnumKeyExA", , 枚举指定项下方的子项
+    .参数 标准项名或句柄, 整数型, , 一个已打开项的句柄，或者指定一个标准项名
+    .参数 项索引, 整数型, , 欲获取的子项的索引。第一个子项的索引编号为零
+    .参数 项索引, 字节集, , 用于装载指定索引处项名的一个缓冲区
+    .参数 缓冲区, 整数型, 传址, 指定一个变量，用于装载lpName缓冲区的实际长度（包括空字符）。一旦返回，它会设为实际装载到lpName缓冲区的字符数量
+    .参数 保留参数, 整数型, , 未用，设为零
+    .参数 项类名, 字节集, , 项使用的类名。可以为vbNullString
+    .参数 项类名长度, 整数型, 传址, 用于装载lpClass缓冲区长度的一个变量。一旦返回，它会设为实际装载到缓冲区的字符数量
+    .参数 修改时间, 文件时间_, , 枚举子项上一次修改的时间
+
+.DLL命令 枚举注册项值_, 整数型, "Advapi32.dll", "RegEnumValueA", , 枚举指定项的值
+    .参数 标准项名或句柄, 整数型, , 一个已打开项的句柄，或者指定一个标准项名
+    .参数 项索引, 整数型, , 欲获取值的索引。注意第一个值的索引编号为零
+    .参数 值名称, 字节集, , 用于装载位于指定索引处值名的一个缓冲区
+    .参数 值名称长度, 整数型, 传址, 用于装载lpValueName缓冲区长度的一个变量。一旦返回，它会设为实际载入缓冲区的字符数量
+    .参数 保留参数, 整数型, , 未用；设为零
+    .参数 类型, 整数型, 传址, 用于装载值的类型代码的变量
+    .参数 数据缓冲区, 字节集, , 用于装载值数据的一个缓冲区
+    .参数 数据缓冲区长度, 整数型, 传址, 用于装载lpData缓冲区长度的一个变量。一旦返回，它会设为实际载入缓冲区的字符数量
+
+.DLL命令 弹出轨迹窗口扩展_, 整数型, "user32.dll", "TrackPopupMenuEx", , 与TrackPopupMenu相似，只是它提供了额外的功能
+    .参数 菜单句柄, 整数型, , 弹出式菜单的句柄
+    .参数 标志, 整数型, , 定位标志和鼠标追踪标志的组合。参考TrackPopupMenu，另外还包括两个标志：TPM_HORIZONTAL或TPM_VERTICAL。参考lpTPMParams参数的说明
+    .参数 横坐标, 整数型, , 定义了弹出式菜单位置的一个x,y点（n1,n2），用屏幕坐标表示
+    .参数 纵坐标, 整数型, , 定义了弹出式菜单位置的一个x,y点（n1,n2），用屏幕坐标表示
+    .参数 窗口句柄, 整数型, , 用于接收弹出式菜单命令的窗口的句柄。应该使用特定窗体的窗口句柄，该窗体有一个菜单能够与弹出式菜单一样接收相同的命令ID集
+    .参数 扩展参数结构, , , TPMPARAMS，指向一个TPMPARAMS结构的指针。这个结构包含了一个矩形，规定了不能由这个弹出式菜单覆盖的区域。如果在un参数中指定了TPM_HORIZONTAL标志，windows就会试着设置水平位置，将弹出式菜单垂直移到这个矩形的外部。如指定了TPM_VERTICAL，那么windows会试着水平移动弹出式菜单的位置
+
+.DLL命令 弹出轨迹菜单_, 整数型, "user32.dll", "TrackPopupMenu", , 在屏幕的任意地方显示一个弹出式菜单
+    .参数 菜单句柄, 整数型, , 弹出式菜单的句柄
+    .参数 标志, 整数型, , 位置标志和鼠标追踪标志的组合，见下表
+    .参数 横坐标, 整数型, , 这个点指定了弹出式菜单在屏幕坐标系统中的位置
+    .参数 纵坐标, 整数型, , 这个点指定了弹出式菜单在屏幕坐标系统中的位置
+    .参数 保留参数, 整数型, , 未使用，设为零
+    .参数 窗口句柄, 整数型, , 用于接收弹出式菜单命令的窗口的句柄。应该使用窗体的窗口句柄——窗体中有一个菜单能象弹出式菜单那样接收相同的命令ID集
+    .参数 矩形结构, , , 用屏幕坐标定义的一个矩形，如用户在这个矩形的范围内单击，则弹出式菜单不会关闭。如单击弹出式菜单之外的任何一个地方，则会关闭菜单。可以设为NULL
+
+.DLL命令 添加菜单项_, 整数型, "user32.dll", "AppendMenuA", , 非零表示成功，零表示失败
+    .参数 菜单句柄, 整数型, , hMenu,菜单句柄
+    .参数 菜单常数标志, 整数型, , wFlags,参见相关帮助
+    .参数 新菜单条目ID, 整数型, , wIDNewItem,指定菜单条目的新命令ID
+    .参数 标志值, 文本型, , lpNewItem,参见相关帮助
+
+.DLL命令 透明位图效果_, 逻辑型, "msimg32.dll", "TransparentBlt", , 
+    .参数 目标设备场景句柄, 整数型, , hdc
+    .参数 目标横坐标, 整数型, , x
+    .参数 目标纵坐标, 整数型, , y
+    .参数 目标宽度, 整数型, , nWidth
+    .参数 目标高度, 整数型, , nHeight
+    .参数 源设备场景句柄, 整数型, , hSrcDC
+    .参数 源横坐标, 整数型, , xSrc
+    .参数 源纵坐标, 整数型, , ySrc
+    .参数 源宽度, 整数型, , nSrcWidth
+    .参数 源高度, 整数型, , nSrcHeight
+    .参数 透明值, 整数型, , crTransparent
+
+.DLL命令 报告事件日志_, 整数型, "advapi32.dll", "ReportEventA", , 写入事件记录项目
+    .参数 事件日志句柄, 整数型, , hEventLog
+    .参数 类型, 整数型, , wType
+    .参数 种类, 整数型, , wCategory
+    .参数 事件日志ID, 整数型, , dwEventID
+    .参数 使用者, 整数型, , any,lpUserSid
+    .参数 数量文本, 整数型, , wNumStrings
+    .参数 数据大小, 整数型, , dwDataSize
+    .参数 文本, 文本型, , lpStrings
+    .参数 数据, 整数型, , any,lpRawData
+
+.DLL命令 十六进制转十进制_, 整数型, "shlwapi.dll", "StrToIntExA", , 
+    .参数 转换文本, 文本型, , pszString
+    .参数 标志, 整数型, , dwFlags
+    .参数 返回值, 整数型, 传址, piRet
+
+.DLL命令 寻找文本I_, 整数型, "shell32.dll", "StrStrIA", , 
+    .参数 被寻找文本, 文本型, , lpFirst
+    .参数 欲寻找文本, 文本型, , lpSrch
+
+.DLL命令 寻找文本_, 整数型, "shlwapi.dll", "StrStrA", , 
+    .参数 被寻找文本, 文本型, , lpSource
+    .参数 欲寻找文本, 文本型, , lpLast
+
+.DLL命令 寻找字符串_, 整数型, "shlwapi.dll", "StrPBrkA", , 
+    .参数 被寻找字符串, 文本型, , psz
+    .参数 欲寻找字符串, 文本型, , pszSet
+
+.DLL命令 附加文本串_, 整数型, "shlwapi.dll", "StrNCatA", , 
+    .参数 文本, 文本型, , psz1
+    .参数 附加文本, 文本型, , psz2
+    .参数 附加文本长度, 整数型, 传址, cchMax
+
+.DLL命令 数值到格式化字节_, 整数型, "shlwapi.dll", "StrFormatByteSizeA", , 
+    .参数 数值, 整数型, , dw
+    .参数 文本缓冲区, 文本型, , szBuf
+    .参数 文本缓冲区大小, 整数型, 传址, uiBufSize
+
+.DLL命令 数值到格式化字节扩展_, 整数型, "shlwapi.dll", "StrFormatByteSize64A", , 
+    .参数 数值, 长整数型, , qdw
+    .参数 文本缓冲区, 文本型, 传址, szBuf
+    .参数 文本缓冲区大小, 整数型, 传址, uiBufSize
+
+.DLL命令 取文本地址_, 整数型, "shlwapi.dll", "StrDupA", , 
+    .参数 文本, 文本型, , lpSrch
+
+.DLL命令 寻找文本串I_, 整数型, "shlwapi.dll", "StrCSpnIA", , 
+    .参数 被寻找文本, 文本型, , lpStr
+    .参数 欲寻找文本, 文本型, , lpSet
+
+.DLL命令 寻找文本串_, 整数型, "shlwapi.dll", "StrCSpnA", , 
+    .参数 被寻找文本, 文本型, , lpStr
+    .参数 欲寻找文本, 文本型, , lpSet
+
+.DLL命令 寻找字符位址I_, 整数型, "shell32.dll", "StrChrIA", , 
+    .参数 文本, 文本型, , haystack
+    .参数 字符, 整数型, , needle
+
+.DLL命令 寻找字符位址_, 整数型, "shell32.dll", "StrChrA", , 
+    .参数 文本, 文本型, , haystack
+    .参数 字符, 字节型, , needle
+
+.DLL命令 比较文本长度_, 整数型, "kernel32.dll", "lstrcmpi", , 
+    .参数 第一个数, 文本型, , lpString1
+    .参数 第二个数, 文本型, , lpString2
+
+.DLL命令 取短文件名_, 整数型, "comdlg32.dll", "GetFileTitleA", , 取完整路径的文件名中的文件名，成功返回0
+    .参数 文件完整路径, 文本型, , lpszFile
+    .参数 名称缓冲区, 文本型, , lpszTitle
+    .参数 缓冲区长度, 短整数型, , cbBuf
+
+.DLL命令 创建文件1_, 整数型, "Kernel32.dll", "_lcreat", , 创建一个文件。如文件已经存在，就会将其缩短成零长度，并将其打开，以便读写
+    .参数 文件路径, 文本型, , lpPathName，路径加文件名
+    .参数 文件类型, 整数型, , iAttribute，0
+
+.DLL命令 共享输入队列_, 整数型, "user32.dll", "AttachThreadInput", , 非零表示成功，零表示失败
+    .参数 线程ID, 整数型, , idAttach,欲连接线程的标识符（ID）
+    .参数 另一个线程ID, 整数型, , idAttachTo,与idAttach线程连接的另一个线程的标识符
+    .参数 连接, 整数型, , fAttach,TRUE（非零）连接，FALSE撤消连接

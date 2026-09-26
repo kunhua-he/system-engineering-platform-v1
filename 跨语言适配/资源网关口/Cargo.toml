@@ -1,0 +1,18 @@
+[package]
+name = "v1-resource-gateway"
+description = "资源网关口 —— 全平台唯一的资源出入口：资源声明 · 唯一出入口 · 默认拒绝"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lib]
+name = "v1_resource_gateway"
+path = "src/lib.rs"
+
+[dependencies]
+# 只能向下：契约 + 内核（`全局连接器与网关.md` 判据 5）。零第三方依赖。
+# 不依赖 `装载入口` / `统一注册表`：资源**被访问**（底座不认识它的内部），
+# 扩展**提供能力**（底座认识它的编号）——两者是接缝的两侧，不许合并（§七 最后一条）。
+v1-contract = { path = "../../契约声明" }
+v1-trace = { path = "../../运行内核/调用留痕" }
+v1-dispatch = { path = "../../运行内核/调用调度" }

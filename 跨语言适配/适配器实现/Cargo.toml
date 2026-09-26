@@ -1,0 +1,17 @@
+[package]
+name = "v1-adapter"
+description = "适配器实现 —— 全平台唯一的适配器：读契约 · 装载内核 · 转发调用"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lib]
+name = "v1_adapter"
+path = "src/lib.rs"
+
+[dependencies]
+# 只能向下：契约 + 内核。不许依赖 对外接口面/，不许手写绑定，不许给某语言开专用通道。
+v1-contract = { path = "../../契约声明" }
+v1-loader = { path = "../../运行内核/装载入口" }
+v1-registry = { path = "../../运行内核/统一注册表" }
+v1-dispatch = { path = "../../运行内核/调用调度" }
