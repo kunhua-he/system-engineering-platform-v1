@@ -1,0 +1,13 @@
+[package]
+name = "v1-contract"
+description = "契约声明 —— 底座与扩展共用的全部契约类型（脊梁，改动须走冻结登记）"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lib]
+name = "v1_contract"
+path = "src/lib.rs"
+
+[dependencies]
+# 零依赖：契约层不许引入任何仓库外的东西。

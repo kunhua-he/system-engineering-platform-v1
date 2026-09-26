@@ -1,0 +1,32 @@
+# 系统工程平台 V1 · 底座工作区
+#
+# 只放底座。支持库 / 模块 / 技能是可热载入的扩展，各自成仓（见 README 第五节）。
+# 内核 crate 一律零第三方依赖——仓库外没有任何东西能改变行为。
+[workspace]
+resolver = "3"
+members = [
+    "契约声明",
+    "运行内核/定长数据槽",
+    "运行内核/统一注册表",
+    "运行内核/装载入口",
+    "运行内核/通知通道",
+    "运行内核/内存分配器",
+    "运行内核/实例状态",
+    "运行内核/调用调度",
+    "运行内核/调用留痕",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+
+# 冻结：不许加第三方依赖。加之前先问"它会不会改变行为"，答不上来就不加。
+[workspace.dependencies]
+
+[profile.release]
+# 制品形态裁剪：静态链接、无运行时、按体积与确定性优先。
+lto = "fat"
+codegen-units = 1
+panic = "abort"
+strip = true

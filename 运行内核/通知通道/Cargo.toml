@@ -1,0 +1,13 @@
+[package]
+name = "v1-notify"
+description = "通知通道 —— 下行 / 上行 / 生命周期三个号段的派发与接收"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lib]
+name = "v1_notify"
+path = "src/lib.rs"
+
+[dependencies]
+v1-contract = { path = "../../契约声明" }
