@@ -8,6 +8,15 @@
 #   反向样本必须报红（证明判据不空转）· 正向样本必须通过（证明判据不误报）。
 #   缺任一方 ⇒ 这条判据的「通过」不计入通过数。本脚本两件都做。
 #
+# 判法是**位置判据**，不是**词命中**（未完成事项.md #161，照 ⑪-3 / ⑪-4 先例）：
+#   早先的模式是一袋词（`解析|生成|校验|验证|…`），于是**真实路径**也被禁 ——
+#   `测试验证/案例/` 里含「验证」，前端不敢写真路径、只好写「案例区」（名词被判成违规）。
+#   现在只认**调用形 / 定义形**：`JSON.parse(` · `DOMParser` · `.test(` ·
+#   `校验(` 这种「后面紧跟 `(`」的形状才算「在解析 / 在判断」。
+#   路径字符串（`"/测试验证/案例"`）里「验证」后面是 `/` 不是 `(` ⇒ 不命中。
+#
+# 扫描面**只做静态检查**（本脚本不启动浏览器、不读页面控制台）—— 见「七 检查面声明」。
+#
 # 用法：sh 前端呈现/网页应用/自检.sh
 # 退出码：0 = 全部通过；1 = 有违规。
 #
@@ -23,8 +32,14 @@ for f in *.html *.js *.css; do
 done
 SCAN="${SCAN# }"
 
-# 违规词：出现任一个即说明前端在做解析 / 生成 / 校验。中英各半，覆盖常见别名。
-PATTERN='解析|生成|校验|验证|判断|检查|转换|validate|valid|parse|generat|convert|regex|正则'
+# 违规形（位置判据）：只有「调用 / 定义形」才算 —— 关键词后面紧跟 `(`。
+#   ① 真解析 / 真执行：`JSON.parse(` · `DOMParser` · `eval(` · `new Function(` · `new RegExp(`
+#   ② 正则真判断：`.test(` / `.exec(`
+#   ③ 中文动词的调用 / 定义形：`校验(` · `校验器(` · `验证结果(`（后面必须跟 `(`）
+#   ④ 英文动词的调用 / 定义形：`validate(` · `parse(` · `convert(` …
+# 不含 `正则` / `regex` 的裸词：它们作名词（如 `// 这里不用正则`）不构成「在判断」，
+# 作调用形时已被 `new RegExp(` / `.test(` 覆盖。
+PATTERN='JSON[[:space:]]*\.[[:space:]]*parse[[:space:]]*\(|DOMParser|parseFromString[[:space:]]*\(|eval[[:space:]]*\(|new[[:space:]]+Function[[:space:]]*\(|new[[:space:]]+RegExp[[:space:]]*\(|\.[[:space:]]*(test|exec)[[:space:]]*\(|(解析|校验|验证|生成|判断|检查|转换)[A-Za-z0-9_$]*[[:space:]]*\(|(validate|valid|parse|generat|convert)[A-Za-z0-9_$]*[[:space:]]*\('
 
 hits() { grep -E -o "${PATTERN}" $1 2>/dev/null | wc -l | tr -d ' '; }
 
@@ -33,7 +48,7 @@ echo "════ 前端自检 · 网页应用 ════"
 echo "扫描面：${SCAN}"
 echo
 
-echo "一 违规词命中（应为 0）"
+echo "一 违规形命中（应为 0）"
 grep -E -n "${PATTERN}" ${SCAN} 2>/dev/null || true
 N="$(hits "${SCAN}")"
 echo "  命中读数：${N}"
@@ -42,17 +57,19 @@ echo
 
 TMP="$(mktemp -d)"
 echo "二 反向样本（必须报红 —— 否则上面的 0 是空转的）"
-printf '%s\n' 'export const 校验器 = 1;' > "${TMP}/反向.js"
+printf '%s\n' 'export function 校验(文) { return JSON.parse(文); }' > "${TMP}/反向.js"
 RH="$(hits "${TMP}/反向.js")"
 echo "  反向样本命中读数：${RH}"
 if [ "${RH}" -ge 1 ]; then echo "  ✓ 抓到了（判据不空转）"; else echo "  ✗ 抓不到 ⇒ 判据空转，上面的 0 不算数"; FAIL=1; fi
 echo
 
 echo "三 正向样本（干净输入必须通过 —— 否则判据误报）"
-printf '%s\n' 'export const 根路径 = "/接口";' > "${TMP}/正向.js"
+# 正向样本刻意含**真实路径**（`测试验证/案例/`）与一个普通赋值 —— 它们都该通过。
+# 这一条同时钉住 #161：路径里的「验证」是名词，不许被判成「在验证」。
+printf '%s\n' 'export const 案例根 = "/测试验证/案例";' 'export const 校验器名 = "纯名词，不是调用";' > "${TMP}/正向.js"
 PH="$(hits "${TMP}/正向.js")"
 echo "  正向样本命中读数：${PH}"
-if [ "${PH}" -eq 0 ]; then echo "  ✓ 通过"; else echo "  ✗ 误报"; FAIL=1; fi
+if [ "${PH}" -eq 0 ]; then echo "  ✓ 通过（真实路径不被误报）"; else echo "  ✗ 误报（路径名词被判成动作）"; FAIL=1; fi
 rm -rf "${TMP}"
 echo
 
@@ -76,6 +93,14 @@ for f in ${SCAN}; do
   L="$(wc -l < "${f}" | tr -d ' ')"
   if [ "${L}" -le 400 ]; then echo "  ✓ ${f}  ${L} 行"; else echo "  ✗ ${f}  ${L} 行"; FAIL=1; fi
 done
+echo
+
+echo "七 检查面声明（本脚本查什么 / 不查什么）"
+# 未完成事项.md #163：本脚本**不查页面控制台输出** —— 它是纯静态 shell，
+# 不启动浏览器、不连 CDP。「页面控制台 0 条」是另一条路（CDP）测的读数，**不在本判据集内**。
+# 不许在别处声称「自检.sh 查控制台 0 条」（那会是一条不存在的判据）。
+echo "  · 查：静态源码里的解析/生成/校验调用形 · 无构建步骤 · 端口不写死 · 单件 ≤400 行"
+echo "  · 不查：页面控制台输出（需浏览器 + CDP，不在本静态脚本内；别声称本脚本查它）"
 echo
 
 if [ "${FAIL}" -eq 0 ]; then

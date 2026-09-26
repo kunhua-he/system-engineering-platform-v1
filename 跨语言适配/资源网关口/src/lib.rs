@@ -73,7 +73,7 @@ pub mod 入口绑定;
 pub mod 关口;
 
 pub use v1_contract::数据槽;
-pub use v1_trace::{丢弃策略, 留痕};
+pub use v1_trace::{丢弃策略, 留痕, 调用类};
 
 pub use 入口绑定::{黑盒体, 黑盒结果, 部署绑定};
 pub use 声明形状::{

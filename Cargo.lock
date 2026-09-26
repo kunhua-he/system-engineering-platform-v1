@@ -11,6 +11,7 @@ dependencies = [
  "v1-loader",
  "v1-notify",
  "v1-registry",
+ "v1-trace",
 ]
 
 [[package]]
