@@ -2,7 +2,10 @@
 # 进入本仓的构建环境。两种用法都行：
 #
 #   . 构建环境/进入.sh     # 在当前 shell 里生效（在仓库根执行）
-#   构建环境/进入.sh        # 起一个已就位的新 shell
+#
+# **只设环境，绝不 exec。** 早先版本在末尾用 $0 判断「是否被 source」再 exec 一个新 shell ——
+# zsh 会把 $0 设成被 source 的脚本名（bash 不会），于是 source 完直接被 exec 掉，
+# 后面的命令全部不执行。这个坑实测撞到过，故整段删除。
 #
 # 把两个环境都钉在仓库内：
 #   Rust   —— 工具链版本由 rust-toolchain.toml 钉死；cargo 的家与构建缓存都在 构建环境/ 下
@@ -47,8 +50,3 @@ fi
 echo "离线构建    : $CARGO_NET_OFFLINE"
 echo
 echo "（入口只设环境，不做闸门。要自检请显式跑： 构建环境/自检.sh）"
-
-# 直接执行（未被 source）时，起一个已就位的新 shell
-case "$0" in
-  *进入.sh) exec "${SHELL:-/bin/sh}" ;;
-esac
