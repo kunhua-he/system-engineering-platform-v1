@@ -74,9 +74,20 @@ def 工具链版本() -> str:
     return 跑(["rustc", "--version"], cwd=仓根).stdout.strip()
 
 
+# 回执件是**只增日志**：每跑一次门禁（含 pre-commit 钩子）就追加一行 ⇒ 它自己永远脏。
+# 判「工作区脏」时必须排除它，与回执自己的 `工作区是否干净` 字段**同一口径**
+# （`测试验证/案例/形状.md` §二：不排除该字段就恒为 false、永远没有信息量）。
+回执相对路径 = "测试验证/案例/运行回执.jsonl"
+
+
 def 提交哈希() -> tuple:
     成 = 跑(["git", "rev-parse", "--short=12", "HEAD"], cwd=仓根).stdout.strip()
-    脏 = bool(跑(["git", "status", "--porcelain"], cwd=仓根).stdout.strip())
+    脏行 = [
+        行
+        for 行 in 跑(["git", "status", "--porcelain"], cwd=仓根).stdout.splitlines()
+        if 行.strip() and 行[3:].strip().strip('"') != 回执相对路径
+    ]
+    脏 = bool(脏行)
     return 成, 脏
 
 
