@@ -110,10 +110,10 @@ pub fn 算指纹(数据: &[u8]) -> [u8; 指纹宽度] {
     出
 }
 
-fn 压缩(状态: &mut [u32; 8], 块: &[u8]) {
+fn 压缩(状态: &mut [u32; 8], 数据块: &[u8]) {
     let mut 字 = [0u32; 64];
     for 序 in 0..16 {
-        字[序] = u32::from_be_bytes(块[序 * 4..序 * 4 + 4].try_into().unwrap());
+        字[序] = u32::from_be_bytes(数据块[序 * 4..序 * 4 + 4].try_into().unwrap());
     }
     for 序 in 16..64 {
         let s0 = 字[序 - 15].rotate_right(7) ^ 字[序 - 15].rotate_right(18) ^ (字[序 - 15] >> 3);

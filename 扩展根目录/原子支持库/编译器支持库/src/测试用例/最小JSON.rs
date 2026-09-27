@@ -17,9 +17,9 @@ pub(crate) enum JSON值 {
 }
 
 impl JSON值 {
-    pub(crate) fn 取成员(&self, 键: &str) -> Option<&JSON值> {
+    pub(crate) fn 取成员(&self, 键名: &str) -> Option<&JSON值> {
         match self {
-            JSON值::对象(项s) => 项s.iter().find(|(名, _)| 名 == 键).map(|(_, 值)| 值),
+            JSON值::对象(项s) => 项s.iter().find(|(名, _)| 名 == 键名).map(|(_, 值)| 值),
             _ => None,
         }
     }
@@ -94,10 +94,10 @@ impl<'a> 读器<'a> {
         }
     }
 
-    fn 字面量(&mut self, 期望: &[u8], 值: JSON值) -> Option<JSON值> {
+    fn 字面量(&mut self, 期望: &[u8], 待处理值: JSON值) -> Option<JSON值> {
         if self.字节.get(self.位..self.位 + 期望.len())? == 期望 {
             self.位 += 期望.len();
-            Some(值)
+            Some(待处理值)
         } else {
             None
         }
@@ -220,12 +220,12 @@ impl<'a> 读器<'a> {
 }
 
 /// 一个 UTF-8 首字节对应几字节。
-fn UTF8字节长(首: u8) -> usize {
-    if 首 < 0x80 {
+fn UTF8字节长(首字节: u8) -> usize {
+    if 首字节 < 0x80 {
         1
-    } else if 首 >> 5 == 0b110 {
+    } else if 首字节 >> 5 == 0b110 {
         2
-    } else if 首 >> 4 == 0b1110 {
+    } else if 首字节 >> 4 == 0b1110 {
         3
     } else {
         4

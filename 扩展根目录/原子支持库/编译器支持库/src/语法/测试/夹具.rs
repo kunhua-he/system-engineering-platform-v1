@@ -8,11 +8,11 @@
 use crate::语言面::{节点种类, 记号, 记号流, 记号种类, 语法树};
 
 /// 按顺序找出片段拼成记号表（夹具构造，**不是词法分析器**：种类由调用方给定）。
-pub(super) fn 造记号流(原文: &str, 表: &[(记号种类, &str)]) -> 记号流 {
+pub(super) fn 造记号流(原文: &str, 项表: &[(记号种类, &str)]) -> 记号流 {
     let 字节 = 原文.as_bytes().to_vec();
     let mut 记号表 = Vec::new();
     let mut 游标 = 0usize;
-    for (种类, 片段) in 表 {
+    for (种类, 片段) in 项表 {
         let 相对 = 原文[游标..].find(片段).expect("夹具片段在原文里找不到");
         let 起 = 游标 + 相对;
         let 止 = 起 + 片段.len();
@@ -26,10 +26,10 @@ pub(super) fn 造记号流(原文: &str, 表: &[(记号种类, &str)]) -> 记号
 }
 
 /// 字节级夹具（GBK 原文用；本腿的 UTF-8 关键字表认不出 GBK）。
-pub(super) fn 造记号流字节(原文: &[u8], 表: &[(记号种类, &[u8])]) -> 记号流 {
+pub(super) fn 造记号流字节(原文: &[u8], 项表: &[(记号种类, &[u8])]) -> 记号流 {
     let mut 记号表 = Vec::new();
     let mut 游标 = 0usize;
-    for (种类, 片段) in 表 {
+    for (种类, 片段) in 项表 {
         let 起 = 游标;
         let 止 = 起 + 片段.len();
         assert_eq!(&原文[起..止], *片段, "夹具片段与原文对不上");
@@ -88,8 +88,8 @@ pub(super) fn 种类名(种类: 节点种类) -> &'static str {
 }
 
 /// 树读数：逐节点一行 `下标 种类 [起,止) 子(起,止)`。报告里的读数就是它。
-pub(super) fn 树读数(树: &语法树) -> Vec<String> {
-    树.节点表
+pub(super) fn 树读数(语法树: &语法树) -> Vec<String> {
+    语法树.节点表
         .iter()
         .enumerate()
         .map(|(位次, 节点)| {
@@ -107,8 +107,8 @@ pub(super) fn 树读数(树: &语法树) -> Vec<String> {
 }
 
 /// 把报告里的读数**钉成判据**：树的逐节点读数必须逐行相同。
-pub(super) fn 断言读数(树: &语法树, 期望: &str) {
-    let 实得 = 树读数(树).join("\n");
+pub(super) fn 断言读数(语法树: &语法树, 期望: &str) {
+    let 实得 = 树读数(语法树).join("\n");
     assert_eq!(实得, 期望.trim_end(), "树的逐节点读数与期望不一致");
 }
 

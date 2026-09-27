@@ -16,10 +16,10 @@
 use crate::容器::{容器段, 段头, 容器};
 
 /// 结构 → 字节集。
-pub fn 编码容器(容: &容器) -> Vec<u8> {
+pub fn 编码容器(容器: &容器) -> Vec<u8> {
     let mut 出 = Vec::new();
-    出.extend_from_slice(&(容.段表.len() as u32).to_le_bytes());
-    for 一段 in &容.段表 {
+    出.extend_from_slice(&(容器.段表.len() as u32).to_le_bytes());
+    for 一段 in &容器.段表 {
         出.extend_from_slice(&一段.头.校验和.to_le_bytes());
         出.push(一段.头.段类型);
         出.extend_from_slice(&一段.头.名称区);
@@ -64,8 +64,8 @@ struct 读器<'a> {
 }
 
 impl<'a> 读器<'a> {
-    fn 取字节(&mut self, 数: usize) -> Option<&'a [u8]> {
-        let 尾 = self.位.checked_add(数)?;
+    fn 取字节(&mut self, 个数: usize) -> Option<&'a [u8]> {
+        let 尾 = self.位.checked_add(个数)?;
         if 尾 > self.字节.len() {
             return None;
         }

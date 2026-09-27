@@ -14,15 +14,15 @@ impl 分析器<'_> {
     /// `…, )` 的尾空位锚在它前面那个逗号。`(首参, , 次参)` ⇒ 空位 `[11,11)`（首参止 == 11）。
     ///
     /// 解不出的实参：把余下记号包成一个兜底叶，**不再往下切**（不 panic、不死循环）。
-    pub(super) fn 实参表在(&mut self, 开: usize, 闭: usize) -> Vec<u32> {
-        let 左止 = self.记号表[开].止;
+    pub(super) fn 实参表在(&mut self, 开符: usize, 闭符: usize) -> Vec<u32> {
+        let 左止 = self.记号表[开符].止;
         let mut 实参: Vec<u32> = Vec::new();
-        let mut 游标 = 开 + 1;
+        let mut 游标 = 开符 + 1;
         let mut 前分隔: Option<u32> = None;
         let mut 期待 = true;
         loop {
             // 跳过空白与花括号（`置入代码 ({ 139, 69, … })` 的 `{` / `}`）。
-            while 游标 < 闭 {
+            while 游标 < 闭符 {
                 let 本记号 = self.记号表[游标];
                 let 是花括号 =
                     本记号.种类 == 记号种类::界符 && (self.取记号原文(本记号) == b"{" || self.取记号原文(本记号) == b"}");
@@ -32,7 +32,7 @@ impl 分析器<'_> {
                     break;
                 }
             }
-            if 游标 >= 闭 {
+            if 游标 >= 闭符 {
                 if 期待
                     && let Some(锚) = 前分隔
                 {
@@ -54,7 +54,7 @@ impl 分析器<'_> {
             let 保存游标 = self.游标;
             let 保存止 = self.止;
             self.游标 = 游标;
-            self.止 = 闭;
+            self.止 = 闭符;
             let 果 = self.二元();
             游标 = self.游标;
             self.游标 = 保存游标;
@@ -68,7 +68,7 @@ impl 分析器<'_> {
                 }
                 None => {
                     // 一个记号都没解出：余下包成一个兜底叶，收手（不 panic、不死循环）
-                    if let Some(叶) = self.兜底到(闭) {
+                    if let Some(叶) = self.兜底到(闭符) {
                         实参.push(叶);
                     }
                     break;
@@ -78,14 +78,14 @@ impl 分析器<'_> {
         实参
     }
 
-    /// 公开口：解析一整个实参表（`开` 给 `(` 的下标）。返回实参草稿下标表。
-    pub(crate) fn 解析实参表(&mut self, 开: usize, 止: usize) -> Vec<u32> {
+    /// 公开口：解析一整个实参表（`开符` 给 `(` 的下标）。返回实参草稿下标表。
+    pub(crate) fn 解析实参表(&mut self, 开符: usize, 区间终点: usize) -> Vec<u32> {
         let 保存游标 = self.游标;
         let 保存止 = self.止;
-        self.游标 = 开;
-        self.止 = 止;
+        self.游标 = 开符;
+        self.止 = 区间终点;
         let 果 = match self.配对(b"(", b")") {
-            Some(闭) => self.实参表在(开, 闭),
+            Some(闭) => self.实参表在(开符, 闭),
             None => Vec::new(),
         };
         self.游标 = 保存游标;
@@ -93,13 +93,13 @@ impl 分析器<'_> {
         果
     }
 
-    /// 公开口：在 `[起, 止)` 里找第一个 `(` 并解析它里面的实参表（块头条件 / 置入代码用）。
-    pub(crate) fn 解析括号实参(&mut self, 起: usize, 止: usize) -> Vec<u32> {
-        let mut 记号位次 = 起;
-        while 记号位次 < 止 {
+    /// 公开口：在 `[区间起点, 区间终点)` 里找第一个 `(` 并解析它里面的实参表（块头条件 / 置入代码用）。
+    pub(crate) fn 解析括号实参(&mut self, 区间起点: usize, 区间终点: usize) -> Vec<u32> {
+        let mut 记号位次 = 区间起点;
+        while 记号位次 < 区间终点 {
             let 本记号 = self.记号表[记号位次];
             if 本记号.种类 == 记号种类::界符 && self.取记号原文(本记号) == b"(" {
-                return self.解析实参表(记号位次, 止);
+                return self.解析实参表(记号位次, 区间终点);
             }
             记号位次 += 1;
         }

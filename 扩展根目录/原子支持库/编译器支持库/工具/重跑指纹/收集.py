@@ -36,9 +36,9 @@ def 收集():
     return sorted(相对路径(路) for 路 in 文件)
 
 
-def 算指纹(路):
+def 算指纹(路径):
     摘要 = hashlib.sha256()
-    with open(路, "rb") as 句柄:
+    with open(路径, "rb") as 句柄:
         for 块 in iter(lambda: 句柄.read(1 << 20), b""):
             摘要.update(块)
     return 摘要.hexdigest()
