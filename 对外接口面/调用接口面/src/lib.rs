@@ -16,6 +16,10 @@ mod 常量;
 mod 槽编码;
 #[path = "网关.rs"]
 mod 网关;
+// 扫扩展根：从 example 搬进 src（启动装配与运行期装载同读一份，台账 237）。
+// **公开**：example（`examples/启动网关/`）也读它 —— 一个实现两处调用，不是第二套。
+#[path = "扫扩展根.rs"]
+pub mod 扫扩展根;
 #[path = "报文读写.rs"]
 mod 报文读写;
 #[path = "请求.rs"]

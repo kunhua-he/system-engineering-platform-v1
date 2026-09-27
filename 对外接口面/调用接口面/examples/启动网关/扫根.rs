@@ -1,28 +1,6 @@
-//! 启动网关 · 扫根 —— 「一个扩展根目录里有哪些可装载库」的判据。
+//! 启动网关 · 扫根 —— **转调**：实现已搬进 `对外接口面/调用接口面/src/扫扩展根.rs`。
 //!
-//! 从 `examples/启动网关.rs` 搬来（那是装配入口，本件是它的一个关注点；**纯搬家**）。
-//! 这里**不写死任何扩展名**：扫到谁就是谁（README 第五节「底座不认识任何扩展」）。
+//! 启动装配与**运行期装载**（`POST /接口/生命周期` 动作=装载）**同读一份**（台账 237）。
+//! 本件只把 `src` 的实现再导出来，不再自己写一份。
 
-use std::fs;
-use std::path::{Path, PathBuf};
-
-/// 可装载库文件的后缀：**按后缀找，不按名字找**（名字里会有扩展名，底座不许认名字）。
-pub(crate) const 库后缀: [&str; 3] = [".dylib", ".so", ".dll"];
-
-/// 取一个目录下的直接子目录，**按名字排序**（装载顺序即依赖序，不许随文件系统飘）。
-pub(crate) fn 子目录(目录: &Path) -> Vec<PathBuf> {
-    let Ok(读器) = fs::read_dir(目录) else { return Vec::new() };
-    let mut 输出缓冲: Vec<PathBuf> = 读器
-        .filter_map(|一项| 一项.ok())
-        .map(|一项| 一项.path())
-        .filter(|路径| 路径.is_dir())
-        .collect();
-    输出缓冲.sort();
-    输出缓冲
-}
-
-/// 是不是可装载库文件（按后缀找，不按名字找）。
-pub(crate) fn 是可装载库(路径: &Path) -> bool {
-    let 名称 = 路径.file_name().and_then(|名称| 名称.to_str());
-    路径.is_file() && 名称.is_some_and(|名称| 库后缀.iter().any(|尾部| 名称.ends_with(尾部)))
-}
+pub(crate) use v1_gateway::扫扩展根::子目录;
