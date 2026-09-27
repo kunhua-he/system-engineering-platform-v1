@@ -8,7 +8,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from .剥字面量 import cfg测试区, 去字面量
+from .剥字面量 import 条件编译测试区, 去字面量
 
 
 构造模式 = re.compile(r"平台信息\s*\{")
@@ -28,7 +28,7 @@ def 找构造点(文本: str) -> list:
     的，是类型位置；前一个非空白字符不在 `= ( , [ { :` 里的，也不是构造。
     """
     净 = 去字面量(文本)
-    区表 = cfg测试区(文本)
+    区表 = 条件编译测试区(文本)
     行首表 = [0]
     for 游标, 字符 in enumerate(净):
         if 字符 == "\n":
@@ -229,7 +229,7 @@ def _属性窗口起(掩: str, 位: int) -> int:
     return 起
 
 
-def _cfg属性(掩: str, 起: int):
+def _条件编译属性(掩: str, 起: int):
     """从 `起`（指向 `#`）解析一个 `#[cfg(…)]` 属性，返回 (属性文本, 结束位) 或 None。
 
     括号**配对**解析：`#[cfg(any(test, feature = "x"))]` 有两层括号，`[^)]*` 这类正则会漏

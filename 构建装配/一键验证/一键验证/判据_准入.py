@@ -174,7 +174,7 @@ def _段含键(文, 段名, 键):
     return False
 
 
-def 检查31_准入crate_type(上: dict) -> list:
+def 检查31_准入制品类型(上: dict) -> list:
     """㉛ 准入⑨：扩展 crate-type 只有一条路（扩展仓不声明，装配侧现场编）。"""
     出 = []
     名 = 检查名[30]
