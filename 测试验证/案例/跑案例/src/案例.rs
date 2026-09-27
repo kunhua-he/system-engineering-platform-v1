@@ -164,39 +164,39 @@ fn 读一个(目录: &Path) -> Result<案例, String> {
 
 fn 读步骤(清单: &值, 目录: &Path) -> Result<Vec<步骤>, String> {
     let 表 = 清单
-        .取("步骤")
+        .取成员("步骤")
         .and_then(|一| 一.表())
         .ok_or_else(|| format!("{}：`步骤` 缺失或不是数组", 目录.display()))?;
     let mut 累积表 = Vec::new();
     for (序, 一) in 表.iter().enumerate() {
         let 名 = 一
-            .取("名")
+            .取成员("名")
             .and_then(|一| 一.串())
             .ok_or_else(|| format!("{}：步骤[{序}] 缺 `名`", 目录.display()))?
             .to_owned();
         let 能力编号 = 一
-            .取("能力编号")
+            .取成员("能力编号")
             .and_then(|一| 一.整数())
             .and_then(|数| u32::try_from(数).ok())
             .ok_or_else(|| format!("{}：步骤[{序}] 的 `能力编号` 缺失或不是 32 位整数", 目录.display()))?;
         let 实参表 = 一
-            .取("实参")
+            .取成员("实参")
             .and_then(|一| 一.表())
             .ok_or_else(|| format!("{}：步骤[{序}] 的 `实参` 缺失或不是数组", 目录.display()))?;
         let mut 实参 = Vec::new();
         for (位, 参) in 实参表.iter().enumerate() {
             let 类型标签 = 参
-                .取("类型标签")
+                .取成员("类型标签")
                 .and_then(|一| 一.整数())
                 .and_then(|数| u32::try_from(数).ok())
                 .ok_or_else(|| {
                     format!("{}：步骤[{序}].实参[{位}] 的 `类型标签` 缺失或不是 32 位整数", 目录.display())
                 })?;
             let 来源名 = 参
-                .取("来源")
+                .取成员("来源")
                 .and_then(|一| 一.串())
                 .ok_or_else(|| format!("{}：步骤[{序}].实参[{位}] 缺 `来源`", 目录.display()))?;
-            let 值项 = 参.取("值");
+            let 值项 = 参.取成员("值");
             let 来源 = match 来源名 {
                 "程序文本" => 实参来源::程序文本,
                 "文件" => 实参来源::文件(PathBuf::from(
@@ -233,7 +233,7 @@ fn 读步骤(清单: &值, 目录: &Path) -> Result<Vec<步骤>, String> {
 fn 读期望(路: &Path, 步骤数: usize, 目录: &Path) -> Result<Vec<期望>, String> {
     let 根 = 读JSON(路)?;
     let 表 = 根
-        .取("步骤")
+        .取成员("步骤")
         .and_then(|一| 一.表())
         .ok_or_else(|| format!("{}：`步骤` 缺失或不是数组", 路.display()))?;
     if 表.len() != 步骤数 {
@@ -246,19 +246,19 @@ fn 读期望(路: &Path, 步骤数: usize, 目录: &Path) -> Result<Vec<期望>,
     let mut 累积表 = Vec::new();
     for (序, 一) in 表.iter().enumerate() {
         let 结果 = 一
-            .取("结果")
+            .取成员("结果")
             .and_then(|一| 一.串())
             .ok_or_else(|| format!("{}：步骤[{序}] 缺 `结果`", 路.display()))?;
         let 定 = match 结果 {
             "成功" => 期望::成功 { 产物: 读产物(一, 目录)? },
             "失败" => {
                 let 层 = 一
-                    .取("死在哪一层")
+                    .取成员("死在哪一层")
                     .and_then(|一| 一.串())
                     .ok_or_else(|| format!("{}：步骤[{序}] 结果=失败，必须有 `死在哪一层`", 路.display()))?
                     .to_owned();
                 let 码项 = 一
-                    .取("错误码")
+                    .取成员("错误码")
                     .ok_or_else(|| format!("{}：步骤[{序}] 结果=失败，必须有 `错误码`", 路.display()))?;
                 let 错误码 = 错误码期望 {
                     码: 要整数(码项, "码", 路)?,
@@ -282,11 +282,11 @@ fn 读期望(路: &Path, 步骤数: usize, 目录: &Path) -> Result<Vec<期望>,
 }
 
 fn 读产物(一: &值, 目录: &Path) -> Result<产物判据, String> {
-    let Some(产物) = 一.取("产物") else {
+    let Some(产物) = 一.取成员("产物") else {
         return Ok(产物判据::不判);
     };
     let 判定值 = 产物
-        .取("判据")
+        .取成员("判据")
         .and_then(|一| 一.串())
         .ok_or_else(|| format!("{}：`产物` 缺 `判据`", 目录.display()))?;
     match 判定值 {
@@ -295,13 +295,13 @@ fn 读产物(一: &值, 目录: &Path) -> Result<产物判据, String> {
         "不判" => Ok(产物判据::不判),
         "错误槽" => Ok(产物判据::错误槽(
             产物
-                .取("码")
+                .取成员("码")
                 .and_then(|一| 一.数())
                 .ok_or_else(|| "`错误槽` 缺 `码`（要一个整数）".to_owned())? as u32,
         )),
         "逐字节等于文件" => Ok(产物判据::逐字节等于文件(PathBuf::from(
             产物
-                .取("文件")
+                .取成员("文件")
                 .and_then(|一| 一.串())
                 .ok_or_else(|| "`逐字节等于文件` 缺 `文件`".to_owned())?
                 .to_owned(),
@@ -339,18 +339,18 @@ fn 读JSON(路: &Path) -> Result<值, String> {
 }
 
 fn 要串<'a>(项: &'a 值, 键: &str) -> Result<&'a str, String> {
-    项.取(键).and_then(|一| 一.串()).ok_or_else(|| format!("缺 `{键}`（或不是字符串）"))
+    项.取成员(键).and_then(|一| 一.串()).ok_or_else(|| format!("缺 `{键}`（或不是字符串）"))
 }
 
 fn 要整数(项: &值, 键: &str, 路: &Path) -> Result<u32, String> {
-    项.取(键)
+    项.取成员(键)
         .and_then(|一| 一.整数())
         .and_then(|数| u32::try_from(数).ok())
         .ok_or_else(|| format!("{}：`{键}` 缺失或不是 32 位整数", 路.display()))
 }
 
 fn 要真假(项: &值, 键: &str) -> Result<bool, String> {
-    项.取(键).and_then(|一| 一.真假()).ok_or_else(|| format!("缺 `{键}`（或不是 true/false）"))
+    项.取成员(键).and_then(|一| 一.真假()).ok_or_else(|| format!("缺 `{键}`（或不是 true/false）"))
 }
 
 #[cfg(test)]
