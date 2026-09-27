@@ -30,7 +30,8 @@ import subprocess
 import time
 from pathlib import Path
 
-from .落点 import 库路径
+from .落点 import 库文件名, 库目录名
+from .落点 import 库路径 as 默认库路径
 
 索引器命令 = "codegraph"
 # ★ **有意不设超时**（与仓里 `cargo` / `nm` / 闸 0 起子进程同一口径）：建索引是**环境步**，
@@ -48,12 +49,16 @@ _行缓存: dict = {}
 # ── 库的开关与读数 ──────────────────────────────────────────────────────────────────────
 
 def 有库() -> bool:
-    return 库路径().is_file()
+    return 默认库路径().is_file()
 
 
-def 连库() -> sqlite3.Connection:
-    """**只读**连库（`mode=ro`：本仓绝不写索引器的库）。"""
-    return sqlite3.connect("file:%s?mode=ro" % 库路径(), uri=True)
+def 连库(库路径=None) -> sqlite3.Connection:
+    """**只读**连库（`mode=ro`：本仓绝不写索引器的库）。
+
+    `库路径` 给了就连那一个库 —— 一开工一工作树时，要查的必须是**那条树**的索引
+    （不带就查主树）。**不许**靠改模块级状态来切库：那是隐式第二来源。
+    """
+    return sqlite3.connect("file:%s?mode=ro" % (库路径 or 默认库路径()), uri=True)
 
 
 def 找命令() -> str:
@@ -61,9 +66,9 @@ def 找命令() -> str:
     return shutil.which(索引器命令) or ""
 
 
-def 库读数() -> dict:
+def 库读数(库路径=None) -> dict:
     """库里的节点 / 边 / 件数（库不在 ⇒ 全 0）。"""
-    if not 有库():
+    if not (库路径 or 默认库路径()).is_file():
         return {"节点": 0, "边": 0, "件": 0, "索引器版本": ""}
     库 = 连库()
     try:
@@ -81,14 +86,21 @@ def 库读数() -> dict:
 
 
 def 建(仓根: Path) -> tuple:
-    """跑索引器全量重建 ⇒ `(退出码, 墙钟毫秒, 说明)`。属**环境步**（不判顶）。"""
+    """跑索引器全量重建 ⇒ `(退出码, 墙钟毫秒, 说明)`。属**环境步**（不判顶）。
+
+    **库不在 ⇒ 先 `init`**：`index` 只刷已有的库，对全新目录直接报
+    `✗ CodeGraph not initialized in <路径>`（退出码 1）。实测撞到两处 —— 一开工一工作树
+    登记时刚建出的工作树、以及**新克隆的仓**。
+    """
     命令 = 找命令()
     if not 命令:
         return 1, 0, ("代码地图：索引器 `%s` 不在（环境依赖，不是底座能力）。装法："
                     "`npm i -g @colbymchenry/codegraph`" % 索引器命令)
+    库文件 = Path(仓根) / 库目录名 / 库文件名
+    动作 = "index" if 库文件.is_file() else "init"
     开始时刻 = time.monotonic()
     try:
-        回执 = subprocess.run([命令, "index", str(仓根)], cwd=str(仓根),
+        回执 = subprocess.run([命令, 动作, str(仓根)], cwd=str(仓根),
                             capture_output=True, text=True)     # 不设超时，见 `索引器命令` 上方
     except OSError as 起不来的原因:
         return -2, 0, "代码地图：起不了索引器：%r" % (起不来的原因,)
@@ -98,7 +110,25 @@ def 建(仓根: Path) -> tuple:
             回执.returncode, (回执.stderr or 回执.stdout or "").strip()[-400:])
     读数 = 库读数()
     return 0, 墙钟毫秒, "索引 %d 节点 · %d 边 · %d 件（索引器 %s）⇒ %s" % (
-        读数["节点"], 读数["边"], 读数["件"], 读数["索引器版本"] or "—", 库路径())
+        读数["节点"], 读数["边"], 读数["件"], 读数["索引器版本"] or "—",
+        库路径 or 默认库路径())
+
+
+def 同步(仓根: Path) -> tuple:
+    """增量同步（改了件之后刷索引）⇒ `(退出码, 说明)`。
+
+    **为什么用 `sync` 不用 `index`**：实测改 1 件后 `sync` 全链 **389 ms**，`index` 要 1.0–1.4 s。
+    写盘后每条改动都要刷一次（下一条改动要拿到新行号与新指纹）⇒ 这一档必须便宜。
+    `仓根` 是**显式参数**：一开工一工作树时，刷的必须是那条树的索引，不是主树的。
+    """
+    命令 = 找命令()
+    if not 命令:
+        return 1, "索引器不在（`%s`）⇒ 索引没刷，下次查符号会读到旧行号" % 索引器命令
+    回执 = subprocess.run([命令, "sync", str(仓根)], cwd=str(仓根),
+                       capture_output=True, text=True)     # 不设超时，见 `索引器命令` 上方
+    if 回执.returncode != 0:
+        return 回执.returncode, (回执.stderr or 回执.stdout or "").strip()[-300:]
+    return 0, "索引已同步"
 
 
 def 报缺工具() -> int:
@@ -182,11 +212,11 @@ _节点字段 = ("n.id, n.kind, n.name, n.qualified_name, n.file_path, n.start_l
            "where e.target = n.id and e.kind <> 'contains')")
 
 
-def 全部定义() -> list:
+def 全部定义(库路径=None) -> list:
     """定义面上的全部节点（见 `非标识符种类`）⇒ 定义表。库不在 ⇒ 空表（调用方据此报「先建」）。"""
-    if not 有库():
+    if not (库路径 or 默认库路径()).is_file():
         return []
-    库 = 连库()
+    库 = 连库(库路径)
     try:
         return [节点记录(一行) for 一行 in 库.execute(
             "select %s from nodes n where n.kind <> ? and n.kind <> ?" % _节点字段,
@@ -197,11 +227,11 @@ def 全部定义() -> list:
 
 # ── 读库：出现位（定义处 + 引用处）────────────────────────────────────────────────────────
 
-def 出现数(标识: str) -> int:
+def 出现数(标识: str, 库路径=None) -> int:
     """该符号的**出现数** = 定义本身 1 处 ＋ 指向它的引用边（`contains` 不算 —— 那是「件包含它」）。"""
-    if not 有库():
+    if not (库路径 or 默认库路径()).is_file():
         return 0
-    库 = 连库()
+    库 = 连库(库路径)
     try:
         引用数 = 库.execute(
             "select count(*) from edges where target=? and kind<>'contains'", (标识,)).fetchone()[0]
@@ -218,7 +248,7 @@ def _源件路径(库: sqlite3.Connection, 源: str) -> str:
     return 行[0] if 行 else ""
 
 
-def 出现位(键: str, 上限: int = 0) -> dict:
+def 出现位(键: str, 上限: int = 0, 库路径=None) -> dict:
     """该符号的全部出现位置 ⇒ `{"位置": [(路径, 行, 列)…], "总数": n, "口径": "…"}`。
 
     **口径**：先按 `限定名` **全等**找（精确）；一条都没有才退回按 `名字` 全等
@@ -227,9 +257,9 @@ def 出现位(键: str, 上限: int = 0) -> dict:
 
     ★ 引用面比编译器索引少约 7%（见本件顶部）⇒ 调用方**必须**拿编译兜底，别当它全。
     """
-    if not 有库():
+    if not (库路径 or 默认库路径()).is_file():
         return {"位置": [], "总数": 0, "口径": "没有索引"}
-    库 = 连库()
+    库 = 连库(库路径)
     try:
         for 匹配列, 口径说明 in (("qualified_name", "限定名（精确）"),
                                 ("name", "名字（同名不同符号会混进来）")):
