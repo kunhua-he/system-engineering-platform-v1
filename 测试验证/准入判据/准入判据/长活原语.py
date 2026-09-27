@@ -44,9 +44,9 @@ from pathlib import Path
 
 def 找仓根() -> Path:
     """从本件往上找仓根（认 `契约声明/` 与 `扩展装载/` 同在的那一层）。"""
-    for 起 in [Path.cwd(), *Path(__file__).resolve().parents]:
-        if (起 / "契约声明").is_dir() and (起 / "扩展装载").is_dir():
-            return 起
+    for 区间起点 in [Path.cwd(), *Path(__file__).resolve().parents]:
+        if (区间起点 / "契约声明").is_dir() and (区间起点 / "扩展装载").is_dir():
+            return 区间起点
     return Path.cwd()
 
 
@@ -60,16 +60,16 @@ def 缓存目录(根目录: Path) -> Path:
 
 def 源指纹(根目录: Path) -> str:
     """考题源的 sha256 —— 戳与它比对，源变了即判「产物与源不符」。"""
-    件 = 考题路径(根目录)
-    if not 件.is_file():
+    节点件 = 考题路径(根目录)
+    if not 节点件.is_file():
         return ""
-    return hashlib.sha256(件.read_bytes()).hexdigest()
+    return hashlib.sha256(节点件.read_bytes()).hexdigest()
 
 
 def 读戳(根目录: Path) -> dict:
-    件 = 缓存目录(根目录) / "戳.json"
+    节点件 = 缓存目录(根目录) / "戳.json"
     try:
-        return json.loads(件.read_text(encoding="utf-8"))
+        return json.loads(节点件.read_text(encoding="utf-8"))
     except (OSError, ValueError):
         return {}
 
@@ -83,7 +83,7 @@ def 预编(根目录: Path) -> int:
     缓存 = 缓存目录(根目录)
     缓存.mkdir(parents=True, exist_ok=True)
     二进制 = 缓存 / "考题"
-    起 = time.monotonic()
+    区间起点 = time.monotonic()
     结果 = subprocess.run(
         # `--edition 2024` 与扩展 crate 的 `Cargo.toml` 逐字一致（否则「真跑」跑的不是它的真版本）。
         ["rustc", "--test", "--edition", "2024", str(考题路径(根目录)), "-o", str(二进制)],
@@ -92,7 +92,7 @@ def 预编(根目录: Path) -> int:
         text=True,
         timeout=编译超时毫秒 / 1000,
     )
-    耗时毫秒 = int((time.monotonic() - 起) * 1000)
+    耗时毫秒 = int((time.monotonic() - 区间起点) * 1000)
     if 结果.returncode != 0:
         sys.stderr.write(f"✗ 考题编不出来（rustc 退出码 {结果.returncode}）：\n{结果.stderr.strip()}\n")
         return 1
@@ -111,41 +111,41 @@ def 预编(根目录: Path) -> int:
 
 def 解测果(输出: str) -> dict:
     """从测试输出里解出 `测试名 ⇒ 通过与否`（只认 `test <名> ... ok|FAILED` 这一形）。"""
-    表 = {}
-    for 行 in 输出.splitlines():
-        净 = 行.strip()
-        if not 净.startswith("test ") or " ... " not in 净:
+    项表 = {}
+    for 源码行 in 输出.splitlines():
+        净文本 = 源码行.strip()
+        if not 净文本.startswith("test ") or " ... " not in 净文本:
             continue
-        名, _, 尾 = 净[5:].partition(" ... ")
-        表[名.strip()] = 尾.strip().startswith("ok")
-    return 表
+        名, _, 尾 = 净文本[5:].partition(" ... ")
+        项表[名.strip()] = 尾.strip().startswith("ok")
+    return 项表
 
 
 def 扫内核任务表(根目录: Path) -> list:
     """判据 10：`运行内核/` 下 0 处任务表（状态在扩展侧，内核不持）。返回命中处。"""
     命中 = []
-    面 = 根目录 / 内核扫描面相对
-    if not 面.is_dir():
+    扫描面 = 根目录 / 内核扫描面相对
+    if not 扫描面.is_dir():
         return 命中
-    for 件 in sorted(面.rglob("*.rs")):
+    for 节点件 in sorted(扫描面.rglob("*.rs")):
         try:
-            文本 = 件.read_text(encoding="utf-8")
+            文本 = 节点件.read_text(encoding="utf-8")
         except OSError:
             continue
-        for 词 in 任务表词:
-            if 词 in 文本:
-                命中.append(f"{件.relative_to(根目录)}::{词}")
+        for 关键词 in 任务表词:
+            if 关键词 in 文本:
+                命中.append(f"{节点件.relative_to(根目录)}::{关键词}")
     return 命中
 
 
 def 判定(根目录: Path) -> int:
     """命令体：跑已编好的考题，把三道断言映射成 判据 7 · 8 · 9，另静态扫 判据 10。"""
-    戳 = 读戳(根目录)
-    二进制 = 缓存目录(根目录) / str(戳.get("二进制") or "考题")
-    if not 戳 or not 二进制.is_file():
+    指纹戳 = 读戳(根目录)
+    二进制 = 缓存目录(根目录) / str(指纹戳.get("二进制") or "考题")
+    if not 指纹戳 or not 二进制.is_file():
         print("✗ 产物缺失：先跑环境步 —— python3 测试验证/准入判据/长活原语.py --预编")
         return 1
-    if 戳.get("源指纹") != 源指纹(根目录):
+    if 指纹戳.get("源指纹") != 源指纹(根目录):
         print("✗ 产物与源不符（考题被改过，戳是旧的）：先跑 --预编 刷新")
         return 1
     try:
@@ -194,29 +194,29 @@ def 自测() -> int:
     三组：① `解测果` 认得出 ok 与 FAILED ② `扫内核任务表` 植入即抓得到 · 干净即 0
     ③ `源指纹` 对源的变化敏感（不敏感 ⇒ 戳形同虚设）。
     """
-    错 = []
-    表 = 解测果("test 通过样例 ... ok\ntest 失败样例 ... FAILED\n")
-    if 表.get("通过样例") is not True or 表.get("失败样例") is not False:
-        错.append("解测果 把 ok / FAILED 判反了")
+    错误 = []
+    项表 = 解测果("test 通过样例 ... ok\ntest 失败样例 ... FAILED\n")
+    if 项表.get("通过样例") is not True or 项表.get("失败样例") is not False:
+        错误.append("解测果 把 ok / FAILED 判反了")
     with tempfile.TemporaryDirectory() as 临时:
-        根 = Path(临时)
-        (根 / 内核扫描面相对).mkdir(parents=True)
-        if 扫内核任务表(根):
-            错.append("干净树上报出了任务表（假红）")
-        (根 / 内核扫描面相对 / "植入.rs").write_text("static mut 任务表: u32 = 0;\n", encoding="utf-8")
-        if not 扫内核任务表(根):
-            错.append("植入了任务表却抓不到（漏判）")
+        根目录 = Path(临时)
+        (根目录 / 内核扫描面相对).mkdir(parents=True)
+        if 扫内核任务表(根目录):
+            错误.append("干净树上报出了任务表（假红）")
+        (根目录 / 内核扫描面相对 / "植入.rs").write_text("static mut 任务表: u32 = 0;\n", encoding="utf-8")
+        if not 扫内核任务表(根目录):
+            错误.append("植入了任务表却抓不到（漏判）")
     with tempfile.TemporaryDirectory() as 临时:
-        根 = Path(临时)
-        件 = 考题路径(根)
-        件.parent.mkdir(parents=True)
-        件.write_text("// 旧内容\n", encoding="utf-8")
-        旧 = 源指纹(根)
-        件.write_text("// 新内容\n", encoding="utf-8")
-        if not 旧 or 旧 == 源指纹(根):
-            错.append("源指纹对源变化不敏感（戳形同虚设）")
-    if 错:
-        print("✗ runner 自测红：" + "；".join(错))
+        根目录 = Path(临时)
+        节点件 = 考题路径(根目录)
+        节点件.parent.mkdir(parents=True)
+        节点件.write_text("// 旧内容\n", encoding="utf-8")
+        旧指纹 = 源指纹(根目录)
+        节点件.write_text("// 新内容\n", encoding="utf-8")
+        if not 旧指纹 or 旧指纹 == 源指纹(根目录):
+            错误.append("源指纹对源变化不敏感（戳形同虚设）")
+    if 错误:
+        print("✗ runner 自测红：" + "；".join(错误))
         return 1
     print("✓ runner 自测全过（解测果 · 内核零任务表 · 源指纹 三组正/反向样本）")
     return 0

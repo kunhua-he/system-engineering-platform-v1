@@ -25,41 +25,41 @@ use super::*;
 /// 这种**属性**形（光写 `extern "C"` 会被 mangled、不算导出），并先**去行注释**
 /// （注释里提一句 `export_name = "…"` 不算导出）。
 fn 扫导出名(文本: &str) -> Vec<String> {
-    let 净 = 去行注释(文本);
-    let 形 = ["#[unsafe(export_name = \"", "#[export_name = \""];
-    let mut 出 = Vec::new();
-    let mut 余 = 净.as_str();
+    let 净文本 = 去行注释(文本);
+    let 格式器 = ["#[unsafe(export_name = \"", "#[export_name = \""];
+    let mut 输出缓冲 = Vec::new();
+    let mut 剩余文本 = 净文本.as_str();
     loop {
         let mut 最优位 = usize::MAX;
         let mut 最优前 = "";
-        for 前 in 形 {
-            if let Some(位) = 余.find(前) && 位 < 最优位 {
+        for 一个前缀 in 格式器 {
+            if let Some(位) = 剩余文本.find(一个前缀) && 位 < 最优位 {
                 最优位 = 位;
-                最优前 = 前;
+                最优前 = 一个前缀;
             }
         }
         if 最优位 == usize::MAX {
             break;
         }
-        let 尾 = &余[最优位 + 最优前.len()..];
-        let Some(闭) = 尾.find('"') else { break };
-        出.push(尾[..闭].to_owned());
-        余 = &尾[闭 + 1..];
+        let 尾部 = &剩余文本[最优位 + 最优前.len()..];
+        let Some(闭) = 尾部.find('"') else { break };
+        输出缓冲.push(尾部[..闭].to_owned());
+        剩余文本 = &尾部[闭 + 1..];
     }
-    出
+    输出缓冲
 }
 
 /// 去行注释（长度无关；本文件只拿它避免「注释里的 `export_name`」被当导出）。
 fn 去行注释(文本: &str) -> String {
-    let mut 出 = String::with_capacity(文本.len());
-    for 行 in 文本.lines() {
-        match 行.find("//") {
-            Some(位) => 出.push_str(&行[..位]),
-            None => 出.push_str(行),
+    let mut 输出缓冲 = String::with_capacity(文本.len());
+    for 源码行 in 文本.lines() {
+        match 源码行.find("//") {
+            Some(位) => 输出缓冲.push_str(&源码行[..位]),
+            None => 输出缓冲.push_str(源码行),
         }
-        出.push('\n');
+        输出缓冲.push('\n');
     }
-    出
+    输出缓冲
 }
 
 /// 本 crate 的**生产源**（`include_str!` 读的是真源码，不是另存的一份）。
@@ -79,19 +79,19 @@ fn 导出符号_恰好四个且不含接缝() {
         .map(|名| (*名).to_owned())
         .collect();
 
-    let mut 名 = Vec::new();
+    let mut 名称 = Vec::new();
     for (_, 文) in 生产源 {
-        名.extend(扫导出名(文));
+        名称.extend(扫导出名(文));
     }
-    assert_eq!(名.len(), 4, "四个符号各恰好一次（重复导出同一名也是多条腿）：{名:?}");
+    assert_eq!(名称.len(), 4, "四个符号各恰好一次（重复导出同一名也是多条腿）：{名称:?}");
 
-    let mut 去重 = 名.clone();
+    let mut 去重 = 名称.clone();
     去重.sort();
     去重.dedup();
     assert_eq!(去重, 允许, "导出符号恰好这四个，一个不多一个不少");
 
     assert!(
-        !名.iter().any(|一| 一 == "GetPlatformInfo"),
+        !名称.iter().any(|一| 一 == "GetPlatformInfo"),
         "接缝是**反方向**（扩展 → 宿主），本边界不许导出它"
     );
     for (文件, 文) in 生产源 {
@@ -126,30 +126,30 @@ pub extern "C" fn 取() {}"#;
 /// 判据：长度出参**正确**（等于 JSON 的字节数），且与 Rust 级读数逐字节相同。
 #[test]
 fn 取接口描述_长度出参等于字节数() {
-    let mut 长: u32 = 0;
+    let mut 长度: u32 = 0;
     // SAFETY: 长 是本函数里的可写 u32（`平台_取接口描述` 的 Safety 契约）。
-    let 首 = unsafe { 平台_取接口描述(&mut 长) };
-    assert!(!首.is_null(), "有接口可描述 ⇒ 不许给空指针");
-    assert!(长 > 0, "空集不算通过：描述必须非空");
+    let 首字节 = unsafe { 平台_取接口描述(&mut 长度) };
+    assert!(!首字节.is_null(), "有接口可描述 ⇒ 不许给空指针");
+    assert!(长度 > 0, "空集不算通过：描述必须非空");
 
     // 逐字节读到 NUL：长度出参必须真是这段字节的长度，不是别的数。
-    let mut 数 = 0usize;
+    let mut 个数 = 0usize;
     loop {
         // SAFETY: 首 指向本函数刚拿到、尚未归还的缓冲（`边界面.rs` 文件头「所有权」），按协议 NUL 结尾。
-        let 字 = unsafe { *首.add(数) };
-        if 字 == 0 {
+        let 字符表 = unsafe { *首字节.add(个数) };
+        if 字符表 == 0 {
             break;
         }
-        数 += 1;
+        个数 += 1;
     }
-    assert_eq!(数, 长 as usize, "长度出参必须等于 JSON 的字节数");
+    assert_eq!(个数, 长度 as usize, "长度出参必须等于 JSON 的字节数");
 
     // 与 Rust 级同源读数比对（导出符号交出的就是同一份描述的字节）。
     let 边界 = 对外边界::新建(&[v1_loader::底座声明()]).expect("底座自身的声明必须载得进来");
     let 期望 = 边界.取接口描述();
-    assert_eq!(长 as usize, 期望.len(), "长度出参与 Rust 级读数必须同数");
+    assert_eq!(长度 as usize, 期望.len(), "长度出参与 Rust 级读数必须同数");
     // SAFETY: 同上（首 指向 长 字节可读的缓冲）。
-    let 字节 = unsafe { core::slice::from_raw_parts(首 as *const u8, 长 as usize) };
+    let 字节 = unsafe { core::slice::from_raw_parts(首字节 as *const u8, 长度 as usize) };
     assert_eq!(字节, 期望.as_bytes(), "导出符号交出的字节必须与 Rust 级读数逐字节相同");
 
     // ── 反向样本：判据对长度敏感 —— 少报 1 字节，比对必挂 ──
@@ -161,15 +161,15 @@ fn 取接口描述_长度出参等于字节数() {
 
     // 用完归还（缓冲归调用方，见文件头「所有权」）。
     // SAFETY: 首/长 是上面那次 `平台_取接口描述` 交出的一对，尚未归还。
-    unsafe { 平台_释放接口描述(首, 长) };
+    unsafe { 平台_释放接口描述(首字节, 长度) };
 }
 
 /// 判据：`长度` 传空指针**不崩**。
 #[test]
 fn 取接口描述_长度指针为空不崩() {
     // SAFETY: 传空指针；本函数按 Safety 契约当场返回空指针，不写任何内存。
-    let 出 = unsafe { 平台_取接口描述(core::ptr::null_mut()) };
-    assert!(出.is_null(), "无法报告长度 ⇒ 不交出一个不可读的缓冲（约定：给空指针）");
+    let 输出缓冲 = unsafe { 平台_取接口描述(core::ptr::null_mut()) };
+    assert!(输出缓冲.is_null(), "无法报告长度 ⇒ 不交出一个不可读的缓冲（约定：给空指针）");
 }
 
 /// 判据：`平台_释放接口描述` 传空指针**不崩**（空 = 无事发生）。
@@ -184,22 +184,22 @@ fn 释放接口描述_空指针不崩() {
 /// 这是正向读数（反向样本见文件末「泄漏读数」那一组：不归还就涨）。
 #[test]
 fn 取接口描述_取多次并归还_活字节不涨() {
-    let 次 = 64;
+    let 次版本 = 64;
     // 先取一次定下「一份」的大小（归还掉，不进基线）。
-    let mut 长: u32 = 0;
+    let mut 长度: u32 = 0;
     // SAFETY: 长 可写；返回的缓冲随即归还。
-    let 首 = unsafe { 平台_取接口描述(&mut 长) };
-    assert!(!首.is_null() && 长 > 0);
+    let 首字节 = unsafe { 平台_取接口描述(&mut 长度) };
+    assert!(!首字节.is_null() && 长度 > 0);
     // SAFETY: 同一对，未归还。
-    unsafe { 平台_释放接口描述(首, 长) };
+    unsafe { 平台_释放接口描述(首字节, 长度) };
 
-    for _ in 0..次 {
-        let mut 长: u32 = 0;
+    for _ in 0..次版本 {
+        let mut 长度: u32 = 0;
         // SAFETY: 长 可写。
-        let 首 = unsafe { 平台_取接口描述(&mut 长) };
-        assert!(!首.is_null(), "平台自身的声明必然载得进来 ⇒ 不许给空指针");
+        let 首字节 = unsafe { 平台_取接口描述(&mut 长度) };
+        assert!(!首字节.is_null(), "平台自身的声明必然载得进来 ⇒ 不许给空指针");
         // SAFETY: 同一对，未归还。
-        unsafe { 平台_释放接口描述(首, 长) };
+        unsafe { 平台_释放接口描述(首字节, 长度) };
     }
     // 本样本只证「取 N 次 + 每次归还」这条协议走得通、不崩；
     // 「活字节不涨」的机器读数在 `边界泄漏读数.rs`（带计数全局分配器）。
@@ -295,14 +295,14 @@ fn 泄漏读数_读活字节() -> usize {
 
 /// 一次「取接口描述」拿到的字节数（顺手归还，不留账）。
 fn 泄漏读数_单份字节() -> usize {
-    let mut 长: u32 = 0;
+    let mut 长度: u32 = 0;
     // SAFETY: 长 可写；返回的缓冲随即归还。
-    let 首 = unsafe { 平台_取接口描述(&mut 长) };
-    assert!(!首.is_null(), "平台自身的声明必然载得进来 ⇒ 不许给空指针");
-    assert!(长 > 0, "空集不算通过：一份描述必须非空");
+    let 首字节 = unsafe { 平台_取接口描述(&mut 长度) };
+    assert!(!首字节.is_null(), "平台自身的声明必然载得进来 ⇒ 不许给空指针");
+    assert!(长度 > 0, "空集不算通过：一份描述必须非空");
     // SAFETY: 首/长 是上面那次调用交出的一对，尚未归还。
-    unsafe { 平台_释放接口描述(首, 长) };
-    长 as usize
+    unsafe { 平台_释放接口描述(首字节, 长度) };
+    长度 as usize
 }
 
 /// 读数：不归还 ⇒ 活字节随 N 线性增长；按协议归还 ⇒ 不涨。
@@ -318,11 +318,11 @@ fn 读数_取多次_不归还涨_归还平() {
     // ── 方向一：不归还（**修前/回退** 的读数） ──
     let 不归还前基线 = 泄漏读数_读活字节();
     for _ in 0..次 {
-        let mut 长: u32 = 0;
+        let mut 长度: u32 = 0;
         // SAFETY: 长 可写；本样本**故意不归还**（就是要量泄漏）。
-        let 首 = unsafe { 平台_取接口描述(&mut 长) };
-        assert!(!首.is_null());
-        core::hint::black_box(首);
+        let 首字节 = unsafe { 平台_取接口描述(&mut 长度) };
+        assert!(!首字节.is_null());
+        core::hint::black_box(首字节);
     }
     let 不归还净增 = 泄漏读数_读活字节().saturating_sub(不归还前基线);
     println!("[读数] 取 {次} 次不归还：单份 {单份} 字节 · 活字节净增 {不归还净增} 字节（≈ {次}×{单份}）");
@@ -335,12 +335,12 @@ fn 读数_取多次_不归还涨_归还平() {
     // ── 方向二：按协议归还（**修后** 的读数） ──
     let 归还前基线 = 泄漏读数_读活字节();
     for _ in 0..次 {
-        let mut 长: u32 = 0;
+        let mut 长度: u32 = 0;
         // SAFETY: 长 可写；返回的缓冲当即归还。
-        let 首 = unsafe { 平台_取接口描述(&mut 长) };
-        assert!(!首.is_null());
+        let 首字节 = unsafe { 平台_取接口描述(&mut 长度) };
+        assert!(!首字节.is_null());
         // SAFETY: 首/长 是上面那次调用交出的一对，尚未归还。
-        unsafe { 平台_释放接口描述(首, 长) };
+        unsafe { 平台_释放接口描述(首字节, 长度) };
     }
     let 归还净增 = 泄漏读数_读活字节().saturating_sub(归还前基线);
     println!("[读数] 取 {次} 次按协议归还：单份 {单份} 字节 · 活字节净增 {归还净增} 字节");
