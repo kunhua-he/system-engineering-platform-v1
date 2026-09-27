@@ -117,8 +117,8 @@ def 健康(端口: int) -> tuple:
 
 
 def 要求健康(端口: int) -> None:
-    状, 读数 = 健康(端口)
-    if 状 != 200:
+    状态码, 读数 = 健康(端口)
+    if 状态码 != 200:
         raise SystemExit("健康检查不过（端口 {}）：{}".format(端口, 读数))
     打印("  健康检查 GET /接口 → 200 · {}".format(读数))
 
@@ -126,7 +126,7 @@ def 要求健康(端口: int) -> None:
 def 活着的实例() -> list:
     if not (运行根 / "已装载").is_dir():
         return []
-    return [读指针("已装载/{}".format(路.stem)) for 路 in sorted((运行根 / "已装载").glob("*.json"))]
+    return [读指针("已装载/{}".format(路径.stem)) for 路径 in sorted((运行根 / "已装载").glob("*.json"))]
 
 
 def 端口空着(端口: int) -> bool:

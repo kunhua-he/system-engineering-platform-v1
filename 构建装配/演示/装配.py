@@ -34,9 +34,9 @@ def 符号导出读数(动态库: Path) -> dict:
     运行结果 = subprocess.run(["/usr/bin/nm", "-gU", str(动态库)], capture_output=True, text=True)
     if 运行结果.returncode != 0:
         return {"命令成了": False, "接缝符号在": False, "说明": 运行结果.stderr.strip()[:200]}
-    导出 = [行.split()[-1] for 行 in 运行结果.stdout.splitlines() if 行.strip()]
+    导出 = [源码行.split()[-1] for 源码行 in 运行结果.stdout.splitlines() if 源码行.strip()]
     # macOS 的 C 符号带前导下划线（_GetPlatformInfo），Linux 不带 —— 两种都认。
-    是否导出 = any(名.lstrip("_") == "GetPlatformInfo" for 名 in 导出)
+    是否导出 = any(名称.lstrip("_") == "GetPlatformInfo" for 名称 in 导出)
     return {"命令成了": True, "接缝符号在": 是否导出, "全局导出数": len(导出)}
 
 
@@ -80,7 +80,7 @@ def 搭暂存(动态库: Path) -> Path:
         "形状与 扩展装载/扩展根声明.json 一致。生成器：构建装配/演示/起演示.py"
     )
     声明["种类"] = [
-        dict(类, 目录=str(扩展树 / Path(类.get("目录", "")).name)) for 类 in 来源.get("种类", [])
+        dict(类别, 目录=str(扩展树 / Path(类别.get("目录", "")).name)) for 类别 in 来源.get("种类", [])
     ]
     (暂存 / "扩展根声明.json").write_text(
         json.dumps(声明, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"

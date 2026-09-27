@@ -76,7 +76,7 @@ def 检查21_时间口径(上层读数: dict) -> list:
         键名: 一项["文本"]
         for 键名, 一项 in 上层读数["文件"].items()
         if 键名.endswith(".rs")
-        and any(键名.startswith(面 + "/") for 面 in 时间口径面)
+        and any(键名.startswith(扫描面 + "/") for 扫描面 in 时间口径面)
         and 一项.get("文本") is not None
     }
     if not 件表:

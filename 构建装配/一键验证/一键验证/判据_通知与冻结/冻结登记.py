@@ -263,7 +263,7 @@ def 检查9_冻结登记(上层读数: dict) -> list:
         if isinstance(已占用, dict):
             for _族, 号表 in 已占用.items():
                 if isinstance(号表, list):
-                    占号.update(int(号) for 号 in 号表 if isinstance(号, int))
+                    占号.update(int(号值) for 号值 in 号表 if isinstance(号值, int))
         # 容器形状的**声明值集**：从 `容器/形状.rs::段类型` 枚举的判别式里读。
         # 读实现而不是读另一份清单 —— 清单就是第二个事实源。
         形状路径 = "扩展根目录/原子支持库/编译器支持库/src/容器/形状.rs"

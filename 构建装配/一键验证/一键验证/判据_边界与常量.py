@@ -77,7 +77,7 @@ def 检查12_边界纪律(上层读数: dict) -> list:
                 if not 名表
                 else f"多出来的就是第二条接缝：{[导出名 for 导出名 in 名表 if 导出名 != 接缝符号]}"
             )
-            命中处表 = [处 for 名称 in 名表 for 处 in 导出表.get(名称, [])]
+            命中处表 = [命中处 for 名称 in 名表 for 命中处 in 导出表.get(名称, [])]
             输出缓冲.append(
                 违规(
                     检查名[11],
@@ -256,7 +256,7 @@ def 检查13_常量表(上层读数: dict) -> list:
     常量名模式 = (
         re.compile(
             r"(?m)^[ \t]*(?:pub(?:\([^)]*\))?[ \t]+)?const[ \t]+("
-            + "|".join(re.escape(名) for 名 in 名表)
+            + "|".join(re.escape(名称) for 名称 in 名表)
             + r")\b"
         )
         if 名表
