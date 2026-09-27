@@ -28,7 +28,7 @@ pub enum 调用类 {
 ///
 /// **构造只有两个口**：[`留痕::能力调用`] 与 [`留痕::资源访问`]。本类型带 `#[non_exhaustive]`
 /// ⇒ 本 crate 之外**写不出结构体字面量**（rustc 报 E0639），两个号位的互斥关系由这两个口一次写对，
-/// 调用方不必自己维护；读取不受影响（字段照旧可读）。
+/// 调用方不必自身维护；读取不受影响（字段照旧可读）。
 #[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct 留痕 {

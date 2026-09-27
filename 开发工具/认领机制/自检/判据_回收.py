@@ -36,7 +36,7 @@ def j3_rev_scope(账本路径):
     rc = reclaim(账本路径, leg="leg-b", now=T0 + 120.0)
     ok = (rc["结果"] == "成功" and [回收条["腿标识"] for 回收条 in rc["回收"]] == ["leg-b"]
           and leases(账本路径) == [("leg-a", frozenset({P1}))])
-    return ok, "只收 leg-b ⇒ 实收=%s；账本剩=%s（leg-a 的过期租约必须还在，等它自己显式回收）" % (
+    return ok, "只收 leg-b ⇒ 实收=%s；账本剩=%s（leg-a 的过期租约必须还在，等它自身显式回收）" % (
         [回收条["腿标识"] for 回收条 in rc["回收"]], [租约条[0] for 租约条 in leases(账本路径)])
 
 

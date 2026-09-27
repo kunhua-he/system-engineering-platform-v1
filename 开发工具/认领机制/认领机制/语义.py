@@ -53,7 +53,7 @@ def op_claim(led, leg, raw_paths, ttl=DEFAULT_TTL_SEC, now=None):
                 "到期时间": fmt_ts(now + ttl)}
         led.data["租约"].append(mine)
     else:
-        # 语义 2 后半：同一腿重复认领自己已占的路径 ⇒ 成功（幂等）；顺带续租 + 并入新路径。
+        # 语义 2 后半：同一腿重复认领自身已占的路径 ⇒ 成功（幂等）；顺带续租 + 并入新路径。
         added = sorted(set(paths) - set(mine["路径集"]))
         mine["路径集"] = sorted(set(mine["路径集"]) | set(paths))
         mine["到期时间"] = fmt_ts(now + ttl)

@@ -15,7 +15,7 @@ def 制品内文件清单(目录: Path) -> dict:
         for 名 in 文件表:
             路 = Path(根) / 名
             if 路.name == "制品清单.json":
-                continue  # 清单不把自己写进自己的清单（否则自指，哈希无解）
+                continue  # 清单不把自身写进自身的清单（否则自指，哈希无解）
             出[路.relative_to(目录).as_posix()] = 文件指纹(路)
     return dict(sorted(出.items()))
 

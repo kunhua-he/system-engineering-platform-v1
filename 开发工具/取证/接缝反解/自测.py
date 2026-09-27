@@ -27,7 +27,7 @@ def 自测(样本="/tmp/易语言源码/lib/shellEx.fne"):
         样本字节 = bytearray(好); 文偏移 = pe.转偏移(解接缝(pe)[1]); 样本字节[文偏移:文偏移 + 6] = b"\x0f\x0b\x0f\x0b\x0f\x0b"
         例.append(("GetNewInf 机器码换成 ud2", bytes(样本字节)))
     except 解析错误 as ex:
-        print("警告：好样本自己就解不动（%s），反向样本只跑通用那批" % ex)
+        print("警告：好样本自身就解不动（%s），反向样本只跑通用那批" % ex)
     print("自测：喂 %d 个坏样本，断言「报错且不产出字段」" % len(例))
     失败 = 0
     for 名, 数据 in 例:

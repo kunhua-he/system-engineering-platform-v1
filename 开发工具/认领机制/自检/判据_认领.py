@@ -49,7 +49,7 @@ def j2_rev(账本路径):
 
 def j2_pos(账本路径):
     r1 = claim(账本路径, "leg-a", [P1, P2])
-    r2 = claim(账本路径, "leg-a", [P1, P2])         # 同一腿重复认领自己已占的路径
+    r2 = claim(账本路径, "leg-a", [P1, P2])         # 同一腿重复认领自身已占的路径
     ok = (r1["结果"] == "成功" and r2["结果"] == "成功" and r2["新增"] == []
           and leases(账本路径) == [("leg-a", frozenset({P1, P2}))])
     return ok, "重复认领=%s；新增=%s；账本条数=%d（幂等）" % (

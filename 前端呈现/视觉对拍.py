@@ -66,7 +66,7 @@ def 主(参数):
         except ImportError as 错:
             print(f"起不来：没有 playwright（{错}）", file=sys.stderr)
             return 1
-        # 起**演示口径**的网关：端口取 0 让它自己报，静态根指我方前端目录（同源）。
+        # 起**演示口径**的网关：端口取 0 让它自身报，静态根指我方前端目录（同源）。
         进程 = subprocess.Popen(
             [str(网关), "--声明根", str(声明根), "--端口", "0", "--静态根", str(前端目录)],
             stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)

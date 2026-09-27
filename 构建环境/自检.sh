@@ -24,7 +24,7 @@ LOCKED=0
 [ -f Cargo.lock ] && LOCKED="$(grep -c '^\[\[package\]\]' Cargo.lock || true)"
 # ③ 第三方的**定义**：lock 里带 `source =` 的包（来自 registry 或 git）。仓内件（工作区成员 ·
 #    被 exclude 但仍是路径依赖的扩展）**没有** source 字段 ⇒ 问「有没有 source」才是直接问法。
-#    ★ 不许改成「数包数 ≤ 数成员」：那个口径实测**假红**（2026-09-27）——成员得自己数，
+#    ★ 不许改成「数包数 ≤ 数成员」：那个口径实测**假红**（2026-09-27）——成员得自行数，
 #    数漏一个就误判；而被 exclude 的扩展仍进 lock。当时 lock 15 包 = 工作区 14 成员 + 1 被 exclude 的扩展，
 #    旧口径只数出 10 个成员 ⇒ 假报「有第三方」，把零依赖的仓判成违规。
 THIRD_PKG="$(grep -c '^source = ' Cargo.lock || true)"

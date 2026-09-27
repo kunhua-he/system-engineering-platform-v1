@@ -6,16 +6,16 @@ from pathlib import Path
 
 
 def 注入_自拼运行数据路径(临根: Path) -> str:
-    """造一处**自己拼运行数据路径**的节点 ⇒ 判据 ㉕ 当场红（「新增即红」）。
+    """造一处**自身拼运行数据路径**的节点 ⇒ 判据 ㉕ 当场红（「新增即红」）。
 
     形状取形③（直读覆盖变量 `V1_RUN_DATA_ROOT`）：节点绕开唯一解析器
-    `运行内核/运行数据根/`，自己读环境变量拼路径 —— 那正是「第二个来源」。
+    `运行内核/运行数据根/`，自身读环境变量拼路径 —— 那正是「第二个来源」。
     """
     路径 = 临根 / "运行内核" / "实例状态" / "src" / "自拼路径.rs"
     路径.parent.mkdir(parents=True, exist_ok=True)
     路径.write_text(
-        "//! 反向样本：绕开运行数据根，自己拼路径。\n"
-        "pub fn 自己拼() -> std::path::PathBuf {\n"
+        "//! 反向样本：绕开运行数据根，自身拼路径。\n"
+        "pub fn 自身拼() -> std::path::PathBuf {\n"
         "    let 根 = std::env::var(\"V1_RUN_DATA_ROOT\").unwrap_or_default();\n"
         "    std::path::PathBuf::from(根).join(\"数据库\")\n"
         "}\n",

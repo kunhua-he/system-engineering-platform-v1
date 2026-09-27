@@ -23,7 +23,7 @@ def _跑一条(样例):
     临时目录 = tempfile.mkdtemp(prefix="claim-selftest-")
     try:
         return 样例["跑"](os.path.join(临时目录, "账本.json"))
-    except Exception as 错:                      # 判据自己崩了也要报，不许静默当通过
+    except Exception as 错:                      # 判据自身崩了也要报，不许静默当通过
         return False, "异常：%r" % (错,)
     finally:
         shutil.rmtree(临时目录, ignore_errors=True)

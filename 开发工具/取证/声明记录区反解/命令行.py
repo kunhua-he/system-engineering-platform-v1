@@ -14,7 +14,7 @@ def 建解析器():
     ap.add_argument("--样本", default="/tmp/易语言源码/lib/krnln/samples/第一个程序.e")
     ap.add_argument("--目录", default="/tmp/易语言源码")
     ap.add_argument("--全部", action="store_true",
-                    help="全量读数：**只归并**已算好的逐件缓存（不自己算 ⇒ 必进顶）；"
+                    help="全量读数：**只归并**已算好的逐件缓存（不自行算 ⇒ 必进顶）；"
                          "缓存不齐时报出缺多少件并非 0")
     ap.add_argument("--分片", default=None, metavar="i/n",
                     help="只算第 i 片（共 n 片）—— 全量由跑齐 n 条分片命令完成（每片一条命令）")

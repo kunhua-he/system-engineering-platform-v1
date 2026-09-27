@@ -61,7 +61,7 @@ def 扫扩展(声明: dict) -> list:
 def 扩展产物(扩展: dict) -> Path:
     """把一个扩展编成**可装载库**（`GetPlatformInfo` 能被 dlopen 取到），返回库文件路径。
 
-    为什么要有这一步：扩展仓自己声明的是 **rlib**（`[lib]` 没写 `crate-type`），
+    为什么要有这一步：扩展仓自身声明的是 **rlib**（`[lib]` 没写 `crate-type`），
     静态库进不了 `dlopen`。装配侧把它按 `cdylib` 再编一遍 —— 这是**装配动作**，
     不改扩展一行源（`cargo rustc -- --crate-type cdylib`）。
 

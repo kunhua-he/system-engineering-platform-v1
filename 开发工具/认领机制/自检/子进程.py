@@ -110,7 +110,7 @@ def run_gate(夹具仓, script, *args, env=None):
 
 
 def run_claim(夹具仓, script, *args):
-    """在真仓 夹具仓 里跑 `认领` 子进程（账本就落该仓自己的目录里）。"""
+    """在真仓 夹具仓 里跑 `认领` 子进程（账本就落该仓自身的目录里）。"""
     return subprocess.run([sys.executable, script] + list(args),
                           capture_output=True, text=True, cwd=夹具仓)
 

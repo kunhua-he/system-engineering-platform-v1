@@ -14,8 +14,8 @@
 //! # 三个字段的口径
 //!
 //! - `提交哈希`：`git rev-parse HEAD` 的**完整**值（40 位十六进制，不截断）。
-//! - `工作区是否干净`：`git status --porcelain` 除**回执自己**之外是否为空。
-//!   排除回执自己是因为**每跑一次就追加一行 ⇒ 它自己永远是脏的**，不排除就恒为 `false`，
+//! - `工作区是否干净`：`git status --porcelain` 除**回执自身**之外是否为空。
+//!   排除回执自身是因为**每跑一次就追加一行 ⇒ 它自身永远是脏的**，不排除就恒为 `false`，
 //!   那个字段就永远没有信息量。
 //! - `跑的时间`：UTC 的 `YYYY-MM-DDTHH:MM:SSZ`（**不是本地时间**：跨机器比读数时本地时区是噪声）。
 
@@ -170,7 +170,7 @@ pub fn 提交哈希(仓根: &Path) -> Result<String, String> {
     Ok(哈希)
 }
 
-/// 工作区是否干净：除**回执自己**之外的改动数为 0。
+/// 工作区是否干净：除**回执自身**之外的改动数为 0。
 pub fn 工作区干净(仓根: &Path) -> Result<bool, String> {
     let 文本缓冲 = Command::new("git")
         .arg("-C")
@@ -188,7 +188,7 @@ pub fn 工作区干净(仓根: &Path) -> Result<bool, String> {
     Ok(String::from_utf8_lossy(&文本缓冲.stdout).trim().is_empty())
 }
 
-/// UTC 的 `YYYY-MM-DDTHH:MM:SSZ`。自己算，不调外部程序（少一个环境依赖）。
+/// UTC 的 `YYYY-MM-DDTHH:MM:SSZ`。自身算，不调外部程序（少一个环境依赖）。
 pub fn 现在UTC() -> String {
     let 秒 = SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -245,7 +245,7 @@ mod 测试 {
         assert!(时.ends_with('Z'));
     }
 
-    /// 正向样本：一行回执必须是**合法 JSON**（回执自己读不回来就是假读数）。
+    /// 正向样本：一行回执必须是**合法 JSON**（回执自身读不回来就是假读数）。
     #[test]
     fn 回执行是合法JSON() {
         let 回 = 回执 {

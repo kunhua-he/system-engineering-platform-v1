@@ -22,7 +22,7 @@ from .语义 import lease_status
 def git_toplevel(cwd=None):
     """→ 当前目录所属 git 仓的仓根，读不到给 None。
 
-    ★ 为什么要它、而不用脚本自己的 `ROOT`：账本里的路径是**仓根相对**的，
+    ★ 为什么要它、而不用脚本自身的 `ROOT`：账本里的路径是**仓根相对**的，
     `git diff --cached` 吐出来的路径也是**仓根相对**的 —— 两边必须同一个基准。
     脚本的 `ROOT` 是「脚本住在哪个仓」，提交发生在「你站在哪个仓」；**两者可以不是同一个**
     （例：在别处 import 本件、或脚本被拷去守另一个仓）。基准一旦悄悄错开，
@@ -104,7 +104,7 @@ def op_gate(led, leg, staged_raw, mode=GATE_WARN, now=None, root=ROOT):
         out.update({"结果": "判不了",
                     "缺什么": "本次提交的仓根（%s）与账本所在的仓根（%s）不是同一个" % (top, root),
                     "提示": "账本路径是仓根相对的 ⇒ 两个仓根不同则比对不成立（不许按字符串硬比）。"
-                            "每条腿请在自己的工作树里跑：那里脚本与账本都在同一棵树内"})
+                            "每条腿请在自身的工作树里跑：那里脚本与账本都在同一棵树内"})
         return out
 
     paths, outside = norm_paths(staged_raw, root=root)

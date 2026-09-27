@@ -25,7 +25,7 @@ members = [
     "测试验证/案例/跑案例",
 ]
 # 扩展是**独立工作区**（底座不认识任何扩展）。跑案例要经它的 `GetPlatformInfo` 接缝取声明，
-# 所以它是一条 path 依赖；而它自己带 `[workspace]` 表 ⇒ 必须在这里 exclude，
+# 所以它是一条 path 依赖；而它自身带 `[workspace]` 表 ⇒ 必须在这里 exclude，
 # 否则 cargo 报「multiple workspace roots found in the same workspace」。
 # exclude 只把它从**本工作区的成员**里摘出去，不改变它的独立工作区身份，也不改它一个字。
 exclude = [

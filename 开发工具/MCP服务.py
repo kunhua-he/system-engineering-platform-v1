@@ -7,8 +7,10 @@
     python3 开发工具/MCP服务.py            # 走协议（stdio JSON-RPC，永不返回）
     python3 开发工具/MCP服务.py --自检      # 不走协议：自造三帧验协议层与工具表
 
-三个工具（详见 `开发工具/MCP服务/工具.py`）：`v1_门禁`（一键门禁）· `v1_符号`（代码地图
-预建索引）· `v1_替换`（**符号级**批量替换，默认 dry-run，写盘过认领机制的所有权闸）。
+三个工具（详见 `开发工具/MCP服务/工具.py`）：`v1_gate`（一键门禁）· `v1_symbol`（代码地图
+预建索引）· `v1_replace`（**符号级**批量替换，默认 dry-run，写盘过认领机制的所有权闸）。
+**工具名必须 ASCII**：客户端把非 ASCII 截掉，三个中文名会截成同一个 `v1_`（实测只活下来
+一个）—— 理由与实测见 `工具.py::工具表` 上方的注释。
 
 **本入口永不返回**（协议主循环），属「结构边界：永不返回」⇒ 不带壳，登记在
 `构建装配/一键验证/入口白名单.json`（判据 ㉔）。依据：
@@ -36,9 +38,14 @@ def main(argv=None):
             else:
                 print("%s ⇒ 键 %s" % (方法, sorted(结果)))
         名表 = sorted(工具表)
-        期望 = sorted(["v1_门禁", "v1_符号", "v1_替换"])
+        期望 = sorted(["v1_gate", "v1_symbol", "v1_replace"])
         print("工具表：%s" % 名表)
-        return 0 if 名表 == 期望 else 1
+        # 防回潮：客户端把非 ASCII 截掉 ⇒ 中文名会撞成一个。凡非 ASCII 名一律判红
+        # （理由见 `MCP服务/工具.py::工具表` 上方注释）。
+        非ASCII = [名 for 名 in 名表 if not 名.isascii()]
+        if 非ASCII:
+            print("★工具名必须 ASCII（客户端会截掉非 ASCII ⇒ 撞名）：%s" % 非ASCII)
+        return 0 if 名表 == 期望 and not 非ASCII else 1
     return 服务(仓根, 工具表)
 
 
