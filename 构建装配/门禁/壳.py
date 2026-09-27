@@ -33,11 +33,11 @@ from .常量 import 硬顶毫秒
 
 def 注入人为慢() -> int:
     """反向样本注入：环境变量给毫秒数，就在算完之后**真睡**那么久（默认 0 = 不注入）。"""
-    值 = os.environ.get(人为慢环境变量)
-    if not 值:
+    待处理值 = os.environ.get(人为慢环境变量)
+    if not 待处理值:
         return 0
     try:
-        毫秒 = float(值)
+        毫秒 = float(待处理值)
     except ValueError:
         return 0
     if 毫秒 <= 0:
