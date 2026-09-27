@@ -93,8 +93,8 @@ impl 语法树 {
 
     /// 某节点的原文切片。区间越界返回 `None`。
     pub fn 原文切片(&self, 下标: u32) -> Option<&[u8]> {
-        let n = self.节点表.get(下标 as usize)?;
-        self.记号流.原文.get(n.起() as usize..n.止() as usize)
+        let 本节点 = self.节点表.get(下标 as usize)?;
+        self.记号流.原文.get(本节点.起() as usize..本节点.止() as usize)
     }
 
     /// 子树终止下标（不含）：本节点**整棵子树之后**那个下标（叶是 `下标 + 1`）。
@@ -111,8 +111,8 @@ impl 语法树 {
             if 步 > 上限 {
                 return None;
             }
-            let n = self.节点表.get(当前 as usize)?;
-            let (起, 止) = n.子区间;
+            let 本节点 = self.节点表.get(当前 as usize)?;
+            let (起, 止) = 本节点.子区间;
             if 起 >= 止 {
                 return Some(当前 + 1);
             }
@@ -159,15 +159,15 @@ impl 语法树 {
         }
 
         // ── 每个节点的两个区间自身合法 ──
-        for (i, n) in self.节点表.iter().enumerate() {
-            let 下标 = i as u32;
-            if n.起() > n.止() {
-                return Err(节点区间倒置 { 下标, 起: n.起(), 止: n.止() });
+        for (节点下标, 本节点) in self.节点表.iter().enumerate() {
+            let 下标 = 节点下标 as u32;
+            if 本节点.起() > 本节点.止() {
+                return Err(节点区间倒置 { 下标, 起: 本节点.起(), 止: 本节点.止() });
             }
-            if n.止() > 全文长 {
-                return Err(节点区间越界 { 下标, 止: n.止(), 全文长 });
+            if 本节点.止() > 全文长 {
+                return Err(节点区间越界 { 下标, 止: 本节点.止(), 全文长 });
             }
-            let (子起, 子止) = n.子区间;
+            let (子起, 子止) = 本节点.子区间;
             if 子起 > 子止 {
                 return Err(子区间倒置 { 下标, 起: 子起, 止: 子止 });
             }
@@ -193,13 +193,13 @@ impl 语法树 {
                     return Err(根被当作子节点 { 节点: 子, 父 });
                 }
                 if let Some(已有) = 父表[子 as usize] {
-                    return Err(同一节点有两个父 { 节点: 子, 甲父: 已有, 乙父: 父 });
+                    return Err(同一节点有两个父 { 节点: 子, 首父: 已有, 次父: 父 });
                 }
                 父表[子 as usize] = Some(父);
             }
         }
-        for (i, 父) in 父表.iter().enumerate() {
-            let 下标 = i as u32;
+        for (节点下标, 父) in 父表.iter().enumerate() {
+            let 下标 = 节点下标 as u32;
             if 下标 != self.根 && 父.is_none() {
                 return Err(节点是孤儿 { 节点: 下标 });
             }
@@ -219,9 +219,9 @@ impl 语法树 {
                 栈.extend(self.直接子(当前));
             }
             if 计数 != 节点数 {
-                for (i, 到) in 到过.iter().enumerate() {
+                for (节点下标, 到) in 到过.iter().enumerate() {
                     if !到 {
-                        return Err(节点从根不可达 { 节点: i as u32 });
+                        return Err(节点从根不可达 { 节点: 节点下标 as u32 });
                     }
                 }
             }
@@ -230,19 +230,19 @@ impl 语法树 {
         // ── 不变量 T2：父节点原文区间包住每个子节点 ──
         // ── 不变量 T3：兄弟原文区间按序两两不重叠 ──
         for 父 in 0..节点数 {
-            let n = &self.节点表[父 as usize];
+            let 本节点 = &self.节点表[父 as usize];
             let mut 前一: Option<(u32, u32)> = None; // (下标, 止)
             for 子 in self.直接子(父) {
-                let c = &self.节点表[子 as usize];
-                if !n.包住(c.起(), c.止()) {
+                let 子节点 = &self.节点表[子 as usize];
+                if !本节点.包住(子节点.起(), 子节点.止()) {
                     return Err(父未包住子 { 父, 子 });
                 }
                 if let Some((前下标, 前止)) = 前一
-                    && c.起() < 前止
+                    && 子节点.起() < 前止
                 {
                     return Err(兄弟重叠 { 父, 前: 前下标, 后: 子 });
                 }
-                前一 = Some((子, c.止()));
+                前一 = Some((子, 子节点.止()));
             }
         }
 

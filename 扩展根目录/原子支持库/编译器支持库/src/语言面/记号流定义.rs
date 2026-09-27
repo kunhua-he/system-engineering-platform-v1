@@ -72,8 +72,8 @@ impl 记号流 {
 
     /// 按区间切出该记号的原文切片。区间越界返回 `None`（不 panic）。
     pub fn 切片(&self, 第几个: usize) -> Option<&[u8]> {
-        let t = self.记号表.get(第几个)?;
-        self.原文.get(t.起 as usize..t.止 as usize)
+        let 本记号 = self.记号表.get(第几个)?;
+        self.原文.get(本记号.起 as usize..本记号.止 as usize)
     }
 
     /// **不变量见证**：把所有记号的区间按序拼起来。
@@ -83,8 +83,8 @@ impl 记号流 {
     /// 与 `记号流::原文` **逐字节相同**的字节（见测试 `记号流_真实语料小样例_…`）。
     pub fn 还原(&self) -> Vec<u8> {
         let mut 出 = Vec::with_capacity(self.原文.len());
-        for t in &self.记号表 {
-            if let Some(片) = self.原文.get(t.起 as usize..t.止 as usize) {
+        for 本记号 in &self.记号表 {
+            if let Some(片) = self.原文.get(本记号.起 as usize..本记号.止 as usize) {
                 出.extend_from_slice(片);
             }
         }
@@ -103,22 +103,22 @@ impl 记号流 {
             return Err(记号表为空);
         }
 
-        for i in 0..self.记号表.len() {
-            let t = self.记号表[i];
-            let 第几个 = i as u32;
-            if t.起 > t.止 {
-                return Err(记号区间倒置 { 第几个, 起: t.起, 止: t.止 });
+        for 记号位次 in 0..self.记号表.len() {
+            let 本记号 = self.记号表[记号位次];
+            let 第几个 = 记号位次 as u32;
+            if 本记号.起 > 本记号.止 {
+                return Err(记号区间倒置 { 第几个, 起: 本记号.起, 止: 本记号.止 });
             }
-            if t.止 > 全文长 {
-                return Err(记号区间越界 { 第几个, 止: t.止, 全文长 });
+            if 本记号.止 > 全文长 {
+                return Err(记号区间越界 { 第几个, 止: 本记号.止, 全文长 });
             }
-            if i > 0 {
-                let 前止 = self.记号表[i - 1].止;
-                if t.起 > 前止 {
-                    return Err(记号有缝隙 { 第几个, 前止, 后起: t.起 });
+            if 记号位次 > 0 {
+                let 前止 = self.记号表[记号位次 - 1].止;
+                if 本记号.起 > 前止 {
+                    return Err(记号有缝隙 { 第几个, 前止, 后起: 本记号.起 });
                 }
-                if t.起 < 前止 {
-                    return Err(记号有重叠 { 第几个, 前止, 后起: t.起 });
+                if 本记号.起 < 前止 {
+                    return Err(记号有重叠 { 第几个, 前止, 后起: 本记号.起 });
                 }
             }
         }
@@ -129,9 +129,9 @@ impl 记号流 {
 
         // 文件结束：只允许一个，且必须在末位、必须零宽、必须锚在全文末尾。
         let 末 = self.记号表.len() - 1;
-        for (i, t) in self.记号表.iter().enumerate() {
-            if t.种类 == 记号种类::文件结束 && i != 末 {
-                return Err(文件结束不在末位 { 第几个: i as u32 });
+        for (记号位次, 本记号) in self.记号表.iter().enumerate() {
+            if 本记号.种类 == 记号种类::文件结束 && 记号位次 != 末 {
+                return Err(文件结束不在末位 { 第几个: 记号位次 as u32 });
             }
         }
         let 末记号 = &self.记号表[末];

@@ -67,16 +67,16 @@ fn 不变量T2_父必须包住子_正反样本() {
     let mut 零宽见过 = 0;
     for 流 in 全部夹具() {
         let 树 = 建树(&流).expect("合法记号流必须建得出树");
-        for (i, n) in 树.节点表.iter().enumerate() {
-            for 子 in 树.直接子(i as u32) {
-                let c = &树.节点表[子 as usize];
+        for (节点下标, 本节点) in 树.节点表.iter().enumerate() {
+            for 子 in 树.直接子(节点下标 as u32) {
+                let 子节点 = &树.节点表[子 as usize];
                 assert!(
-                    n.包住(c.起(), c.止()),
+                    本节点.包住(子节点.起(), 子节点.止()),
                     "{} 没包住它的子 {}",
-                    种类名(n.种类),
-                    种类名(c.种类)
+                    种类名(本节点.种类),
+                    种类名(子节点.种类)
                 );
-                if c.起() == c.止() {
+                if 子节点.起() == 子节点.止() {
                     零宽见过 += 1;
                 }
             }
@@ -103,15 +103,15 @@ fn 不变量T3_兄弟不得重叠_正反样本() {
     let mut 兄弟对 = 0u32;
     for 流 in 全部夹具() {
         let 树 = 建树(&流).expect("合法记号流必须建得出树");
-        for (i, _n) in 树.节点表.iter().enumerate() {
+        for (节点下标, _n) in 树.节点表.iter().enumerate() {
             let mut 前一止: Option<u32> = None;
-            for 子 in 树.直接子(i as u32) {
-                let c = &树.节点表[子 as usize];
+            for 子 in 树.直接子(节点下标 as u32) {
+                let 子节点 = &树.节点表[子 as usize];
                 if let Some(前止) = 前一止 {
-                    assert!(c.起() >= 前止, "兄弟 {} 与前一个重叠", 子);
+                    assert!(子节点.起() >= 前止, "兄弟 {} 与前一个重叠", 子);
                     兄弟对 += 1;
                 }
-                前一止 = Some(c.止());
+                前一止 = Some(子节点.止());
             }
         }
     }
@@ -137,14 +137,14 @@ fn 不变量T4_必须是一棵树_正反样本() {
         let 树 = 建树(&流).expect("合法记号流必须建得出树");
         let 节点数 = 树.节点表.len();
         let mut 父数 = vec![0u32; 节点数];
-        for (i, _n) in 树.节点表.iter().enumerate() {
-            for 子 in 树.直接子(i as u32) {
+        for (节点下标, _n) in 树.节点表.iter().enumerate() {
+            for 子 in 树.直接子(节点下标 as u32) {
                 父数[子 as usize] += 1;
             }
         }
         assert_eq!(父数[0], 0, "根不能有父");
-        for (i, c) in 父数.iter().enumerate().skip(1) {
-            assert_eq!(*c, 1, "节点 {} 的父数不是 1", i);
+        for (节点下标, 父数项) in 父数.iter().enumerate().skip(1) {
+            assert_eq!(*父数项, 1, "节点 {} 的父数不是 1", 节点下标);
         }
         // 从根可达：子树止(根) == 节点数（先序表里根子树铺满整表）
         assert_eq!(树.子树止(0), Some(节点数 as u32));
@@ -158,7 +158,7 @@ fn 不变量T4_必须是一棵树_正反样本() {
         节点::叶(节点种类::注释, (0, 1)),
     ];
     let (错, 码) = 报码(表, 0);
-    assert_eq!(错, 形状错误::同一节点有两个父 { 节点: 3, 甲父: 1, 乙父: 2 });
+    assert_eq!(错, 形状错误::同一节点有两个父 { 节点: 3, 首父: 1, 次父: 2 });
     assert_eq!(码, crate::错误码::同一节点有两个父);
 
     // 反向二：根被当作子节点 ⇒ 1129
@@ -201,13 +201,13 @@ fn 不变量T5_必须先序连续_正反样本() {
     let mut 相邻对 = 0u32;
     for 流 in 全部夹具() {
         let 树 = 建树(&流).expect("合法记号流必须建得出树");
-        for (i, n) in 树.节点表.iter().enumerate() {
-            let (起, 止) = n.子区间;
+        for (节点下标, 本节点) in 树.节点表.iter().enumerate() {
+            let (起, 止) = 本节点.子区间;
             if 起 >= 止 {
                 continue;
             }
             let mut 前: Option<u32> = None;
-            for 子 in 树.直接子(i as u32) {
+            for 子 in 树.直接子(节点下标 as u32) {
                 if let Some(前下标) = 前 {
                     // 相邻兄弟：前一个的子树止 == 后一个（逐跳紧接，中间不许夹兄弟）
                     assert_eq!(
