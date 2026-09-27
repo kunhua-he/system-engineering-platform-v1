@@ -78,8 +78,8 @@ impl 支持库引用 {
         self.字段.len()
     }
 
-    /// 取第 `序号` 段。
-    pub fn 取(&self, 序号: usize) -> Option<&[u8]> {
+    /// 取第 `序号` 段字节。
+    pub fn 取字节段(&self, 序号: usize) -> Option<&[u8]> {
         self.字段.get(序号).map(Vec::as_slice)
     }
 

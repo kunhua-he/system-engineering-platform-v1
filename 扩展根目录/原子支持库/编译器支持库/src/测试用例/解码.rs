@@ -28,7 +28,7 @@ impl<'a> 读器<'a> {
         self.位 += 4;
         u32::from_le_bytes(片)
     }
-    fn 取(&mut self, 长: usize) -> &'a [u8] {
+    fn 取字节(&mut self, 长: usize) -> &'a [u8] {
         let 片 = &self.字节[self.位..self.位 + 长];
         self.位 += 长;
         片
@@ -38,7 +38,7 @@ impl<'a> 读器<'a> {
 /// 从当前位置读一份记号流编码。
 fn 解记号流在(读: &mut 读器<'_>) -> 记号流 {
     let 原文长 = 读.u32() as usize;
-    let 原文 = 读.取(原文长).to_vec();
+    let 原文 = 读.取字节(原文长).to_vec();
     let 记号数 = 读.u32();
     let mut 记号表 = Vec::with_capacity(记号数 as usize);
     for _ in 0..记号数 {
@@ -110,7 +110,7 @@ pub(crate) fn 解诊断(字节: &[u8]) -> 诊断解 {
                 其余 => panic!("位置标志只认 0 / 1，实得 {其余}"),
             };
             let 读数长 = 读.u32() as usize;
-            let 读数 = std::str::from_utf8(读.取(读数长))
+            let 读数 = std::str::from_utf8(读.取字节(读数长))
                 .expect("读数该是合法 UTF-8")
                 .to_owned();
             assert_eq!(读.位, 字节.len(), "诊断编码尾部不该有多余字节");

@@ -3,10 +3,10 @@
 import re
 from collections import Counter, defaultdict
 
-from .规格词表 import is_remark_field
-from .按规格切 import tokenize
+from .规格词表 import 是备注字段
+from .按规格切 import 切记号
 
-def analyse(rows):
+def 统计读数(rows):
     """rows = [(样本名, 真文本原文(GBK bytes), 层级)]"""
     读数 = {
         "样本数": 0, "总字节": 0, "总字符": 0,
@@ -36,7 +36,7 @@ def analyse(rows):
         读数["总字符"] += len(text)
         读数["换行_裸CR"] += len(re.findall(r"(?<!\r)\r(?!\n)", text))
         读数["含TAB"] += text.count("\t")
-        toks, unknown = tokenize(text)
+        toks, unknown = 切记号(text)
         if not text.endswith(("\n", "\r")):
             读数["末行无换行"] += 1
         covered = 0
@@ -99,7 +99,7 @@ def analyse(rows):
             读数["未归类样本"][ch][name] += 1
             读数["未归类位"][(lk, fi)] += 1
             读数["未归类位2"][ch][(lk, fi)] += 1
-            if is_remark_field(line, fi):
+            if 是备注字段(line, fi):
                 读数["未归类_备注位"] += 1
             else:
                 读数["未归类_代码位"] += 1

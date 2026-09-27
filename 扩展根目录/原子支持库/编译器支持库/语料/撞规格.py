@@ -27,16 +27,16 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[4]))  # 仓根：取共享门禁
 from 构建装配.门禁 import 自门禁  # noqa: E402
 
-HERE = os.path.dirname(os.path.abspath(__file__))
-DST = os.path.join(HERE, "真文本")
+语料目录 = os.path.dirname(os.path.abspath(__file__))
+真文本目录 = os.path.join(语料目录, "真文本")
 
 from 撞规格 import 报表, 统计
 from 撞规格.读样本 import 读样本
 
 
 def main():
-    rows = 读样本(DST)
-    读数 = 统计.analyse(rows)
+    rows = 读样本(真文本目录)
+    读数 = 统计.统计读数(rows)
     tier_bytes = 统计.分层字节(rows)
     报表.打印(读数, rows, tier_bytes)
     if "--json" in sys.argv:

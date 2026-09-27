@@ -85,7 +85,7 @@ impl 注册表 {
         let mut 项 = Vec::with_capacity(项数);
         for _ in 0..项数 {
             let 名长 = 读.u32()? as usize;
-            let 名 = 读.取(名长)?.to_vec();
+            let 名 = 读.取字节(名长)?.to_vec();
             let 号 = 读.u16()?;
             项.push((名, 号));
         }
@@ -97,14 +97,14 @@ impl 注册表 {
     }
 }
 
-/// 顺序读器：每个 `取` 都查边界，越界给 `None`（不 panic）。
+/// 顺序读器：每个 `取字节` 都查边界，越界给 `None`（不 panic）。
 struct 读器<'a> {
     字节: &'a [u8],
     位: usize,
 }
 
 impl<'a> 读器<'a> {
-    fn 取(&mut self, 数: usize) -> Option<&'a [u8]> {
+    fn 取字节(&mut self, 数: usize) -> Option<&'a [u8]> {
         let 尾 = self.位.checked_add(数)?;
         if 尾 > self.字节.len() {
             return None;
@@ -115,10 +115,10 @@ impl<'a> 读器<'a> {
     }
 
     fn u16(&mut self) -> Option<u16> {
-        Some(u16::from_le_bytes(self.取(2)?.try_into().ok()?))
+        Some(u16::from_le_bytes(self.取字节(2)?.try_into().ok()?))
     }
 
     fn u32(&mut self) -> Option<u32> {
-        Some(u32::from_le_bytes(self.取(4)?.try_into().ok()?))
+        Some(u32::from_le_bytes(self.取字节(4)?.try_into().ok()?))
     }
 }

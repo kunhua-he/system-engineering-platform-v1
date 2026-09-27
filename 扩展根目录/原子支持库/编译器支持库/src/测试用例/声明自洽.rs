@@ -25,14 +25,14 @@ fn 声明自洽_表等长与参数行数与错误码登记() {
     for 编号 in 1101..=1107u32 {
         let json = 读JSON(&format!("能力声明/{编号}.json"));
         assert_eq!(
-            json.取("编号").and_then(|值| 值.数()).map(|数| 数 as u32),
+            json.取成员("编号").and_then(|值| 值.数()).map(|数| 数 as u32),
             Some(编号)
         );
         见到的.push(编号);
 
         // SAFETY: 表内位 已断言编号落在本表范围内，项表非空。
         let 命令 = unsafe { &*命令表存储.0.as_ptr().add(表内位(编号)) };
-        let json名 = json.取("名称").and_then(|值| 值.串()).expect("名称");
+        let json名 = json.取成员("名称").and_then(|值| 值.串()).expect("名称");
         // SAFETY: 命令名是静态只读 NUL 结尾串。
         assert_eq!(
             unsafe { 读串(命令.名称) },
@@ -40,7 +40,7 @@ fn 声明自洽_表等长与参数行数与错误码登记() {
             "编号 {编号} 的名称漂了"
         );
 
-        let json说明 = json.取("说明").and_then(|值| 值.串()).expect("说明");
+        let json说明 = json.取成员("说明").and_then(|值| 值.串()).expect("说明");
         // SAFETY: 同上。
         assert_eq!(
             unsafe { 读串(命令.说明) },
@@ -49,17 +49,17 @@ fn 声明自洽_表等长与参数行数与错误码登记() {
         );
 
         assert_eq!(
-            json.取("返回类型").and_then(|值| 值.数()).map(|数| 数 as u32),
+            json.取成员("返回类型").and_then(|值| 值.数()).map(|数| 数 as u32),
             Some(命令.返回类型.取()),
             "编号 {编号} 的返回类型漂了"
         );
         assert_eq!(
-            json.取("状态位").and_then(|值| 值.数()).map(|数| 数 as u16),
+            json.取成员("状态位").and_then(|值| 值.数()).map(|数| 数 as u16),
             Some(命令.状态位),
             "编号 {编号} 的状态位漂了"
         );
 
-        let 参数表 = json.取("参数表").and_then(|值| 值.表()).expect("参数表");
+        let 参数表 = json.取成员("参数表").and_then(|值| 值.表()).expect("参数表");
         assert_eq!(
             参数表.len() as u32,
             命令.参数个数,
@@ -69,29 +69,29 @@ fn 声明自洽_表等长与参数行数与错误码登记() {
             // SAFETY: 序 < 参数个数，参数表非空。
             let 实 = unsafe { &*命令.参数表.add(序) };
             assert_eq!(
-                参.取("类型标签").and_then(|值| 值.数()).map(|数| 数 as u32),
+                参.取成员("类型标签").and_then(|值| 值.数()).map(|数| 数 as u32),
                 Some(实.类型标签.取()),
                 "编号 {编号} 第 {序} 行的类型标签漂了（行序即契约）"
             );
-            let 参名 = 参.取("名称").and_then(|值| 值.串()).expect("参数名");
+            let 参名 = 参.取成员("名称").and_then(|值| 值.串()).expect("参数名");
             // SAFETY: 参数名是静态只读 NUL 结尾串。
             assert_eq!(unsafe { 读串(实.名称) }, 参名.as_bytes());
         }
 
         // ③ 每个可抛错误码都在 错误码表/ 里登记过，且段位 == 码 // 1000。
         let 码s = json
-            .取("可抛错误码")
+            .取成员("可抛错误码")
             .and_then(|值| 值.表())
             .expect("可抛错误码");
         for 码 in 码s {
             let 码 = 码.数().expect("码是数") as u32;
             let 档 = 读JSON(&format!("错误码表/{码}.json"));
             assert_eq!(
-                档.取("码").and_then(|值| 值.数()).map(|数| 数 as u32),
+                档.取成员("码").and_then(|值| 值.数()).map(|数| 数 as u32),
                 Some(码)
             );
             assert_eq!(
-                档.取("段位").and_then(|值| 值.数()).map(|数| 数 as u32),
+                档.取成员("段位").and_then(|值| 值.数()).map(|数| 数 as u32),
                 Some(码 / 1000),
                 "码 {码} 的冗余登记项「段位」必须 == 码 // 1000"
             );
@@ -119,7 +119,7 @@ fn 声明自洽_表等长与参数行数与错误码登记() {
 
         // 名称与说明逐字与 JSON 对齐（声明与实现不漂）。
         let 档 = 读JSON(&format!("错误码表/{}.json", 项.码));
-        let json名 = 档.取("名称").and_then(|值| 值.串()).expect("名称");
+        let json名 = 档.取成员("名称").and_then(|值| 值.串()).expect("名称");
         // SAFETY: 错误码名是静态只读 NUL 结尾串。
         assert_eq!(
             unsafe { 读串(项.名称) },
@@ -127,7 +127,7 @@ fn 声明自洽_表等长与参数行数与错误码登记() {
             "码 {} 的名称漂了",
             项.码
         );
-        let json说明 = 档.取("说明").and_then(|值| 值.串()).expect("说明");
+        let json说明 = 档.取成员("说明").and_then(|值| 值.串()).expect("说明");
         // SAFETY: 同上。
         assert_eq!(
             unsafe { 读串(项.说明) },
@@ -136,7 +136,7 @@ fn 声明自洽_表等长与参数行数与错误码登记() {
             项.码
         );
         for (键, 实) in [("可重试", 项.可重试), ("可自愈", 项.可自愈), ("需人工", 项.需人工)] {
-            let 期望 = if 档.取(键).and_then(|值| 值.真假()).expect(键) {
+            let 期望 = if 档.取成员(键).and_then(|值| 值.真假()).expect(键) {
                 1u8
             } else {
                 0u8

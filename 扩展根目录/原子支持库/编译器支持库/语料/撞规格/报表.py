@@ -4,10 +4,10 @@ import json
 import os
 from collections import Counter
 
-from .规格词表 import KNOWN_DOTTED, SPEC_DELIM, SPEC_KEYWORD_DOTTED, SPEC_OP
+from .规格词表 import 已知带点词, SPEC_DELIM, SPEC_KEYWORD_DOTTED, SPEC_OP
 
-HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DST = os.path.join(HERE, "真文本")
+语料目录 = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+真文本目录 = os.path.join(语料目录, "真文本")
 
 
 def 打印(读数, rows, tier_bytes):
@@ -20,7 +20,7 @@ def 打印(读数, rows, tier_bytes):
     print("\n【关键字 · 以 . 开头】共 %d 种 / %d 次"
           % (len(读数["关键字_带点"]), sum(读数["关键字_带点"].values())))
     for 关键字, 计数 in 读数["关键字_带点"].most_common():
-        mark = "" if 关键字 in SPEC_KEYWORD_DOTTED else ("  ← 规格未点名" if 关键字 in KNOWN_DOTTED else "  ← 规格未点名（且不在已知词表）")
+        mark = "" if 关键字 in SPEC_KEYWORD_DOTTED else ("  ← 规格未点名" if 关键字 in 已知带点词 else "  ← 规格未点名（且不在已知词表）")
         print(f"    .{关键字:<20} {计数:>7}{mark}")
 
     print("\n【关键字 · 不带点】%s" % dict(读数["关键字_不带点"]))
@@ -165,5 +165,5 @@ def 导出(读数, tier_bytes):
         "覆盖字符": 读数["覆盖字符"], "未归类字节": 读数["未归类字节"],
         "分层字节": dict(tier_bytes),
     }
-    json.dump(out, open(os.path.join(HERE, "_撞规格读数.json"), "w", encoding="utf-8"),
+    json.dump(out, open(os.path.join(语料目录, "_撞规格读数.json"), "w", encoding="utf-8"),
               ensure_ascii=False, indent=1)

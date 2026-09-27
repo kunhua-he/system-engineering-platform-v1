@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """挖真文本 · 行判定 —— GBK 可解 / 行长 / 控制字符 / 声明行计数 / 行分类与边界扩张。"""
-from .常量 import CTRL, DECL_RE, MAXLINE, VER
+from .常量 import 控制字符, 声明行正则, 最大行长, 版本锚
 
 
 # ── 行工具 ────────────────────────────────────────────────────────────────
@@ -12,15 +12,15 @@ def gbk_ok(原文):
         return False
 
 
-def check_value(val):
+def 检查取值(val):
     probs = []
     nb = blk = 0
     for 序号, ln in enumerate(val.split(b"\n")):
         if ln.endswith(b"\r"):
             ln = ln[:-1]
-        if len(ln) > MAXLINE:
+        if len(ln) > 最大行长:
             probs.append(f"行{序号} 超长 {len(ln)}")
-        elif any(字符 in ln for 字符 in CTRL):
+        elif any(字符 in ln for 字符 in 控制字符):
             probs.append(f"行{序号} 含控制字符")
         elif not gbk_ok(ln):
             probs.append(f"行{序号} 非 GBK")
@@ -31,26 +31,26 @@ def check_value(val):
     return (not probs), probs, nb, blk
 
 
-def decl_lines(val):
+def 声明行数(val):
     声明数, cnt = 0, {}
     for ln in val.split(b"\n"):
         if ln.endswith(b"\r"):
             ln = ln[:-1]
         if not gbk_ok(ln):
             continue
-        匹配 = DECL_RE.match(ln.decode("gbk"))
+        匹配 = 声明行正则.match(ln.decode("gbk"))
         if 匹配:
             声明数 += 1
             cnt[匹配.group(1)] = cnt.get(匹配.group(1), 0) + 1
     return 声明数, cnt
 
 
-def classify(raw):
-    if len(raw) > MAXLINE:
+def 行分类(raw):
+    if len(raw) > 最大行长:
         return "OTHER"
     if not raw.strip():
         return "BLANK"
-    if any(字符 in raw for 字符 in CTRL) or not gbk_ok(raw):
+    if any(字符 in raw for 字符 in 控制字符) or not gbk_ok(raw):
         return "OTHER"
     行文 = raw.decode("gbk")
     st = 行文.lstrip(" ")
@@ -63,7 +63,7 @@ def classify(raw):
     return "OTHER"
 
 
-def line_at(字节流, pos):
+def 定位行(字节流, pos):
     ls = 字节流.rfind(b"\n", 0, pos) + 1
     le = 字节流.find(b"\n", pos)
     nxt = len(字节流) if le < 0 else le + 1
@@ -73,20 +73,20 @@ def line_at(字节流, pos):
     return ls, 行尾, nxt
 
 
-def expand(字节流, 锚点):
+def 扩张边界(字节流, 锚点):
     """按行形状从锚点向前扩张（弱证据用）。"""
-    ls, le, nxt = line_at(字节流, 锚点)
-    start = ls if 字节流[ls:ls + len(VER)] == VER else 锚点
+    ls, le, nxt = 定位行(字节流, 锚点)
+    start = ls if 字节流[ls:ls + len(版本锚)] == 版本锚 else 锚点
     end = nxt
     while end < len(字节流):
-        _, le2, nxt2 = line_at(字节流, end)
-        if classify(字节流[end:le2]) == "OTHER":
+        _, le2, nxt2 = 定位行(字节流, end)
+        if 行分类(字节流[end:le2]) == "OTHER":
             break
         end = nxt2
     if start == ls:
         while start >= 2:
-            pls, ple, _ = line_at(字节流, start - 2)
-            if pls >= start or classify(字节流[pls:ple]) == "OTHER":
+            pls, ple, _ = 定位行(字节流, start - 2)
+            if pls >= start or 行分类(字节流[pls:ple]) == "OTHER":
                 break
             start = pls
     return start, end
