@@ -4,10 +4,10 @@ from __future__ import annotations
 
 import re
 
-def _前面不是标识符(文本: str, 位: int) -> bool:
-    if 位 == 0:
+def _前面不是标识符(文本: str, 位置: int) -> bool:
+    if 位置 == 0:
         return True
-    字 = 文本[位 - 1]
+    字 = 文本[位置 - 1]
     return not (字.isalnum() or 字 == "_" or 字 == "：")
 
 
@@ -21,8 +21,8 @@ def 掩码(文本: str) -> str:
     全长 = len(文本)
     游标 = 0
 
-    def 抹区间(起, 止):
-        for 位次 in range(起, min(止, 全长)):
+    def 抹区间(区间起点, 区间终点):
+        for 位次 in range(区间起点, min(区间终点, 全长)):
             if 结果[位次] != "\n":
                 结果[位次] = " "
 

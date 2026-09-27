@@ -9,15 +9,15 @@ from .小工具 import 配对
 from .掩码 import 掩码
 
 
-def 解整数(文) -> object:
-    if 文 is None:
+def 解整数(文本) -> object:
+    if 文本 is None:
         return None
-    文 = 文.strip()
-    if re.fullmatch(r"\d+", 文):
-        return int(文)
-    if re.fullmatch(r"0[xX][0-9a-fA-F]+", 文):
-        return int(文, 16)
-    匹配 = re.fullmatch(r"(\d+)\s*(<<|>>|\+|\-|\*|/|\||&)\s*(\d+)", 文)
+    文本 = 文本.strip()
+    if re.fullmatch(r"\d+", 文本):
+        return int(文本)
+    if re.fullmatch(r"0[xX][0-9a-fA-F]+", 文本):
+        return int(文本, 16)
+    匹配 = re.fullmatch(r"(\d+)\s*(<<|>>|\+|\-|\*|/|\||&)\s*(\d+)", 文本)
     if 匹配:
         左值, 运, 右值 = int(匹配.group(1)), 匹配.group(2), int(匹配.group(3))
         try:
@@ -27,33 +27,33 @@ def 解整数(文) -> object:
             }[运]
         except (ValueError, ZeroDivisionError):
             return None
-    匹配 = re.fullmatch(r"(\d+)\s+as\s+\w+", 文)
+    匹配 = re.fullmatch(r"(\d+)\s+as\s+\w+", 文本)
     if 匹配:
         return int(匹配.group(1))
     return None
 
 
-def 解表达式(文, 表: dict) -> object:
-    """把 `表` 里的符号代入后求整数（例：`码 / 1000` + {码: 1001} → 1）。解不出 None。"""
-    if 文 is None:
+def 解表达式(文本, 项表: dict) -> object:
+    """把 `项表` 里的符号代入后求整数（例：`码 / 1000` + {码: 1001} → 1）。解不出 None。"""
+    if 文本 is None:
         return None
-    裸值 = 解整数(文)
+    裸值 = 解整数(文本)
     if 裸值 is not None:
         return 裸值
-    换 = 文
-    for 名 in sorted(表, key=len, reverse=True):
-        值 = 表[名]
+    换 = 文本
+    for 名 in sorted(项表, key=len, reverse=True):
+        值 = 项表[名]
         if 值 is None:
             continue
         换 = re.sub(r"(?<![\w:])" + re.escape(名) + r"(?![\w:])", str(值), 换)
     return 解整数(换)
 
 
-def 末段(文: str) -> str:
-    return 文.strip().split("::")[-1].strip()
+def 末段(文本: str) -> str:
+    return 文本.strip().split("::")[-1].strip()
 
 
-def 解构造器(文: str, 符号表: dict = None, 本表: dict = None) -> object:
+def 解构造器(文本: str, 符号表: dict = None, 本表: dict = None) -> object:
     """newtype 构造器 → 内层整数。**内层只认「整数字面量」或「本单元常量」**。
 
     为什么要有它：`契约声明` 新增 `#[repr(transparent)]` newtype 后，底座侧字段写成
@@ -70,11 +70,11 @@ def 解构造器(文: str, 符号表: dict = None, 本表: dict = None) -> objec
     这**不是放宽**：解的仍是**已登记的数**（生成物常量或本单元 `能力号` 表），不是猜。
     只认「内层是单个符号/字面量」：内层是复合表达式（`某值.取号值()` · `a + b`）一律不认。
     """
-    if 文 is None:
+    if 文本 is None:
         return None
-    文 = 文.strip()
+    文本 = 文本.strip()
     # `路径::类型名::新(<内层>)`
-    匹配 = re.fullmatch(r"[\w:]+::新建\s*\(\s*(.+?)\s*\)", 文)
+    匹配 = re.fullmatch(r"[\w:]+::新建\s*\(\s*(.+?)\s*\)", 文本)
     if 匹配:
         内 = 匹配.group(1)
         数 = 解整数(内)
@@ -84,48 +84,48 @@ def 解构造器(文: str, 符号表: dict = None, 本表: dict = None) -> objec
             return 解符号(内, 符号表, 本表)
         return None
     # `<整数字面量>.into()`（可带类型后缀：`0u32.into()` / `0_usize.into()`）
-    匹配 = re.fullmatch(r"(\d+)\s*(?:[a-zA-Z]\w*)?\s*\.\s*into\s*\(\s*\)", 文)
+    匹配 = re.fullmatch(r"(\d+)\s*(?:[a-zA-Z]\w*)?\s*\.\s*into\s*\(\s*\)", 文本)
     if 匹配:
         return int(匹配.group(1))
     return None
 
 
-def 解符号(文, 符号表: dict, 本表: dict) -> object:
+def 解符号(文本, 符号表: dict, 本表: dict) -> object:
     """把 `类型标签_0005` / `v1_contract::声明数据::类型标签_0005` /
     `命令状态::错误` / `能力号::生成容器 as usize` / `v1_contract::类型标签::新建(0)` 解析成数。
 
     读法（顺序即优先级）：newtype 构造器 → 去 `as` → 全路径（含去掉 `v1_contract::` /
     `crate::` 前缀后的模块限定名）→ 末段 → 表达式代入。解不出返回 None（不许猜）。
     """
-    if 文 is None:
+    if 文本 is None:
         return None
-    文 = 文.strip()
-    裸值 = 解构造器(文, 符号表, 本表)
+    文本 = 文本.strip()
+    裸值 = 解构造器(文本, 符号表, 本表)
     if 裸值 is not None:
         return 裸值
-    裸值 = 解整数(文)
+    裸值 = 解整数(文本)
     if 裸值 is not None:
         return 裸值
-    匹配 = re.fullmatch(r"(.+?)\s+as\s+\w+", 文)
+    匹配 = re.fullmatch(r"(.+?)\s+as\s+\w+", 文本)
     if 匹配:
-        文 = 匹配.group(1).strip()
+        文本 = 匹配.group(1).strip()
     # 先按**全路径**（含模块限定名）找，再退回**末段** —— 同名的常量分属不同 `pub mod` 时，
     # 只有全路径能消歧（`槽标志::空槽标志` 与 `常量排布::无值` 是两个数）。
-    候选 = [文]
+    候选 = [文本]
     for 前 in ("v1_contract::", "crate::"):
-        if 文.startswith(前):
-            候选.append(文[len(前):])
+        if 文本.startswith(前):
+            候选.append(文本[len(前):])
     for 候 in 候选:
         if 候 in 本表:
             return 本表[候]
         if 候 in 符号表:
             return 符号表[候]
-    名 = 末段(文)
+    名 = 末段(文本)
     if 名 in 本表:
         return 本表[名]
     if 名 in 符号表:
         return 符号表[名]
-    return 解表达式(文, {**符号表, **本表})
+    return 解表达式(文本, {**符号表, **本表})
 
 
 def 解常量值(值文: str) -> object:

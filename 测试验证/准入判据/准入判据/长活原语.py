@@ -50,44 +50,44 @@ def 找仓根() -> Path:
     return Path.cwd()
 
 
-def 考题路径(根: Path) -> Path:
-    return 根 / 考题相对路径
+def 考题路径(根目录: Path) -> Path:
+    return 根目录 / 考题相对路径
 
 
-def 缓存目录(根: Path) -> Path:
-    return 根 / 缓存目录相对
+def 缓存目录(根目录: Path) -> Path:
+    return 根目录 / 缓存目录相对
 
 
-def 源指纹(根: Path) -> str:
+def 源指纹(根目录: Path) -> str:
     """考题源的 sha256 —— 戳与它比对，源变了即判「产物与源不符」。"""
-    件 = 考题路径(根)
+    件 = 考题路径(根目录)
     if not 件.is_file():
         return ""
     return hashlib.sha256(件.read_bytes()).hexdigest()
 
 
-def 读戳(根: Path) -> dict:
-    件 = 缓存目录(根) / "戳.json"
+def 读戳(根目录: Path) -> dict:
+    件 = 缓存目录(根目录) / "戳.json"
     try:
         return json.loads(件.read_text(encoding="utf-8"))
     except (OSError, ValueError):
         return {}
 
 
-def 预编(根: Path) -> int:
+def 预编(根目录: Path) -> int:
     """环境步：`rustc --test` 编**单文件**考题 ⇒ 缓存目录里的二进制 + 源指纹戳。
 
     **不碰 cargo 锁**（不读工作区、不解析依赖）：这是本 runner 能在「不许跑 cargo」的纪律下
     出读数的唯一原因。编译耗时照实报（它在本命令的墙钟里）。
     """
-    缓存 = 缓存目录(根)
+    缓存 = 缓存目录(根目录)
     缓存.mkdir(parents=True, exist_ok=True)
     二进制 = 缓存 / "考题"
     起 = time.monotonic()
     结果 = subprocess.run(
         # `--edition 2024` 与扩展 crate 的 `Cargo.toml` 逐字一致（否则「真跑」跑的不是它的真版本）。
-        ["rustc", "--test", "--edition", "2024", str(考题路径(根)), "-o", str(二进制)],
-        cwd=str(根),
+        ["rustc", "--test", "--edition", "2024", str(考题路径(根目录)), "-o", str(二进制)],
+        cwd=str(根目录),
         capture_output=True,
         text=True,
         timeout=编译超时毫秒 / 1000,
@@ -98,7 +98,7 @@ def 预编(根: Path) -> int:
         return 1
     (缓存 / "戳.json").write_text(
         json.dumps(
-            {"源指纹": 源指纹(根), "二进制": 二进制.name, "编译毫秒": 耗时毫秒},
+            {"源指纹": 源指纹(根目录), "二进制": 二进制.name, "编译毫秒": 耗时毫秒},
             ensure_ascii=False,
             indent=2,
         )
@@ -121,10 +121,10 @@ def 解测果(输出: str) -> dict:
     return 表
 
 
-def 扫内核任务表(根: Path) -> list:
+def 扫内核任务表(根目录: Path) -> list:
     """判据 10：`运行内核/` 下 0 处任务表（状态在扩展侧，内核不持）。返回命中处。"""
     命中 = []
-    面 = 根 / 内核扫描面相对
+    面 = 根目录 / 内核扫描面相对
     if not 面.is_dir():
         return 命中
     for 件 in sorted(面.rglob("*.rs")):
@@ -134,24 +134,24 @@ def 扫内核任务表(根: Path) -> list:
             continue
         for 词 in 任务表词:
             if 词 in 文本:
-                命中.append(f"{件.relative_to(根)}::{词}")
+                命中.append(f"{件.relative_to(根目录)}::{词}")
     return 命中
 
 
-def 判定(根: Path) -> int:
+def 判定(根目录: Path) -> int:
     """命令体：跑已编好的考题，把三道断言映射成 判据 7 · 8 · 9，另静态扫 判据 10。"""
-    戳 = 读戳(根)
-    二进制 = 缓存目录(根) / str(戳.get("二进制") or "考题")
+    戳 = 读戳(根目录)
+    二进制 = 缓存目录(根目录) / str(戳.get("二进制") or "考题")
     if not 戳 or not 二进制.is_file():
         print("✗ 产物缺失：先跑环境步 —— python3 测试验证/准入判据/长活原语.py --预编")
         return 1
-    if 戳.get("源指纹") != 源指纹(根):
+    if 戳.get("源指纹") != 源指纹(根目录):
         print("✗ 产物与源不符（考题被改过，戳是旧的）：先跑 --预编 刷新")
         return 1
     try:
         结果 = subprocess.run(
             [str(二进制), "--test-threads=1"],
-            cwd=str(根),
+            cwd=str(根目录),
             capture_output=True,
             text=True,
             timeout=跑测超时毫秒 / 1000,
@@ -172,7 +172,7 @@ def 判定(根: Path) -> int:
         else:
             行表.append((号, "失败", f"{测名} 红了"))
             失败 += 1
-    命中 = 扫内核任务表(根)
+    命中 = 扫内核任务表(根目录)
     if 命中:
         行表.append((10, "失败", "运行内核/ 下出现任务表：" + " · ".join(命中)))
         失败 += 1

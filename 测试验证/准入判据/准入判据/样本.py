@@ -21,15 +21,15 @@ from .清单 import 机器判据
 from .登记 import 有意不判
 
 
-def _复制(世: 世界) -> 世界:
+def _复制(测试世界: 世界) -> 世界:
     新 = object.__new__(世界)
-    新.__dict__ = dict(世.__dict__)
+    新.__dict__ = dict(测试世界.__dict__)
     return 新
 
 
-def _复制扩展目录(世: 世界) -> Path:
+def _复制扩展目录(测试世界: 世界) -> Path:
     目标 = Path(tempfile.mkdtemp(prefix="准入判据_指纹_")) / "编译器支持库"
-    shutil.copytree(世.扩展目录(), 目标)
+    shutil.copytree(测试世界.扩展目录(), 目标)
     return 目标
 
 
@@ -40,9 +40,9 @@ def 自测() -> int:
     失败 = []
     行 = []
 
-    def 断言(编号, 名, 样本, 期望, 果):
-        if 果[0] != 期望:
-            失败.append(f"{编号} {名}｜{样本}：期望 {期望}，实得 {果[0]}（{果[1]}）")
+    def 断言(编号, 名称, 样本, 期望, 结果):
+        if 结果[0] != 期望:
+            失败.append(f"{编号} {名称}｜{样本}：期望 {期望}，实得 {结果[0]}（{结果[1]}）")
             return False
         return True
 

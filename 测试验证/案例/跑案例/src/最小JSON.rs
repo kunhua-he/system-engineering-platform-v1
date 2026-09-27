@@ -25,9 +25,9 @@ pub enum JSON值 {
 
 impl JSON值 {
     /// 按键取成员。**只对对象有意义**，其余一律 `None`（不猜、不转换）。
-    pub fn 取成员(&self, 键: &str) -> Option<&JSON值> {
+    pub fn 取成员(&self, 键名: &str) -> Option<&JSON值> {
         match self {
-            JSON值::对象(项表) => 项表.iter().find(|(名, _)| 名 == 键).map(|(_, 值)| 值),
+            JSON值::对象(项表) => 项表.iter().find(|(名, _)| 名 == 键名).map(|(_, 值)| 值),
             _ => None,
         }
     }
@@ -72,8 +72,8 @@ impl JSON值 {
 }
 
 /// 解析。错误信息带**字节位置**——案例文件写错时要能直接找到那一处。
-pub fn 解析(源: &str) -> Result<JSON值, String> {
-    let mut 读 = 读器 { 字节: 源.as_bytes(), 位: 0 };
+pub fn 解析(来源: &str) -> Result<JSON值, String> {
+    let mut 读 = 读器 { 字节: 来源.as_bytes(), 位: 0 };
     读.跳空白();
     let 文本缓冲 = 读.取值()?;
     读.跳空白();
@@ -99,28 +99,28 @@ impl 读器<'_> {
         self.字节.get(self.位).copied()
     }
 
-    fn 期望(&mut self, 字: u8) -> Result<(), String> {
+    fn 期望(&mut self, 字符表: u8) -> Result<(), String> {
         match self.取当前字节() {
-            Some(实) if 实 == 字 => {
+            Some(实) if 实 == 字符表 => {
                 self.位 += 1;
                 Ok(())
             }
             Some(实) => Err(format!(
                 "第 {} 字节：期望 `{}`，实到 `{}`",
                 self.位,
-                字 as char,
+                字符表 as char,
                 实 as char
             )),
-            None => Err(format!("第 {} 字节：期望 `{}`，已到末尾", self.位, 字 as char)),
+            None => Err(format!("第 {} 字节：期望 `{}`，已到末尾", self.位, 字符表 as char)),
         }
     }
 
-    fn 取字面(&mut self, 文: &str) -> Result<(), String> {
-        if self.字节[self.位..].starts_with(文.as_bytes()) {
-            self.位 += 文.len();
+    fn 取字面(&mut self, 文本: &str) -> Result<(), String> {
+        if self.字节[self.位..].starts_with(文本.as_bytes()) {
+            self.位 += 文本.len();
             Ok(())
         } else {
-            Err(format!("第 {} 字节：期望 `{文}`", self.位))
+            Err(format!("第 {} 字节：期望 `{文本}`", self.位))
         }
     }
 
@@ -287,9 +287,9 @@ impl 读器<'_> {
 }
 
 /// 写出：转义控制字符与 `"` `\`，其余原样（含中文）。
-pub fn 写串(文本缓冲: &mut String, 文: &str) {
+pub fn 写串(文本缓冲: &mut String, 文本: &str) {
     文本缓冲.push('"');
-    for 字 in 文.chars() {
+    for 字 in 文本.chars() {
         match 字 {
             '"' => 文本缓冲.push_str("\\\""),
             '\\' => 文本缓冲.push_str("\\\\"),
@@ -309,8 +309,8 @@ pub fn 写串(文本缓冲: &mut String, 文: &str) {
 mod 测试 {
     use super::*;
 
-    fn 解析JSON(源: &str) -> JSON值 {
-        解析(源).unwrap_or_else(|错| panic!("{源} 该能解析：{错}"))
+    fn 解析JSON(来源: &str) -> JSON值 {
+        解析(来源).unwrap_or_else(|错| panic!("{来源} 该能解析：{错}"))
     }
 
     /// 正向样本：干净输入必须通过，且读到的东西与写的一样。

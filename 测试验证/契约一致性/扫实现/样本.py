@@ -26,8 +26,8 @@ def 造样本() -> dict:
     为什么不用真仓当正向样本：真仓当前有真失败（③j 的两处硬编码），拿它当「干净输入」
     就会把真红当成判据 bug。正向样本必须是**已知答案**的输入（`判据的可信性.md` §三.5）。
     """
-    def 造件(对):
-        return json.dumps(对, ensure_ascii=False, indent=2)
+    def 造件(键值对):
+        return json.dumps(键值对, ensure_ascii=False, indent=2)
 
     能力 = {
         "编号": 1001, "名称": "样本能力", "说明": "样本能力", "类别": 0, "状态位": 0,

@@ -127,26 +127,26 @@ impl 回执 {
     }
 }
 
-fn 写可选串(文本缓冲: &mut String, 值: Option<&str>) {
-    match 值 {
+fn 写可选串(文本缓冲: &mut String, 待处理值: Option<&str>) {
+    match 待处理值 {
         Some(文) => crate::最小JSON::写串(文本缓冲, 文),
         None => 文本缓冲.push_str("null"),
     }
 }
 
 /// **追加**一行。追加不是覆盖：回执是历史，抹掉历史就没法判「回执是不是旧的」。
-pub fn 追加(路: &Path, 行: &str) -> Result<(), String> {
-    if let Some(父) = 路.parent() {
+pub fn 追加(路径: &Path, 源码行: &str) -> Result<(), String> {
+    if let Some(父) = 路径.parent() {
         std::fs::create_dir_all(父).map_err(|错| format!("建不了 {}：{错}", 父.display()))?;
     }
     let mut 件 = std::fs::OpenOptions::new()
         .create(true)
         .append(true)
-        .open(路)
-        .map_err(|错| format!("打不开 {}：{错}", 路.display()))?;
-    件.write_all(行.as_bytes())
+        .open(路径)
+        .map_err(|错| format!("打不开 {}：{错}", 路径.display()))?;
+    件.write_all(源码行.as_bytes())
         .and_then(|()| 件.write_all(b"\n"))
-        .map_err(|错| format!("写不进 {}：{错}", 路.display()))
+        .map_err(|错| format!("写不进 {}：{错}", 路径.display()))
 }
 
 /// `git rev-parse HEAD` 的**完整**值。取不到就报错——**不许拿一个空串或短哈希顶上**。
@@ -206,8 +206,8 @@ pub fn 现在UTC() -> String {
 }
 
 /// 天数（1970-01-01 起）→ 公历日期。Howard Hinnant 的 `civil_from_days`，整数运算，无外部依赖。
-fn 民用日期(天: i64) -> (i64, u32, u32) {
-    let 移 = 天 + 719_468;
+fn 民用日期(天数: i64) -> (i64, u32, u32) {
+    let 移 = 天数 + 719_468;
     let 纪元 = if 移 >= 0 { 移 } else { 移 - 146_096 } / 146_097;
     let 纪内 = (移 - 纪元 * 146_097) as u64;
     let 年内 = (纪内 - 纪内 / 1460 + 纪内 / 36_524 - 纪内 / 146_096) / 365;

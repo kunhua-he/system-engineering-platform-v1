@@ -22,9 +22,9 @@ from .抽取件 import (
     抽常量,
 )
 
-def 找所属单元(键: str, 件表: dict) -> str:
+def 找所属单元(键名: str, 件表: dict) -> str:
     """文件的 crate 根 = **最近的**含 Cargo.toml 的祖先目录（`src/` 在 crate 根下一层）。"""
-    段 = 键.split("/")[:-1]
+    段 = 键名.split("/")[:-1]
     for 位次 in range(len(段), 0, -1):
         候选 = "/".join(段[:位次])
         if f"{候选}/Cargo.toml" in 件表:
@@ -274,9 +274,9 @@ def _按构造器解字段(构造, 实参, 符号表, 本表) -> dict:
     return 出
 
 
-def _序(表: list, 名: str) -> int:
+def _序(项表: list, 名称: str) -> int:
     try:
-        return 表.index(名)
+        return 项表.index(名称)
     except ValueError:
         return -1
 
@@ -316,5 +316,5 @@ def _代形参(文本: str, 形参: list, 实参: list) -> str:
     return 换
 
 
-def 任内(键: str, 范围: list) -> bool:
-    return any(键 == 项 or 键.startswith(项.rstrip("/") + "/") for 项 in 范围)
+def 任内(键名: str, 范围: list) -> bool:
+    return any(键名 == 项 or 键名.startswith(项.rstrip("/") + "/") for 项 in 范围)
