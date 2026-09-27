@@ -92,8 +92,8 @@ impl 黑盒体 for 夹具黑盒 {
     fn 调用(&self, 操作号: u32, 输入槽表: &[数据槽], 输出槽表: &mut Vec<数据槽>) -> 黑盒结果 {
         self.跑过.fetch_add(1, Ordering::Relaxed);
         // 夹具只造单入参的声明 ⇒ 记第一个入参槽的类型标签（§七 那条测试要它）。
-        if let Some(槽) = 输入槽表.first() {
-            self.收到的类型标签.store(槽.类型标签.取号值(), Ordering::Relaxed);
+        if let Some(数据槽) = 输入槽表.first() {
+            self.收到的类型标签.store(数据槽.类型标签.取号值(), Ordering::Relaxed);
         }
         if self.睡毫秒 > 0 {
             std::thread::sleep(Duration::from_millis(self.睡毫秒));
@@ -105,9 +105,9 @@ impl 黑盒体 for 夹具黑盒 {
             });
         }
         let 标签 = if self.写错类型 { 整数 } else { self.输出类型 };
-        let (值, 长) = 输入槽表.first().map_or((0, 0), |槽| (槽.值, 槽.长度));
+        let (待处理值, 长度) = 输入槽表.first().map_or((0, 0), |数据槽| (数据槽.值, 数据槽.长度));
         输出槽表.clear();
-        输出槽表.push(数据槽::内联(v1_contract::类型标签::新建(标签), 值, 长));
+        输出槽表.push(数据槽::内联(v1_contract::类型标签::新建(标签), 待处理值, 长度));
         黑盒结果::成功
     }
 }

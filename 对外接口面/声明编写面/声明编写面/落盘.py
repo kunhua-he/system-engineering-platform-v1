@@ -61,11 +61,11 @@ def 回滚(路径, 旧字节) -> None:
 def 只增判定(旧数据, 新数据):
     """→ (是否只增, 差异列表)。只增 = 旧键全在且值全等（新键可以多出来）。"""
     差异 = []
-    for 键, 旧值 in 旧数据.items():
-        if 键 not in 新数据:
-            差异.append("删掉旧键 %s" % 键)
-        elif 新数据[键] != 旧值:
-            差异.append("改旧键 %s：%r → %r" % (键, 旧值, 新数据[键]))
+    for 键名, 旧值 in 旧数据.items():
+        if 键名 not in 新数据:
+            差异.append("删掉旧键 %s" % 键名)
+        elif 新数据[键名] != 旧值:
+            差异.append("改旧键 %s：%r → %r" % (键名, 旧值, 新数据[键名]))
     return (not 差异), 差异
 
 
@@ -74,6 +74,6 @@ def 留痕(面根, 记录) -> str:
     目录 = Path(面根) / 留痕目录名
     目录.mkdir(parents=True, exist_ok=True)
     路径 = 目录 / 留痕文件名
-    with 路径.open("a", encoding="utf-8") as 流:
-        流.write(json.dumps(记录, ensure_ascii=False) + "\n")
+    with 路径.open("a", encoding="utf-8") as 输出流:
+        输出流.write(json.dumps(记录, ensure_ascii=False) + "\n")
     return "%s/%s" % (留痕目录名, 留痕文件名)

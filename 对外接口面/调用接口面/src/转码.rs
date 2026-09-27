@@ -51,7 +51,7 @@ pub fn base64编码(来源: &[u8]) -> String {
 
 /// 一位 base64 字符 → 6 位值。`=` 与表外字符都算不合法。
 fn 取值(字符表: u8, 位置: usize) -> Result<u32, 转码错误> {
-    match 字母表.iter().position(|一| *一 == 字符表) {
+    match 字母表.iter().position(|一项| *一项 == 字符表) {
         Some(序) => Ok(序 as u32),
         None => Err(转码错误 {
             位置: 位置,
@@ -166,7 +166,7 @@ pub fn 百分号解码(来源: &str) -> Result<String, 转码错误> {
 }
 
 fn 十六进制(字符表: u8) -> Option<u8> {
-    (字符表 as char).to_digit(16).map(|数| 数 as u8)
+    (字符表 as char).to_digit(16).map(|个数| 个数 as u8)
 }
 
 #[cfg(test)]

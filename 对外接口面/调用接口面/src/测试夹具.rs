@@ -30,10 +30,10 @@ pub struct 收到 {
 impl 收到 {
     /// 体解析成 JSON。**应答体必须是合法 JSON** —— 不是就当场挂（那是本面的缺陷）。
     pub fn 取协议值(&self) -> 协议值 {
-        crate::协议解析::解析(&self.体).unwrap_or_else(|错| {
+        crate::协议解析::解析(&self.体).unwrap_or_else(|错误| {
             panic!(
                 "应答体必须是合法 JSON，却在第 {} 字节报「{}」：\n{}",
-                错.位置, 错.说明, self.体
+                错误.位置, 错误.说明, self.体
             )
         })
     }
@@ -185,18 +185,18 @@ pub fn 发到端口(端口: u16, 请求: &str) -> 收到 {
 /// 解析原始应答文本。
 fn 解析应答(字节: &[u8]) -> 收到 {
     let 文本 = String::from_utf8(字节.to_vec()).expect("应答必须是 UTF-8");
-    let (头, 体) = 文本
+    let (头部, 应答体) = 文本
         .split_once("\r\n\r\n")
         .unwrap_or_else(|| panic!("应答必须有头体分界：\n{文本}"));
-    let 状态 = 头
+    let 状态 = 头部
         .lines()
         .next()
-        .and_then(|行| 行.split(' ').nth(1))
-        .and_then(|码| 码.parse::<u16>().ok())
+        .and_then(|源码行| 源码行.split(' ').nth(1))
+        .and_then(|状态码| 状态码.parse::<u16>().ok())
         .unwrap_or_else(|| panic!("应答首行必须是「HTTP/1.1 码 短语」：\n{文本}"));
     收到 {
         状态,
-        头: 头.to_owned(),
-        体: 体.to_owned(),
+        头: 头部.to_owned(),
+        体: 应答体.to_owned(),
     }
 }

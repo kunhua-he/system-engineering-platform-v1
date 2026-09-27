@@ -102,9 +102,9 @@ pub fn 认端点(方法: &str, 目标: &str) -> Result<端点, 拒绝> {
     if 路径 == 路径_声明 {
         return 要方法(&方法, "POST").map(|()| 端点::声明);
     }
-    if let Some(尾) = 路径.strip_prefix(路径_能力) {
+    if let Some(尾部) = 路径.strip_prefix(路径_能力) {
         要方法(&方法, "GET")?;
-        let 编号 = 尾.parse::<u32>().map_err(|_| 拒绝::编号不是十进制数)?;
+        let 编号 = 尾部.parse::<u32>().map_err(|_| 拒绝::编号不是十进制数)?;
         return Ok(端点::能力契约 { 编号 });
     }
     // ── §七 工具族（新增旁路：`冻结登记.json` 已登记）────────────────────────────
@@ -161,7 +161,7 @@ fn 取路径(目标: &str) -> &str {
     let 目标 = 目标
         .strip_prefix("http://")
         .or_else(|| 目标.strip_prefix("https://"))
-        .and_then(|余| 余.find('/').map(|位| &余[位..]))
+        .and_then(|剩余目标| 剩余目标.find('/').map(|位置| &剩余目标[位置..]))
         .unwrap_or(目标);
     match 目标.find('?') {
         Some(位) => &目标[..位],

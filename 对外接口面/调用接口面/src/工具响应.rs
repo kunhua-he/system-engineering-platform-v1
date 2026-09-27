@@ -127,17 +127,17 @@ pub(super) fn 相对(工具根: &Path, 路径: &Path) -> String {
 
 /// 读一件 JSON。读不到 / 解不了都**原样带回**（不吞、不给默认值）。
 pub(super) fn 读JSON件(路径: &Path) -> Result<协议值, String> {
-    let 文本 = std::fs::read_to_string(路径).map_err(|错| format!("读不到 {}：{错}", 路径.display()))?;
+    let 文本 = std::fs::read_to_string(路径).map_err(|错误| format!("读不到 {}：{错误}", 路径.display()))?;
     crate::协议解析::解析(&文本)
-        .map_err(|错| format!("{} 不是合法 JSON：{}（第 {} 字节）", 路径.display(), 错.说明, 错.位置))
+        .map_err(|错误| format!("{} 不是合法 JSON：{}（第 {} 字节）", 路径.display(), 错误.说明, 错误.位置))
 }
 
 /// 列一个目录下的**子目录名**，按名排序（顺序确定 ⇒ 读数可比）。
 pub(super) fn 列子目录(目录: &Path) -> Result<Vec<String>, String> {
-    let 读器 = std::fs::read_dir(目录).map_err(|错| format!("读不到目录 {}：{错}", 目录.display()))?;
+    let 读器 = std::fs::read_dir(目录).map_err(|错误| format!("读不到目录 {}：{错误}", 目录.display()))?;
     let mut 输出缓冲 = Vec::new();
     for 目录项 in 读器 {
-        let 目录项 = 目录项.map_err(|错| format!("列目录 {} 失败：{错}", 目录.display()))?;
+        let 目录项 = 目录项.map_err(|错误| format!("列目录 {} 失败：{错误}", 目录.display()))?;
         if !目录项.path().is_dir() {
             continue;
         }

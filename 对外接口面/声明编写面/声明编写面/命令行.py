@@ -31,8 +31,8 @@ def 读请求(文本: str):
         文本 = sys.stdin.read()
     try:
         请求 = json.loads(文本)
-    except ValueError as 错:
-        return None, "请求体不是合法 JSON：%s" % 错
+    except ValueError as 错误:
+        return None, "请求体不是合法 JSON：%s" % 错误
     if not isinstance(请求, dict):
         return None, "请求体顶层必须是 JSON 对象（形状：{类别,编号,正文,确认}）"
     return 请求, ""

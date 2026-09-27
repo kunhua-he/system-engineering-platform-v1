@@ -31,7 +31,7 @@ fn 说清启动失败(错误: &启动失败) -> String {
 
 fn 取值(名称: &str) -> Option<String> {
     let 参数: Vec<String> = env::args().collect();
-    参数.iter().position(|项| 项 == 名称).and_then(|位| 参数.get(位 + 1).cloned())
+    参数.iter().position(|一项| 一项 == 名称).and_then(|位置| 参数.get(位置 + 1).cloned())
 }
 
 /// 跑完整条链。命令行参数、端口与日志输出**逐字不变**（上线切换靠 `监听 127.0.0.1:<端口>` 一行拿端口）。
@@ -52,18 +52,18 @@ pub(crate) fn 跑网关() -> Result<(), String> {
 
     // ── 第一步：读扩展根声明 ────────────────────────────────────────────────
     let 文本 = fs::read_to_string(&声明根路径)
-        .map_err(|错| format!("读不到扩展根声明 {}：{错}", 声明根路径.display()))?;
+        .map_err(|错误| format!("读不到扩展根声明 {}：{错误}", 声明根路径.display()))?;
     let 根目录 = 读器::新建(&文本)
         .读一个值()
-        .map_err(|错| format!("扩展根声明不是合法 JSON：{错}"))?;
+        .map_err(|错误| format!("扩展根声明不是合法 JSON：{错误}"))?;
     let 种类 = 根目录
         .取成员("种类")
-        .and_then(|值| 值.取数组())
+        .and_then(|待处理值| 待处理值.取数组())
         .ok_or_else(|| "扩展根声明缺 `种类` 段".to_owned())?;
     println!(
         "扩展根声明 {} · 种类 {} 类",
         fs::canonicalize(&声明根路径)
-            .map(|路| 路.display().to_string())
+            .map(|路径| 路径.display().to_string())
             .unwrap_or_else(|_| 声明根路径.display().to_string()),
         种类.len()
     );
@@ -82,8 +82,8 @@ pub(crate) fn 跑网关() -> Result<(), String> {
     let mut 装上的: Vec<String> = Vec::new();
     let mut 剔除的: Vec<(String, String)> = Vec::new();
     for 类别 in 种类 {
-        let 类名 = 类别.取成员("种类").and_then(|值| 值.取字符串()).unwrap_or("?");
-        let Some(可装载) = 类别.取成员("可装载件").and_then(|值| 值.布尔()) else {
+        let 类名 = 类别.取成员("种类").and_then(|待处理值| 待处理值.取字符串()).unwrap_or("?");
+        let Some(可装载) = 类别.取成员("可装载件").and_then(|待处理值| 待处理值.布尔()) else {
             return Err(format!(
                 "扩展根声明的 种类[{类名}] 缺 `可装载件`（或不是布尔）。\n  \
                  这个键决定「这一类的直接子目录要不要当可装载件候选」（支持库 true · \
@@ -94,7 +94,7 @@ pub(crate) fn 跑网关() -> Result<(), String> {
         if !可装载 {
             continue;
         }
-        let Some(目录) = 类别.取成员("目录").and_then(|值| 值.取字符串()) else {
+        let Some(目录) = 类别.取成员("目录").and_then(|待处理值| 待处理值.取字符串()) else {
             continue;
         };
         let 目录 = PathBuf::from(目录);
@@ -140,7 +140,7 @@ pub(crate) fn 跑网关() -> Result<(), String> {
         Some(号) => 服务::绑定(&候选, 号),
         None => 服务::绑定默认端口(&候选),
     }
-    .map_err(|错| format!("起服务失败：{}", 说清启动失败(&错)))?;
+    .map_err(|错误| format!("起服务失败：{}", 说清启动失败(&错误)))?;
     let 服务 = match 静态根 {
         Some(根) => 服务.托管静态根(根),
         None => 服务,

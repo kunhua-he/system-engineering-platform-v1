@@ -33,8 +33,8 @@ fn 扫导出名(文本: &str) -> Vec<String> {
         let mut 最优位 = usize::MAX;
         let mut 最优前 = "";
         for 一个前缀 in 格式器 {
-            if let Some(位) = 剩余文本.find(一个前缀) && 位 < 最优位 {
-                最优位 = 位;
+            if let Some(位置) = 剩余文本.find(一个前缀) && 位置 < 最优位 {
+                最优位 = 位置;
                 最优前 = 一个前缀;
             }
         }
@@ -42,9 +42,9 @@ fn 扫导出名(文本: &str) -> Vec<String> {
             break;
         }
         let 尾部 = &剩余文本[最优位 + 最优前.len()..];
-        let Some(闭) = 尾部.find('"') else { break };
-        输出缓冲.push(尾部[..闭].to_owned());
-        剩余文本 = &尾部[闭 + 1..];
+        let Some(闭引号位) = 尾部.find('"') else { break };
+        输出缓冲.push(尾部[..闭引号位].to_owned());
+        剩余文本 = &尾部[闭引号位 + 1..];
     }
     输出缓冲
 }
@@ -76,12 +76,12 @@ const 生产源: [(&str, &str); 5] = [
 fn 导出符号_恰好四个且不含接缝() {
     let 允许: Vec<String> = ["平台_取接口描述", "平台_调用", "平台_释放值", "平台_释放接口描述"]
         .iter()
-        .map(|名| (*名).to_owned())
+        .map(|名称| (*名称).to_owned())
         .collect();
 
     let mut 名称 = Vec::new();
-    for (_, 文) in 生产源 {
-        名称.extend(扫导出名(文));
+    for (_, 文本) in 生产源 {
+        名称.extend(扫导出名(文本));
     }
     assert_eq!(名称.len(), 4, "四个符号各恰好一次（重复导出同一名也是多条腿）：{名称:?}");
 
@@ -91,12 +91,12 @@ fn 导出符号_恰好四个且不含接缝() {
     assert_eq!(去重, 允许, "导出符号恰好这四个，一个不多一个不少");
 
     assert!(
-        !名称.iter().any(|一| 一 == "GetPlatformInfo"),
+        !名称.iter().any(|一项| 一项 == "GetPlatformInfo"),
         "接缝是**反方向**（扩展 → 宿主），本边界不许导出它"
     );
-    for (文件, 文) in 生产源 {
+    for (文件, 文本) in 生产源 {
         assert!(
-            !文.contains("#[no_mangle]"),
+            !文本.contains("#[no_mangle]"),
             "{文件} 不许用 `#[no_mangle]`（导出只走 `export_name` 这一条路）"
         );
     }
@@ -111,7 +111,7 @@ pub extern "C" fn 多余() -> usize { 0 }"#;
     let 注入接缝 = r#"#[unsafe(export_name = "GetPlatformInfo")]
 pub extern "C" fn 取() {}"#;
     assert!(
-        扫导出名(注入接缝).iter().any(|一| 一 == "GetPlatformInfo"),
+        扫导出名(注入接缝).iter().any(|一项| 一项 == "GetPlatformInfo"),
         "反向样本：接缝符号也必须被扫出来（否则「不含 GetPlatformInfo」是空话）"
     );
 

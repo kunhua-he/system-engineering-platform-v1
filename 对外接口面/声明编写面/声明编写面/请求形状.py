@@ -90,6 +90,6 @@ def 合成正文(正文, 字段, 编号):
             )
         return dict(正文), None
     输出正文 = {字段: 编号}
-    for 键, 值 in 正文.items():
-        输出正文[键] = 值
+    for 键名, 待处理值 in 正文.items():
+        输出正文[键名] = 待处理值
     return 输出正文, None

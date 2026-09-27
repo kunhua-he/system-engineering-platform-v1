@@ -30,13 +30,13 @@ pub(crate) fn 读报文(输出流: &mut TcpStream) -> Result<报文, String> {
     let mut 缓冲: Vec<u8> = Vec::with_capacity(1024);
     let mut 临时 = [0u8; 4096];
     let 头尾 = loop {
-        if let Some(位) = 找头尾(&缓冲) {
-            break 位;
+        if let Some(位置) = 找头尾(&缓冲) {
+            break 位置;
         }
         if 缓冲.len() > 头区上限 {
             return Err(format!("请求头超过 {头区上限} 字节"));
         }
-        let 读到 = 输出流.read(&mut 临时).map_err(|错| format!("读请求失败：{错}"))?;
+        let 读到 = 输出流.read(&mut 临时).map_err(|错误| format!("读请求失败：{错误}"))?;
         if 读到 == 0 {
             return Err("连接在请求写完之前就断了".to_owned());
         }
@@ -51,7 +51,7 @@ pub(crate) fn 读报文(输出流: &mut TcpStream) -> Result<报文, String> {
 
     let mut 行迭代器 = 头部.split("\r\n");
     let 首行 = 行迭代器.next().unwrap_or("");
-    let 部件: Vec<&str> = 首行.split(' ').filter(|段| !段.is_empty()).collect();
+    let 部件: Vec<&str> = 首行.split(' ').filter(|号段| !号段.is_empty()).collect();
     if 部件.len() != 3 {
         return Err("请求行必须是「方法 目标 版本」三段".to_owned());
     }
@@ -85,7 +85,7 @@ pub(crate) fn 读报文(输出流: &mut TcpStream) -> Result<报文, String> {
         let 还差 = (内容长度 - 体字节.len()).min(临时.len());
         let 读到 = 输出流
             .read(&mut 临时[..还差])
-            .map_err(|错| format!("读请求体失败：{错}"))?;
+            .map_err(|错误| format!("读请求体失败：{错误}"))?;
         if 读到 == 0 {
             return Err("请求体没读完连接就断了".to_owned());
         }
@@ -99,7 +99,7 @@ pub(crate) fn 读报文(输出流: &mut TcpStream) -> Result<报文, String> {
 fn 找头尾(缓冲: &[u8]) -> Option<usize> {
     缓冲
         .windows(4)
-        .position(|窗| 窗 == b"\r\n\r\n")
+        .position(|字节窗口| 字节窗口 == b"\r\n\r\n")
 }
 
 /// 写一条应答。**恒带 `Connection: close`**（不做连接管理）。

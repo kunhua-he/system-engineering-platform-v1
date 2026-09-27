@@ -159,7 +159,7 @@ pub fn 程序文本(适配器: &适配器, 工具根: &Path, 请求: &程序文�
 pub fn 菜单命令(适配器: &适配器, 工具根: &Path, 编号: &str) -> 协议值 {
     let 区间起点 = Instant::now();
     let (在菜单表里, 名称, 读表失败) = match 读菜单表(工具根) {
-        Ok(表) => match 表.iter().find(|(号, _)| 号 == 编号) {
+        Ok(表) => match 表.iter().find(|(号值, _)| 号值 == 编号) {
             Some((_, 名)) => (Some(true), 名.clone(), None),
             None => (Some(false), String::new(), None),
         },
@@ -222,7 +222,7 @@ pub fn 菜单命令(适配器: &适配器, 工具根: &Path, 编号: &str) -> �
 fn 读菜单表(工具根: &Path) -> Result<Vec<(String, String)>, String> {
     let 路径 = 工具根.join(常量::菜单表);
     let 文本 =
-        std::fs::read_to_string(&路径).map_err(|错| format!("读不到 {}：{错}", 路径.display()))?;
+        std::fs::read_to_string(&路径).map_err(|错误| format!("读不到 {}：{错误}", 路径.display()))?;
     let mut 输出缓冲 = Vec::new();
     for 源码行 in 文本.lines() {
         let Some(编号) = 取引号值(源码行, "编号: \"") else {

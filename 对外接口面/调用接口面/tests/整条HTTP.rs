@@ -126,29 +126,29 @@ mod 整条HTTP {
         let mut 缓冲 = Vec::new();
         输出流.read_to_end(&mut 缓冲).expect("读应答");
         let 文本 = String::from_utf8(缓冲).expect("应答必须是 UTF-8");
-        let (头, 体) = 文本.split_once("\r\n\r\n").expect("应答必须有头体分界");
-        let 状态 = 头
+        let (头部, 应答体) = 文本.split_once("\r\n\r\n").expect("应答必须有头体分界");
+        let 状态 = 头部
             .lines()
             .next()
-            .and_then(|行| 行.split(' ').nth(1))
-            .and_then(|码| 码.parse::<u16>().ok())
+            .and_then(|源码行| 源码行.split(' ').nth(1))
+            .and_then(|状态码| 状态码.parse::<u16>().ok())
             .expect("应答首行必须是「HTTP/1.1 码 短语」");
-        (状态, 体.to_owned())
+        (状态, 应答体.to_owned())
     }
 
     /// `GET /接口` → 自描述根里必须有**合成扩展**那条能力（起服务时声明根带上了它）。
     #[test]
     fn 整条HTTP_自描述根带出合成扩展的能力() {
         let 服务 = 起服务();
-        let (状态, 体) = 发请求(&服务, "GET /接口 HTTP/1.1\r\nHost: 127.0.0.1\r\n\r\n");
+        let (状态, 应答体) = 发请求(&服务, "GET /接口 HTTP/1.1\r\nHost: 127.0.0.1\r\n\r\n");
         assert_eq!(状态, 200);
         assert!(
-            体.contains(&format!("\"编号\": {合成编号}")),
-            "自描述根的能力清单必须带上合成扩展那条（声明根里确实有它）：\n{体}"
+            应答体.contains(&format!("\"编号\": {合成编号}")),
+            "自描述根的能力清单必须带上合成扩展那条（声明根里确实有它）：\n{应答体}"
         );
         assert!(
-            体.contains("\"名称\": \"合成能力\""),
-            "清单里的名称必须从合成声明现读：\n{体}"
+            应答体.contains("\"名称\": \"合成能力\""),
+            "清单里的名称必须从合成声明现读：\n{应答体}"
         );
     }
 
@@ -175,16 +175,16 @@ mod 整条HTTP {
     fn 整条HTTP_合成能力的契约端点() {
         let 服务 = 起服务();
         let 请求 = format!("GET /接口/能力/{合成编号} HTTP/1.1\r\nHost: 127.0.0.1\r\n\r\n");
-        let (状态, 体) = 发请求(&服务, &请求);
+        let (状态, 应答体) = 发请求(&服务, &请求);
         assert_eq!(状态, 200);
-        assert!(体.contains("\"成功\": true"), "能力端点应答：\n{体}");
+        assert!(应答体.contains("\"成功\": true"), "能力端点应答：\n{应答体}");
         assert!(
-            体.contains(&format!("\"编号\": {合成编号}")),
-            "契约里的编号必须是合成声明的编号：\n{体}"
+            应答体.contains(&format!("\"编号\": {合成编号}")),
+            "契约里的编号必须是合成声明的编号：\n{应答体}"
         );
         assert!(
-            体.contains("\"返回类型\": 1"),
-            "返回类型必须从合成声明现读（1 = 整数）：\n{体}"
+            应答体.contains("\"返回类型\": 1"),
+            "返回类型必须从合成声明现读（1 = 整数）：\n{应答体}"
         );
     }
 
@@ -193,7 +193,7 @@ mod 整条HTTP {
     fn 整条HTTP_可抛错误码按命令给出且六项齐() {
         let 服务 = 起服务();
         let 请求 = format!("GET /接口/能力/{合成编号} HTTP/1.1\r\nHost: 127.0.0.1\r\n\r\n");
-        let (状态, 体) = 发请求(&服务, &请求);
+        let (状态, 应答体) = 发请求(&服务, &请求);
         assert_eq!(状态, 200);
         for 片段 in [
             format!("\"码\": {合成可抛码}"),
@@ -204,7 +204,7 @@ mod 整条HTTP {
             "\"需人工\": false".to_owned(),
             "\"已登记\": true".to_owned(),
         ] {
-            assert!(体.contains(&片段), "可抛错误码必须给 {片段}：\n{体}");
+            assert!(应答体.contains(&片段), "可抛错误码必须给 {片段}：\n{应答体}");
         }
     }
 }

@@ -70,8 +70,8 @@ impl 部署绑定 {
 
     /// 绑一份。同一个号再绑即取代。
     pub fn 绑定(&mut self, 资源号: u32, 调用体: Box<dyn 黑盒体>) {
-        if let Some(格) = self.项表.iter_mut().find(|格| 格.0 == 资源号) {
-            格.1 = 调用体;
+        if let Some(格子) = self.项表.iter_mut().find(|格子| 格子.0 == 资源号) {
+            格子.1 = 调用体;
             return;
         }
         self.项表.push((资源号, 调用体));
@@ -79,7 +79,7 @@ impl 部署绑定 {
 
     /// 这个号绑过没有。**读侧要它**：声明里有、这里没有 ⇒ 这条资源是「调了会拒」的状态。
     pub fn 已绑定(&self, 资源号: u32) -> bool {
-        self.项表.iter().any(|格| 格.0 == 资源号)
+        self.项表.iter().any(|格子| 格子.0 == 资源号)
     }
 
     /// 已绑的份数（验证面用）。
@@ -91,7 +91,7 @@ impl 部署绑定 {
     pub(crate) fn 按资源号取(&self, 资源号: u32) -> Option<&dyn 黑盒体> {
         self.项表
             .iter()
-            .find(|格| 格.0 == 资源号)
-            .map(|格| 格.1.as_ref())
+            .find(|格子| 格子.0 == 资源号)
+            .map(|格子| 格子.1.as_ref())
     }
 }

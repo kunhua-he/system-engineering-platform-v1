@@ -35,8 +35,8 @@ def 读作废号表(声明根):
         return None, None, "%s 不在（作废登记的唯一落点）" % 路径.name
     try:
         数据 = json.loads(路径.read_bytes().decode("utf-8"))
-    except (OSError, UnicodeDecodeError, ValueError) as 错:
-        return None, None, "%s 读不动（%s）⇒ 面不覆写一份自身读不懂的已公布档案" % (路径.name, 错)
+    except (OSError, UnicodeDecodeError, ValueError) as 错误:
+        return None, None, "%s 读不动（%s）⇒ 面不覆写一份自身读不懂的已公布档案" % (路径.name, 错误)
     if not isinstance(数据, dict):
         return None, None, "%s 顶层不是对象（§七 的形状）" % 路径.name
     条目 = 数据.get("作废")
@@ -51,7 +51,7 @@ def 编一行(正文, 编号):
     五键行["编号"] = 编号
     if not 五键行.get("作废于"):
         五键行["作废于"] = time.strftime("%Y-%m-%d")
-    缺失键表 = [键 for 键 in 五键 if 键 not in 五键行]
+    缺失键表 = [键名 for 键名 in 五键 if 键名 not in 五键行]
     return 五键行, 缺失键表
 
 
@@ -63,9 +63,9 @@ def 只增判定(旧条目, 新条目):
     """
     if len(新条目) < len(旧条目):
         return False, "新表比旧表短（删了 %d 行）" % (len(旧条目) - len(新条目))
-    for 序, 旧 in enumerate(旧条目):
-        if 新条目[序] != 旧:
-            return False, "第 %d 行被改（作废表是历史档案，只许在尾部追加）" % (序 + 1,)
+    for 序号, 旧行 in enumerate(旧条目):
+        if 新条目[序号] != 旧行:
+            return False, "第 %d 行被改（作废表是历史档案，只许在尾部追加）" % (序号 + 1,)
     if len(新条目) == len(旧条目):
         return False, "没有新行（一次作废 = 追加一行）"
     return True, ""
