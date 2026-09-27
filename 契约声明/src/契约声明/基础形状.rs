@@ -20,7 +20,7 @@ pub struct 版本三元组 {
 }
 
 impl 版本三元组 {
-    pub const fn 新(主: i32, 次: i32, 构建: i32) -> Self {
+    pub const fn 新建(主: i32, 次: i32, 构建: i32) -> Self {
         Self { 主, 次, 构建 }
     }
 
@@ -46,12 +46,12 @@ pub struct 版本要求 {
 }
 
 impl 版本要求 {
-    pub const fn 新(主: i32, 次: i32) -> Self {
+    pub const fn 新建(主: i32, 次: i32) -> Self {
         Self { 主, 次 }
     }
 }
 
-/// 一张静态表：项数 + 项表指针。空表用 `表段::空()`。
+/// 一张静态表：项数 + 项表指针。空表用 `表段::空实例()`。
 #[repr(C)]
 #[derive(Clone, Copy)]
 pub struct 表段<元素> {
@@ -60,10 +60,10 @@ pub struct 表段<元素> {
 }
 
 impl<元素> 表段<元素> {
-    pub const fn 空() -> Self {
+    pub const fn 空实例() -> Self {
         Self { 项数: 0, 项表: core::ptr::null() }
     }
-    pub const fn 新(项表: *const 元素, 项数: u32) -> Self {
+    pub const fn 新建(项表: *const 元素, 项数: u32) -> Self {
         Self { 项数, 项表 }
     }
     pub fn 是否空(&self) -> bool {
@@ -100,14 +100,14 @@ pub mod 槽标志 {
     /// 值归接收方所有，接收方负责释放。
     pub const 所有权交出: u16 = 1 << 1;
     /// 空值（等价于"无值"，不是错误）。
-    pub const 空: u16 = 1 << 2;
+    pub const 空槽标志: u16 = 1 << 2;
     /// 只读：接收方不许改。
     pub const 只读: u16 = 1 << 3;
 }
 
 impl 数据槽 {
     pub const fn 空槽() -> Self {
-        Self { 类型标签: 类型标签::新(0), 标志: 槽标志::空, 保留: 0, 长度: 0, 值: 0 }
+        Self { 类型标签: 类型标签::新建(0), 标志: 槽标志::空槽标志, 保留: 0, 长度: 0, 值: 0 }
     }
     pub const fn 内联(标签: 类型标签, 值: u64, 长度: u64) -> Self {
         Self { 类型标签: 标签, 标志: 0, 保留: 0, 长度, 值 }
@@ -117,7 +117,7 @@ impl 数据槽 {
         Self { 类型标签: 标签, 标志, 保留: 0, 长度: 字节长度, 值: 地址 }
     }
     pub const fn 是否空(&self) -> bool {
-        self.标志 & 槽标志::空 != 0
+        self.标志 & 槽标志::空槽标志 != 0
     }
     pub const fn 是否引用(&self) -> bool {
         self.标志 & 槽标志::引用 != 0

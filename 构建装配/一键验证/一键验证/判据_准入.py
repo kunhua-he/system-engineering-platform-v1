@@ -81,7 +81,7 @@ def 检查27_准入广播段(上: dict) -> list:
         缺.append("判定.rs 无 fn 生命周期广播段")
     if "通知号段::生命周期起" not in 判定rs or "通知号段::生命周期止" not in 判定rs:
         缺.append("判定.rs 未引契约常量（生命周期起/止）")
-    if not re.search(r"if\s+生命周期广播段\(\s*段\.起(?:\.取\(\))?\s*,\s*段\.止(?:\.取\(\))?\s*\)", 判定rs):
+    if not re.search(r"if\s+生命周期广播段\(\s*段\.起(?:\.取号值\(\))?\s*,\s*段\.止(?:\.取号值\(\))?\s*\)", 判定rs):
         缺.append("判定.rs 通知号段循环未对广播段 continue（扩展仍会被底座预置占用拦下）")
     elif "continue;" not in 判定rs:
         缺.append("判定.rs 通知号段循环未对广播段 continue（扩展仍会被底座预置占用拦下）")
