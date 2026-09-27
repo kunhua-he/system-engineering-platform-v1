@@ -34,9 +34,9 @@ pub struct 静态件 {
 ///
 /// `路径` 必须是**已经百分号解码过**的路径 —— 解码在协议层做（`路由.rs`），
 /// 这里只认解码后的形态，不重复解一次（同一件事两处做，两处会分叉）。
-pub fn 取件(根: &Path, 路径: &str) -> Option<静态件> {
+pub fn 取件(根目录: &Path, 路径: &str) -> Option<静态件> {
     let 相对 = 安全相对路径(路径)?;
-    let 全 = 根.join(&相对);
+    let 全 = 根目录.join(&相对);
     // 目录与不存在的件一律 `None`（口径 4：不列表、不重写）。
     if !std::fs::metadata(&全).ok()?.is_file() {
         return None;

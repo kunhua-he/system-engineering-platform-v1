@@ -24,8 +24,8 @@ from pathlib import Path
 号空间值域 = ("能力", "类型", "通知", "错误码", "资源")
 
 
-def _是整数(值) -> bool:
-    return isinstance(值, int) and not isinstance(值, bool)
+def _是整数(待处理值) -> bool:
+    return isinstance(待处理值, int) and not isinstance(待处理值, bool)
 
 
 def 读作废号表(声明根):

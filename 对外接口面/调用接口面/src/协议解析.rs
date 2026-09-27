@@ -28,9 +28,9 @@ pub struct 解析错误 {
 }
 
 /// 解析一段 JSON 文本。**整个输入必须是一个值**，尾部不许有余料。
-pub fn 解析(源: &str) -> Result<协议值, 解析错误> {
+pub fn 解析(来源: &str) -> Result<协议值, 解析错误> {
     let mut 游标 = 游标 {
-        字节: 源.as_bytes(),
+        字节: 来源.as_bytes(),
         位: 0,
     };
     游标.跳空白();
@@ -91,10 +91,10 @@ impl<'a> 游标<'a> {
         }
     }
 
-    fn 取字面(&mut self, 期望: &[u8], 值: 协议值) -> Result<协议值, 解析错误> {
+    fn 取字面(&mut self, 期望: &[u8], 待处理值: 协议值) -> Result<协议值, 解析错误> {
         if self.字节[self.位..].starts_with(期望) {
             self.位 += 期望.len();
-            return Ok(值);
+            return Ok(待处理值);
         }
         Err(self.报错("字面量写错了"))
     }
@@ -169,17 +169,17 @@ impl<'a> 游标<'a> {
         String::from_utf8(出).map_err(|_| self.报错("字符串不是合法 UTF-8"))
     }
 
-    fn 取转义(&mut self, 出: &mut Vec<u8>) -> Result<(), 解析错误> {
+    fn 取转义(&mut self, 输出缓冲: &mut Vec<u8>) -> Result<(), 解析错误> {
         let 字 = self.前进一字节().ok_or_else(|| self.报错("转义没写完"))?;
         match 字 {
-            b'"' => 出.push(b'"'),
-            b'\\' => 出.push(b'\\'),
-            b'/' => 出.push(b'/'),
-            b'b' => 出.push(0x08),
-            b'f' => 出.push(0x0C),
-            b'n' => 出.push(b'\n'),
-            b'r' => 出.push(b'\r'),
-            b't' => 出.push(b'\t'),
+            b'"' => 输出缓冲.push(b'"'),
+            b'\\' => 输出缓冲.push(b'\\'),
+            b'/' => 输出缓冲.push(b'/'),
+            b'b' => 输出缓冲.push(0x08),
+            b'f' => 输出缓冲.push(0x0C),
+            b'n' => 输出缓冲.push(b'\n'),
+            b'r' => 输出缓冲.push(b'\r'),
+            b't' => 输出缓冲.push(b'\t'),
             b'u' => {
                 let 码 = self.取四位十六进制()?;
                 // 代理对：高代理必须紧跟一个低代理，合起来才是一个码点。
@@ -199,7 +199,7 @@ impl<'a> 游标<'a> {
                 };
                 let 字 = char::from_u32(码点).ok_or_else(|| self.报错("码点不合法"))?;
                 let mut 缓 = [0u8; 4];
-                出.extend_from_slice(字.encode_utf8(&mut 缓).as_bytes());
+                输出缓冲.extend_from_slice(字.encode_utf8(&mut 缓).as_bytes());
             }
             _ => return Err(self.报错("不认识的转义")),
         }

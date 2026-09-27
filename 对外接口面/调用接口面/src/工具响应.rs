@@ -73,63 +73,63 @@ const 提示号: u32 = 0;
 // ════════════════════════════════════════════════════════════════════════════
 
 /// 成功返回：`成功: true` + `数据` + `耗时微秒`。
-pub(super) fn 成功(数据: 协议值, 起: &Instant) -> 协议值 {
+pub(super) fn 成功(数据: 协议值, 区间起点: &Instant) -> 协议值 {
     协议值::对象(vec![
         ("成功".to_owned(), 协议值::逻辑真),
         ("数据".to_owned(), 数据),
-        ("耗时微秒".to_owned(), 微秒(起)),
+        ("耗时微秒".to_owned(), 微秒(区间起点)),
     ])
 }
 
 /// 业务失败：`成功: false` + `错误` 六项 + 可选的结构化回执 `数据` + `耗时微秒`。
 ///
 /// `数据` 给 `None` 时不出现这个键 —— 不编一个空对象出来（空对象与「没有回执」不可区分）。
-pub(super) fn 失败(适配器: &适配器, 码: u32, 数据: Option<协议值>, 起: &Instant) -> 协议值 {
+pub(super) fn 失败(适配器: &适配器, 错误码: u32, 数据: Option<协议值>, 区间起点: &Instant) -> 协议值 {
     let mut 成员 = vec![
         ("成功".to_owned(), 协议值::逻辑假),
         (
             "错误".to_owned(),
-            错误对象::由码(适配器, 提示号, 码).到协议值(),
+            错误对象::由码(适配器, 提示号, 错误码).到协议值(),
         ),
     ];
     if let Some(数据) = 数据 {
         成员.push(("数据".to_owned(), 数据));
     }
-    成员.push(("耗时微秒".to_owned(), 微秒(起)));
+    成员.push(("耗时微秒".to_owned(), 微秒(区间起点)));
     协议值::对象(成员)
 }
 
-fn 微秒(起: &Instant) -> 协议值 {
-    let 微秒 = 起.elapsed().as_micros().min(u128::from(u64::MAX)) as u64;
+fn 微秒(区间起点: &Instant) -> 协议值 {
+    let 微秒 = 区间起点.elapsed().as_micros().min(u128::from(u64::MAX)) as u64;
     match i64::try_from(微秒) {
         Ok(数) => 协议值::整数(数),
         Err(_) => 协议值::无符号(微秒),
     }
 }
 
-pub(super) fn 造文本值(值: &str) -> 协议值 {
-    协议值::文本(值.to_owned())
+pub(super) fn 造文本值(待处理值: &str) -> 协议值 {
+    协议值::文本(待处理值.to_owned())
 }
 
 /// 一对「键 → 文本」。
-pub(super) fn 键文(键: &str, 值: &str) -> (String, 协议值) {
-    (键.to_owned(), 造文本值(值))
+pub(super) fn 键文(键名: &str, 待处理值: &str) -> (String, 协议值) {
+    (键名.to_owned(), 造文本值(待处理值))
 }
 
 /// 回执里报路径一律报**相对工具根**的（绝对路径会把部署位置写进回执，
 /// 而回执要能跨机器比对）。
-pub(super) fn 相对(工具根: &Path, 路: &Path) -> String {
-    路.strip_prefix(工具根)
-        .unwrap_or(路)
+pub(super) fn 相对(工具根: &Path, 路径: &Path) -> String {
+    路径.strip_prefix(工具根)
+        .unwrap_or(路径)
         .display()
         .to_string()
 }
 
 /// 读一件 JSON。读不到 / 解不了都**原样带回**（不吞、不给默认值）。
-pub(super) fn 读JSON件(路: &Path) -> Result<协议值, String> {
-    let 文本 = std::fs::read_to_string(路).map_err(|错| format!("读不到 {}：{错}", 路.display()))?;
+pub(super) fn 读JSON件(路径: &Path) -> Result<协议值, String> {
+    let 文本 = std::fs::read_to_string(路径).map_err(|错| format!("读不到 {}：{错}", 路径.display()))?;
     crate::协议解析::解析(&文本)
-        .map_err(|错| format!("{} 不是合法 JSON：{}（第 {} 字节）", 路.display(), 错.说明, 错.位置))
+        .map_err(|错| format!("{} 不是合法 JSON：{}（第 {} 字节）", 路径.display(), 错.说明, 错.位置))
 }
 
 /// 列一个目录下的**子目录名**，按名排序（顺序确定 ⇒ 读数可比）。

@@ -39,72 +39,72 @@ impl 收到 {
     }
 
     /// 取一个顶层键；**没有就挂**（要判「没有」请用 `找成员`）。
-    pub fn 取成员(&self, 键: &str) -> 协议值 {
-        self.找成员(键)
-            .unwrap_or_else(|| panic!("应答里没有「{键}」：\n{}", self.体))
+    pub fn 取成员(&self, 键名: &str) -> 协议值 {
+        self.找成员(键名)
+            .unwrap_or_else(|| panic!("应答里没有「{键名}」：\n{}", self.体))
     }
 
     /// 找一个顶层键；没有给 `None`。
-    pub fn 找成员(&self, 键: &str) -> Option<协议值> {
-        self.取协议值().取成员(键).cloned()
+    pub fn 找成员(&self, 键名: &str) -> Option<协议值> {
+        self.取协议值().取成员(键名).cloned()
     }
 
     /// 取顶层的一个布尔键。
-    pub fn 取布尔(&self, 键: &str) -> bool {
-        match self.取成员(键) {
+    pub fn 取布尔(&self, 键名: &str) -> bool {
+        match self.取成员(键名) {
             协议值::逻辑真 => true,
             协议值::逻辑假 => false,
-            其它 => panic!("「{键}」应当是布尔，实际 {其它:?}：\n{}", self.体),
+            其它 => panic!("「{键名}」应当是布尔，实际 {其它:?}：\n{}", self.体),
         }
     }
 
     /// 取顶层的一个文本键。
-    pub fn 取文本(&self, 键: &str) -> String {
-        self.取成员(键)
+    pub fn 取文本(&self, 键名: &str) -> String {
+        self.取成员(键名)
             .取文本()
             .map(str::to_owned)
-            .unwrap_or_else(|| panic!("「{键}」应当是文本：\n{}", self.体))
+            .unwrap_or_else(|| panic!("「{键名}」应当是文本：\n{}", self.体))
     }
 
     /// 取顶层的一个数组键。
-    pub fn 取数组(&self, 键: &str) -> Vec<协议值> {
-        self.取成员(键)
+    pub fn 取数组(&self, 键名: &str) -> Vec<协议值> {
+        self.取成员(键名)
             .取数组()
             .map(<[协议值]>::to_vec)
-            .unwrap_or_else(|| panic!("「{键}」应当是数组：\n{}", self.体))
+            .unwrap_or_else(|| panic!("「{键名}」应当是数组：\n{}", self.体))
     }
 }
 
 /// 取一个布尔成员。**不是布尔就挂**：形状不对当场暴露，不静默当 `false`。
-pub fn 布尔(值: &协议值, 键: &str) -> bool {
-    match 值.取成员(键) {
+pub fn 布尔(待处理值: &协议值, 键名: &str) -> bool {
+    match 待处理值.取成员(键名) {
         Some(协议值::逻辑真) => true,
         Some(协议值::逻辑假) => false,
-        其它 => panic!("「{键}」应当是布尔，实际 {其它:?}"),
+        其它 => panic!("「{键名}」应当是布尔，实际 {其它:?}"),
     }
 }
 
 /// 取一个非负整数成员。
-pub fn 无符号(值: &协议值, 键: &str) -> u64 {
-    值.取成员(键)
+pub fn 无符号(待处理值: &协议值, 键名: &str) -> u64 {
+    待处理值.取成员(键名)
         .and_then(协议值::取无符号)
-        .unwrap_or_else(|| panic!("「{键}」应当是非负整数，实际 {:?}", 值.取成员(键)))
+        .unwrap_or_else(|| panic!("「{键名}」应当是非负整数，实际 {:?}", 待处理值.取成员(键名)))
 }
 
 /// 取一个文本成员。
-pub fn 文本(值: &协议值, 键: &str) -> String {
-    值.取成员(键)
+pub fn 文本(待处理值: &协议值, 键名: &str) -> String {
+    待处理值.取成员(键名)
         .and_then(协议值::取文本)
         .map(str::to_owned)
-        .unwrap_or_else(|| panic!("「{键}」应当是文本，实际 {:?}", 值.取成员(键)))
+        .unwrap_or_else(|| panic!("「{键名}」应当是文本，实际 {:?}", 待处理值.取成员(键名)))
 }
 
 /// 取一个数组成员。
-pub fn 数组(值: &协议值, 键: &str) -> Vec<协议值> {
-    值.取成员(键)
+pub fn 数组(待处理值: &协议值, 键名: &str) -> Vec<协议值> {
+    待处理值.取成员(键名)
         .and_then(协议值::取数组)
         .map(<[协议值]>::to_vec)
-        .unwrap_or_else(|| panic!("「{键}」应当是数组，实际 {:?}", 值.取成员(键)))
+        .unwrap_or_else(|| panic!("「{键名}」应当是数组，实际 {:?}", 待处理值.取成员(键名)))
 }
 
 /// 前端网页应用的仓内位置（**本 crate 的相对位置**）：静态托管的根（`接口面形状.md` §五）。
@@ -149,10 +149,10 @@ pub fn 取请求(路径: &str) -> String {
 }
 
 /// 一条 POST 请求（原始文本）。`Content-Length` 按**字节数**算，与冻结件一致。
-pub fn 交请求(路径: &str, 体: &str) -> String {
+pub fn 交请求(路径: &str, 应答体: &str) -> String {
     format!(
-        "POST {路径} HTTP/1.1\r\nHost: 127.0.0.1\r\nContent-Type: application/json; charset=utf-8\r\nContent-Length: {}\r\n\r\n{体}",
-        体.len()
+        "POST {路径} HTTP/1.1\r\nHost: 127.0.0.1\r\nContent-Type: application/json; charset=utf-8\r\nContent-Length: {}\r\n\r\n{应答体}",
+        应答体.len()
     )
 }
 

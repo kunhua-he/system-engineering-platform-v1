@@ -29,9 +29,9 @@
 类别表 = {**编号目录类别表, 作废类别: ("", "编号")}
 
 
-def _是整数(值) -> bool:
+def _是整数(待处理值) -> bool:
     """布尔不算整数（Python 里 True 是 int 的子类，这里必须排掉）。"""
-    return isinstance(值, int) and not isinstance(值, bool)
+    return isinstance(待处理值, int) and not isinstance(待处理值, bool)
 
 
 def 解析请求(请求):

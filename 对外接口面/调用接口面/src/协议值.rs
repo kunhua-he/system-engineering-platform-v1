@@ -33,11 +33,11 @@ pub enum 协议值 {
 impl 协议值 {
     /// 按名取一个成员。非对象、无此键、值为 `null` 都给 `None`
     /// （`null` 在契约里是「编号留空」这类**显式空位**，不是「有这个键」）。
-    pub fn 取成员(&self, 键: &str) -> Option<&协议值> {
+    pub fn 取成员(&self, 键名: &str) -> Option<&协议值> {
         match self {
             协议值::对象(成员) => 成员
                 .iter()
-                .find(|(名, _)| 名 == 键)
+                .find(|(名, _)| 名 == 键名)
                 .map(|(_, 值)| 值)
                 .filter(|值| !matches!(值, 协议值::空值)),
             _ => None,
@@ -45,9 +45,9 @@ impl 协议值 {
     }
 
     /// 这个键在不在（含值为 `null` 的情形）。`POST /接口/声明` 的 `编号: null` 靠它。
-    pub fn 是否含键(&self, 键: &str) -> bool {
+    pub fn 是否含键(&self, 键名: &str) -> bool {
         match self {
-            协议值::对象(成员) => 成员.iter().any(|(名, _)| 名 == 键),
+            协议值::对象(成员) => 成员.iter().any(|(名, _)| 名 == 键名),
             _ => false,
         }
     }
