@@ -7,14 +7,14 @@ from .常量 import 虚拟键名
 from .形状 import 解析错误
 
 
-def 解加速键(b, 资源id):
-    if not b or len(b) % 8:
-        raise 解析错误("加速键 %s 长度 %d 不是 8 的整数倍" % (资源id, len(b)))
+def 解加速键(表字节, 资源id):
+    if not 表字节 or len(表字节) % 8:
+        raise 解析错误("加速键 %s 长度 %d 不是 8 的整数倍" % (资源id, len(表字节)))
     out = []
-    for i in range(0, len(b), 8):
-        fVirt, key, cmd, 垫 = struct.unpack_from("<HHHH", b, i)
+    for 项起 in range(0, len(表字节), 8):
+        fVirt, key, cmd, 垫 = struct.unpack_from("<HHHH", 表字节, 项起)
         if fVirt & 0xFF00:
-            raise 解析错误("加速键 %s 第 %d 条 fVirt=0x%04x 高字节非 0：对齐判错" % (资源id, i // 8, fVirt))
+            raise 解析错误("加速键 %s 第 %d 条 fVirt=0x%04x 高字节非 0：对齐判错" % (资源id, 项起 // 8, fVirt))
         标 = []
         if fVirt & 0x01:
             标.append("FVIRTKEY")

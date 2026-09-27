@@ -19,14 +19,14 @@ class Ledger:
         self.data = None
 
     def _lockpath(self):
-        h = hashlib.sha1(os.path.abspath(self.path).encode("utf-8")).hexdigest()[:16]
-        return os.path.join(tempfile.gettempdir(), "claim-ledger-%s.lock" % h)
+        路径散列 = hashlib.sha1(os.path.abspath(self.path).encode("utf-8")).hexdigest()[:16]
+        return os.path.join(tempfile.gettempdir(), "claim-ledger-%s.lock" % 路径散列)
 
     def _load(self):
         if not os.path.exists(self.path):
             return {"格式版本": FORMAT_VERSION, "租约": []}
-        with open(self.path, "r", encoding="utf-8") as f:
-            raw = f.read().strip()
+        with open(self.path, "r", encoding="utf-8") as 柄:
+            raw = 柄.read().strip()
         if not raw:
             return {"格式版本": FORMAT_VERSION, "租约": []}
         data = json.loads(raw)
@@ -35,8 +35,8 @@ class Ledger:
         return data
 
     def __enter__(self):
-        d = os.path.dirname(self.path) or "."
-        os.makedirs(d, exist_ok=True)
+        上级目录 = os.path.dirname(self.path) or "."
+        os.makedirs(上级目录, exist_ok=True)
         self.fd = os.open(self._lockpath(), os.O_RDWR | os.O_CREAT, 0o600)
         fcntl.flock(self.fd, fcntl.LOCK_EX)          # 认领/释放/回收的原子性靠它
         try:
@@ -54,10 +54,10 @@ class Ledger:
         return False
 
     def save(self):
-        self.data["租约"].sort(key=lambda l: l["腿标识"])   # 稳定序 ⇒ diff 只显示真变化
-        d = os.path.dirname(self.path) or "."
-        fd, tmp = tempfile.mkstemp(dir=d, prefix=".账本-", suffix=".tmp")
-        with os.fdopen(fd, "w", encoding="utf-8") as f:
-            json.dump(self.data, f, ensure_ascii=False, indent=2)
-            f.write("\n")
+        self.data["租约"].sort(key=lambda 租约条: 租约条["腿标识"])   # 稳定序 ⇒ diff 只显示真变化
+        上级目录 = os.path.dirname(self.path) or "."
+        fd, tmp = tempfile.mkstemp(dir=上级目录, prefix=".账本-", suffix=".tmp")
+        with os.fdopen(fd, "w", encoding="utf-8") as 柄:
+            json.dump(self.data, 柄, ensure_ascii=False, indent=2)
+            柄.write("\n")
         os.replace(tmp, self.path)

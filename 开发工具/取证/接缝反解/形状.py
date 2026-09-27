@@ -29,12 +29,12 @@ class PE:
             raise 解析错误("魔数 0x%x 不是 PE32。64 位 LIB_INFO 布局未取证，拒绝猜" % self.魔数)
         self.基址 = struct.unpack_from("<I", 数据, self.e + 24 + 28)[0]
         self.节 = []
-        for i in range(self.节数):
-            b = self.e + 24 + self.可选头长 + i * 40
-            if b + 40 > len(数据):
-                raise 解析错误("节表第 %d 项越界" % i)
-            名 = 数据[b:b + 8].rstrip(b"\0").decode("latin1")
-            虚长, 虚址, 原长, 原址 = struct.unpack_from("<IIII", 数据, b + 8)
+        for 序 in range(self.节数):
+            节表项偏移 = self.e + 24 + self.可选头长 + 序 * 40
+            if 节表项偏移 + 40 > len(数据):
+                raise 解析错误("节表第 %d 项越界" % 序)
+            名 = 数据[节表项偏移:节表项偏移 + 8].rstrip(b"\0").decode("latin1")
+            虚长, 虚址, 原长, 原址 = struct.unpack_from("<IIII", 数据, 节表项偏移 + 8)
             if 原址 + 原长 > len(数据):
                 raise 解析错误("节 %s 原始数据越界（%d+%d > %d）" % (名, 原址, 原长, len(数据)))
             self.节.append((名, 虚址, 虚长, 原址, 原长))
@@ -44,10 +44,10 @@ class PE:
     def 转偏移(self, rva):
         for 名, 虚址, 虚长, 原址, 原长 in self.节:
             if 虚址 <= rva < 虚址 + max(虚长, 原长):
-                o = 原址 + (rva - 虚址)
-                if o >= len(self.d):
-                    raise 解析错误("RVA 0x%x 映到文件外 0x%x" % (rva, o))
-                return o
+                文偏移 = 原址 + (rva - 虚址)
+                if 文偏移 >= len(self.d):
+                    raise 解析错误("RVA 0x%x 映到文件外 0x%x" % (rva, 文偏移))
+                return 文偏移
         raise 解析错误("RVA 0x%x 不在任何节里" % rva)
 
     def 取址(self, 绝对址):
@@ -69,29 +69,29 @@ class PE:
         rva = self.取址(绝对址)
         if rva is None:
             return None
-        o = self.转偏移(rva)
-        尾 = self.d.find(b"\0", o)
+        文偏移 = self.转偏移(rva)
+        尾 = self.d.find(b"\0", 文偏移)
         if 尾 < 0:
             raise 解析错误("0x%x 处的字符串没有 NUL 结尾" % 绝对址)
-        return self.d[o:尾].decode("gbk", "replace")
+        return self.d[文偏移:尾].decode("gbk", "replace")
 
     def 导出(self):
         目录 = struct.unpack_from("<II", self.d, self.e + 24 + 96)
         if 目录[0] == 0:
             raise 解析错误("无导出目录（本库不是支持库？）")
-        o = self.转偏移(目录[0])
-        if o + 40 > len(self.d):
+        文偏移 = self.转偏移(目录[0])
+        if 文偏移 + 40 > len(self.d):
             raise 解析错误("导出目录越界")
         _, _, _, _, _, 基序, 函数数, 名字数, 函数表, 名字表, 序号表 = struct.unpack_from(
-            "<IIHHIIIIIII", self.d, o)
+            "<IIHHIIIIIII", self.d, 文偏移)
         if 函数数 == 0:
             raise 解析错误("导出函数数为 0")
         函数 = struct.unpack_from("<%dI" % 函数数, self.d, self.转偏移(函数表))
         结果 = []
-        for i in range(名字数):
-            s = self.转偏移(self.读u32(self.转偏移(名字表) + 4 * i))
-            idx = struct.unpack_from("<H", self.d, self.转偏移(序号表) + 2 * i)[0]
+        for 序 in range(名字数):
+            串起 = self.转偏移(self.读u32(self.转偏移(名字表) + 4 * 序))
+            idx = struct.unpack_from("<H", self.d, self.转偏移(序号表) + 2 * 序)[0]
             if idx >= 函数数:
                 raise 解析错误("名字序号 %d 超出函数数 %d" % (idx, 函数数))
-            结果.append((self.d[s:self.d.find(b"\0", s)], 基序 + idx, 函数[idx]))
+            结果.append((self.d[串起:self.d.find(b"\0", 串起)], 基序 + idx, 函数[idx]))
         return 结果

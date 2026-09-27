@@ -15,5 +15,5 @@ def fmt_ts(ts):
     return datetime.datetime.fromtimestamp(ts).astimezone().strftime(TIME_FMT)
 
 
-def parse_ts(s):
-    return datetime.datetime.strptime(s, TIME_FMT).timestamp()
+def parse_ts(时刻串):
+    return datetime.datetime.strptime(时刻串, TIME_FMT).timestamp()

@@ -30,13 +30,13 @@ def 是源码(名):
 
 
 def 收集源码(仓根):
-    出 = []
+    命中表 = []
     for 当前, 目录表, 文件表 in os.walk(仓根):
-        目录表[:] = [d for d in 目录表 if d not in 跳过目录]
+        目录表[:] = [目录 for 目录 in 目录表 if 目录 not in 跳过目录]
         for 名 in sorted(文件表):
             if 是源码(名):
-                出.append(os.path.relpath(os.path.join(当前, 名), 仓根))
-    return sorted(出)
+                命中表.append(os.path.relpath(os.path.join(当前, 名), 仓根))
+    return sorted(命中表)
 
 
 def 读文本(路):
@@ -58,34 +58,34 @@ def 入口类(相对路, 文本):
 
 def 入口实现项(类别, 相对路, 文本):
     """入口文件里「不该有」的顶层实现项清单（逐条给原文，便于定位）。"""
-    出 = []
+    命中表 = []
     if 类别 == "rust":
         # 二进制入口 `main.rs` 的 `fn main` 是语言强制，不是「实现」——唯一豁免。
         豁免主函数 = os.path.basename(相对路) == "main.rs"
         for 序, 行 in enumerate(文本.splitlines(), 1):
-            m = RUST定义.match(行.strip())
-            if m:
-                if 豁免主函数 and m.group(1) == "fn" and 行.strip().startswith(("fn main(", "pub fn main(")):
+            匹配 = RUST定义.match(行.strip())
+            if 匹配:
+                if 豁免主函数 and 匹配.group(1) == "fn" and 行.strip().startswith(("fn main(", "pub fn main(")):
                     continue
-                出.append((序, m.group(1), 行.strip()))
+                命中表.append((序, 匹配.group(1), 行.strip()))
     elif 类别 == "py-init":
         for 序, 行 in enumerate(文本.splitlines(), 1):
-            m = PY定义.match(行)
-            if m:
-                出.append((序, "def/class " + m.group(1), 行.strip()))
+            匹配 = PY定义.match(行)
+            if 匹配:
+                命中表.append((序, "def/class " + 匹配.group(1), 行.strip()))
                 continue
-            m = PY赋值.match(行)
-            if m and m.group(1) != "__all__":
-                出.append((序, "赋值 " + m.group(1), 行.strip()))
+            匹配 = PY赋值.match(行)
+            if 匹配 and 匹配.group(1) != "__all__":
+                命中表.append((序, "赋值 " + 匹配.group(1), 行.strip()))
     else:  # py-script：只许一个入口函数
         定义 = []
         for 序, 行 in enumerate(文本.splitlines(), 1):
-            m = PY定义.match(行)
-            if m:
-                定义.append((序, m.group(1), 行.strip()))
+            匹配 = PY定义.match(行)
+            if 匹配:
+                定义.append((序, 匹配.group(1), 行.strip()))
         if len(定义) > 1:
-            出 = 定义[1:]
-    return 出
+            命中表 = 定义[1:]
+    return 命中表
 
 
 def 扫(仓根):
@@ -145,7 +145,7 @@ def 自测():
             os.makedirs(os.path.dirname(路), exist_ok=True)
             with open(路, "w", encoding="utf-8") as 柄:
                 柄.write(内容)
-        造("超限.rs", "\n".join(f"// 第 {i} 行" for i in range(行数上限 + 1)) + "\n")
+        造("超限.rs", "\n".join(f"// 第 {行序} 行" for 行序 in range(行数上限 + 1)) + "\n")
         造("入口超行数/lib.rs", "\n".join("// 占位" for _ in range(入口行数上限 + 1)) + "\n")
         造("入口含实现/lib.rs", "pub mod 甲;\npub use 甲::乙;\n\nfn 实现() {}\n")
         造("入口含实现/__init__.py", '"""包。"""\n\n\ndef 实现():\n    pass\n')

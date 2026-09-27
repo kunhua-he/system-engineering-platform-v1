@@ -15,14 +15,14 @@ from .常量 import LEDGER_BASENAME
 
 def repo_root():
     """向上找 rust-toolchain.toml 定仓根；找不到就退回脚本的上两级。"""
-    d = 脚本目录
+    目录 = 脚本目录
     while True:
-        if os.path.isfile(os.path.join(d, "rust-toolchain.toml")):
-            return d
-        up = os.path.dirname(d)
-        if up == d:
+        if os.path.isfile(os.path.join(目录, "rust-toolchain.toml")):
+            return 目录
+        up = os.path.dirname(目录)
+        if up == 目录:
             return os.path.dirname(脚本目录)
-        d = up
+        目录 = up
 
 
 ROOT = repo_root()

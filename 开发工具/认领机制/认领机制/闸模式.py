@@ -14,9 +14,9 @@ def gate_mode(raw=None, forced=False):
     raw = os.environ.get("CLAIM_GATE", "") if raw is None else raw
     if not raw.strip():
         return GATE_WARN, "（没设）", True
-    v = raw.strip()
-    if v in GATE_BLOCK_ALIASES:
-        return GATE_BLOCK, v, True
-    if v in (GATE_WARN, "warn", "警告"):
-        return GATE_WARN, v, True
-    return GATE_WARN, v, False
+    取定值 = raw.strip()
+    if 取定值 in GATE_BLOCK_ALIASES:
+        return GATE_BLOCK, 取定值, True
+    if 取定值 in (GATE_WARN, "warn", "警告"):
+        return GATE_WARN, 取定值, True
+    return GATE_WARN, 取定值, False

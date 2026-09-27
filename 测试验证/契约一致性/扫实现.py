@@ -53,9 +53,9 @@ def main(参数: list) -> int:
     仓根 = 找仓根()
     范围 = 默认范围
     if "--范围" in 参数:
-        i = 参数.index("--范围")
-        if i + 1 < len(参数):
-            范围 = [x for x in 参数[i + 1].split(",") if x]
+        参数位 = 参数.index("--范围")
+        if 参数位 + 1 < len(参数):
+            范围 = [范围项 for 范围项 in 参数[参数位 + 1].split(",") if 范围项]
     if "--自测" in 参数:
         return 自测()
     起 = time.perf_counter()
@@ -65,8 +65,8 @@ def main(参数: list) -> int:
     if "--读数" in 参数:
         print("")
         打印读数(结果)
-    失败 = sum(1 for r in 结果 if r["判定"] == "失败")
-    未判 = sum(1 for r in 结果 if r["判定"] == "未判")
+    失败 = sum(1 for 判据读数 in 结果 if 判据读数["判定"] == "失败")
+    未判 = sum(1 for 判据读数 in 结果 if 判据读数["判定"] == "未判")
     return 0 if (失败 == 0 and 未判 == 0) else 1
 
 

@@ -17,19 +17,19 @@ def 解整数(文) -> object:
         return int(文)
     if re.fullmatch(r"0[xX][0-9a-fA-F]+", 文):
         return int(文, 16)
-    m = re.fullmatch(r"(\d+)\s*(<<|>>|\+|\-|\*|/|\||&)\s*(\d+)", 文)
-    if m:
-        a, 运, b = int(m.group(1)), m.group(2), int(m.group(3))
+    匹配 = re.fullmatch(r"(\d+)\s*(<<|>>|\+|\-|\*|/|\||&)\s*(\d+)", 文)
+    if 匹配:
+        左值, 运, 右值 = int(匹配.group(1)), 匹配.group(2), int(匹配.group(3))
         try:
             return {
-                "<<": a << b, ">>": a >> b, "+": a + b, "-": a - b,
-                "*": a * b, "/": a // b, "|": a | b, "&": a & b,
+                "<<": 左值 << 右值, ">>": 左值 >> 右值, "+": 左值 + 右值, "-": 左值 - 右值,
+                "*": 左值 * 右值, "/": 左值 // 右值, "|": 左值 | 右值, "&": 左值 & 右值,
             }[运]
         except (ValueError, ZeroDivisionError):
             return None
-    m = re.fullmatch(r"(\d+)\s+as\s+\w+", 文)
-    if m:
-        return int(m.group(1))
+    匹配 = re.fullmatch(r"(\d+)\s+as\s+\w+", 文)
+    if 匹配:
+        return int(匹配.group(1))
     return None
 
 
@@ -37,9 +37,9 @@ def 解表达式(文, 表: dict) -> object:
     """把 `表` 里的符号代入后求整数（例：`码 / 1000` + {码: 1001} → 1）。解不出 None。"""
     if 文 is None:
         return None
-    v = 解整数(文)
-    if v is not None:
-        return v
+    裸值 = 解整数(文)
+    if 裸值 is not None:
+        return 裸值
     换 = 文
     for 名 in sorted(表, key=len, reverse=True):
         值 = 表[名]
@@ -66,13 +66,13 @@ def 解构造器(文: str) -> object:
         return None
     文 = 文.strip()
     # `路径::类型名::新(<整数字面量>)`
-    m = re.fullmatch(r"[\w:]+::新\s*\(\s*(\d+)\s*\)", 文)
-    if m:
-        return int(m.group(1))
+    匹配 = re.fullmatch(r"[\w:]+::新\s*\(\s*(\d+)\s*\)", 文)
+    if 匹配:
+        return int(匹配.group(1))
     # `<整数字面量>.into()`（可带类型后缀：`0u32.into()` / `0_usize.into()`）
-    m = re.fullmatch(r"(\d+)\s*(?:[a-zA-Z]\w*)?\s*\.\s*into\s*\(\s*\)", 文)
-    if m:
-        return int(m.group(1))
+    匹配 = re.fullmatch(r"(\d+)\s*(?:[a-zA-Z]\w*)?\s*\.\s*into\s*\(\s*\)", 文)
+    if 匹配:
+        return int(匹配.group(1))
     return None
 
 
@@ -86,15 +86,15 @@ def 解符号(文, 符号表: dict, 本表: dict) -> object:
     if 文 is None:
         return None
     文 = 文.strip()
-    v = 解构造器(文)
-    if v is not None:
-        return v
-    v = 解整数(文)
-    if v is not None:
-        return v
-    m = re.fullmatch(r"(.+?)\s+as\s+\w+", 文)
-    if m:
-        文 = m.group(1).strip()
+    裸值 = 解构造器(文)
+    if 裸值 is not None:
+        return 裸值
+    裸值 = 解整数(文)
+    if 裸值 is not None:
+        return 裸值
+    匹配 = re.fullmatch(r"(.+?)\s+as\s+\w+", 文)
+    if 匹配:
+        文 = 匹配.group(1).strip()
     # 先按**全路径**（含模块限定名）找，再退回**末段** —— 同名的常量分属不同 `pub mod` 时，
     # 只有全路径能消歧（`槽标志::空` 与 `常量排布::空` 是两个数）。
     候选 = [文]
@@ -132,12 +132,12 @@ def 建符号表(件表: dict, 掩表: dict = None) -> dict:
             continue
         掩 = 掩表.get(键) or 掩码(文)
         # `pub const <名>: <t> = <整数字面量>;`（顶层或缩进都认；`pub const fn` 不匹配）
-        for m in re.finditer(
+        for 匹配 in re.finditer(
             r"(?m)^\s*pub\s+const\s+([^\s:]+)\s*:\s*[^=;]*?=\s*([^;]+);", 掩
         ):
-            v = 解整数(m.group(2))
-            if v is not None:
-                表[m.group(1)] = v
+            裸值 = 解整数(匹配.group(2))
+            if 裸值 is not None:
+                表[匹配.group(1)] = 裸值
         # `pub mod <M> { … pub const <名>: <t> = <整数字面量>; … }`
         # 同时收**模块限定名**（`M::名`）与**末段名**（`名`）两种键。
         for mm in re.finditer(r"pub\s+mod\s+([^\s{]+)\s*\{", 掩):
@@ -145,16 +145,16 @@ def 建符号表(件表: dict, 掩表: dict = None) -> dict:
             if 止 < 0:
                 continue
             模 = mm.group(1)
-            for c in re.finditer(
+            for 常量配 in re.finditer(
                 r"pub\s+const\s+([^\s:]+)\s*:\s*[^=;]*?=\s*([^;]+);", 掩[mm.end() : 止]
             ):
-                v = 解整数(c.group(2))
-                if v is not None:
-                    表[c.group(1)] = v
-                    表[f"{模}::{c.group(1)}"] = v
+                裸值 = 解整数(常量配.group(2))
+                if 裸值 is not None:
+                    表[常量配.group(1)] = 裸值
+                    表[f"{模}::{常量配.group(1)}"] = 裸值
         # `pub use <路径>::<原名> as <别名>;`
-        for m in re.finditer(r"pub\s+use\s+([^\s;]+?)\s+as\s+([^\s;]+)\s*;", 掩):
-            原名 = m.group(1).split("::")[-1]
+        for 匹配 in re.finditer(r"pub\s+use\s+([^\s;]+?)\s+as\s+([^\s;]+)\s*;", 掩):
+            原名 = 匹配.group(1).split("::")[-1]
             if 原名 in 表:
-                表[m.group(2)] = 表[原名]
+                表[匹配.group(2)] = 表[原名]
     return 表

@@ -74,63 +74,63 @@ pub struct 回执 {
 impl 回执 {
     /// 一行 JSON（**没有换行**，追加时补）。
     pub fn 到行(&self) -> String {
-        let mut 出 = String::from("{");
-        出.push_str("\"提交哈希\":");
-        crate::最小JSON::写串(&mut 出, &self.提交哈希);
-        出.push_str(&format!(",\"工作区是否干净\":{}", self.工作区是否干净));
-        出.push_str(",\"案例名\":");
-        crate::最小JSON::写串(&mut 出, &self.案例名);
-        出.push_str(",\"结果\":");
-        crate::最小JSON::写串(&mut 出, &self.结果);
-        出.push_str(",\"死在哪一层\":");
-        写可选串(&mut 出, self.死在哪一层.as_deref());
-        出.push_str(",\"死在哪一步\":");
-        写可选串(&mut 出, self.死在哪一步.as_deref());
-        出.push_str(",\"错误码\":");
+        let mut 文本缓冲 = String::from("{");
+        文本缓冲.push_str("\"提交哈希\":");
+        crate::最小JSON::写串(&mut 文本缓冲, &self.提交哈希);
+        文本缓冲.push_str(&format!(",\"工作区是否干净\":{}", self.工作区是否干净));
+        文本缓冲.push_str(",\"案例名\":");
+        crate::最小JSON::写串(&mut 文本缓冲, &self.案例名);
+        文本缓冲.push_str(",\"结果\":");
+        crate::最小JSON::写串(&mut 文本缓冲, &self.结果);
+        文本缓冲.push_str(",\"死在哪一层\":");
+        写可选串(&mut 文本缓冲, self.死在哪一层.as_deref());
+        文本缓冲.push_str(",\"死在哪一步\":");
+        写可选串(&mut 文本缓冲, self.死在哪一步.as_deref());
+        文本缓冲.push_str(",\"错误码\":");
         match &self.错误码 {
-            Some(码) => 出.push_str(&码.到JSON()),
-            None => 出.push_str("null"),
+            Some(码) => 文本缓冲.push_str(&码.到JSON()),
+            None => 文本缓冲.push_str("null"),
         }
-        出.push_str(&format!(",\"耗时微秒\":{}", self.耗时微秒));
-        出.push_str(",\"跑的时间\":");
-        crate::最小JSON::写串(&mut 出, &self.跑的时间);
-        出.push_str(",\"说明\":");
-        crate::最小JSON::写串(&mut 出, &self.说明);
-        出.push_str(",\"步骤\":[");
+        文本缓冲.push_str(&format!(",\"耗时微秒\":{}", self.耗时微秒));
+        文本缓冲.push_str(",\"跑的时间\":");
+        crate::最小JSON::写串(&mut 文本缓冲, &self.跑的时间);
+        文本缓冲.push_str(",\"说明\":");
+        crate::最小JSON::写串(&mut 文本缓冲, &self.说明);
+        文本缓冲.push_str(",\"步骤\":[");
         for (序, 步) in self.步骤.iter().enumerate() {
             if 序 > 0 {
-                出.push(',');
+                文本缓冲.push(',');
             }
-            出.push('{');
-            出.push_str("\"名\":");
-            crate::最小JSON::写串(&mut 出, &步.名);
-            出.push_str(&format!(",\"能力编号\":{},\"能力名\":", 步.能力编号));
-            写可选串(&mut 出, 步.能力名.as_deref());
-            出.push_str(",\"调用结果\":");
-            crate::最小JSON::写串(&mut 出, &步.调用结果);
-            出.push_str(&format!(",\"符合期望\":{}", 步.符合期望));
-            出.push_str(",\"死在哪一层\":");
-            写可选串(&mut 出, 步.死在哪一层.as_deref());
-            出.push_str(",\"死在哪一步\":");
-            写可选串(&mut 出, 步.死在哪一步.as_deref());
-            出.push_str(",\"错误码\":");
+            文本缓冲.push('{');
+            文本缓冲.push_str("\"名\":");
+            crate::最小JSON::写串(&mut 文本缓冲, &步.名);
+            文本缓冲.push_str(&format!(",\"能力编号\":{},\"能力名\":", 步.能力编号));
+            写可选串(&mut 文本缓冲, 步.能力名.as_deref());
+            文本缓冲.push_str(",\"调用结果\":");
+            crate::最小JSON::写串(&mut 文本缓冲, &步.调用结果);
+            文本缓冲.push_str(&format!(",\"符合期望\":{}", 步.符合期望));
+            文本缓冲.push_str(",\"死在哪一层\":");
+            写可选串(&mut 文本缓冲, 步.死在哪一层.as_deref());
+            文本缓冲.push_str(",\"死在哪一步\":");
+            写可选串(&mut 文本缓冲, 步.死在哪一步.as_deref());
+            文本缓冲.push_str(",\"错误码\":");
             match &步.错误码 {
-                Some(码) => 出.push_str(&码.到JSON()),
-                None => 出.push_str("null"),
+                Some(码) => 文本缓冲.push_str(&码.到JSON()),
+                None => 文本缓冲.push_str("null"),
             }
-            出.push_str(&format!(",\"耗时微秒\":{},\"说明\":", 步.耗时微秒));
-            crate::最小JSON::写串(&mut 出, &步.说明);
-            出.push('}');
+            文本缓冲.push_str(&format!(",\"耗时微秒\":{},\"说明\":", 步.耗时微秒));
+            crate::最小JSON::写串(&mut 文本缓冲, &步.说明);
+            文本缓冲.push('}');
         }
-        出.push_str("]}");
-        出
+        文本缓冲.push_str("]}");
+        文本缓冲
     }
 }
 
-fn 写可选串(出: &mut String, 值: Option<&str>) {
+fn 写可选串(文本缓冲: &mut String, 值: Option<&str>) {
     match 值 {
-        Some(文) => crate::最小JSON::写串(出, 文),
-        None => 出.push_str("null"),
+        Some(文) => crate::最小JSON::写串(文本缓冲, 文),
+        None => 文本缓冲.push_str("null"),
     }
 }
 
@@ -151,19 +151,19 @@ pub fn 追加(路: &Path, 行: &str) -> Result<(), String> {
 
 /// `git rev-parse HEAD` 的**完整**值。取不到就报错——**不许拿一个空串或短哈希顶上**。
 pub fn 提交哈希(仓根: &Path) -> Result<String, String> {
-    let 出 = Command::new("git")
+    let 文本缓冲 = Command::new("git")
         .arg("-C")
         .arg(仓根)
         .args(["rev-parse", "HEAD"])
         .output()
         .map_err(|错| format!("跑不了 git rev-parse：{错}"))?;
-    if !出.status.success() {
+    if !文本缓冲.status.success() {
         return Err(format!(
             "git rev-parse HEAD 失败：{}",
-            String::from_utf8_lossy(&出.stderr).trim()
+            String::from_utf8_lossy(&文本缓冲.stderr).trim()
         ));
     }
-    let 哈希 = String::from_utf8_lossy(&出.stdout).trim().to_owned();
+    let 哈希 = String::from_utf8_lossy(&文本缓冲.stdout).trim().to_owned();
     if 哈希.len() < 40 {
         return Err(format!("提交哈希不是完整值（{} 位）：`{哈希}`", 哈希.len()));
     }
@@ -172,20 +172,20 @@ pub fn 提交哈希(仓根: &Path) -> Result<String, String> {
 
 /// 工作区是否干净：除**回执自己**之外的改动数为 0。
 pub fn 工作区干净(仓根: &Path) -> Result<bool, String> {
-    let 出 = Command::new("git")
+    let 文本缓冲 = Command::new("git")
         .arg("-C")
         .arg(仓根)
         .args(["status", "--porcelain", "--"])
         .arg(format!(":(exclude){回执相对路}"))
         .output()
         .map_err(|错| format!("跑不了 git status：{错}"))?;
-    if !出.status.success() {
+    if !文本缓冲.status.success() {
         return Err(format!(
             "git status 失败：{}",
-            String::from_utf8_lossy(&出.stderr).trim()
+            String::from_utf8_lossy(&文本缓冲.stderr).trim()
         ));
     }
-    Ok(String::from_utf8_lossy(&出.stdout).trim().is_empty())
+    Ok(String::from_utf8_lossy(&文本缓冲.stdout).trim().is_empty())
 }
 
 /// UTC 的 `YYYY-MM-DDTHH:MM:SSZ`。自己算，不调外部程序（少一个环境依赖）。

@@ -57,16 +57,16 @@ impl 登记 {
     }
 
     pub fn 到JSON(&self) -> String {
-        let mut 出 = String::from("{");
-        出.push_str(&format!("\"码\":{},\"段位\":{}", self.码, self.段位));
-        出.push_str(",\"名称\":");
-        crate::最小JSON::写串(&mut 出, &self.名称);
-        出.push_str(&format!(
+        let mut 文本缓冲 = String::from("{");
+        文本缓冲.push_str(&format!("\"码\":{},\"段位\":{}", self.码, self.段位));
+        文本缓冲.push_str(",\"名称\":");
+        crate::最小JSON::写串(&mut 文本缓冲, &self.名称);
+        文本缓冲.push_str(&format!(
             ",\"可重试\":{},\"可自愈\":{},\"需人工\":{},\"已登记\":{}",
             self.可重试, self.可自愈, self.需人工, self.已登记
         ));
-        出.push('}');
-        出
+        文本缓冲.push('}');
+        文本缓冲
     }
 }
 

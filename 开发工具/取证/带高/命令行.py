@@ -15,10 +15,10 @@ def main(argv):
     if len(argv) < 1:
         print(__doc__)
         return 1
-    for p in argv:
+    for 参数 in argv:
         try:
-            带(p)
-        except OSError as e:
-            print(f"打不开 {p}：{e}", file=sys.stderr)
+            带(参数)
+        except OSError as 错:
+            print(f"打不开 {参数}：{错}", file=sys.stderr)
             return 1
     return 0

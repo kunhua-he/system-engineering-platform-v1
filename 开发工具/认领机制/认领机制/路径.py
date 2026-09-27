@@ -9,11 +9,11 @@ from .仓根 import ROOT
 def norm_paths(raw, root=ROOT):
     """→ (归一化后的路径集, 仓外路径)。相对路径按仓根解析，统一 `/` 分隔。"""
     good, outside = [], []
-    for p in raw:
-        ap = os.path.normpath(p if os.path.isabs(p) else os.path.join(root, p))
+    for 原路径 in raw:
+        ap = os.path.normpath(原路径 if os.path.isabs(原路径) else os.path.join(root, 原路径))
         rel = os.path.relpath(ap, root).replace(os.sep, "/")
         if rel == ".." or rel.startswith("../"):
-            outside.append(p)
+            outside.append(原路径)
         else:
             good.append(rel)
     return sorted(set(good)), outside

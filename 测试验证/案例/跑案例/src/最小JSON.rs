@@ -75,12 +75,12 @@ impl 值 {
 pub fn 解析(源: &str) -> Result<值, String> {
     let mut 读 = 读器 { 字节: 源.as_bytes(), 位: 0 };
     读.跳空白();
-    let 出 = 读.取值()?;
+    let 文本缓冲 = 读.取值()?;
     读.跳空白();
     if 读.位 != 读.字节.len() {
         return Err(format!("第 {} 字节起有多余内容（JSON 只许一个顶层值）", 读.位));
     }
-    Ok(出)
+    Ok(文本缓冲)
 }
 
 struct 读器<'a> {
@@ -192,29 +192,29 @@ impl 读器<'_> {
 
     fn 取串(&mut self) -> Result<String, String> {
         self.期望(b'"')?;
-        let mut 出 = String::new();
+        let mut 文本缓冲 = String::new();
         loop {
             let 起 = self.位;
             match self.看() {
                 None => return Err("字符串未闭合（缺 `\"`）".to_owned()),
                 Some(b'"') => {
                     self.位 += 1;
-                    return Ok(出);
+                    return Ok(文本缓冲);
                 }
                 Some(b'\\') => {
                     self.位 += 1;
                     let 转 = self.看().ok_or_else(|| "转义符后已到末尾".to_owned())?;
                     self.位 += 1;
                     match 转 {
-                        b'"' => 出.push('"'),
-                        b'\\' => 出.push('\\'),
-                        b'/' => 出.push('/'),
-                        b'b' => 出.push('\u{8}'),
-                        b'f' => 出.push('\u{c}'),
-                        b'n' => 出.push('\n'),
-                        b'r' => 出.push('\r'),
-                        b't' => 出.push('\t'),
-                        b'u' => 出.push(self.取码点()?),
+                        b'"' => 文本缓冲.push('"'),
+                        b'\\' => 文本缓冲.push('\\'),
+                        b'/' => 文本缓冲.push('/'),
+                        b'b' => 文本缓冲.push('\u{8}'),
+                        b'f' => 文本缓冲.push('\u{c}'),
+                        b'n' => 文本缓冲.push('\n'),
+                        b'r' => 文本缓冲.push('\r'),
+                        b't' => 文本缓冲.push('\t'),
+                        b'u' => 文本缓冲.push(self.取码点()?),
                         _ => return Err(format!("第 {} 字节：不认的转义 `\\{}`", 起, 转 as char)),
                     }
                 }
@@ -222,7 +222,7 @@ impl 读器<'_> {
                     return Err(format!("第 {起} 字节：字符串里出现未转义的控制字符"));
                 }
                 Some(实) if 实 < 0x80 => {
-                    出.push(实 as char);
+                    文本缓冲.push(实 as char);
                     self.位 += 1;
                 }
                 Some(_) => {
@@ -234,7 +234,7 @@ impl 读器<'_> {
                         .chars()
                         .next()
                         .ok_or_else(|| format!("第 {起} 字节：字符串内容到头了"))?;
-                    出.push(字);
+                    文本缓冲.push(字);
                     self.位 += 字.len_utf8();
                 }
             }
@@ -287,22 +287,22 @@ impl 读器<'_> {
 }
 
 /// 写出：转义控制字符与 `"` `\`，其余原样（含中文）。
-pub fn 写串(出: &mut String, 文: &str) {
-    出.push('"');
+pub fn 写串(文本缓冲: &mut String, 文: &str) {
+    文本缓冲.push('"');
     for 字 in 文.chars() {
         match 字 {
-            '"' => 出.push_str("\\\""),
-            '\\' => 出.push_str("\\\\"),
-            '\n' => 出.push_str("\\n"),
-            '\r' => 出.push_str("\\r"),
-            '\t' => 出.push_str("\\t"),
+            '"' => 文本缓冲.push_str("\\\""),
+            '\\' => 文本缓冲.push_str("\\\\"),
+            '\n' => 文本缓冲.push_str("\\n"),
+            '\r' => 文本缓冲.push_str("\\r"),
+            '\t' => 文本缓冲.push_str("\\t"),
             控 if (控 as u32) < 0x20 => {
-                let _ = write!(出, "\\u{:04x}", 控 as u32);
+                let _ = write!(文本缓冲, "\\u{:04x}", 控 as u32);
             }
-            其 => 出.push(其),
+            其 => 文本缓冲.push(其),
         }
     }
-    出.push('"');
+    文本缓冲.push('"');
 }
 
 #[cfg(test)]
@@ -357,9 +357,9 @@ mod 测试 {
     fn 串的转义与中文都读得出() {
         assert_eq!(解(r#""a\u0041\n中""#).串(), Some("aA\n中"));
         assert_eq!(解(r#""\ud83d\ude00""#).串(), Some("😀"));
-        let mut 出 = String::new();
-        写串(&mut 出, "中\n\"");
-        assert_eq!(出, "\"中\\n\\\"\"");
-        assert_eq!(解(&出).串(), Some("中\n\""));
+        let mut 文本缓冲 = String::new();
+        写串(&mut 文本缓冲, "中\n\"");
+        assert_eq!(文本缓冲, "\"中\\n\\\"\"");
+        assert_eq!(解(&文本缓冲).串(), Some("中\n\""));
     }
 }

@@ -20,45 +20,45 @@ def _cfg属性(掩: str, 起: int):
     `[^)]*` 这类正则在第一个 `)` 就断，漏判 ⇒ 扫描面不覆盖它声称的范围
     （判据的可信性.md §三.2）。
     """
-    m = CFG开头模式.match(掩, 起)
-    if not m:
+    匹配 = CFG开头模式.match(掩, 起)
+    if not 匹配:
         return None
-    k = m.end()
-    n = len(掩)
+    括号位 = 匹配.end()
+    全长 = len(掩)
     深 = 1
-    while k < n and 深:
-        if 掩[k] == "(":
+    while 括号位 < 全长 and 深:
+        if 掩[括号位] == "(":
             深 += 1
-        elif 掩[k] == ")":
+        elif 掩[括号位] == ")":
             深 -= 1
-        k += 1
+        括号位 += 1
     if 深:
         return None
-    j = k
-    while j < n and 掩[j] in " \t\r\n":
-        j += 1
-    if j >= n or 掩[j] != "]":
+    空白位 = 括号位
+    while 空白位 < 全长 and 掩[空白位] in " \t\r\n":
+        空白位 += 1
+    if 空白位 >= 全长 or 掩[空白位] != "]":
         return None
-    return 掩[起 : j + 1], j + 1
+    return 掩[起 : 空白位 + 1], 空白位 + 1
 
 
 def 找cfg属性(掩: str) -> list:
     """返回 [(起, 止, 属性文本, 是否含 test)]，按位置序。"""
-    出 = []
-    for m in CFG开头模式.finditer(掩):
-        属 = _cfg属性(掩, m.start())
+    结果 = []
+    for 匹配 in CFG开头模式.finditer(掩):
+        属 = _cfg属性(掩, 匹配.start())
         if 属 is None:
             continue
         属性文本, 止 = 属
-        出.append((m.start(), 止, 属性文本, bool(re.search(r"\btest\b", 属性文本))))
-    return 出
+        结果.append((匹配.start(), 止, 属性文本, bool(re.search(r"\btest\b", 属性文本))))
+    return 结果
 
 
 def _项头(掩: str, 位: int) -> tuple:
     """从 `位` 起扫到第一个 `{` 或 `;`，返回 (头文本, 终止位)。"""
-    n = len(掩)
+    全长 = len(掩)
     终 = 位
-    while 终 < n and 掩[终] not in "{;":
+    while 终 < 全长 and 掩[终] not in "{;":
         终 += 1
     return 掩[位:终], 终
 
@@ -120,9 +120,9 @@ def 建夹具集(件表: dict, 掩表: dict = None) -> dict:
     `掩表` 是 `掩码()` 的**每趟缓存**：掩码是这一趟里最贵的一步（154 个文件 ≈ 250 ms），
     而夹具判定与实现面抽取都要它 ⇒ 一趟只算一次（这是秒级的手段，不是可选优化）。
     """
-    Rs件 = {k: v for k, v in 件表.items() if k.endswith(".rs") and v is not None}
+    Rs件 = {括号位: 原文 for 括号位, 原文 in 件表.items() if 括号位.endswith(".rs") and 原文 is not None}
     if 掩表 is None:
-        掩表 = {k: 掩码(v) for k, v in Rs件.items()}
+        掩表 = {括号位: 掩码(原文) for 括号位, 原文 in Rs件.items()}
     块表 = {}
     外部 = []
     其它 = []
@@ -163,9 +163,9 @@ def 建夹具集(件表: dict, 掩表: dict = None) -> dict:
 def 生产区(文本: str, 区间表: list) -> str:
     if not 区间表:
         return 文本
-    出 = list(文本)
+    结果 = list(文本)
     for 起, 止 in 区间表:
-        for p in range(起, min(止, len(出))):
-            if 出[p] != "\n":
-                出[p] = " "
-    return "".join(出)
+        for 位次 in range(起, min(止, len(结果))):
+            if 结果[位次] != "\n":
+                结果[位次] = " "
+    return "".join(结果)
