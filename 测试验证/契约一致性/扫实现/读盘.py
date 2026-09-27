@@ -6,7 +6,7 @@ import json
 import os
 from pathlib import Path
 
-from .常量 import 读上限字节, 契约目录名, 常量表相对, 判据名表
+from .常量 import 读上限字节, 契约目录名, 常量表相对, 判据名表, 处数基线相对
 from .小工具 import 相对
 from .掩码 import 掩码
 from .夹具判定 import 建夹具集
@@ -52,6 +52,10 @@ def 读盘(仓根: str, 范围: list) -> dict:
                 # 写死文件名会让拆分后的子件静默丢出符号表。
                 if 名.endswith((".json", ".rs")):
                     收(Path(根目录) / 名)
+    # ③h 处数判据的基线（不在 `范围` 内，故显式收）：判据读不到它就只能报未判（fail-closed）。
+    基线 = 根 / 处数基线相对
+    if 基线.is_file():
+        收(基线)
     return {"件表": 件表, "坏": 坏}
 
 
