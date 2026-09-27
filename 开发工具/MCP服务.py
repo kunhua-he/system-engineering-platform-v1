@@ -22,17 +22,17 @@ from pathlib import Path
 仓根 = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(仓根 / "开发工具"))
 
-from MCP服务 import 工具表, 派, 服务  # noqa: E402
+from MCP服务 import 工具表, 派发, 服务  # noqa: E402
 
 
-def main(argv=None):
+def 入口函数(argv=None):
     参 = list(sys.argv[1:] if argv is None else argv)
     if "--自检" in 参:
         # 协议层的身份证：自造三帧（initialize / tools/list / 一个不存在的方法），
         # 断言响应形状与工具表 —— 协议层坏了要当场看得出来，不许「连上了但什么也不回」。
         for 方法, 参数 in (("initialize", {"protocolVersion": "试"}),
                           ("tools/list", {}), ("没有这个方法", {})):
-            结果, 错 = 派(方法, 参数, 仓根, 工具表)
+            结果, 错 = 派发(方法, 参数, 仓根, 工具表)
             if 错:
                 print("%s ⇒ 错误码 %d（%s）" % (方法, 错["code"], 错["message"]))
             else:
@@ -50,4 +50,4 @@ def main(argv=None):
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    sys.exit(入口函数())

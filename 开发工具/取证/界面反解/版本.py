@@ -9,7 +9,7 @@ from PE形状 import 解析错误
 def 解版本(块字节, 资源id):
     out = []
 
-    def 走(起, 止, 层):
+    def 遍历版本块(起, 止, 层):
         块起 = 起
         while 块起 + 6 <= 止:
             长, 值长, 型 = struct.unpack_from("<HHH", 块字节, 块起)
@@ -33,9 +33,9 @@ def 解版本(块字节, 资源id):
                 out.append((层, 键, 块字节[值起:值起 + 字节数].decode("utf-16le").rstrip("\0")))
             else:
                 out.append((层, 键, "<%d 字节二进制> %s" % (值长, 块字节[值起:值起 + 字节数][:12].hex(" "))))
-            走(值起 + 字节数, 块起 + 长, 层 + 1)     # 型 0 的根块也有子块（StringFileInfo/VarFileInfo）
+            遍历版本块(值起 + 字节数, 块起 + 长, 层 + 1)     # 型 0 的根块也有子块（StringFileInfo/VarFileInfo）
             块起 = (块起 + 长 + 3) & ~3
-    走(0, len(块字节), 0)
+    遍历版本块(0, len(块字节), 0)
     if not out:
         raise 解析错误("版本资源 %s 没解出任何键" % 资源id)
     return out

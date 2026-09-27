@@ -16,10 +16,10 @@
 **中文显示名放 `title`**（协议字段，客户端会用）。
 """
 
-from .门禁 import 派 as 门禁派
-from .修改 import 派 as 修改派
-from .符号 import 派 as 符号派
-from .开工 import 派 as 开工派
+from .门禁 import 派发 as 门禁派
+from .修改 import 派发 as 修改派
+from .符号 import 派发 as 符号派
+from .开工 import 派发 as 开工派
 
 工具表 = {
     "v1_task": (开工派, "开工", "开工。先跑它拿一个开工 ID，后面改文件都要带上这个 ID。"

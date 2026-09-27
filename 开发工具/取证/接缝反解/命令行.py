@@ -9,7 +9,7 @@ from .扫全部 import 扫全部
 from .自测 import 自测
 
 
-def main():
+def 入口函数():
     ap = argparse.ArgumentParser(description="GetNewInf 接缝静态反解（只读字节，不执行语料）")
     ap.add_argument("--样本", default="/tmp/易语言源码/lib/shellEx.fne")
     ap.add_argument("--目录", default="/tmp/易语言源码")

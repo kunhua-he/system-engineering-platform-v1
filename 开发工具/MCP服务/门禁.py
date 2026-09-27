@@ -33,7 +33,7 @@ from .修改 import 对账
 超时秒 = 5
 
 
-def 派(参数表: dict, 仓根) -> tuple:
+def 派发(参数表: dict, 仓根) -> tuple:
     """`v1_gate` 的入口。"""
     开工号 = str(参数表.get("开工ID") or "").strip()
     判据词表 = 参数表.get("判据")

@@ -41,8 +41,8 @@ def 带门禁跑(参数, 起始) -> int:
     门禁报告走 **stderr**：它是诊断，不是命令的输出面 —— 走 stdout 会污染
     `N=$(python3 … --建议分片数)` 这类取值（取回来的是「命令墙钟…」那一行，不是数）。
     """
-    from .命令行 import 主
-    码 = 主(参数)
+    from .命令行 import 入口函数
+    码 = 入口函数(参数)
     注入 = 注入人为慢()
     墙钟毫秒 = int((time.monotonic() - 起始) * 1000)
     print("─" * 78, file=sys.stderr)

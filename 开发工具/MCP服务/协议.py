@@ -45,7 +45,7 @@ def _回(输出, 码, 结果=None, 错=None):
     输出.flush()
 
 
-def 派(方法, 参数, 仓根, 工具表):
+def 派发(方法, 参数, 仓根, 工具表):
     """把一个请求派到 MCP 的四个方法上 ⇒ `(结果, 错误)`。"""
     if 方法 == "initialize":
         求 = 参数.get("protocolVersion")
@@ -87,6 +87,6 @@ def 服务(仓根, 工具表, 输入=None, 输出=None):
         码 = 请求.get("id")
         if 码 is None:
             continue                       # 通知：不回应
-        结果, 错 = 派(请求.get("method"), 请求.get("params") or {}, 仓根, 工具表)
+        结果, 错 = 派发(请求.get("method"), 请求.get("params") or {}, 仓根, 工具表)
         _回(输出, 码, 结果, 错)
     return 0

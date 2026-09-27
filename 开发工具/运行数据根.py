@@ -20,7 +20,7 @@ import tempfile
 import time
 from pathlib import Path
 
-起 = time.monotonic()  # 壳起表点：必须在 import 业务包**之前**（见 构建装配/门禁/壳.py）
+起始时刻 = time.monotonic()  # 壳起表点：必须在 import 业务包**之前**（见 构建装配/门禁/壳.py）
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))  # 仓根：取共享门禁
 from 构建装配.门禁 import 自门禁  # noqa: E402
@@ -28,7 +28,7 @@ from 构建装配.门禁 import 自门禁  # noqa: E402
 from 运行数据根 import 一致性判据  # noqa: E402
 
 
-def main(argv=None):
+def 入口函数(argv=None):
     参 = list(sys.argv[1:] if argv is None else argv)
     python路 = 一致性判据.镜像源
     if "--python" in 参:
@@ -42,13 +42,13 @@ def main(argv=None):
     if "--反向样本" in 参:
         with tempfile.TemporaryDirectory(prefix="运行数据根反向样本-") as 临时:
             return 一致性判据.反向样本(Path(临时))
-    return 一致性判据.跑(解析路, 子目录路, python路)
+    return 一致性判据.跑一遍(解析路, 子目录路, python路)
 
 
 if __name__ == "__main__":
     sys.exit(
         自门禁(
-            起, main(), 尾巴余量毫秒=200,
+            起始时刻, 入口函数(), 尾巴余量毫秒=200,
             修法="本命令比两份源文本 —— 树长大它自身会超顶。修法是只读被比的那几件"
                  "（不扫全仓），别砍判据面。",
         )

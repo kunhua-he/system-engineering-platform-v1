@@ -6,7 +6,7 @@ import collections
 from PIL import Image
 
 
-def 带(路径):
+def 带高逐行(路径):
     im = Image.open(路径).convert("RGB")
     宽, 高 = im.size
     px = im.load()

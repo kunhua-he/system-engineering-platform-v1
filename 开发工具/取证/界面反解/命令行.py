@@ -8,7 +8,7 @@ from .反解 import 反解
 from .自测 import 自测
 
 
-def main():
+def 入口函数():
     ap = argparse.ArgumentParser(description="e.exe 界面资源静态反解（只读字节，不执行语料）")
     ap.add_argument("--样本", default="/tmp/易语言源码/e.exe")
     ap.add_argument("--自测", action="store_true")

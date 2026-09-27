@@ -11,13 +11,13 @@ import sys
 from .逐行 import 带
 
 
-def main(argv):
+def 入口函数(argv):
     if len(argv) < 1:
         print(__doc__)
         return 1
     for 参数 in argv:
         try:
-            带(参数)
+            带高逐行(参数)
         except OSError as 错:
             print(f"打不开 {参数}：{错}", file=sys.stderr)
             return 1
