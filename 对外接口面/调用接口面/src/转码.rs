@@ -29,10 +29,10 @@ const 字母表: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvw
 pub fn base64编码(源: &[u8]) -> String {
     let mut 出 = String::with_capacity(源.len().div_ceil(3) * 4);
     for 块 in 源.chunks(3) {
-        let 甲 = u32::from(块[0]);
-        let 乙 = u32::from(块.get(1).copied().unwrap_or(0));
-        let 丙 = u32::from(块.get(2).copied().unwrap_or(0));
-        let 合 = (甲 << 16) | (乙 << 8) | 丙;
+        let 首字节值 = u32::from(块[0]);
+        let 次字节值 = u32::from(块.get(1).copied().unwrap_or(0));
+        let 末字节值 = u32::from(块.get(2).copied().unwrap_or(0));
+        let 合 = (首字节值 << 16) | (次字节值 << 8) | 末字节值;
         出.push(char::from(字母表[(合 >> 18) as usize & 63]));
         出.push(char::from(字母表[(合 >> 12) as usize & 63]));
         出.push(if 块.len() > 1 {
@@ -76,9 +76,9 @@ pub fn base64解码(文本: &str) -> Result<Vec<u8>, 转码错误> {
         let 起 = 序 * 4;
         let 组 = &字节[起..起 + 4];
         let 末组 = 序 + 1 == 组数;
-        let 甲 = 取值(组[0], 起)?;
-        let 乙 = 取值(组[1], 起 + 1)?;
-        let (丙, 丁) = match (组[2], 组[3]) {
+        let 最高六位 = 取值(组[0], 起)?;
+        let 次高六位 = 取值(组[1], 起 + 1)?;
+        let (次低六位, 最低六位) = match (组[2], 组[3]) {
             (b'=', b'=') => {
                 if !末组 {
                     return Err(转码错误 {
@@ -86,7 +86,7 @@ pub fn base64解码(文本: &str) -> Result<Vec<u8>, 转码错误> {
                         说明: "`=` 只许出现在最后一组",
                     });
                 }
-                if 乙 & 0x0F != 0 {
+                if 次高六位 & 0x0F != 0 {
                     return Err(转码错误 {
                         位置: 起 + 1,
                         说明: "补齐位不是 0（同一串字节有两种写法）",
@@ -107,23 +107,23 @@ pub fn base64解码(文本: &str) -> Result<Vec<u8>, 转码错误> {
                         说明: "`=` 只许出现在最后一组",
                     });
                 }
-                let 丙 = 取值(组[2], 起 + 2)?;
-                if 丙 & 0x03 != 0 {
+                let 次低六位 = 取值(组[2], 起 + 2)?;
+                if 次低六位 & 0x03 != 0 {
                     return Err(转码错误 {
                         位置: 起 + 2,
                         说明: "补齐位不是 0（同一串字节有两种写法）",
                     });
                 }
-                (Some(丙), None)
+                (Some(次低六位), None)
             }
             (_, _) => (Some(取值(组[2], 起 + 2)?), Some(取值(组[3], 起 + 3)?)),
         };
-        let 合 = (甲 << 18) | (乙 << 12) | (丙.unwrap_or(0) << 6) | 丁.unwrap_or(0);
+        let 合 = (最高六位 << 18) | (次高六位 << 12) | (次低六位.unwrap_or(0) << 6) | 最低六位.unwrap_or(0);
         出.push((合 >> 16) as u8);
-        if 丙.is_some() {
+        if 次低六位.is_some() {
             出.push((合 >> 8) as u8);
         }
-        if 丁.is_some() {
+        if 最低六位.is_some() {
             出.push(合 as u8);
         }
     }

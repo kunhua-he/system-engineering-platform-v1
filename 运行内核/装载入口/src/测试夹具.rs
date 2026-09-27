@@ -37,7 +37,7 @@ pub(crate) unsafe extern "C" fn 占位执行(
 /// 样本的标识串（与底座身份不同）。
 pub(crate) const 样本标识串: &[u8] = b"11223344556677889900aabbccddeeff\0";
 /// 第二份样本的标识串（测「两份不同扩展」用）。
-pub(crate) const 样本标识串乙: &[u8] = b"fedcba9876543210fedcba9876543210\0";
+pub(crate) const 样本标识串次: &[u8] = b"fedcba9876543210fedcba9876543210\0";
 
 /// 一份**六步全过**的样本声明（每步失败的样本都由它改一处得到）。
 pub(crate) const 样本能力号段: [号段; 1] = [号段::新(1000, 1999)];

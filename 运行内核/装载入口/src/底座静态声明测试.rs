@@ -172,7 +172,7 @@ fn 取顶层字符串(文本: &str, 键: &str) -> Option<String> {
     let mut 位 = 0usize;
 
     fn 跳空白(字: &[char], 位: &mut usize) {
-        while 字.get(*位).is_some_and(|c| c.is_whitespace()) {
+        while 字.get(*位).is_some_and(|当前字| 当前字.is_whitespace()) {
             *位 += 1;
         }
     }
@@ -185,9 +185,9 @@ fn 取顶层字符串(文本: &str, 键: &str) -> Option<String> {
         *位 += 1;
         let mut 出 = String::new();
         loop {
-            let c = *字.get(*位)?;
+            let 当前字 = *字.get(*位)?;
             *位 += 1;
-            match c {
+            match 当前字 {
                 '"' => return Some(出),
                 '\\' => {
                     let 转 = *字.get(*位)?;
@@ -212,7 +212,7 @@ fn 取顶层字符串(文本: &str, 键: &str) -> Option<String> {
                         _ => return None,
                     }
                 }
-                _ => 出.push(c),
+                _ => 出.push(当前字),
             }
         }
     }
@@ -228,23 +228,23 @@ fn 取顶层字符串(文本: &str, 键: &str) -> Option<String> {
                 let (开, 闭) = if *字.get(*位)? == '{' { ('{', '}') } else { ('[', ']') };
                 let mut 深 = 0i32;
                 loop {
-                    let c = *字.get(*位)?;
+                    let 当前字 = *字.get(*位)?;
                     *位 += 1;
-                    if c == 开 {
+                    if 当前字 == 开 {
                         深 += 1;
-                    } else if c == 闭 {
+                    } else if 当前字 == 闭 {
                         深 -= 1;
                         if 深 == 0 {
                             return Some(());
                         }
-                    } else if c == '"' {
+                    } else if 当前字 == '"' {
                         *位 -= 1;
                         读串(字, 位)?;
                     }
                 }
             }
             _ => {
-                while 字.get(*位).is_some_and(|c| !matches!(c, ',' | '}' | ']')) {
+                while 字.get(*位).is_some_and(|当前字| !matches!(当前字, ',' | '}' | ']')) {
                     *位 += 1;
                 }
             }

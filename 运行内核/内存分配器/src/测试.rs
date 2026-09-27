@@ -22,19 +22,19 @@
     #[test]
     fn 多块各自记账() {
         let mut 器 = 分配器::新建();
-        let 甲 = 器.分配(16).expect("甲应成功");
-        let 乙 = 器.分配(32).expect("乙应成功");
-        assert_ne!(甲, 乙, "两块地址不许相同");
-        assert_eq!(器.块长(甲), Some(16));
-        assert_eq!(器.块长(乙), Some(32));
+        let 首块 = 器.分配(16).expect("甲应成功");
+        let 次块 = 器.分配(32).expect("乙应成功");
+        assert_ne!(首块, 次块, "两块地址不许相同");
+        assert_eq!(器.块长(首块), Some(16));
+        assert_eq!(器.块长(次块), Some(32));
         assert_eq!(器.在用块数(), 2);
 
-        unsafe { 器.释放(甲).expect("释放甲应成功") };
-        assert_eq!(器.块长(甲), None);
-        assert_eq!(器.块长(乙), Some(32), "释放甲不许动到乙");
+        unsafe { 器.释放(首块).expect("释放甲应成功") };
+        assert_eq!(器.块长(首块), None);
+        assert_eq!(器.块长(次块), Some(32), "释放甲不许动到乙");
         assert_eq!(器.在用块数(), 1);
 
-        unsafe { 器.释放(乙).expect("释放乙应成功") };
+        unsafe { 器.释放(次块).expect("释放乙应成功") };
         assert_eq!(器.在用块数(), 0);
     }
 
@@ -102,10 +102,10 @@
     /// 两个分配器实例互不污染：甲的地址在乙那里是外来地址。
     #[test]
     fn 两实例互不污染() {
-        let mut 甲 = 分配器::新建();
-        let mut 乙 = 分配器::新建();
-        let 地址 = 甲.分配(16).expect("甲分配应成功");
-        assert_eq!(乙.块长(地址), None);
-        assert_eq!(unsafe { 乙.释放(地址) }, Err(释放错误::非本分配器地址));
-        unsafe { 甲.释放(地址).expect("甲释放应成功") };
+        let mut 首器 = 分配器::新建();
+        let mut 次器 = 分配器::新建();
+        let 地址 = 首器.分配(16).expect("甲分配应成功");
+        assert_eq!(次器.块长(地址), None);
+        assert_eq!(unsafe { 次器.释放(地址) }, Err(释放错误::非本分配器地址));
+        unsafe { 首器.释放(地址).expect("甲释放应成功") };
     }

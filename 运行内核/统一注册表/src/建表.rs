@@ -73,7 +73,7 @@ mod 表名 {
 /// 也不能拿空指针去 `from_raw_parts`（那是未定义行为）。
 /// 传参按「项数 + 项表」两个字段，不传整个 `表段`：`表段<T>` 只在 `T: Copy` 时才 `Copy`，
 /// 从 `&平台信息` 里读不出来（也正因如此，这里一律按字段取值，不搬结构）。
-fn 切片<T>(项数: u32, 项表: *const T, 表名: &'static str) -> Result<&'static [T], 建表错误> {
+fn 切片<项类型>(项数: u32, 项表: *const 项类型, 表名: &'static str) -> Result<&'static [项类型], 建表错误> {
     if 项数 == 0 {
         return Ok(&[]);
     }

@@ -84,10 +84,10 @@ class 世界:
         self.边界协议 = 读文本(根 / "跨语言适配/边界协议/边界协议.md")
         self.扩展根声明 = 读JSON(根 / "扩展装载/扩展根声明.json") or {}
         self.包声明表 = sorted(
-            (p, 读JSON(p)) for p in (根 / 扩展根目录名).rglob("包声明.json")
+            (声明件, 读JSON(声明件)) for 声明件 in (根 / 扩展根目录名).rglob("包声明.json")
         )
         self.扩展Cargo表 = sorted(
-            (p, 读文本(p)) for p in (根 / 扩展根目录名).rglob("Cargo.toml")
+            (声明件, 读文本(声明件)) for 声明件 in (根 / 扩展根目录名).rglob("Cargo.toml")
         )
         self.必备件 = 读JSON(根 / "扩展装载/开发标准/必备件.json") or {}
         self.构建制品 = 读装配器源码(根)
@@ -120,5 +120,5 @@ class 世界:
         命 = (读JSON(self.指纹件()) or {}).get("生成命令", "")
         # 生成命令形如 "python3 扩展根目录/…/重跑指纹.py"（仓库根相对）
         分 = 命.split()
-        参 = [x for x in 分 if x.endswith(".py")]
+        参 = [参项 for 参项 in 分 if 参项.endswith(".py")]
         return self.仓根 / 参[0] if 参 else self.仓根 / "__缺__"
