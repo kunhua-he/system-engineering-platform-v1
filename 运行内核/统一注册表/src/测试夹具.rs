@@ -135,7 +135,7 @@ pub(crate) fn 造常量(常量号: v1_contract::常量号, 排布: u16, 文本: 
 
 /// 最简声明：四张表全空、函数表空指针。**要改哪一处就改哪一处**——
 /// 夹具不许掩盖被测的那一处。
-pub(crate) fn 造声明(改: impl FnOnce(&mut 平台信息)) -> &'static 平台信息 {
+pub(crate) fn 造声明(改后声明: impl FnOnce(&mut 平台信息)) -> &'static 平台信息 {
     let 声明 = Box::leak(Box::new(平台信息 {
         声明格式号: v1_contract::声明格式号,
         目标字宽: 64,
@@ -160,7 +160,7 @@ pub(crate) fn 造声明(改: impl FnOnce(&mut 平台信息)) -> &'static 平台�
         命令类别表: 表段::空实例(),
         要求权限: 表段::空实例(),
     }));
-    改(声明);
+    改后声明(声明);
     声明
 }
 

@@ -239,15 +239,15 @@ def 出现数(标识: str, 库路径=None) -> int:
         库.close()
 
 
-def _源件路径(库: sqlite3.Connection, 源: str) -> str:
+def _源件路径(动态库: sqlite3.Connection, 来源: str) -> str:
     """边的 `source` ⇒ 件路径。`file:<路径>` 是件节点，否则是符号节点（查它的 `file_path`）。"""
-    if 源.startswith("file:"):
-        return 源[len("file:"):]
-    行 = 库.execute("select file_path from nodes where id=?", (源,)).fetchone()
+    if 来源.startswith("file:"):
+        return 来源[len("file:"):]
+    行 = 动态库.execute("select file_path from nodes where id=?", (来源,)).fetchone()
     return 行[0] if 行 else ""
 
 
-def 出现位(键: str, 上限: int = 0, 库路径=None) -> dict:
+def 出现位(键名: str, 上限: int = 0, 库路径=None) -> dict:
     """该符号的全部出现位置 ⇒ `{"位置": [(路径, 行, 列)…], "总数": n, "口径": "…"}`。
 
     **口径**：先按 `限定名` **全等**找（精确）；一条都没有才退回按 `名字` 全等
@@ -264,7 +264,7 @@ def 出现位(键: str, 上限: int = 0, 库路径=None) -> dict:
                                 ("name", "名字（同名不同符号会混进来）")):
             节点行表 = list(库.execute(
                 "select id, name, file_path, start_line, start_column from nodes where %s = ?"
-                % 匹配列, (键,)))
+                % 匹配列, (键名,)))
             if not 节点行表:
                 continue
             位置表 = []

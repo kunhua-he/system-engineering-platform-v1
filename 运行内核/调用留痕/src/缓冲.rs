@@ -250,11 +250,11 @@ impl 留痕缓冲 {
     }
 
     /// 有界重试地认领一格。成功即持有该格（须由调用方写 `在写 = 无序号` 释放）。
-    fn 认领(槽: &留痕槽, 序: u64) -> bool {
+    fn 认领(数据槽: &留痕槽, 序号: u64) -> bool {
         for _ in 0..重试上限 {
-            if 槽
+            if 数据槽
                 .在写
-                .compare_exchange(无序号, 序, Ordering::AcqRel, Ordering::Acquire)
+                .compare_exchange(无序号, 序号, Ordering::AcqRel, Ordering::Acquire)
                 .is_ok()
             {
                 return true;
@@ -265,15 +265,15 @@ impl 留痕缓冲 {
     }
 
     /// 顺序锁读一格。`就绪` 前后一致才认，否则有界重试后放弃（并发覆盖）。
-    fn 读一条(槽: &留痕槽, 序: u64) -> Option<留痕> {
+    fn 读一条(数据槽: &留痕槽, 序号: u64) -> Option<留痕> {
         for _ in 0..重试上限 {
-            let 前 = 槽.就绪.load(Ordering::Acquire);
-            if 前 != 序 {
+            let 前 = 数据槽.就绪.load(Ordering::Acquire);
+            if 前 != 序号 {
                 core::hint::spin_loop();
                 continue;
             }
-            let 一条 = 槽.读字段();
-            if 槽.就绪.load(Ordering::Acquire) == 前 {
+            let 一条 = 数据槽.读字段();
+            if 数据槽.就绪.load(Ordering::Acquire) == 前 {
                 return Some(一条);
             }
             core::hint::spin_loop();

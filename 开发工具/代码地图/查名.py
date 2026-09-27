@@ -44,17 +44,17 @@ from .索引库 import 全部定义, 有库
 实义单字 = set("值码槽号根表键止起名项条位序上左前末首")
 
 
-def 含序数代称作标识符(名: str) -> bool:
+def 含序数代称作标识符(名称: str) -> bool:
     """标识符里有没有「**当序数代称**的序数代称字」（词内的不算，见 `词内序数代称`）。"""
-    余 = 名
+    余 = 名称
     for 词 in 词内序数代称:
         余 = 余.replace(词, "")
     return any(字 in 序数代称字 for 字 in 余)
 
 
-def 是单西文字母(名: str) -> bool:
+def 是单西文字母(名称: str) -> bool:
     """单个**西文字母**的标识符（`f` `i` `n` … 大小写皆算；`_` 不算 —— 它不是字母）。"""
-    return len(名) == 1 and 名.isascii() and 名.isalpha()
+    return len(名称) == 1 and 名称.isascii() and 名称.isalpha()
 
 
 def 是命名件(路径: str) -> bool:
@@ -62,9 +62,9 @@ def 是命名件(路径: str) -> bool:
     return 路径.endswith(命名后缀)
 
 
-def 含西文字母(名: str) -> bool:
+def 含西文字母(名称: str) -> bool:
     """名字里有没有西文字母（**读数用**：命名规范 §六「西文名一律换成中文，除非是强加的」）。"""
-    return any(字.isascii() and 字.isalpha() for 字 in 名)
+    return any(字.isascii() and 字.isalpha() for 字 in 名称)
 
 
 def 分档(定义表: list) -> dict:

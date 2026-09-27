@@ -81,39 +81,39 @@ def 连账本() -> sqlite3.Connection:
 
 # ── 开工 ────────────────────────────────────────────────────────────────────────────────
 
-def 新开工号(连: sqlite3.Connection) -> str:
+def 新开工号(连接: sqlite3.Connection) -> str:
     """下一个开工号：`v1-` + 6 位递增号（**只增不复用**）。
 
     复用号会让旧记录与支线撞名 ⇒ 那是最难查的一类错，所以取「已出现过的最大号 + 1」，
     不取「当前行数 + 1」。
     """
-    行 = 连.execute("select 开工号 from 开工 order by 开工号 desc limit 1").fetchone()
+    行 = 连接.execute("select 开工号 from 开工 order by 开工号 desc limit 1").fetchone()
     号 = int(行["开工号"][3:]) + 1 if 行 else 100001
     return "v1-%06d" % 号
 
 
-def 登记开工(连, 开工号: str, 工作内容: str, 分支名: str, 工作树: str) -> None:
-    连.execute("insert into 开工 (开工号, 工作内容, 分支名, 工作树, 状态, 开工时间) "
+def 登记开工(连接, 开工号: str, 工作内容: str, 分支名: str, 工作树: str) -> None:
+    连接.execute("insert into 开工 (开工号, 工作内容, 分支名, 工作树, 状态, 开工时间) "
               "values (?, ?, ?, ?, ?, ?)",
               (开工号, 工作内容, 分支名, 工作树, 状态_进行中, 时刻串()))
-    连.commit()
+    连接.commit()
 
 
-def 读开工(连, 开工号: str):
+def 读开工(连接, 开工号: str):
     """一条开工 ⇒ dict（没有就是 `None`）。"""
-    行 = 连.execute("select * from 开工 where 开工号 = ?", (开工号,)).fetchone()
+    行 = 连接.execute("select * from 开工 where 开工号 = ?", (开工号,)).fetchone()
     return dict(行) if 行 else None
 
 
-def 列开工(连, 上限: int = 20) -> list:
-    return [dict(行) for 行 in 连.execute(
+def 列开工(连接, 上限: int = 20) -> list:
+    return [dict(行) for 行 in 连接.execute(
         "select * from 开工 order by 开工号 desc limit ?", (上限,))]
 
 
-def 搜开工(连, 关键词: str, 上限: int = 20) -> list:
+def 搜开工(连接, 关键词: str, 上限: int = 20) -> list:
     """按关键词搜历史：面 = 工作内容 + 认领路径 + 改动路径（**不含 diff**，见文件头）。"""
     模 = "%" + 关键词 + "%"
-    return [dict(行) for 行 in 连.execute(
+    return [dict(行) for 行 in 连接.execute(
         "select distinct 开工.* from 开工 "
         "left join 认领 on 认领.开工号 = 开工.开工号 "
         "left join 改动 on 改动.开工号 = 开工.开工号 "
@@ -121,29 +121,29 @@ def 搜开工(连, 关键词: str, 上限: int = 20) -> list:
         "order by 开工.开工号 desc limit ?", (模, 模, 模, 上限))]
 
 
-def 置状态(连, 开工号: str, 状态: str) -> None:
-    连.execute("update 开工 set 状态 = ?, 释放时间 = ? where 开工号 = ?",
+def 置状态(连接, 开工号: str, 状态: str) -> None:
+    连接.execute("update 开工 set 状态 = ?, 释放时间 = ? where 开工号 = ?",
               (状态, 时刻串() if 状态 != 状态_进行中 else None, 开工号))
-    连.commit()
+    连接.commit()
 
 
 # ── 认领 ────────────────────────────────────────────────────────────────────────────────
 
-def 认领文件(连, 开工号: str, 路径指纹表: dict) -> None:
+def 认领文件(连接, 开工号: str, 路径指纹表: dict) -> None:
     """登记/补充认领。**指纹由调用方读盘算好**（agent 从不传指纹）。"""
     for 路径, 指纹 in 路径指纹表.items():
-        连.execute("insert into 认领 (开工号, 路径, 指纹) values (?, ?, ?) "
+        连接.execute("insert into 认领 (开工号, 路径, 指纹) values (?, ?, ?) "
                   "on conflict(开工号, 路径) do update set 指纹 = excluded.指纹",
                   (开工号, 路径, 指纹))
-    连.commit()
+    连接.commit()
 
 
-def 读认领(连, 开工号: str) -> dict:
-    return {行["路径"]: 行["指纹"] for 行 in 连.execute(
+def 读认领(连接, 开工号: str) -> dict:
+    return {行["路径"]: 行["指纹"] for 行 in 连接.execute(
         "select 路径, 指纹 from 认领 where 开工号 = ?", (开工号,))}
 
 
-def 查跨开工冲突(连, 开工号: str, 路径表) -> dict:
+def 查跨开工冲突(连接, 开工号: str, 路径表) -> dict:
     """`{路径: [也认领了它的别的开工号…]}` —— 别的**未释放**开工占着同一个件。
 
     **只报不拦**：有时确实要两条开工改同一个件的不同节。但工具不许一句不说 ——
@@ -151,7 +151,7 @@ def 查跨开工冲突(连, 开工号: str, 路径表) -> dict:
     """
     占表 = {}
     for 路径 in 路径表:
-        行表 = 连.execute(
+        行表 = 连接.execute(
             "select 认领.开工号 from 认领 join 开工 on 认领.开工号 = 开工.开工号 "
             "where 认领.路径 = ? and 认领.开工号 <> ? and 开工.状态 <> ?",
             (路径, 开工号, 状态_已释放)).fetchall()
@@ -160,7 +160,7 @@ def 查跨开工冲突(连, 开工号: str, 路径表) -> dict:
     return 占表
 
 
-def 查同内容未释放(连, 工作内容: str, 排除开工号: str) -> list:
+def 查同内容未释放(连接, 工作内容: str, 排除开工号: str) -> list:
     """**未释放**的开工里，工作内容与本次逐字相同（去首尾空白后）的那些 ⇒ `[(开工号, 工作内容)]`。
 
     **只报不拦**（口径与 `查跨开工冲突` 同一条）：有时确实要重开一条。但工具不许一句不说 ——
@@ -170,22 +170,22 @@ def 查同内容未释放(连, 工作内容: str, 排除开工号: str) -> list:
     内容 = 工作内容.strip()
     if not 内容:
         return []
-    return [(行["开工号"], 行["工作内容"]) for 行 in 连.execute(
+    return [(行["开工号"], 行["工作内容"]) for 行 in 连接.execute(
         "select 开工号, 工作内容 from 开工 "
         "where 工作内容 = ? and 开工号 <> ? and 状态 <> ? order by 开工号",
         (内容, 排除开工号, 状态_已释放))]
 
 
-def 查重复登记(连, 开工号: str, 工作内容: str, 路径表) -> list:
+def 查重复登记(连接, 开工号: str, 工作内容: str, 路径表) -> list:
     """疑似重复登记的别的**未释放**开工 ⇒ `[(别的开工号, 原因)]`。**只报不拦**。
 
     两个面：① 工作内容逐字相同；② 认领路径**高度重叠**（重合 ≥ 2 件且占本次认领的一半以上）。
     路径那一面**复用** `查跨开工冲突`（同一份实现）—— 不写平行的第二套判断。
     """
     出 = [(别的号, "工作内容逐字相同（它还没释放）")
-         for 别的号, _ in 查同内容未释放(连, 工作内容, 开工号)]
+         for 别的号, _ in 查同内容未释放(连接, 工作内容, 开工号)]
     重合表: dict = {}
-    for 路径, 号表 in 查跨开工冲突(连, 开工号, 路径表).items():
+    for 路径, 号表 in 查跨开工冲突(连接, 开工号, 路径表).items():
         for 别的号 in 号表:
             重合表.setdefault(别的号, []).append(路径)
     for 别的号, 件表 in sorted(重合表.items()):
@@ -209,32 +209,32 @@ def 前置提示行() -> str:
             "  （工具优先级 MCP 优先 · 硬纪律 · 提速红线 · 权威源地图 —— 腿不知道它存在 = 等于没写）" % 路)
 
 
-def 写回指纹(连, 开工号: str, 路径: str, 指纹: str) -> None:
+def 写回指纹(连接, 开工号: str, 路径: str, 指纹: str) -> None:
     """写盘之后把**新指纹**内置回认领那一栏（agent 全程不碰指纹）。
 
     **是 upsert 不是 update**：新建出来的件在认领那一刻盘上还不存在 ⇒ 认领表里没有它那一行
     （`读盘指纹` 只收读得到的件）⇒ 写完必须能**补进去**，否则这个件下一次改动会被第 ③ 道闸
     判成「变过」而永远改不动（实测这条：不改 upsert，新建完就再也改不了它）。
     """
-    连.execute("insert into 认领 (开工号, 路径, 指纹) values (?, ?, ?) "
+    连接.execute("insert into 认领 (开工号, 路径, 指纹) values (?, ?, ?) "
               "on conflict(开工号, 路径) do update set 指纹 = excluded.指纹",
               (开工号, 路径, 指纹))
-    连.commit()
+    连接.commit()
 
 
 # ── 改动 ────────────────────────────────────────────────────────────────────────────────
 
-def 记改动(连, 开工号: str, 路径: str, 功能: str, 写前指纹: str, 写后指纹: str) -> None:
-    连.execute("insert into 改动 (开工号, 路径, 功能, 写前指纹, 写后指纹, 时间) "
+def 记改动(连接, 开工号: str, 路径: str, 功能: str, 写前指纹: str, 写后指纹: str) -> None:
+    连接.execute("insert into 改动 (开工号, 路径, 功能, 写前指纹, 写后指纹, 时间) "
               "values (?, ?, ?, ?, ?, ?)",
               (开工号, 路径, 功能, 写前指纹, 写后指纹, 时刻串()))
-    连.commit()
+    连接.commit()
 
 
-def 读改动(连, 开工号: str) -> list:
-    return [dict(行) for 行 in 连.execute(
+def 读改动(连接, 开工号: str) -> list:
+    return [dict(行) for 行 in 连接.execute(
         "select * from 改动 where 开工号 = ? order by 编号", (开工号,))]
 
 
-def 全部开工(连) -> list:
-    return [dict(行) for 行 in 连.execute("select * from 开工 order by 开工号")]
+def 全部开工(连接) -> list:
+    return [dict(行) for 行 in 连接.execute("select * from 开工 order by 开工号")]

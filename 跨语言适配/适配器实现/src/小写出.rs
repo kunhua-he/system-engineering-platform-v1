@@ -34,61 +34,61 @@ pub enum JSON值 {
 ///
 /// 缩进的理由与 `接口面形状.md` 同一条：根端点的返回是给人也是给 agent 读的说明书，
 /// 压成一行就丢掉了这层用途。
-pub fn 写协议值(值: &JSON值) -> String {
+pub fn 写协议值(待处理值: &JSON值) -> String {
     let mut 出 = String::new();
-    写值(&mut 出, 值, 0);
+    写值(&mut 出, 待处理值, 0);
     出
 }
 
 /// 缩进一个单位（两空格）并换行。**公开**：`对外接口面/调用接口面/src/协议写出.rs` 也用它 ——
 /// 同一套排版只许有一份实现。
-pub fn 缩进(出: &mut String, 层: usize) {
-    出.push('\n');
-    for _ in 0..层 {
-        出.push_str("  ");
+pub fn 缩进(输出缓冲: &mut String, 层级: usize) {
+    输出缓冲.push('\n');
+    for _ in 0..层级 {
+        输出缓冲.push_str("  ");
     }
 }
 
-fn 写值(出: &mut String, 值: &JSON值, 层: usize) {
-    match 值 {
-        JSON值::空值 => 出.push_str("null"),
-        JSON值::逻辑真 => 出.push_str("true"),
-        JSON值::逻辑假 => 出.push_str("false"),
-        JSON值::整数(数) => 出.push_str(&数.to_string()),
-        JSON值::文本(文) => 写文本(出, 文),
+fn 写值(输出缓冲: &mut String, 待处理值: &JSON值, 层级: usize) {
+    match 待处理值 {
+        JSON值::空值 => 输出缓冲.push_str("null"),
+        JSON值::逻辑真 => 输出缓冲.push_str("true"),
+        JSON值::逻辑假 => 输出缓冲.push_str("false"),
+        JSON值::整数(数) => 输出缓冲.push_str(&数.to_string()),
+        JSON值::文本(文) => 写文本(输出缓冲, 文),
         JSON值::数组(项) => {
             if 项.is_empty() {
-                出.push_str("[]");
+                输出缓冲.push_str("[]");
                 return;
             }
-            出.push('[');
+            输出缓冲.push('[');
             for (序, 一) in 项.iter().enumerate() {
                 if 序 > 0 {
-                    出.push(',');
+                    输出缓冲.push(',');
                 }
-                缩进(出, 层 + 1);
-                写值(出, 一, 层 + 1);
+                缩进(输出缓冲, 层级 + 1);
+                写值(输出缓冲, 一, 层级 + 1);
             }
-            缩进(出, 层);
-            出.push(']');
+            缩进(输出缓冲, 层级);
+            输出缓冲.push(']');
         }
         JSON值::对象(成员) => {
             if 成员.is_empty() {
-                出.push_str("{}");
+                输出缓冲.push_str("{}");
                 return;
             }
-            出.push('{');
+            输出缓冲.push('{');
             for (序, (键, 一)) in 成员.iter().enumerate() {
                 if 序 > 0 {
-                    出.push(',');
+                    输出缓冲.push(',');
                 }
-                缩进(出, 层 + 1);
-                写文本(出, 键);
-                出.push_str(": ");
-                写值(出, 一, 层 + 1);
+                缩进(输出缓冲, 层级 + 1);
+                写文本(输出缓冲, 键);
+                输出缓冲.push_str(": ");
+                写值(输出缓冲, 一, 层级 + 1);
             }
-            缩进(出, 层);
-            出.push('}');
+            缩进(输出缓冲, 层级);
+            输出缓冲.push('}');
         }
     }
 }
@@ -96,21 +96,21 @@ fn 写值(出: &mut String, 值: &JSON值, 层: usize) {
 /// 写一个 JSON 字符串：只转 `"` `\` 与 `U+0000..U+001F`（见文件头）。
 /// 把一个字符串按 JSON 规则转义着写进去。**公开**：转义表是**正确性资产**
 /// （少转一个控制字符就产出非法 JSON）⇒ 只许有一份，上层复用本函数。
-pub fn 写文本(出: &mut String, 文: &str) {
-    出.push('"');
-    for 字 in 文.chars() {
+pub fn 写文本(输出缓冲: &mut String, 文本: &str) {
+    输出缓冲.push('"');
+    for 字 in 文本.chars() {
         match 字 {
-            '"' => 出.push_str("\\\""),
-            '\\' => 出.push_str("\\\\"),
-            '\n' => 出.push_str("\\n"),
-            '\r' => 出.push_str("\\r"),
-            '\t' => 出.push_str("\\t"),
-            '\u{08}' => 出.push_str("\\b"),
-            '\u{0C}' => 出.push_str("\\f"),
+            '"' => 输出缓冲.push_str("\\\""),
+            '\\' => 输出缓冲.push_str("\\\\"),
+            '\n' => 输出缓冲.push_str("\\n"),
+            '\r' => 输出缓冲.push_str("\\r"),
+            '\t' => 输出缓冲.push_str("\\t"),
+            '\u{08}' => 输出缓冲.push_str("\\b"),
+            '\u{0C}' => 输出缓冲.push_str("\\f"),
             // 其余控制字符必须转义（裸控制字符不是合法 JSON）。
-            字 if (字 as u32) < 0x20 => 出.push_str(&format!("\\u{:04x}", 字 as u32)),
-            字 => 出.push(字),
+            字 if (字 as u32) < 0x20 => 输出缓冲.push_str(&format!("\\u{:04x}", 字 as u32)),
+            字 => 输出缓冲.push(字),
         }
     }
-    出.push('"');
+    输出缓冲.push('"');
 }

@@ -34,11 +34,11 @@ import sys
 改文件只能走 v1_edit（Edit / Write 会被钩子拦）。"""
 
 
-def _回(输出, 码, 结果=None, 错=None):
-    """写一条响应。`错` 非空 ⇒ JSON-RPC 错误对象（协议级失败，不是工具失败）。"""
+def _回(输出, 码, 结果=None, 错误=None):
+    """写一条响应。`错误` 非空 ⇒ JSON-RPC 错误对象（协议级失败，不是工具失败）。"""
     信 = {"jsonrpc": "2.0", "id": 码}
-    if 错 is not None:
-        信["error"] = 错
+    if 错误 is not None:
+        信["error"] = 错误
     else:
         信["result"] = 结果
     输出.write(json.dumps(信, ensure_ascii=False) + "\n")

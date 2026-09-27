@@ -9,8 +9,8 @@ from PE形状 import 解析错误
 def 解版本(块字节, 资源id):
     out = []
 
-    def 遍历版本块(起, 止, 层):
-        块起 = 起
+    def 遍历版本块(区间起点, 止, 层级):
+        块起 = 区间起点
         while 块起 + 6 <= 止:
             长, 值长, 型 = struct.unpack_from("<HHH", 块字节, 块起)
             if 长 == 0:
@@ -30,10 +30,10 @@ def 解版本(块字节, 资源id):
             if 值起 + 字节数 > 块起 + 长:
                 raise 解析错误("版本资源 %s 的子块 %r 的值越界" % (资源id, 键))
             if 型 == 1:
-                out.append((层, 键, 块字节[值起:值起 + 字节数].decode("utf-16le").rstrip("\0")))
+                out.append((层级, 键, 块字节[值起:值起 + 字节数].decode("utf-16le").rstrip("\0")))
             else:
-                out.append((层, 键, "<%d 字节二进制> %s" % (值长, 块字节[值起:值起 + 字节数][:12].hex(" "))))
-            遍历版本块(值起 + 字节数, 块起 + 长, 层 + 1)     # 型 0 的根块也有子块（StringFileInfo/VarFileInfo）
+                out.append((层级, 键, "<%d 字节二进制> %s" % (值长, 块字节[值起:值起 + 字节数][:12].hex(" "))))
+            遍历版本块(值起 + 字节数, 块起 + 长, 层级 + 1)     # 型 0 的根块也有子块（StringFileInfo/VarFileInfo）
             块起 = (块起 + 长 + 3) & ~3
     遍历版本块(0, len(块字节), 0)
     if not out:

@@ -169,31 +169,31 @@ fn 底座命令表_名称与说明逐字等于能力声明() {
 /// 为什么自身写这一小段：本 crate 零第三方依赖（同 `编译器支持库/src/测试用例/最小JSON.rs`
 /// 的理由），而本测试只要两个顶层字符串字段；搬一个通用 JSON 读取器进来就是
 /// 「同一件事两套实现」（`项目文档/决策记录/2026-09-27_短期红可接受与反漂移选型.md` §二）。
-fn 取顶层字符串(文本: &str, 键: &str) -> Option<String> {
+fn 取顶层字符串(文本: &str, 键名: &str) -> Option<String> {
     let 字: Vec<char> = 文本.chars().collect();
     let mut 位 = 0usize;
 
-    fn 跳空白(字: &[char], 位: &mut usize) {
-        while 字.get(*位).is_some_and(|当前字| 当前字.is_whitespace()) {
-            *位 += 1;
+    fn 跳空白(字符表: &[char], 位置: &mut usize) {
+        while 字符表.get(*位置).is_some_and(|当前字| 当前字.is_whitespace()) {
+            *位置 += 1;
         }
     }
 
     /// 读一个 JSON 字符串（当前位须指向开引号）。
-    fn 读串(字: &[char], 位: &mut usize) -> Option<String> {
-        if *字.get(*位)? != '"' {
+    fn 读串(字符表: &[char], 位置: &mut usize) -> Option<String> {
+        if *字符表.get(*位置)? != '"' {
             return None;
         }
-        *位 += 1;
+        *位置 += 1;
         let mut 出 = String::new();
         loop {
-            let 当前字 = *字.get(*位)?;
-            *位 += 1;
+            let 当前字 = *字符表.get(*位置)?;
+            *位置 += 1;
             match 当前字 {
                 '"' => return Some(出),
                 '\\' => {
-                    let 转 = *字.get(*位)?;
-                    *位 += 1;
+                    let 转 = *字符表.get(*位置)?;
+                    *位置 += 1;
                     match 转 {
                         '"' => 出.push('"'),
                         '\\' => 出.push('\\'),
@@ -206,8 +206,8 @@ fn 取顶层字符串(文本: &str, 键: &str) -> Option<String> {
                         'u' => {
                             let mut 码 = 0u32;
                             for _ in 0..4 {
-                                码 = 码 * 16 + (*字.get(*位)?).to_digit(16)?;
-                                *位 += 1;
+                                码 = 码 * 16 + (*字符表.get(*位置)?).to_digit(16)?;
+                                *位置 += 1;
                             }
                             出.push(char::from_u32(码)?);
                         }
@@ -220,18 +220,18 @@ fn 取顶层字符串(文本: &str, 键: &str) -> Option<String> {
     }
 
     /// 跳过一个 JSON 值（字符串 / 嵌套容器 / 标量）。
-    fn 跳值(字: &[char], 位: &mut usize) -> Option<()> {
-        跳空白(字, 位);
-        match *字.get(*位)? {
+    fn 跳值(字符表: &[char], 位置: &mut usize) -> Option<()> {
+        跳空白(字符表, 位置);
+        match *字符表.get(*位置)? {
             '"' => {
-                读串(字, 位)?;
+                读串(字符表, 位置)?;
             }
             '{' | '[' => {
-                let (开, 闭) = if *字.get(*位)? == '{' { ('{', '}') } else { ('[', ']') };
+                let (开, 闭) = if *字符表.get(*位置)? == '{' { ('{', '}') } else { ('[', ']') };
                 let mut 深 = 0i32;
                 loop {
-                    let 当前字 = *字.get(*位)?;
-                    *位 += 1;
+                    let 当前字 = *字符表.get(*位置)?;
+                    *位置 += 1;
                     if 当前字 == 开 {
                         深 += 1;
                     } else if 当前字 == 闭 {
@@ -240,14 +240,14 @@ fn 取顶层字符串(文本: &str, 键: &str) -> Option<String> {
                             return Some(());
                         }
                     } else if 当前字 == '"' {
-                        *位 -= 1;
-                        读串(字, 位)?;
+                        *位置 -= 1;
+                        读串(字符表, 位置)?;
                     }
                 }
             }
             _ => {
-                while 字.get(*位).is_some_and(|当前字| !matches!(当前字, ',' | '}' | ']')) {
-                    *位 += 1;
+                while 字符表.get(*位置).is_some_and(|当前字| !matches!(当前字, ',' | '}' | ']')) {
+                    *位置 += 1;
                 }
             }
         }
@@ -264,14 +264,14 @@ fn 取顶层字符串(文本: &str, 键: &str) -> Option<String> {
         if *字.get(位)? == '}' {
             return None; // 扫完顶层还没找到该键
         }
-        let 键名 = 读串(&字, &mut 位)?;
+        let 顶层键名 = 读串(&字, &mut 位)?;
         跳空白(&字, &mut 位);
         if *字.get(位)? != ':' {
             return None;
         }
         位 += 1;
         跳空白(&字, &mut 位);
-        if 键名 == 键 {
+        if 顶层键名 == 键名 {
             if *字.get(位)? != '"' {
                 return None; // 该键的值不是字符串 ⇒ fail-closed
             }

@@ -33,8 +33,8 @@ macro_rules! 造号空间类型 {
 
         impl $名 {
             /// 造一个。
-            pub const fn 新建(值: u32) -> Self {
-                Self(值)
+            pub const fn 新建(待处理值: u32) -> Self {
+                Self(待处理值)
             }
             /// 取出裸 `u32`。**只在确实要落到裸数时用**。
             pub const fn 取号值(self) -> u32 {
@@ -43,33 +43,33 @@ macro_rules! 造号空间类型 {
         }
 
         impl From<u32> for $名 {
-            fn from(值: u32) -> Self {
-                Self(值)
+            fn from(待处理值: u32) -> Self {
+                Self(待处理值)
             }
         }
         impl From<$名> for u32 {
-            fn from(值: $名) -> Self {
-                值.0
+            fn from(待处理值: $名) -> Self {
+                待处理值.0
             }
         }
         impl PartialEq<u32> for $名 {
-            fn eq(&self, 另: &u32) -> bool {
-                self.0 == *另
+            fn eq(&self, 另一份: &u32) -> bool {
+                self.0 == *另一份
             }
         }
         impl PartialEq<$名> for u32 {
-            fn eq(&self, 另: &$名) -> bool {
-                *self == 另.0
+            fn eq(&self, 另一份: &$名) -> bool {
+                *self == 另一份.0
             }
         }
         impl PartialOrd<u32> for $名 {
-            fn partial_cmp(&self, 另: &u32) -> Option<core::cmp::Ordering> {
-                self.0.partial_cmp(另)
+            fn partial_cmp(&self, 另一份: &u32) -> Option<core::cmp::Ordering> {
+                self.0.partial_cmp(另一份)
             }
         }
         impl PartialOrd<$名> for u32 {
-            fn partial_cmp(&self, 另: &$名) -> Option<core::cmp::Ordering> {
-                self.partial_cmp(&另.0)
+            fn partial_cmp(&self, 另一份: &$名) -> Option<core::cmp::Ordering> {
+                self.partial_cmp(&另一份.0)
             }
         }
     };

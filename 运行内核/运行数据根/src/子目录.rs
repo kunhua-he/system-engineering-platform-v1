@@ -37,13 +37,13 @@ impl 子目录 {
 
 /// 某一类子目录的路径。**只拼路径，不建目录**（建目录是 [`确保子目录`] 的事 ——
 /// 「只是想算个路径」不该有副作用）。
-pub fn 子目录路径(根: &Path, 类: 子目录) -> PathBuf {
-    根.join(类.取名称())
+pub fn 子目录路径(根目录: &Path, 类别: 子目录) -> PathBuf {
+    根目录.join(类别.取名称())
 }
 
 /// 建出某一类子目录并交出路径（父目录一并建）。
-pub fn 确保子目录(根: &Path, 类: 子目录) -> std::io::Result<PathBuf> {
-    let 路 = 子目录路径(根, 类);
+pub fn 确保子目录(根目录: &Path, 类别: 子目录) -> std::io::Result<PathBuf> {
+    let 路 = 子目录路径(根目录, 类别);
     std::fs::create_dir_all(&路)?;
     Ok(路)
 }

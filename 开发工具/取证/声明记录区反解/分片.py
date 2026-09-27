@@ -41,15 +41,15 @@ def 文件表(目录) -> list:
     return sorted(set(命中))
 
 
-def 解析分片形(文) -> tuple:
+def 解析分片形(文本) -> tuple:
     """`"i/n"` → `(i, n)`。**形状错就抛**（不默认、不猜）—— 分片编号猜错等于少算/重算一片。"""
-    if not 文 or "/" not in 文:
-        raise ValueError("分片形必须是 `i/n`（例：0/8），实得 %r" % (文,))
-    左, _, 右 = 文.partition("/")
+    if not 文本 or "/" not in 文本:
+        raise ValueError("分片形必须是 `i/n`（例：0/8），实得 %r" % (文本,))
+    左, _, 右 = 文本.partition("/")
     try:
         序号, 片数 = int(左), int(右)
     except ValueError:
-        raise ValueError("分片形必须是整数 `i/n`（例：0/8），实得 %r" % (文,))
+        raise ValueError("分片形必须是整数 `i/n`（例：0/8），实得 %r" % (文本,))
     if 片数 < 1:
         raise ValueError("分片总数必须 ≥ 1，实得 %d" % 片数)
     if not (0 <= 序号 < 片数):
