@@ -43,7 +43,7 @@ def 不可变读数(标识: str) -> tuple:
 def 流量端口() -> int:
     """流量端口 = 契约里的默认端口（唯一定义处：`契约声明/常量表.json`），可用
     `V1_GATEWAY_PORT` 覆盖（**统一名，唯一一处** —— 与前端命令行界面同读它，
-    见 `项目文档/设计文档/接口面形状.md` §六 第 6 条；台账 #50 收口）。"""
+    见 `项目文档/设计文档/接口面形状.md` §六 第 6 条）。"""
     if os.environ.get("V1_GATEWAY_PORT"):
         return int(os.environ["V1_GATEWAY_PORT"])
     表 = json.loads((仓根 / "契约声明" / "常量表.json").read_text(encoding="utf-8"))

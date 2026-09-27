@@ -15,6 +15,7 @@ from .注入_散文 import 注入_散文落忽略目录
 from .注入_入口覆盖 import 注入_入口无壳不在白名单
 from .注入_运行数据 import 注入_自拼运行数据路径
 from .注入_落点 import 注入_判据落点悬空
+from .注入_台账号 import 注入_台账号引用  # noqa: F401
 
 from . import 常量
 
