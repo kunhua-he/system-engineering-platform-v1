@@ -117,14 +117,14 @@ impl 适配器 {
     fn 问卸载按标识(
         &self,
         标识串: &str,
-        问: impl FnOnce(&v1_notify::通知通道, *const u8) -> 派发结果,
+        询问函数: impl FnOnce(&v1_notify::通知通道, *const u8) -> 派发结果,
     ) -> 派发结果 {
         let mut 账 = 取锁(&self.通知);
         let Some(位) = 账.标识表.iter().position(|项| 项.标识串 == 标识串) else {
             return 派发结果::未命中;
         };
         let 指针 = 账.标识表[位].指针;
-        let 结果 = 问(&账.通道, 指针);
+        let 结果 = 询问函数(&账.通道, 指针);
         if 结果 == 派发结果::成功 {
             // 卸载必须收回：端点已由 `通知通道` 摘掉，索引也同步摘掉（否则就绪读数会虚高）。
             账.标识表.remove(位);
