@@ -14,6 +14,7 @@ import fcntl
 import hashlib
 import json
 import os
+import subprocess
 import sys
 import tempfile
 import time
@@ -27,6 +28,31 @@ EXIT_OK = 0
 EXIT_USAGE = 2
 EXIT_CONFLICT = 3
 EXIT_NOT_FOUND = 4
+
+# ── 提交闸的模式 ──────────────────────────────────────────────────────────────
+# ★ **默认警告**：只报不拦。理由（说明.md §六 第 2 条）：现在没人在用认领机制
+#   （账本实测为空）⇒ 硬拦会挡住**所有**提交，把闸门变成「谁都不能提交」。
+#   硬拦是**显式开关**：命令行 `--硬拦`，或环境变量 `CLAIM_GATE=硬拦`（别名 block/1/true）。
+#   模式的定义只此一处 —— 命令行与环境变量都得经过 gate_mode() 归一。
+GATE_WARN = "警告"
+GATE_BLOCK = "硬拦"
+GATE_BLOCK_ALIASES = ("硬拦", "block", "1", "true", "on", "yes")
+
+
+def gate_mode(raw=None, forced=False):
+    """→ (模式, 读到的原值, 认不认得)。认不得的值**退回警告**并回报「不认得」——
+    拼错一个环境变量就静默变成硬拦，比不拦更坏。"""
+    if forced:
+        return GATE_BLOCK, "命令行 --硬拦", True
+    raw = os.environ.get("CLAIM_GATE", "") if raw is None else raw
+    if not raw.strip():
+        return GATE_WARN, "（没设）", True
+    v = raw.strip()
+    if v in GATE_BLOCK_ALIASES:
+        return GATE_BLOCK, v, True
+    if v in (GATE_WARN, "warn", "警告"):
+        return GATE_WARN, v, True
+    return GATE_WARN, v, False
 
 LEG_CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_"
 
@@ -242,6 +268,175 @@ def op_query(led, only_active=True, now=None):
             "读数": "判得了" if rows else "未判（空集不算通过）"}
 
 
+# ── 提交闸：改动路径 ⊆ 认领集？ ───────────────────────────────────────────────
+# 这是 §五 说的「真正的强制点」：账本说谁占了什么，vs diff 里实际改了哪些路径。
+# 口径（说明.md §六 第 2 条）：**默认只报不拦**，硬拦是显式开关。
+#
+# ★ 这里**不做「谁改的」归属推断**：git 的 diff 里没有腿标识，账本里也没有提交。
+#   所以闸只回答一个问题：「本次要提交的路径，是不是全都在**你报的那个腿**的认领集里」。
+#   腿标识由提交者显式给出（`--腿` / `CLAIM_LEG`）—— 推断不出来就不许猜（猜了就是假绿）。
+
+def git_toplevel(cwd=None):
+    """→ 当前目录所属 git 仓的仓根，读不到给 None。
+
+    ★ 为什么要它、而不用脚本自己的 `ROOT`：账本里的路径是**仓根相对**的，
+    `git diff --cached` 吐出来的路径也是**仓根相对**的 —— 两边必须同一个基准。
+    脚本的 `ROOT` 是「脚本住在哪个仓」，提交发生在「你站在哪个仓」；**两者可以不是同一个**
+    （例：在别处 import 本件、或脚本被拷去守另一个仓）。基准一旦悄悄错开，
+    比对就退化成「比两份互不相干的字符串」——**全绿而什么都没判**（假绿）。
+    故这里显式取 cwd 的仓根，并与 ROOT 对不上时报「判不了」（见 op_gate）。
+    """
+    try:
+        p = subprocess.run(["git", "rev-parse", "--show-toplevel"],
+                           capture_output=True, cwd=cwd)
+    except OSError:
+        return None
+    if p.returncode != 0:
+        return None
+    top = p.stdout.decode("utf-8", "surrogateescape").strip()
+    return os.path.realpath(top) if top else None
+
+
+def leg_from_branch(cwd=None):
+    """→ 当前分支按 `腿/<腿名>` 约定推出的腿标识；不是这条约定就给 None。
+
+    ★ 为什么允许推：`开发工具/并行工作树.sh 新建 <腿名>` 建的分支就叫 `腿/<腿名>`
+    —— **分支名就是腿标识**，这是机制一已经定下的落点，这里只是读它，没有另立一套。
+    不是 `腿/` 开头的分支（收口方在主树、或人在别的分支上提交）⇒ 返回 None，
+    闸报「判不了」（**不许猜**：猜错腿名 = 拿别人的认领集去判，那是假绿）。
+    """
+    try:
+        p = subprocess.run(["git", "rev-parse", "--abbrev-ref", "HEAD"],
+                           capture_output=True, cwd=cwd)
+    except OSError:
+        return None
+    if p.returncode != 0:
+        return None
+    b = p.stdout.decode("utf-8", "surrogateescape").strip()
+    return b[len("腿/"):] if b.startswith("腿/") and len(b) > len("腿/") else None
+
+
+def git_staged_paths(root=ROOT):
+    """→ (路径集, 说明, 退出码)。走 `git diff --cached`，**不是**工作区 diff ——
+    闸问的是「将要提交的那些路径」，工作区里没暂存的改动不算（`git commit` 不会带上它们）。
+
+    两条实测口径：
+      · 必须在**仓根**跑：`git -C <子目录> diff --cached --name-only` 仍出**仓根相对**路径，
+        故这里显式 `-C root`，让「读出来的路径」与「账本里的路径」同一套基准；
+      · `--no-renames`：改名必须**两边都报**（旧路径 + 新路径）。默认的改名探测只报新路径，
+        于是「旧租约挂在 a 上、b 没人认领」这条（说明.md §五 第 5 条）就漏过去了。
+    """
+    cmd = ["git", "-C", root, "diff", "--cached", "--name-only", "-z",
+           "--no-renames", "--diff-filter=ACMRDT"]
+    try:
+        p = subprocess.run(cmd, capture_output=True)
+    except OSError as e:
+        return None, "调不起 git（%r）" % (e,), EXIT_USAGE
+    if p.returncode != 0:
+        return None, "git 退出码 %d：%s" % (
+            p.returncode, p.stderr.decode("utf-8", "replace").strip()), EXIT_USAGE
+    raw = p.stdout.decode("utf-8", "surrogateescape")
+    return [f for f in raw.split("\0") if f], "git diff --cached --name-only", EXIT_OK
+
+
+def op_gate(led, leg, staged_raw, mode=GATE_WARN, now=None, root=ROOT):
+    """比对「本次改动涉及的文件」与「账本里本腿的认领集」，报出不在集里的。
+
+    返回的 `结果` 三态：
+      · `全在集里`  —— 每条改动路径都在本腿认领集里（闸放行）
+      · `有不在集里` —— 列出了 `不在认领集` 与 `没人认领`（闸在硬拦模式下拒）
+      · `判不了`    —— 缺腿标识 / 本腿无租约 / 仓外路径 / 基准不一致（**不算通过**）
+    """
+    now = now_ts() if now is None else now
+    out = {"腿标识": leg, "模式": mode, "基准": "git diff --cached（将要提交的路径）"}
+
+    if not leg:
+        out.update({"结果": "判不了", "缺什么": "没给腿标识（--腿 <腿标识> 或 CLAIM_LEG）",
+                    "提示": "git 的 diff 与账本里都没有「谁改的」⇒ 腿标识只能显式给，不许猜"})
+        return out
+
+    # ★ 基准一致性：账本路径基准（root）必须与本次提交的仓根同源，否则比对无意义。
+    top = git_toplevel()
+    if top is not None and top != os.path.realpath(root):
+        out.update({"结果": "判不了",
+                    "缺什么": "本次提交的仓根（%s）与账本所在的仓根（%s）不是同一个" % (top, root),
+                    "提示": "账本路径是仓根相对的 ⇒ 两个仓根不同则比对不成立（不许按字符串硬比）。"
+                            "每条腿请在自己的工作树里跑：那里脚本与账本都在同一棵树内"})
+        return out
+
+    paths, outside = norm_paths(staged_raw, root=root)
+    out["改动路径数"] = len(paths)
+    out["改动路径"] = paths
+    if outside:
+        out.update({"结果": "判不了", "缺什么": "改动里有仓外路径：%s" % "、".join(outside)})
+        return out
+
+    holders = {}
+    for lease in led.data["租约"]:
+        for p in lease["路径集"]:
+            holders.setdefault(p, lease)
+
+    mine = None
+    for lease in led.data["租约"]:
+        if lease["腿标识"] == leg:
+            mine = lease
+            break
+    if mine is None:
+        out.update({"结果": "判不了",
+                    "缺什么": "账本里没有腿 %s 的租约（本腿一条路径都没认领）" % leg,
+                    "账本读到总条数": len(led.data["租约"]),
+                    "提示": "先认领：认领 %s <路径>..." % leg})
+        return out
+
+    claimed = set(mine["路径集"])
+    out.update({"认领集": sorted(claimed), "认领集大小": len(claimed),
+                "到期时间": mine["到期时间"], "租约状态": lease_status(mine, now)})
+
+    if not paths:
+        out.update({"结果": "判不了", "缺什么": "本次没有要提交的路径（空集不算通过）"})
+        return out
+
+    不在 = [p for p in paths if p not in claimed]
+    没人认领 = [p for p in 不在 if p not in holders]
+    被谁占 = {p: holders[p]["腿标识"] for p in 不在 if p in holders}
+    out["不在认领集"] = 不在
+    out["没人认领"] = 没人认领
+    out["被别人占"] = 被谁占
+    out["结果"] = "全在集里" if not 不在 else "有不在集里"
+    return out
+
+
+def render_gate(res):
+    mode = res.get("模式", GATE_WARN)
+    head = {"全在集里": "提交闸：全在认领集里 ⇒ 放行",
+            "有不在集里": "提交闸：有路径不在认领集里",
+            "判不了": "提交闸：判不了（不算通过）"}.get(res["结果"], "提交闸：%s" % res["结果"])
+    out = ["%s（模式=%s）" % (head, mode),
+           "  腿标识   : %s" % (res.get("腿标识") or "（没给）"),
+           "  基准     : %s" % res.get("基准", "-")]
+    if res["结果"] == "判不了":
+        out.append("  缺什么   : %s" % res.get("缺什么", "-"))
+        if res.get("提示"):
+            out.append("  提示     : %s" % res["提示"])
+        if "账本读到总条数" in res:
+            out.append("  账本     : 读到 %d 条租约" % res["账本读到总条数"])
+        return "\n".join(out)
+
+    out += ["  改动路径 : %d 条（账本里本腿认领 %d 条，租约%s）" % (
+        res["改动路径数"], res["认领集大小"], res.get("租约状态", "-"))]
+    if res["结果"] == "全在集里":
+        return "\n".join(out)
+    out.append("  不在认领集里 %d 条：" % len(res["不在认领集"]))
+    for p in res["不在认领集"]:
+        who = res["被别人占"].get(p)
+        out.append("    %s%s" % (p, "（被 %s 占）" % who if who else "（没人认领）"))
+    out.append("  ⇒ %s" % ("**只报不拦**（警告模式）—— 要它拒提交，见 开发工具/认领机制/说明.md §六："
+                           "设 CLAIM_GATE=硬拦 或给 --硬拦"
+                           if mode != GATE_BLOCK else
+                           "**硬拦模式**：这些路径不在你的认领集里 ⇒ 拒提交。"))
+    return "\n".join(out)
+
+
 # ── 输出渲染（人读的那一版） ─────────────────────────────────────────────────
 
 def render_claim(res):
@@ -300,7 +495,7 @@ def render_reclaim(res):
 
 # ── 命令行 ───────────────────────────────────────────────────────────────────
 
-BOOL_FLAGS = ("强制", "全部过期", "含过期", "json")
+BOOL_FLAGS = ("强制", "全部过期", "含过期", "json", "硬拦")
 
 
 def parse_args(args):
@@ -330,9 +525,20 @@ def usage():
   python3 开发工具/认领机制/认领机制.py 收工释放 <腿标识>
   python3 开发工具/认领机制/认领机制.py 查活跃 [--含过期]
   python3 开发工具/认领机制/认领机制.py 回收 (--腿 <腿标识> [--强制] | --全部过期)
+  python3 开发工具/认领机制/认领机制.py 提交闸 [--腿 <腿标识>] [--硬拦]
   加 --json 出机器可读的一版。退出码：0 成功 · 2 用法/参数错 · 3 冲突或被拒 · 4 无此租约。
 腿标识用 ASCII（字母/数字/短横线/下划线），与 开发工具/并行工作树.sh 的腿名一致。
-它只挡得住**愿意来认领的腿**；挡不住什么逐条见 开发工具/认领机制/说明.md。""")
+它只挡得住**愿意来认领的腿**；挡不住什么逐条见 开发工具/认领机制/说明.md。
+
+提交闸（比对「将要提交的路径」与账本里本腿的认领集）：
+  ★ **默认只报不拦**（警告模式）—— 现在没人在用认领机制，硬拦会挡掉所有提交。
+  硬拦要显式开：`--硬拦` 或环境变量 `CLAIM_GATE=硬拦`（别名 block/1/true）。
+  腿标识怎么来（三级，先到先用）：`--腿 <腿标识>` → 环境变量 `CLAIM_LEG` →
+  **当前分支按 `腿/<腿名>` 推**（机制一 建的分支就叫这个名，腿标识 = 腿名）。
+  三级都没有 ⇒ 读数「判不了」（**不许猜**：猜错腿名就是拿别人的认领集判，那是假绿）。
+  退出码**按模式给**（模式的定义只此一处，调用方只写 `exit $CODE`，不许自己再判模式）：
+    警告模式：**一律 0** —— 只报不拦，连「判不了」也不拦。
+    硬拦模式：全在集里 0 · 有不在集里 3 · 判不了 2（fail-closed：开了硬拦又没配腿标识 = 配置错）。""")
 
 
 def main(argv):
@@ -351,6 +557,43 @@ def main(argv):
     def emit(res, render, code):
         print(json.dumps(res, ensure_ascii=False, indent=2) if want_json else render())
         return code
+
+    # ── 提交闸：**单独一条路** ────────────────────────────────────────────────
+    # 为什么不能并进下面那个 try：账本坏 ⇒ 那里一律 EXIT_USAGE，而**默认警告模式下
+    # 连「判不了」都不许拦**（硬要求：只报不拦）。账本坏不是提交者的错，
+    # 更不该在「没人在用认领机制」的时候把所有人的提交挡住 —— 那样闸门就成了「谁都不能提交」。
+    if action == "提交闸":
+        leg = flags.get("腿") or os.environ.get("CLAIM_LEG") or leg_from_branch()
+        mode, raw, known = gate_mode(forced=bool(flags.get("硬拦")))
+        if not known:
+            print("提交闸：认不得的模式 %r（按 %s 跑）—— 认得的有 %s" % (
+                raw, GATE_WARN, "、".join(GATE_BLOCK_ALIASES + (GATE_WARN,))),
+                file=sys.stderr)
+        staged, how, _ = git_staged_paths()
+        try:
+            if staged is None:
+                raise ValueError(how)
+            with Ledger(ledger_path()) as led:
+                res = op_gate(led, leg, staged, mode=mode)
+            res["基准"] = "git diff --cached（将要提交的路径）· %s" % how
+        except (ValueError, OSError, json.JSONDecodeError) as e:
+            # 读数「判不了」，**不是**「通过」——账本读不出时闸什么都没判。
+            res = {"结果": "判不了", "腿标识": leg, "模式": mode,
+                   "基准": "git diff --cached（将要提交的路径）· %s" % how,
+                   "缺什么": "账本或 git 读不出：%r" % (e,),
+                   "提示": "账本坏不是提交者的错 ⇒ 警告模式下不拦；修好账本再让它有牙"}
+        # ★ 退出码按**模式**给，不按事实给 —— 模式的定义只此一处（gate_mode），
+        #   于是调用方（pre-commit 钩子）只写 `exit $CODE` 就对了，不许自己再判模式：
+        #   两处各判一次模式 = 两处定义同一件事。
+        #   警告模式：**一律 0**（只报不拦，连「判不了」也不拦）；
+        #   硬拦模式：全在集里 0 · 有不在集里 3 · 判不了 2（fail-closed：
+        #   开了硬拦又没配腿标识 / 账本坏，那是配置错，不是「可以提交」）。
+        if mode == GATE_BLOCK:
+            gate_code = {"全在集里": EXIT_OK, "有不在集里": EXIT_CONFLICT}.get(
+                res["结果"], EXIT_USAGE)
+        else:
+            gate_code = EXIT_OK
+        return emit(res, lambda: render_gate(res), gate_code)
 
     try:
         with Ledger(ledger_path()) as led:
@@ -385,6 +628,8 @@ def main(argv):
                 res = op_reclaim(led, leg=leg, all_expired=all_expired, force=force)
                 return emit(res, lambda: render_reclaim(res),
                             EXIT_OK if res["结果"] == "成功" else EXIT_CONFLICT)
+            if action == "提交闸":
+                pass                                     # 已在上面的专门铁轨里处理
             print("未知动作：%s" % action, file=sys.stderr)
             usage()
             return EXIT_USAGE
