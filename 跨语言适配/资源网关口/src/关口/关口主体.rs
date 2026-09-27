@@ -130,8 +130,8 @@ impl 资源网关口 {
         {
             缓冲.记(留痕::资源访问(
                 self.实例号(),
-                资源号,
-                操作号,
+                v1_contract::资源号::新(资源号),
+                v1_contract::操作号::新(操作号),
                 槽表指纹(输入槽表),
                 结果.错误码().map_or(0, |码| 码 as i32),
                 u64::try_from(开始.elapsed().as_micros()).unwrap_or(u64::MAX),

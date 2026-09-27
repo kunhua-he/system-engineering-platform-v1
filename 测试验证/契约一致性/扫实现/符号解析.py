@@ -128,6 +128,19 @@ def 解符号(文, 符号表: dict, 本表: dict) -> object:
     return 解表达式(文, {**符号表, **本表})
 
 
+def 解常量值(值文: str) -> object:
+    """`pub const` 右值 → 数。**整数字面量与号空间 newtype 两种都认**，其余 None。
+
+    为什么要有它（2026-09-27 补，实测撞到）：号空间 newtype 落地后，生成器改出
+    `pub const 类型标签_0005: v1_contract::类型标签 = v1_contract::类型标签::新(5);`
+    —— 右值不再是裸整数。本函数原先只走 `解整数` ⇒ 生成物里那一批 `类型标签_N` /
+    `错误码_N` **整批丢出符号表**（89 条里一条都不含它们），实现侧引用 `类型标签_0005`
+    当场解不出 ⇒ ③e / ③c / ③d1 由「通过」变「未判」。
+    走 `解符号`（同一套口径，不另写第二份）：newtype 构造器 → 整数字面量；解不出仍 None。
+    """
+    return 解符号(值文, {}, {})
+
+
 def 建符号表(件表: dict, 掩表: dict = None) -> dict:
     """从生成物 + `契约声明/src/` 下**全部** `.rs` 建「符号 → 数」引用表（只读，不计入实现面）。
 
@@ -149,7 +162,7 @@ def 建符号表(件表: dict, 掩表: dict = None) -> dict:
         for 匹配 in re.finditer(
             r"(?m)^\s*pub\s+const\s+([^\s:]+)\s*:\s*[^=;]*?=\s*([^;]+);", 掩
         ):
-            裸值 = 解整数(匹配.group(2))
+            裸值 = 解常量值(匹配.group(2))
             if 裸值 is not None:
                 表[匹配.group(1)] = 裸值
         # `pub mod <M> { … pub const <名>: <t> = <整数字面量>; … }`
@@ -162,7 +175,7 @@ def 建符号表(件表: dict, 掩表: dict = None) -> dict:
             for 常量配 in re.finditer(
                 r"pub\s+const\s+([^\s:]+)\s*:\s*[^=;]*?=\s*([^;]+);", 掩[mm.end() : 止]
             ):
-                裸值 = 解整数(常量配.group(2))
+                裸值 = 解常量值(常量配.group(2))
                 if 裸值 is not None:
                     表[常量配.group(1)] = 裸值
                     表[f"{模}::{常量配.group(1)}"] = 裸值
