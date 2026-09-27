@@ -19,7 +19,7 @@
 
 from pathlib import Path
 
-from 代码地图 import 查, 出现位置, 库路径
+from 代码地图 import 查符号, 出现位置, 库路径
 from 代码地图.索引库 import 找命令
 
 from . import 开工账本 as 账本
@@ -61,7 +61,7 @@ def _带源码(根: Path, 路径: str, 起始行: int, 末行: int, 上限行: i
 
 
 def 搜定义(查询根: Path, 索引库, 关键词: str, 条数: int, 要源码: bool) -> str:
-    结果 = 查(关键词, 上限=条数, 库路径=索引库, 根=查询根)
+    结果 = 查符号(关键词, 上限=条数, 库路径=索引库, 根=查询根)
     if not 结果["总数"]:
         return ("没有命中「%s」的符号（搜的面：名字 · 限定名 · 声明 · 路径）。"
               "换个词，或给一段路径试试" % 关键词)

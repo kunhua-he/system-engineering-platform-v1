@@ -18,7 +18,7 @@ from pathlib import Path
 真源子目录路径 = 仓根 / "运行内核" / "运行数据根" / "src" / "子目录.rs"
 镜像源 = 本件.parent / "口径.py"
 
-七项 = ("默认目录名", "覆盖变量名", "四类子目录名", "macOS基片段", "Linux退回片段",
+七项 = ("默认目录名", "覆盖变量名", "四类子目录名", "苹果基片段", "利努克斯退回片段",
         "XDG变量名", "应用数据变量名")
 
 
@@ -35,8 +35,8 @@ def 抽真源口径(解析文: str, 子目录文: str) -> dict:
         "默认目录名": 默认目录名.group(1) if 默认目录名 else None,
         "覆盖变量名": 覆盖变量名.group(1) if 覆盖变量名 else None,
         "四类子目录名": tuple(子) if 子 else None,
-        "macOS基片段": (macOS.group(1), macOS.group(2)) if macOS else None,
-        "Linux退回片段": (Linux.group(1), Linux.group(2)) if Linux else None,
+        "苹果基片段": (macOS.group(1), macOS.group(2)) if macOS else None,
+        "利努克斯退回片段": (Linux.group(1), Linux.group(2)) if Linux else None,
         "XDG变量名": XDG.group(1) if XDG else None,
         "应用数据变量名": APPDATA.group(1) if APPDATA else None,
     }
@@ -58,8 +58,8 @@ def 抽镜像口径(文: str) -> dict:
         "默认目录名": 串("默认目录名"),
         "覆盖变量名": 串("覆盖变量名"),
         "四类子目录名": 元组("子目录名"),
-        "macOS基片段": 元组("macOS基片段"),
-        "Linux退回片段": 元组("Linux退回片段"),
+        "苹果基片段": 元组("苹果基片段"),
+        "利努克斯退回片段": 元组("利努克斯退回片段"),
         "XDG变量名": 串("XDG变量名"),
         "应用数据变量名": 串("应用数据变量名"),
     }
@@ -84,7 +84,7 @@ def 比对(解析路: Path, 子目录路: Path, python路: Path) -> list:
 
 def 改坏(文: str, 项: str, 假值) -> str:
     """把 Python 源文本里某一项改成假值（反向样本用）。"""
-    元 = ("四类子目录名", "macOS基片段", "Linux退回片段")
+    元 = ("四类子目录名", "苹果基片段", "利努克斯退回片段")
     变量 = "子目录名" if 项 == "四类子目录名" else 项
     if 项 in 元:
         值 = "(%s)" % ", ".join('"%s"' % 段 for 段 in 假值)
@@ -97,8 +97,8 @@ def 改坏(文: str, 项: str, 假值) -> str:
     "默认目录名": "系统工程平台V1-坏",
     "覆盖变量名": "V1_RUN_DATA_ROOT_坏",
     "四类子目录名": ("数据库", "缓存", "日志", "临时件坏"),
-    "macOS基片段": ("Library", "Application Support坏"),
-    "Linux退回片段": (".local", "share坏"),
+    "苹果基片段": ("Library", "Application Support坏"),
+    "利努克斯退回片段": (".local", "share坏"),
     "XDG变量名": "XDG_DATA_HOME_坏",
     "应用数据变量名": "APPDATA_坏",
 }

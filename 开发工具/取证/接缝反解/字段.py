@@ -18,7 +18,7 @@ def 读字段(pe, 基偏移, 表):
             值 = struct.unpack_from(数值格式[类], pe.原始字节, 值起)[0]
             读 = "%r" % 值 if 类 == "f64" else "%d" % 值
         else:                                                # ptr / str
-            值 = pe.读u32(值起); 读 = "0x%08x" % 值
+            值 = pe.读四字节(值起); 读 = "0x%08x" % 值
             if 类 == "str" and 值:
                 读 += " → %r" % pe.读串(值)     # 指向不合法即抛错：fail-closed，不编串
         out.append((偏移, 宽, 名, 类, 值, 读))
