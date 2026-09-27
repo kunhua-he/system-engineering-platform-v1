@@ -59,24 +59,24 @@ def 入口函数(参数: list) -> int:
     print("闸 0：两条闸串起来跑（声明侧 + 实现侧；子进程调入口，互不 import）")
     print("")
     # **串行**（不并发）：并发会让闸 1 的 ⑱ 读到被抢 CPU 的墙钟 ⇒ 假红（见文件头）。
-    for 名, 相对 in 闸表:
-        果 = subprocess.run(
+    for 名称, 相对 in 闸表:
+        结果 = subprocess.run(
             [sys.executable, str(仓根 / 相对)],
             cwd=str(仓根), capture_output=True, text=True,
         )
-        命 = 读数模式.search(果.stdout or "")
-        读数 = 命.group(0).strip() if 命 else "（没有读出「通过 …」那一行）"
-        全过 = 全过 and (果.returncode == 0)
-        print(f"  {名} ｜ {相对}")
-        print(f"    退出码 {果.returncode} ｜ {读数}")
-        if 果.returncode != 0:
-            明细.append((名, 相对, (果.stdout or "") + (果.stderr or "")))
+        命中 = 读数模式.search(结果.stdout or "")
+        读数 = 命中.group(0).strip() if 命中 else "（没有读出「通过 …」那一行）"
+        全过 = 全过 and (结果.returncode == 0)
+        print(f"  {名称} ｜ {相对}")
+        print(f"    退出码 {结果.returncode} ｜ {读数}")
+        if 结果.returncode != 0:
+            明细.append((名称, 相对, (结果.stdout or "") + (结果.stderr or "")))
     print("")
     if 全过:
         print("闸 0：两条闸都过（退出码 0）")
         return 0
-    for 名, 相对, 原始 in 明细:
-        print(f"── {名}（{相对}）失败明细 ──")
+    for 名称, 相对, 原始 in 明细:
+        print(f"── {名称}（{相对}）失败明细 ──")
         print(原始.rstrip())
         print("")
     print("闸 0：至少一条闸没过（退出码 1）")

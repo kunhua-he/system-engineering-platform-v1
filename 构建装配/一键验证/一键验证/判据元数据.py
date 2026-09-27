@@ -35,8 +35,8 @@ def _样本_编号文件(上层读数):
 
 
 def _样本_号段图(上层读数):
-    图 = 上层读数["号段图"] or {}
-    return sum(len(图.get(节键) or []) for 节键 in 号段图四节)
+    号段图 = 上层读数["号段图"] or {}
+    return sum(len(号段图.get(节键) or []) for 节键 in 号段图四节)
 
 
 def _样本_能力声明(上层读数):
@@ -52,29 +52,29 @@ def _样本_通知号段(上层读数):
 
 
 def _样本_冻结项(上层读数):
-    冻 = 上层读数["冻结"] or {}
-    项 = 冻.get("冻结项")
-    return len(项) if isinstance(项, list) else 0
+    冻结登记 = 上层读数["冻结"] or {}
+    一项 = 冻结登记.get("冻结项")
+    return len(一项) if isinstance(一项, list) else 0
 
 
 def _样本_底座源文件(上层读数):
     return sum(
         1
-        for 键 in 上层读数["文件"]
-        if 键.endswith(".rs") and not 键.startswith("扩展根目录/")
+        for 键名 in 上层读数["文件"]
+        if 键名.endswith(".rs") and not 键名.startswith("扩展根目录/")
     )
 
 
 def _样本_时间口径面(上层读数):
     """判据 ㉑ 的对象数：时间口径两个主人下的 `.rs` 件数（0 个 ⇒ 报未判，不报通过）。"""
     return sum(
-        1 for 键 in 上层读数["文件"]
-        if 键.endswith(".rs") and any(键.startswith(面 + "/") for 面 in 时间口径面)
+        1 for 键名 in 上层读数["文件"]
+        if 键名.endswith(".rs") and any(键名.startswith(扫描面 + "/") for 扫描面 in 时间口径面)
     )
 
 
 def _样本_代码文件(上层读数):
-    return sum(1 for 键 in 上层读数["文件"] if 键.endswith((".rs", ".py", ".ts", ".js", ".vue")))
+    return sum(1 for 键名 in 上层读数["文件"] if 键名.endswith((".rs", ".py", ".ts", ".js", ".vue")))
 
 
 def _样本_命名面(上层读数):
@@ -89,18 +89,18 @@ def _样本_命名面(上层读数):
 def _样本_扩展目录(上层读数):
     return sum(
         1
-        for 键 in 上层读数["文件"]
-        if 键.endswith("Cargo.toml")
-        and len(键.split("/")) >= 4
-        and 键.split("/")[0] == "扩展根目录"
-        and 键.split("/")[1] in 扩展根三类
+        for 键名 in 上层读数["文件"]
+        if 键名.endswith("Cargo.toml")
+        and len(键名.split("/")) >= 4
+        and 键名.split("/")[0] == "扩展根目录"
+        and 键名.split("/")[1] in 扩展根三类
     )
 
 
 def _样本_常量(上层读数):
-    表 = 上层读数["常量表"] or {}
-    条 = 表.get("常量")
-    return len(条) if isinstance(条, list) else 0
+    项表 = 上层读数["常量表"] or {}
+    一条 = 项表.get("常量")
+    return len(一条) if isinstance(一条, list) else 0
 
 
 def _样本_判据(上层读数):
@@ -111,8 +111,8 @@ def _样本_文档脚本(上层读数):
     """判据 ⑮ 的对象数：扫描面下的 `.md` / `.py` / `.rs` 件数（0 个 ⇒ 报未判，不报通过）。"""
     return sum(
         1
-        for 键, 项 in 上层读数["文件"].items()
-        if 键.endswith(行号引用后缀) and 项.get("文本") is not None
+        for 键名, 一项 in 上层读数["文件"].items()
+        if 键名.endswith(行号引用后缀) and 一项.get("文本") is not None
     )
 
 
@@ -123,11 +123,11 @@ def _样本_底座代码件(上层读数):
     """
     return sum(
         1
-        for 键, 项 in 上层读数["文件"].items()
-        if 项.get("文本") is not None
-        and 键.endswith(代码后缀)
-        and 键.split("/")[0] in 底座代码树
-        and not 键.startswith(底座代码面排除)
+        for 键名, 一项 in 上层读数["文件"].items()
+        if 一项.get("文本") is not None
+        and 键名.endswith(代码后缀)
+        and 键名.split("/")[0] in 底座代码树
+        and not 键名.startswith(底座代码面排除)
     )
 
 
@@ -137,11 +137,11 @@ def _样本_仓树条目(上层读数):
     口径与 检查17 的实际遍历一致（它走全树，不看后缀）；0 个 ⇒ 报未判，不报通过。
     """
     仓根 = 上层读数["仓根"]
-    数 = 0
-    for 根, 目录表, 文件表 in os.walk(仓根):
+    个数 = 0
+    for 根目录, 目录表, 文件表 in os.walk(仓根):
         目录表[:] = [目录名 for 目录名 in 目录表 if 目录名 != ".git"]
-        数 += len(目录表) + len(文件表)
-    return 数
+        个数 += len(目录表) + len(文件表)
+    return 个数
 
 
 def _样本_行数面(上层读数):

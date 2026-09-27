@@ -371,14 +371,14 @@ def 注入_临时件落源码树(临根: Path) -> str:
       · 一份声明 JSON（若被读进 `契约声明/`，编号类判据会抓）。
     因为路径含 `_临时_` 前缀，扫描面已排除它们 ⇒ 只有 ⑰ 该报「树里有临时件」。
     """
-    根 = 临根 / (常量.临时目录前缀 + "外部库声明根")
-    根.mkdir(parents=True, exist_ok=True)
-    (根 / "样例.rs").write_text(
+    根目录 = 临根 / (常量.临时目录前缀 + "外部库声明根")
+    根目录.mkdir(parents=True, exist_ok=True)
+    (根目录 / "样例.rs").write_text(
         "pub const 目标字宽: u32 = 64;\n"
         f"// 见 `运行内核/装载入口/src/lib.rs:{12}`（按行号引用）\n",
         encoding="utf-8",
     )
-    (根 / "包声明.json").write_text('{"名称": "临时样例"}\n', encoding="utf-8")
+    (根目录 / "包声明.json").write_text('{"名称": "临时样例"}\n', encoding="utf-8")
     return 常量.临时目录前缀 + "外部库声明根"
 
 

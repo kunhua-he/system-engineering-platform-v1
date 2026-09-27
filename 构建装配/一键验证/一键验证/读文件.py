@@ -19,15 +19,15 @@ from .测试件 import 建测试文件集
 def 扫源文件(仓根: Path) -> list:
     """全仓源码文件（跳过生成物与参照物目录）。"""
     结果 = []
-    for 根, 目录表, 文件表 in os.walk(仓根):
+    for 根目录, 目录表, 文件表 in os.walk(仓根):
         目录表[:] = [
             目录名
             for 目录名 in 目录表
             if 目录名 not in 跳过目录 and not 目录名.startswith(常量.临时目录前缀)
         ]
-        for 名 in 文件表:
-            if 名.endswith(扫描后缀):
-                结果.append(Path(根) / 名)
+        for 名称 in 文件表:
+            if 名称.endswith(扫描后缀):
+                结果.append(Path(根目录) / 名称)
     return 结果
 
 
@@ -39,35 +39,35 @@ def 扫源文件(仓根: Path) -> list:
 def 读一个文件(任务: tuple) -> tuple:
     """一个分片的全部重活：读字节 → 解 UTF-8 → 解 JSON。都在这里做，并行跑。"""
     仓根, 路径 = 任务
-    键 = 相对(仓根, 路径)
+    键名 = 相对(仓根, 路径)
     try:
         字节 = 路径.read_bytes()
-    except OSError as 错:
-        return 键, {"文本": None, "数据": None, "错误": f"读不动：{错}"}
+    except OSError as 错误:
+        return 键名, {"文本": None, "数据": None, "错误": f"读不动：{错误}"}
     try:
         文本 = 字节.decode("utf-8")
-    except UnicodeDecodeError as 错:
-        return 键, {"文本": None, "数据": None, "错误": f"不是 UTF-8：{错}"}
+    except UnicodeDecodeError as 错误:
+        return 键名, {"文本": None, "数据": None, "错误": f"不是 UTF-8：{错误}"}
     数据 = None
-    错 = None
+    错误 = None
     if 路径.suffix == ".json":
         try:
             数据 = json.loads(文本)
         except json.JSONDecodeError as 解析错:
-            return 键, {"文本": 文本, "数据": None, "错误": f"JSON 解析失败：{解析错}"}
+            return 键名, {"文本": 文本, "数据": None, "错误": f"JSON 解析失败：{解析错}"}
         if not isinstance(数据, dict):
-            return 键, {
+            return 键名, {
                 "文本": 文本,
                 "数据": None,
                 "错误": f"顶层不是对象（是 {type(数据).__name__}）",
             }
-    return 键, {"文本": 文本, "数据": 数据, "错误": 错}
+    return 键名, {"文本": 文本, "数据": 数据, "错误": 错误}
 
 
 def 并行读(仓根: Path, 路径表: list) -> dict:
     任务 = [(仓根, 路径) for 路径 in 路径表]
-    with ThreadPoolExecutor(max_workers=并发度) as 池:
-        return dict(池.map(读一个文件, 任务))
+    with ThreadPoolExecutor(max_workers=并发度) as 线程池:
+        return dict(线程池.map(读一个文件, 任务))
 
 
 def 建上下文(仓根: Path) -> dict:
@@ -93,17 +93,17 @@ def 建上下文(仓根: Path) -> dict:
         目录存在[目录] = (契约根 / 目录).is_dir()
         记录表 = []
         前缀 = f"{契约目录名}/{目录}/"
-        for 键 in sorted(文件):
-            if not 键.startswith(前缀) or not 键.endswith(".json"):
+        for 键名 in sorted(文件):
+            if not 键名.startswith(前缀) or not 键名.endswith(".json"):
                 continue
             记录表.append(
                 {
                     "目录": 目录,
-                    "文件名": 键.rsplit("/", 1)[1],
-                    "键": 键,
+                    "文件名": 键名.rsplit("/", 1)[1],
+                    "键": 键名,
                     "字段": 编号字段[目录],
-                    "数据": 文件[键]["数据"],
-                    "错误": 文件[键]["错误"],
+                    "数据": 文件[键名]["数据"],
+                    "错误": 文件[键名]["错误"],
                 }
             )
         编号表[目录] = 记录表
@@ -125,27 +125,27 @@ def 建上下文(仓根: Path) -> dict:
 
 def 建包到层映射(文件: dict) -> dict:
     """Cargo 包名 → 层。包名里的 `-` 换成 `_`（Rust 的 `use` 用下划线）。"""
-    表 = {}
-    for 键, 项 in 文件.items():
-        if not 键.endswith("Cargo.toml") or 项["文本"] is None:
+    项表 = {}
+    for 键名, 一项 in 文件.items():
+        if not 键名.endswith("Cargo.toml") or 一项["文本"] is None:
             continue
-        配 = re.search(r"^\s*name\s*=\s*\"([^\"]+)\"", 项["文本"], re.M)
-        if not 配:
+        名配 = re.search(r"^\s*name\s*=\s*\"([^\"]+)\"", 一项["文本"], re.M)
+        if not 名配:
             continue
-        层 = 路径到层(键)
-        if 层:
-            表[配.group(1).replace("-", "_")] = 层
-    return 表
+        层级 = 路径到层(键名)
+        if 层级:
+            项表[名配.group(1).replace("-", "_")] = 层级
+    return 项表
 
 
 def 路径到层(键名: str) -> str:
-    头 = 键名.split("/", 1)[0]
-    return 顶层目录到层.get(头, "")
+    头部 = 键名.split("/", 1)[0]
+    return 顶层目录到层.get(头部, "")
 
 
 def 解析(文件: dict, 键名: str):
-    项 = 文件.get(键名)
-    return None if 项 is None else 项["数据"]
+    一项 = 文件.get(键名)
+    return None if 一项 is None else 一项["数据"]
 
 
 # ════════════════════════════════════════════════════════════════════════════
@@ -192,24 +192,24 @@ def _合成索引节点(件表: dict) -> list:
     from .命名扫描 import _标识符, _是自身成员访问, 剥后缀
 
     行表 = []
-    for 键 in sorted(件表):
-        文本 = 件表[键]
+    for 键名 in sorted(件表):
+        文本 = 件表[键名]
         if not 文本:
             continue
-        后缀 = "." + 键.rsplit(".", 1)[-1]
-        净 = 剥后缀(后缀, 文本)
-        for 序, 命 in enumerate(
-            命 for 命 in _标识符.finditer(净)
-            if not (命.start() > 0 and 净[命.start() - 1] == "."
-                    and not _是自身成员访问(净, 命.start()))
+        后缀 = "." + 键名.rsplit(".", 1)[-1]
+        净文本 = 剥后缀(后缀, 文本)
+        for 序号, 命中 in enumerate(
+            命中 for 命中 in _标识符.finditer(净文本)
+            if not (命中.start() > 0 and 净文本[命中.start() - 1] == "."
+                    and not _是自身成员访问(净文本, 命中.start()))
         ):
-            名 = 命.group(0)
-            行号 = 净[: 命.start()].count("\n") + 1
-            列号 = 命.start() - (净.rfind("\n", 0, 命.start()) + 1)
+            名称 = 命中.group(0)
+            行号 = 净文本[: 命中.start()].count("\n") + 1
+            列号 = 命中.start() - (净文本.rfind("\n", 0, 命中.start()) + 1)
             行表.append((
-                "variable:%s:%d" % (键, 序),
-                "variable", 名, 名, 键, _合成索引语言名.get(后缀, ""),
-                行号, 行号, 列号, 列号 + len(名), "",
+                "variable:%s:%d" % (键名, 序号),
+                "variable", 名称, 名称, 键名, _合成索引语言名.get(后缀, ""),
+                行号, 行号, 列号, 列号 + len(名称), "",
             ))
     return 行表
 
@@ -226,11 +226,11 @@ def 建合成索引(仓根: Path, 件表: dict) -> Path:
     """
     import sqlite3
 
-    库 = Path(str(仓根) + "." + 合成索引目录名) / 合成索引文件名
-    库.parent.mkdir(parents=True, exist_ok=True)
-    if 库.is_file():
-        库.unlink()  # 每轮重建：同一夹具被跑多次时不许读到上一轮的节点
-    连接 = sqlite3.connect(str(库))
+    动态库 = Path(str(仓根) + "." + 合成索引目录名) / 合成索引文件名
+    动态库.parent.mkdir(parents=True, exist_ok=True)
+    if 动态库.is_file():
+        动态库.unlink()  # 每轮重建：同一夹具被跑多次时不许读到上一轮的节点
+    连接 = sqlite3.connect(str(动态库))
     try:
         for 语句 in _合成索引建表:
             连接.execute(语句)
@@ -239,7 +239,7 @@ def 建合成索引(仓根: Path, 件表: dict) -> Path:
         连接.commit()
     finally:
         连接.close()
-    return 库
+    return 动态库
 
 
 # 合成索引的按仓缓存（键 = 仓根路径）。**一次 `验证` 只建一次**：`上["文件"]`
@@ -274,10 +274,10 @@ def 索引路径(仓根: Path, 件表: dict) -> Path:
         return 真库
     if str(仓根) not in _夹具仓根集:
         return 真库  # 真仓没索引 = 未判（调用方据空表报未判），不造合成索引
-    键 = str(仓根)
-    记住 = _合成索引缓存.get(键)
+    键名 = str(仓根)
+    记住 = _合成索引缓存.get(键名)
     if 记住 is not None and 记住.is_file():
         return 记住
-    库 = 建合成索引(仓根, 件表)
-    _合成索引缓存[键] = 库
-    return 库
+    动态库 = 建合成索引(仓根, 件表)
+    _合成索引缓存[键名] = 动态库
+    return 动态库
