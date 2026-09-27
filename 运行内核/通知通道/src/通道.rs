@@ -42,12 +42,12 @@ impl 通知通道 {
         if 标识串.is_null() {
             return;
         }
-        let 表 = self.端点表.get_mut();
-        let 已存在 = 表.iter().any(|端点| unsafe { 标识串相同(端点.标识串, 标识串) });
+        let 端点表 = self.端点表.get_mut();
+        let 已存在 = 端点表.iter().any(|端点| unsafe { 标识串相同(端点.标识串, 标识串) });
         if 已存在 {
             return;
         }
-        表.push(通知端点 { 标识串, 函数 });
+        端点表.push(通知端点 { 标识串, 函数 });
     }
 
     /// 注销一个通知端点。注销后该标识串不再被派发。

@@ -86,14 +86,14 @@ impl 配额账本 {
         let 现在 = self.现在毫秒();
         // 锁中毒不许崩：中毒只说明别人 panic 过，账本本身照样能记账。
         let mut 记录 = self.记录.lock().unwrap_or_else(|中毒| 中毒.into_inner());
-        let 项 = 记录.entry(命令号).or_insert(窗口用量 { 窗口起点毫秒: 现在, 已用: 0 });
-        if 现在.saturating_sub(项.窗口起点毫秒) >= self.窗口毫秒 {
-            *项 = 窗口用量 { 窗口起点毫秒: 现在, 已用: 0 };
+        let 窗口用量 = 记录.entry(命令号).or_insert(窗口用量 { 窗口起点毫秒: 现在, 已用: 0 });
+        if 现在.saturating_sub(窗口用量.窗口起点毫秒) >= self.窗口毫秒 {
+            *窗口用量 = 窗口用量 { 窗口起点毫秒: 现在, 已用: 0 };
         }
-        if 项.已用 >= self.上限 {
+        if 窗口用量.已用 >= self.上限 {
             return false;
         }
-        项.已用 += 1;
+        窗口用量.已用 += 1;
         true
     }
 
@@ -113,8 +113,8 @@ impl 调用账本 for 配额账本 {
     /// 现在只累加留痕；将来若要按耗时限速，改这里，不改契约。
     fn 记账(&self, 命令号: 能力号, 耗时毫秒: u64) {
         let mut 记录 = self.耗时记录.lock().unwrap_or_else(|中毒| 中毒.into_inner());
-        let 项 = 记录.entry(命令号).or_insert(0);
-        *项 = 项.saturating_add(耗时毫秒);
+        let 已用量 = 记录.entry(命令号).or_insert(0);
+        *已用量 = 已用量.saturating_add(耗时毫秒);
     }
 }
 
