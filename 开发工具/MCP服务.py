@@ -42,7 +42,7 @@ def 入口函数(argv=None):
         print("工具表：%s" % 名表)
         # 防回潮：客户端把非 ASCII 截掉 ⇒ 中文名会撞成一个。凡非 ASCII 名一律判红
         # （理由见 `MCP服务/工具.py::工具表` 上方注释）。
-        非ASCII = [名 for 名 in 名表 if not 名.isascii()]
+        非ASCII = [名称 for 名称 in 名表 if not 名称.isascii()]
         if 非ASCII:
             print("★工具名必须 ASCII（客户端会截掉非 ASCII ⇒ 撞名）：%s" % 非ASCII)
         return 0 if 名表 == 期望 and not 非ASCII else 1

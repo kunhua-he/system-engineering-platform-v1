@@ -125,4 +125,4 @@ def 带缓存(缓存目录, 路径) -> dict:
 
 def 缓存覆盖数(缓存目录, 文件表) -> int:
     """有多少件的缓存键与当前盘面相符（`--全部` 用它报「缓存命中/需算」）。"""
-    return sum(1 for 件 in 文件表 if 取缓存(缓存目录, 件) is not None)
+    return sum(1 for 节点件 in 文件表 if 取缓存(缓存目录, 节点件) is not None)

@@ -52,7 +52,7 @@ def 抽镜像口径(文本: str) -> dict:
         命中 = re.search(r'^%s\s*=\s*\(([^)]*)\)' % re.escape(名称), 文本, re.M)
         if not 命中:
             return None
-        return tuple(段.strip().strip('"') for 段 in 命中.group(1).split(",") if 段.strip())
+        return tuple(号段.strip().strip('"') for 号段 in 命中.group(1).split(",") if 号段.strip())
 
     return {
         "默认目录名": 取字符串("默认目录名"),
@@ -87,7 +87,7 @@ def 改坏(文本: str, 一项: str, 假值) -> str:
     元组项 = ("四类子目录名", "苹果基片段", "利努克斯退回片段")
     变量 = "子目录名" if 一项 == "四类子目录名" else 一项
     if 一项 in 元组项:
-        待处理值 = "(%s)" % ", ".join('"%s"' % 段 for 段 in 假值)
+        待处理值 = "(%s)" % ", ".join('"%s"' % 号段 for 号段 in 假值)
     else:
         待处理值 = '"%s"' % 假值
     return re.sub(r"^%s\s*=\s*.*$" % re.escape(变量), "%s = %s" % (变量, 待处理值), 文本, count=1, flags=re.M)
@@ -108,11 +108,11 @@ def 反向样本(临时根: Path) -> int:
     """逐项改坏一份副本 ⇒ 每一项都必须被判红；有一项漏 ⇒ 退出码 1。"""
     原文 = 镜像源.read_text(encoding="utf-8")
     漏判项表 = []
-    for 项, 值 in 假值表.items():
+    for 一项, 待处理值 in 假值表.items():
         路径 = 临时根 / "坏.py"
-        路径.write_text(改坏(原文, 项, 值), encoding="utf-8")
+        路径.write_text(改坏(原文, 一项, 待处理值), encoding="utf-8")
         if not 比对(真源解析路径, 真源子目录路径, 路径):
-            漏判项表.append(项)
+            漏判项表.append(一项)
     if 漏判项表:
         print("反向样本失败：改坏这些项却没判红 ⇒ %s" % " · ".join(漏判项表))
         return 1

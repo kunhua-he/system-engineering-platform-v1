@@ -29,7 +29,7 @@ def 入口函数(参数):
     for 路径 in 参数:
         try:
             打印(分析(路径))
-        except OSError as 错:
-            print(f"打不开 {路径}：{错}", file=sys.stderr)
+        except OSError as 错误:
+            print(f"打不开 {路径}：{错误}", file=sys.stderr)
             return 1
     return 0

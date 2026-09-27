@@ -74,8 +74,8 @@ def 是单字形参(名称: str) -> bool:
 def 读文本(路径: str) -> str:
     """读成文本；读不动（二进制 / 权限）⇒ 空串。本面**只报读数不判**，故不当成错误抛。"""
     try:
-        with open(路径, encoding="utf-8", errors="replace") as 件:
-            return 件.read()
+        with open(路径, encoding="utf-8", errors="replace") as 节点件:
+            return 节点件.read()
     except OSError:
         return ""
 
@@ -87,8 +87,8 @@ def 扫签名形参(行表: list) -> list:
     实测（本仓）多行签名里有 12 处单字形参 —— 只扫单行签名会整批漏掉。
     """
     输出缓冲 = []
-    for 序号, 行 in enumerate(行表):
-        首字节 = 行.strip()
+    for 序号, 源码行 in enumerate(行表):
+        首字节 = 源码行.strip()
         if 首字节.startswith(注释头):
             continue
         匹配 = _函数头.match(首字节)
@@ -130,10 +130,10 @@ def 扫JS形参(行表: list) -> list:
     这些形参是**函数内局部**的：改名字面替换即可，但**不许**把同名的外层变量一起改（按行判）。
     """
     输出缓冲 = []
-    for 序号, 行 in enumerate(行表, 1):
-        if 行.strip().startswith(注释头):
+    for 序号, 源码行 in enumerate(行表, 1):
+        if 源码行.strip().startswith(注释头):
             continue
-        for 匹配 in list(_箭头.finditer(行)) + list(_函数式.finditer(行)):
+        for 匹配 in list(_箭头.finditer(源码行)) + list(_函数式.finditer(源码行)):
             形参段 = ""
             for 匹配组 in 匹配.groups():
                 if 匹配组 is not None:
@@ -153,7 +153,7 @@ def 扫文本(路径: str, 文本: str) -> list:
     """
     行表 = 文本.splitlines()
     if 路径.endswith(JS后缀):
-        return [(行, "", 形参名) for 行, 形参名 in 扫JS形参(行表)]
+        return [(源码行, "", 形参名) for 源码行, 形参名 in 扫JS形参(行表)]
     return 扫签名形参(行表)
 
 
@@ -170,7 +170,7 @@ def 有函数头(路径: str, 文本: str) -> bool:
     """
     行表 = 文本.splitlines()
     if 路径.endswith(JS后缀):
-        return any(_箭头.search(行) or _函数式.search(行) for 行 in 行表)
+        return any(_箭头.search(源码行) or _函数式.search(源码行) for 源码行 in 行表)
     return any(_函数头.match(源码行.strip()) and not 源码行.strip().startswith(注释头)
                for 源码行 in 行表)
 
@@ -179,7 +179,7 @@ def 遍历命名件(根目录: str = None):
     """走树产出扫描面里的件路径（后缀在 `命名后缀` 里，且不在 `跳过目录` 下）。"""
     起点 = str(根目录 or 仓根)
     for 目录, 子目录表, 件表 in os.walk(起点):
-        子目录表[:] = [段 for 段 in 子目录表 if 段 not in 跳过目录]
+        子目录表[:] = [号段 for 号段 in 子目录表 if 号段 not in 跳过目录]
         for 节点件 in 件表:
             if 节点件.endswith(命名后缀):
                 yield os.path.join(目录, 节点件)
@@ -188,8 +188,8 @@ def 遍历命名件(根目录: str = None):
 def 面读数(条表: list) -> dict:
     """一面的读数：处数 / 唯一名数 / 件数。"""
     return {"处": len(条表),
-            "唯一名": len({条["形参名"] for 条 in 条表}),
-            "件": len({条["路径"] for 条 in 条表})}
+            "唯一名": len({一条["形参名"] for 一条 in 条表}),
+            "件": len({一条["路径"] for 一条 in 条表})}
 
 
 def 检形参(根目录: str = None, 上限: int = 25) -> dict:
@@ -203,11 +203,11 @@ def 检形参(根目录: str = None, 上限: int = 25) -> dict:
     for 路径 in 遍历命名件(起点):
         短路径 = os.path.relpath(路径, 起点)
         面名 = "JS面" if 路径.endswith(JS后缀) else "签名面"
-        for 行, 函数名, 形参名 in 扫件(路径):
+        for 源码行, 函数名, 形参名 in 扫件(路径):
             面表[面名].append(
-                {"路径": 短路径, "行": 行, "函数名": 函数名, "形参名": 形参名})
-    return {"读数": {面: 面读数(条表) for 面, 条表 in 面表.items()},
-            "明细": {面: 条表[:上限] for 面, 条表 in 面表.items()}}
+                {"路径": 短路径, "行": 源码行, "函数名": 函数名, "形参名": 形参名})
+    return {"读数": {扫描面: 面读数(条表) for 扫描面, 条表 in 面表.items()},
+            "明细": {扫描面: 条表[:上限] for 扫描面, 条表 in 面表.items()}}
 
 
 def 形参行(读数: dict = None) -> list:

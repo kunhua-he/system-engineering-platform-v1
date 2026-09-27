@@ -49,7 +49,7 @@ def 含序数代称作标识符(名称: str) -> bool:
     剩余名称 = 名称
     for 白名单词 in 词内序数代称:
         剩余名称 = 剩余名称.replace(白名单词, "")
-    return any(字 in 序数代称字 for 字 in 剩余名称)
+    return any(字符表 in 序数代称字 for 字符表 in 剩余名称)
 
 
 def 是单西文字母(名称: str) -> bool:
@@ -64,7 +64,7 @@ def 是命名件(路径: str) -> bool:
 
 def 含西文字母(名称: str) -> bool:
     """名字里有没有西文字母（**读数用**：命名规范 §六「西文名一律换成中文，除非是强加的」）。"""
-    return any(字.isascii() and 字.isalpha() for 字 in 名称)
+    return any(字符表.isascii() and 字符表.isalpha() for 字符表 in 名称)
 
 
 def 分档(定义表: list) -> dict:
@@ -112,10 +112,10 @@ def 检名(上限: int = 25) -> dict:
     if not 有库():
         return {"有索引": False, "路径": str(库路径())}
     档表 = 分档(读索引定义())
-    读数 = {档: len(条表) for 档, 条表 in 档表.items()}
+    读数 = {档位: len(条表) for 档位, 条表 in 档表.items()}
     return {
         "有索引": True,
         "路径": str(库路径()),
         "读数": 读数,
-        "样本": {档: 条表[:上限] for 档, 条表 in 档表.items()},
+        "样本": {档位: 条表[:上限] for 档位, 条表 in 档表.items()},
     }

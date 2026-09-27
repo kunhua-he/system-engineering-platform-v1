@@ -39,7 +39,7 @@ def 派发(参数表: dict, 仓根) -> tuple:
     判据词表 = 参数表.get("判据")
     if isinstance(判据词表, str):
         判据词表 = [判据词表]
-    词表 = [str(词).strip() for 词 in (判据词表 or []) if str(词).strip()]
+    词表 = [str(判据词).strip() for 判据词 in (判据词表 or []) if str(判据词).strip()]
 
     查询根, 树名, 认领表 = Path(仓根).resolve(), "主工作树", None
     if 开工号:
@@ -75,7 +75,7 @@ def 派发(参数表: dict, 仓根) -> tuple:
     except OSError as 起不来的原因:
         return -2, "起不了验证器：%r" % (起不来的原因,)
 
-    有效行表 = [行 for 行 in 命令输出.splitlines() if 行.strip() and "─" not in 行]
+    有效行表 = [源码行 for 源码行 in 命令输出.splitlines() if 源码行.strip() and "─" not in 源码行]
     输出行表 = ["在「%s」跑的：%s" % (树名, 查询根),
               "范围：%s" % ("只跑判据 %s" % " · ".join(词表) if 词表
                          else "**全量 = 闸 0**（声明侧 + 实现侧两条闸；这才是放行凭据）"),
@@ -90,6 +90,6 @@ def 派发(参数表: dict, 仓根) -> tuple:
         if 变过表:
             输出行表.append("★ **绕过检测**：这些件被绕过 MCP 改过（盘上指纹 ≠ 账本指纹）：\n%s"
                         % "\n".join("    %s：账本 %s → 盘上 %s"
-                                   % (路径, 对[0] or "（无）", 对[1] or "（件没了）")
-                                   for 路径, 对 in sorted(变过表.items())))
+                                   % (路径, 键值对[0] or "（无）", 键值对[1] or "（件没了）")
+                                   for 路径, 键值对 in sorted(变过表.items())))
     return 退出码, "\n".join(输出行表)

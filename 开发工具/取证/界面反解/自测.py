@@ -53,16 +53,16 @@ def 自测(样本="/tmp/易语言源码/e.exe"):
 
     print("自测：喂 %d 个坏样本，断言「报错且不产出任何字段」" % len(坏样本表))
     失败 = 0
-    for 名, 数据 in 坏样本表:
+    for 名称, 数据 in 坏样本表:
         try:
-            读数 = 反解数据(数据, 名)
+            读数 = 反解数据(数据, 名称)
             项数合计 = sum(len(表值) for 表值 in 读数["菜单"].values()) + sum(len(表值[1]["控件"]) for 表值 in 读数["对话框"].values())
-            print("  ✗ %-34s 竟然解析成功（解出菜单/控件 %d 项）—— 假绿" % (名, 项数合计))
+            print("  ✗ %-34s 竟然解析成功（解出菜单/控件 %d 项）—— 假绿" % (名称, 项数合计))
             失败 += 1
         except 解析错误 as ex:
-            print("  ✓ %-34s 报错：%s" % (名, str(ex)[:60]))
+            print("  ✓ %-34s 报错：%s" % (名称, str(ex)[:60]))
         except (struct.error, IndexError, ValueError, OverflowError, TypeError, UnicodeDecodeError) as ex:
-            print("  ✗ %-34s 抛了非解析错误（%s: %s）" % (名, type(ex).__name__, str(ex)[:40]))
+            print("  ✗ %-34s 抛了非解析错误（%s: %s）" % (名称, type(ex).__name__, str(ex)[:40]))
             失败 += 1
     try:
         读数 = 反解(样本)

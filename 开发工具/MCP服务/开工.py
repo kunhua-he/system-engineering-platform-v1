@@ -294,7 +294,7 @@ def 释放(仓根, 开工号: str, 强制: bool) -> tuple:
         # ② 跑门禁。红了就**不提交、不推、不释放**。
         码, 出 = 跑命令([sys.executable, "构建装配/一键验证/闸0.py"], cwd=工作树)
         if 码 != 0:
-            有效行表 = [行 for 行 in 出.splitlines() if 行.strip() and "─" not in 行]
+            有效行表 = [源码行 for 源码行 in 出.splitlines() if 源码行.strip() and "─" not in 源码行]
             return 1, ("门禁没过（退出码 %d）⇒ **无法释放**（不提交、不推）。逐条读数：\n%s"
                      % (码, "\n".join(有效行表[-25:])))
 

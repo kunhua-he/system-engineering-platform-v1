@@ -70,8 +70,8 @@ fn 默认基(环境: &环境, 平台: 平台) -> Option<PathBuf> {
         // macOS：`~/Library/Application Support`
         平台::MacOS => 环境
             .家目录
-            .filter(|家| !家.is_empty())
-            .map(|家| PathBuf::from(家).join("Library").join("Application Support")),
+            .filter(|家目录| !家目录.is_empty())
+            .map(|家目录| PathBuf::from(家目录).join("Library").join("Application Support")),
         // Linux：`$XDG_DATA_HOME`，未设则按 XDG 规范退回 `~/.local/share`
         平台::Linux => {
             if let Some(数据) = 环境.xdg数据目录.filter(|目录| !目录.is_empty()) {
@@ -79,8 +79,8 @@ fn 默认基(环境: &环境, 平台: 平台) -> Option<PathBuf> {
             }
             环境
                 .家目录
-                .filter(|家| !家.is_empty())
-                .map(|家| PathBuf::from(家).join(".local").join("share"))
+                .filter(|家目录| !家目录.is_empty())
+                .map(|家目录| PathBuf::from(家目录).join(".local").join("share"))
         }
         // Windows：`%APPDATA%`（家目录不是它 —— 两者别混）
         平台::Windows => 环境

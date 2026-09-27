@@ -57,7 +57,7 @@ def _缓存与分片(样本, 失败: list) -> None:
             项表.append(str(路径))
         项表 = sorted(项表)
         片段 = 切分(项表, 2)
-        覆盖 = sorted(件 for 一片 in 片段 for 件 in 一片)
+        覆盖 = sorted(节点件 for 一片 in 片段 for 节点件 in 一片)
         if 覆盖 == 项表 and len(覆盖) == len(set(覆盖)):
             print("  ✓ 分片不重不漏：切 2 片覆盖全部件且无重复")
         else:
@@ -78,8 +78,8 @@ def _缓存与分片(样本, 失败: list) -> None:
                 失败.append("切分确定性")
         finally:
             shutil.rmtree(临时刀, ignore_errors=True)
-        全量读数 = 归并([单件读数(件) for 件 in 项表])
-        缓存读数 = 归并([带缓存(None, 件) for 件 in 项表])
+        全量读数 = 归并([单件读数(节点件) for 节点件 in 项表])
+        缓存读数 = 归并([带缓存(None, 节点件) for 节点件 in 项表])
         扫片 = 归并汇总([扫分片(临时语料, 下标, 2, None)[0] for 下标 in range(2)])
         if 全量读数 == 缓存读数 == 扫片:
             print("  ✓ 归并等价：串行逐件 == 缓存逐件 == 两片各扫再并（读数逐字相同）")
@@ -157,32 +157,32 @@ def 自测(样本="/tmp/易语言源码/lib/krnln/samples/第一个程序.e"):
     print("自测：喂 %d 个坏样本 + %d 个合法边界样本" % (len(坏样本表), len(合法例)))
     print("判据：坏样本**不许产出声明记录区**（报错 或 零条程序段）；合法样本必须过。")
     报错数 = 未产出数 = 假绿 = 失败 = 0
-    for 名, 数据 in 坏样本表:
+    for 名称, 数据 in 坏样本表:
         try:
             区表 = 取声明记录区(数据)
         except 解析错误 as ex:
-            print("  ✓ %-36s 报错：%s" % (名, ex))
+            print("  ✓ %-36s 报错：%s" % (名称, ex))
             报错数 += 1
             continue
         except (struct.error, IndexError, ValueError, OverflowError, TypeError) as ex:
-            print("  ✗ %-36s 抛了非解析错误（%s: %s）" % (名, type(ex).__name__, ex))
+            print("  ✗ %-36s 抛了非解析错误（%s: %s）" % (名称, type(ex).__name__, ex))
             失败 += 1
             continue
         if not 区表:
-            print("  ✓ %-36s 未产出（0 条程序段 ⇒ 无声明记录区）" % 名)
+            print("  ✓ %-36s 未产出（0 条程序段 ⇒ 无声明记录区）" % 名称)
             未产出数 += 1
         else:
-            print("  ✗ %-36s 竟产出 %d 条声明记录区 —— 假绿" % (名, len(区表)))
+            print("  ✗ %-36s 竟产出 %d 条声明记录区 —— 假绿" % (名称, len(区表)))
             假绿 += 1
             失败 += 1
-    for 名, 数据 in 合法例:
+    for 名称, 数据 in 合法例:
         try:
             区表 = 取声明记录区(数据)
             assert 区表 and len(区表[0][3]) > 0
             print("  ✓ %-36s 通过（区 %d 字节，头 4 字节 %s）"
-                  % (名, len(区表[0][3]), 区表[0][3][:4].hex(" ")))
+                  % (名称, len(区表[0][3]), 区表[0][3][:4].hex(" ")))
         except Exception as ex:
-            print("  ✗ %-36s 合法样本反而失败：%s" % (名, ex))
+            print("  ✗ %-36s 合法样本反而失败：%s" % (名称, ex))
             失败 += 1
     try:
         区表 = 取声明记录区(合格样本)
