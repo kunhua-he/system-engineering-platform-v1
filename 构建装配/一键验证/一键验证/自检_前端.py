@@ -76,16 +76,20 @@ def 自检_前端语义判据() -> list:
         f"命中 {命中(搬运)}（要求空）——纯搬运/编码允许",
     )
     断言(
-        "反向样本：正则**字面量在值位置**（赋给标识符 / 作实参 / `return`）⇒ 报",
+        "反向样本：正则**字面量在值位置**（赋给标识符 / 作实参 / `return` / 对象属性值 / 数组元素 / 三元分支 / 箭头体）⇒ 报",
         all(
             命中(x)
             for x in (
                 "const 形 = /^[0-9]+$/;\n",
                 "export function 判(s) { return /^[0-9]+$/.test(s); }\n",
                 "export function 判(s, 另) { return 查(s, /^[0-9]+$/); }\n",
+                "const 表 = { 模式: /^[0-9]+$/ };\n",
+                "const 表 = [/^[0-9]+$/, /^[a-z]+$/];\n",
+                "export function 取(x) { return x ? /^[0-9]+$/ : /^[a-z]+$/; }\n",
+                "const 判 = (s) => /^[0-9]+$/;\n",
             )
         ),
-        "三种值位置各报一处（要求都非空）",
+        "七种值位置各报一处（要求都非空）",
     )
     断言(
         "正向样本：**除法**与含 `//` 的字符串/注释 ⇒ 不报（值位置的口径不许误伤它们）",
@@ -94,6 +98,8 @@ def 自检_前端语义判据() -> list:
             for x in (
                 "export function 比(a, b) { return a / b; }\n",
                 "export function 比(a, b) { const 商 = a / b; return 商; }\n",
+                "export function 比(a, b, c) { return a ? b / c : c / b; }\n",
+                "export function 取(表, i, j) { return 表[i / j]; }\n",
                 "// 注释里写 /^[0-9]+$/ 不算逻辑\n",
                 'const 网址 = "https://example.com/a/b";\n',
             )
@@ -178,7 +184,7 @@ def 自检_前端语义判据() -> list:
 
 
 def 自检_前端内联脚本() -> list:
-    """⑪-6 的 `.html` 内联 `<script>` 扫描面的身份证（未完成事项.md #38）。
+    """⑪-6 的 `.html` 内联 `<script>` 扫描面的身份证。
 
     反向样本：只含**内联** `<script>…JSON.parse(…)</script>` 的 `.html` ⇒ ⑪-6 必须报
     （证明内联脚本真进了扫描面）。
