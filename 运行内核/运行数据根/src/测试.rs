@@ -159,12 +159,12 @@ fn 默认位置不在源码树内_三条规则都推不出当前目录() {
 /// 反向样本：把两类写成同一个目录名（复制粘贴错），本用例当场红。
 #[test]
 fn 四类子目录_名字两两不同_次序与判别值一致() {
-    for (序, 类) in 子目录::全.iter().enumerate() {
+    for (序, 类) in 子目录::全集.iter().enumerate() {
         assert_eq!(*类 as usize, 序, "次序必须与判别值一致：{类:?}");
     }
-    for (前项序, 前项) in 子目录::全.iter().enumerate() {
-        for 后项 in &子目录::全[前项序 + 1..] {
-            assert_ne!(前项.名(), 后项.名(), "两类不许同名：{前项:?} 与 {后项:?}");
+    for (前项序, 前项) in 子目录::全集.iter().enumerate() {
+        for 后项 in &子目录::全集[前项序 + 1..] {
+            assert_ne!(前项.取名称(), 后项.取名称(), "两类不许同名：{前项:?} 与 {后项:?}");
         }
     }
 }
@@ -178,10 +178,10 @@ fn 确保子目录真建得出来() {
         std::process::id()
     ));
     let _ = std::fs::remove_dir_all(&根);
-    for 类 in 子目录::全 {
+    for 类 in 子目录::全集 {
         let 路 = 确保子目录(&根, 类).expect("建目录");
         assert!(路.is_dir(), "必须真建出目录：{路:?}");
-        assert!(路.ends_with(类.名()));
+        assert!(路.ends_with(类.取名称()));
     }
     let _ = std::fs::remove_dir_all(&根);
 }
