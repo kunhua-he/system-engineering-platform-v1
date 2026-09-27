@@ -70,7 +70,7 @@ def 库读数(库路径=None) -> dict:
     """库里的节点 / 边 / 件数（库不在 ⇒ 全 0）。"""
     if not (库路径 or 默认库路径()).is_file():
         return {"节点": 0, "边": 0, "件": 0, "索引器版本": ""}
-    库 = 连库()
+    库 = 连库(库路径)
     try:
         读数 = {"节点": 库.execute("select count(*) from nodes").fetchone()[0],
                "边": 库.execute("select count(*) from edges").fetchone()[0],
@@ -110,8 +110,7 @@ def 建(仓根: Path) -> tuple:
             回执.returncode, (回执.stderr or 回执.stdout or "").strip()[-400:])
     读数 = 库读数()
     return 0, 墙钟毫秒, "索引 %d 节点 · %d 边 · %d 件（索引器 %s）⇒ %s" % (
-        读数["节点"], 读数["边"], 读数["件"], 读数["索引器版本"] or "—",
-        库路径 or 默认库路径())
+        读数["节点"], 读数["边"], 读数["件"], 读数["索引器版本"] or "—", 库文件)
 
 
 def 同步(仓根: Path) -> tuple:
