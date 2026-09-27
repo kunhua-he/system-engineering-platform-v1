@@ -37,9 +37,9 @@ def _读配置() -> dict:
     return 数据 if isinstance(数据, dict) else {}
 
 
-def _自家条(条) -> bool:
+def _自家条(一条) -> bool:
     return any(自家标记 in str(一个.get("command") or "")
-              for 一个 in (条.get("hooks") or []) if isinstance(一个, dict))
+              for 一个 in (一条.get("hooks") or []) if isinstance(一个, dict))
 
 
 def 装钩子() -> int:

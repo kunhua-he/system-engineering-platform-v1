@@ -276,8 +276,8 @@ impl Default for 资源网关口 {
 /// 手写 `Debug`：`黑盒体` 是 trait 对象、不带 `Debug`，所以不 derive。
 /// 读得出来的只有**可数的三样**（声明份数 · 绑定份数 · 留痕开没开）—— 不打印内部指针。
 impl core::fmt::Debug for 资源网关口 {
-    fn fmt(&self, 形: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        形.debug_struct("资源网关口")
+    fn fmt(&self, 格式器: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        格式器.debug_struct("资源网关口")
             .field("声明份数", &self.声明表.len())
             .field("绑定份数", &self.绑定表.已绑定份数())
             .field("留痕", &self.留痕.is_some())

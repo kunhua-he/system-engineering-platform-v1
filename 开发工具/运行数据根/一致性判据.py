@@ -42,14 +42,14 @@ def 抽真源口径(解析文: str, 子目录文: str) -> dict:
     }
 
 
-def 抽镜像口径(文: str) -> dict:
+def 抽镜像口径(文本: str) -> dict:
     """从 Python 源文本抽出同一组口径（值本身就是实现用的常量，故改实现即改这里）。"""
-    def 取字符串(名):
-        命中 = re.search(r'^%s\s*=\s*"([^"]+)"' % re.escape(名), 文, re.M)
+    def 取字符串(名称):
+        命中 = re.search(r'^%s\s*=\s*"([^"]+)"' % re.escape(名称), 文本, re.M)
         return 命中.group(1) if 命中 else None
 
-    def 元组(名):
-        命中 = re.search(r'^%s\s*=\s*\(([^)]*)\)' % re.escape(名), 文, re.M)
+    def 元组(名称):
+        命中 = re.search(r'^%s\s*=\s*\(([^)]*)\)' % re.escape(名称), 文本, re.M)
         if not 命中:
             return None
         return tuple(段.strip().strip('"') for 段 in 命中.group(1).split(",") if 段.strip())
@@ -82,15 +82,15 @@ def 比对(解析路: Path, 子目录路: Path, python路: Path) -> list:
     return 出
 
 
-def 改坏(文: str, 项: str, 假值) -> str:
+def 改坏(文本: str, 一项: str, 假值) -> str:
     """把 Python 源文本里某一项改成假值（反向样本用）。"""
     元 = ("四类子目录名", "苹果基片段", "利努克斯退回片段")
-    变量 = "子目录名" if 项 == "四类子目录名" else 项
-    if 项 in 元:
+    变量 = "子目录名" if 一项 == "四类子目录名" else 一项
+    if 一项 in 元:
         值 = "(%s)" % ", ".join('"%s"' % 段 for 段 in 假值)
     else:
         值 = '"%s"' % 假值
-    return re.sub(r"^%s\s*=\s*.*$" % re.escape(变量), "%s = %s" % (变量, 值), 文, count=1, flags=re.M)
+    return re.sub(r"^%s\s*=\s*.*$" % re.escape(变量), "%s = %s" % (变量, 值), 文本, count=1, flags=re.M)
 
 
 假值表 = {

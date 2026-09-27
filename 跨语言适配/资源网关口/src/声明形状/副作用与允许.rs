@@ -54,18 +54,18 @@ impl 副作用集 {
     pub const 全集: Self = Self(0b1111);
 
     /// 只含一项。
-    pub const fn 单个(项: 副作用) -> Self {
-        Self(项.取位掩码())
+    pub const fn 单个(一项: 副作用) -> Self {
+        Self(一项.取位掩码())
     }
 
     /// 这一项在不在集合里。
-    pub const fn 包含(&self, 项: 副作用) -> bool {
-        self.0 & 项.取位掩码() != 0
+    pub const fn 包含(&self, 一项: 副作用) -> bool {
+        self.0 & 一项.取位掩码() != 0
     }
 
     /// 并进一项。
-    pub fn 并入(&mut self, 项: 副作用) {
-        self.0 |= 项.取位掩码();
+    pub fn 并入(&mut self, 一项: 副作用) {
+        self.0 |= 一项.取位掩码();
     }
 
     /// 集合为空？
@@ -101,8 +101,8 @@ impl 允许表 {
     };
 
     /// 这一项副作用**有没有被允许**。四个开关各管一件事，不互相顶替。
-    pub const fn 允许(&self, 项: 副作用) -> bool {
-        match 项 {
+    pub const fn 允许(&self, 一项: 副作用) -> bool {
+        match 一项 {
             副作用::读文件 => self.读文件,
             副作用::写文件 => self.写文件,
             副作用::联网 => self.联网,

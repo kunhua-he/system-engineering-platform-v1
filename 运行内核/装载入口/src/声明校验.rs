@@ -52,18 +52,18 @@ const 依赖清单上限: usize = 256;
 /// - 每段不许跨号段类、不许越过 9xxx（号段即层级，跨类 = 归属不明 ⇒ `号段冲突`）。
 ///
 /// **只判这一张表**：能力号段与通知号段是两个独立命名空间，两张表之间不交叉比对。
-pub(crate) fn 判号段表(表: 表段<号段>, 名: &'static str) -> Result<(), 载入错误> {
-    if 表.项数 == 0 {
+pub(crate) fn 判号段表(项表: 表段<号段>, 名称: &'static str) -> Result<(), 载入错误> {
+    if 项表.项数 == 0 {
         return Ok(());
     }
-    if 表.项表.is_null() || 表.项数 as usize > 号段表上限 {
-        return Err(载入错误::号段非法 { 表: 名, 序: 0 });
+    if 项表.项表.is_null() || 项表.项数 as usize > 号段表上限 {
+        return Err(载入错误::号段非法 { 表: 名称, 序: 0 });
     }
-    let 段s = 号段切片(表);
+    let 段s = 号段切片(项表);
     for (序, 段) in 段s.iter().enumerate() {
         let 项序 = 序 as u32;
         if 段.起 > 段.止 {
-            return Err(载入错误::号段非法 { 表: 名, 序: 项序 });
+            return Err(载入错误::号段非法 { 表: 名称, 序: 项序 });
         }
         let 类 = 段.止.取号值() / 号段类宽度;
         if 段.起.取号值() / 号段类宽度 != 类 || 类 >= 号段类个数 {
@@ -72,7 +72,7 @@ pub(crate) fn 判号段表(表: 表段<号段>, 名: &'static str) -> Result<(),
         for (另序, 另段) in 段s[..项序 as usize].iter().enumerate() {
             if 段.相交(另段) {
                 return Err(载入错误::号段表内重叠 {
-                    表: 名,
+                    表: 名称,
                     序: 项序,
                     另序: 另序 as u32,
                 });
@@ -335,12 +335,12 @@ fn 命令表含编号(声明: &平台信息, 命令号: 能力号) -> bool {
 
 /// 读声明的错误段位表：**不许为空**（没有它，「未登记的段位不许抛出」判不了），
 /// 段位**不许重复**；表段形状不可用同 `错误段位表为空` 一并拦下。
-pub(crate) fn 读段位表(表: 表段<u32>) -> Result<&'static [u32], 载入错误> {
-    if 表.项数 == 0 || 表.项表.is_null() || 表.项数 as usize > 错误段位表上限 {
+pub(crate) fn 读段位表(项表: 表段<u32>) -> Result<&'static [u32], 载入错误> {
+    if 项表.项数 == 0 || 项表.项表.is_null() || 项表.项数 as usize > 错误段位表上限 {
         return Err(载入错误::错误段位表为空);
     }
     // SAFETY: 契约保证错误段位表指向静态只读数组；项数 > 0 且项表非空。
-    let 段s = unsafe { core::slice::from_raw_parts(表.项表, 表.项数 as usize) };
+    let 段s = unsafe { core::slice::from_raw_parts(项表.项表, 项表.项数 as usize) };
     for (序, 段位) in 段s.iter().enumerate() {
         if 段s[..序].contains(段位) {
             return Err(载入错误::错误段位重复 { 段位: *段位 });

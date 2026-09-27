@@ -34,24 +34,24 @@ pub(crate) unsafe fn 读串(指针: *const u8, 上限: usize) -> Option<&'static
 }
 
 /// 标识串形状：恰好 32 位十六进制字符。
-pub(crate) fn 是合法标识串(串: &[u8]) -> bool {
-    串.len() == 标识串字节数 && 串.iter().all(|字节| 字节.is_ascii_hexdigit())
+pub(crate) fn 是合法标识串(字节串: &[u8]) -> bool {
+    字节串.len() == 标识串字节数 && 字节串.iter().all(|字节| 字节.is_ascii_hexdigit())
 }
 
 /// 号段表 → 切片（判定的合法性由 `判号段表` 负责；此处项数 0 或项表空一律给空切片）。
-pub(crate) fn 号段切片(表: 表段<号段>) -> &'static [号段] {
-    if 表.项数 == 0 || 表.项表.is_null() || 表.项数 as usize > 号段表上限 {
+pub(crate) fn 号段切片(项表: 表段<号段>) -> &'static [号段] {
+    if 项表.项数 == 0 || 项表.项表.is_null() || 项表.项数 as usize > 号段表上限 {
         return &[];
     }
     // SAFETY: 契约保证号段表指向静态只读数组；项数 > 0 且项表非空。
-    unsafe { core::slice::from_raw_parts(表.项表, 表.项数 as usize) }
+    unsafe { core::slice::from_raw_parts(项表.项表, 项表.项数 as usize) }
 }
 
 /// 号段表 → 段表。项数 0 或项表空 ⇒ 空（`登记` 用；判定的合法性由 `判号段表` 负责）。
-pub(crate) fn 读号段表(表: 表段<号段>) -> Vec<号段> {
-    if 表.项数 == 0 || 表.项表.is_null() || 表.项数 as usize > 号段表上限 {
+pub(crate) fn 读号段表(项表: 表段<号段>) -> Vec<号段> {
+    if 项表.项数 == 0 || 项表.项表.is_null() || 项表.项数 as usize > 号段表上限 {
         return Vec::new();
     }
     // SAFETY: 契约保证号段表指向静态只读数组；项数 > 0 且项表非空。
-    unsafe { core::slice::from_raw_parts(表.项表, 表.项数 as usize) }.to_vec()
+    unsafe { core::slice::from_raw_parts(项表.项表, 项表.项数 as usize) }.to_vec()
 }

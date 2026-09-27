@@ -30,8 +30,8 @@ import tempfile
 主入口行模式 = re.compile(r"^if __name__ == ['\"]__main__['\"]:", re.M)
 
 
-def 是源码(名):
-    return 名.endswith(源码后缀)
+def 是源码(名称):
+    return 名称.endswith(源码后缀)
 
 
 def 收集源码(仓根):
@@ -44,8 +44,8 @@ def 收集源码(仓根):
     return sorted(命中表)
 
 
-def 读文本(路):
-    with open(路, encoding="utf-8", errors="replace") as 柄:
+def 读文本(路径):
+    with open(路径, encoding="utf-8", errors="replace") as 柄:
         return 柄.read()
 
 

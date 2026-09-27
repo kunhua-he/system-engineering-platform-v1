@@ -103,6 +103,6 @@ unsafe impl Sync for 适配器 {}
 /// 锁一把 `Mutex`，中毒也照用（锁中毒只说明别的线程 panic 过，被保护的数据本身没坏）。
 ///
 /// 与 `运行内核/调用调度/src/配额记账.rs` 的处置同一口径：**不许因为中毒就崩**。
-pub(crate) fn 取锁<'锁, 值>(锁: &'锁 Mutex<值>) -> std::sync::MutexGuard<'锁, 值> {
-    锁.lock().unwrap_or_else(|中毒| 中毒.into_inner())
+pub(crate) fn 取锁<'锁, 值>(锁句柄: &'锁 Mutex<值>) -> std::sync::MutexGuard<'锁, 值> {
+    锁句柄.lock().unwrap_or_else(|中毒| 中毒.into_inner())
 }
