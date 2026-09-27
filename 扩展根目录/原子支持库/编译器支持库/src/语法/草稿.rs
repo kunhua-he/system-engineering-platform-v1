@@ -46,10 +46,6 @@ impl 草稿表 {
         self.表[下标 as usize].种类
     }
 
-    pub(crate) fn 区间(&self, 下标: u32) -> (u32, u32) {
-        self.表[下标 as usize].区间
-    }
-
     pub(crate) fn 起(&self, 下标: u32) -> u32 {
         self.表[下标 as usize].区间.0
     }
@@ -60,10 +56,6 @@ impl 草稿表 {
 
     pub(crate) fn 子(&self, 下标: u32) -> &[u32] {
         &self.表[下标 as usize].子
-    }
-
-    pub(crate) fn 长(&self) -> usize {
-        self.表.len()
     }
 
     /// 扁平化成先序节点表：**每个子节点都带着它的整棵子树**（见文件头）。
