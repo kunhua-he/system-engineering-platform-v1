@@ -6,7 +6,7 @@
 
 use std::path::{Path, PathBuf};
 
-/// 四类运行数据。**封闭枚举** —— 判别值固定，与 [`子目录::全`] 的次序一致。
+/// 四类运行数据。**封闭枚举** —— 判别值固定，与 [`子目录::全集`] 的次序一致。
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(u8)]
 pub enum 子目录 {
@@ -22,7 +22,7 @@ pub enum 子目录 {
 
 impl 子目录 {
     /// 本类在磁盘上的目录名。**全平台统一**（不随界面语言变 —— 目录名是事实，不是文案）。
-    pub const fn 名(self) -> &'static str {
+    pub const fn 取名称(self) -> &'static str {
         match self {
             Self::数据库 => "数据库",
             Self::缓存 => "缓存",
@@ -32,13 +32,13 @@ impl 子目录 {
     }
 
     /// 四类全表。次序与判别值一致（`0..=3`）。
-    pub const 全: [Self; 4] = [Self::数据库, Self::缓存, Self::日志, Self::临时件];
+    pub const 全集: [Self; 4] = [Self::数据库, Self::缓存, Self::日志, Self::临时件];
 }
 
 /// 某一类子目录的路径。**只拼路径，不建目录**（建目录是 [`确保子目录`] 的事 ——
 /// 「只是想算个路径」不该有副作用）。
 pub fn 子目录路径(根: &Path, 类: 子目录) -> PathBuf {
-    根.join(类.名())
+    根.join(类.取名称())
 }
 
 /// 建出某一类子目录并交出路径（父目录一并建）。
