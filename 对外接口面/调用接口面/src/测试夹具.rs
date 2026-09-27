@@ -39,19 +39,19 @@ impl 收到 {
     }
 
     /// 取一个顶层键；**没有就挂**（要判「没有」请用 `找`）。
-    pub fn 取(&self, 键: &str) -> 协议值 {
+    pub fn 取成员(&self, 键: &str) -> 协议值 {
         self.找(键)
             .unwrap_or_else(|| panic!("应答里没有「{键}」：\n{}", self.体))
     }
 
     /// 找一个顶层键；没有给 `None`。
     pub fn 找(&self, 键: &str) -> Option<协议值> {
-        self.取协议值().取(键).cloned()
+        self.取协议值().取成员(键).cloned()
     }
 
     /// 取顶层的一个布尔键。
     pub fn 取布尔(&self, 键: &str) -> bool {
-        match self.取(键) {
+        match self.取成员(键) {
             协议值::真 => true,
             协议值::假 => false,
             其它 => panic!("「{键}」应当是布尔，实际 {其它:?}：\n{}", self.体),
@@ -60,7 +60,7 @@ impl 收到 {
 
     /// 取顶层的一个文本键。
     pub fn 取文本(&self, 键: &str) -> String {
-        self.取(键)
+        self.取成员(键)
             .取文本()
             .map(str::to_owned)
             .unwrap_or_else(|| panic!("「{键}」应当是文本：\n{}", self.体))
@@ -68,7 +68,7 @@ impl 收到 {
 
     /// 取顶层的一个数组键。
     pub fn 取数组(&self, 键: &str) -> Vec<协议值> {
-        self.取(键)
+        self.取成员(键)
             .取数组()
             .map(<[协议值]>::to_vec)
             .unwrap_or_else(|| panic!("「{键}」应当是数组：\n{}", self.体))
@@ -77,7 +77,7 @@ impl 收到 {
 
 /// 取一个布尔成员。**不是布尔就挂**：形状不对当场暴露，不静默当 `false`。
 pub fn 布尔(值: &协议值, 键: &str) -> bool {
-    match 值.取(键) {
+    match 值.取成员(键) {
         Some(协议值::真) => true,
         Some(协议值::假) => false,
         其它 => panic!("「{键}」应当是布尔，实际 {其它:?}"),
@@ -86,25 +86,25 @@ pub fn 布尔(值: &协议值, 键: &str) -> bool {
 
 /// 取一个非负整数成员。
 pub fn 无符号(值: &协议值, 键: &str) -> u64 {
-    值.取(键)
+    值.取成员(键)
         .and_then(协议值::取无符号)
-        .unwrap_or_else(|| panic!("「{键}」应当是非负整数，实际 {:?}", 值.取(键)))
+        .unwrap_or_else(|| panic!("「{键}」应当是非负整数，实际 {:?}", 值.取成员(键)))
 }
 
 /// 取一个文本成员。
 pub fn 文本(值: &协议值, 键: &str) -> String {
-    值.取(键)
+    值.取成员(键)
         .and_then(协议值::取文本)
         .map(str::to_owned)
-        .unwrap_or_else(|| panic!("「{键}」应当是文本，实际 {:?}", 值.取(键)))
+        .unwrap_or_else(|| panic!("「{键}」应当是文本，实际 {:?}", 值.取成员(键)))
 }
 
 /// 取一个数组成员。
 pub fn 数组(值: &协议值, 键: &str) -> Vec<协议值> {
-    值.取(键)
+    值.取成员(键)
         .and_then(协议值::取数组)
         .map(<[协议值]>::to_vec)
-        .unwrap_or_else(|| panic!("「{键}」应当是数组，实际 {:?}", 值.取(键)))
+        .unwrap_or_else(|| panic!("「{键}」应当是数组，实际 {:?}", 值.取成员(键)))
 }
 
 /// 前端网页应用的仓内位置（**本 crate 的相对位置**）：静态托管的根（`接口面形状.md` §五）。

@@ -16,7 +16,7 @@ pub(crate) enum 值 {
 }
 
 impl 值 {
-    pub(crate) fn 取(&self, 键: &str) -> Option<&值> {
+    pub(crate) fn 取成员(&self, 键: &str) -> Option<&值> {
         match self {
             值::表(项) => 项.iter().find(|(名, _)| 名 == 键).map(|(_, 值)| 值),
             _ => None,

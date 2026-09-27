@@ -33,7 +33,7 @@ pub enum 协议值 {
 impl 协议值 {
     /// 按名取一个成员。非对象、无此键、值为 `null` 都给 `None`
     /// （`null` 在契约里是「编号留空」这类**显式空位**，不是「有这个键」）。
-    pub fn 取(&self, 键: &str) -> Option<&协议值> {
+    pub fn 取成员(&self, 键: &str) -> Option<&协议值> {
         match self {
             协议值::对象(成员) => 成员
                 .iter()

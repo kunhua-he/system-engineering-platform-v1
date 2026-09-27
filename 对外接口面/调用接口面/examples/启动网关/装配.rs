@@ -57,7 +57,7 @@ pub(crate) fn 跑() -> Result<(), String> {
         .值()
         .map_err(|错| format!("扩展根声明不是合法 JSON：{错}"))?;
     let 种类 = 根
-        .取("种类")
+        .取成员("种类")
         .and_then(|值| 值.列())
         .ok_or_else(|| "扩展根声明缺 `种类` 段".to_owned())?;
     println!(
@@ -82,8 +82,8 @@ pub(crate) fn 跑() -> Result<(), String> {
     let mut 装上的: Vec<String> = Vec::new();
     let mut 剔除的: Vec<(String, String)> = Vec::new();
     for 类 in 种类 {
-        let 类名 = 类.取("种类").and_then(|值| 值.串()).unwrap_or("?");
-        let Some(可装载) = 类.取("可装载件").and_then(|值| 值.布尔()) else {
+        let 类名 = 类.取成员("种类").and_then(|值| 值.串()).unwrap_or("?");
+        let Some(可装载) = 类.取成员("可装载件").and_then(|值| 值.布尔()) else {
             return Err(format!(
                 "扩展根声明的 种类[{类名}] 缺 `可装载件`（或不是布尔）。\n  \
                  这个键决定「这一类的直接子目录要不要当可装载件候选」（支持库 true · \
@@ -94,7 +94,7 @@ pub(crate) fn 跑() -> Result<(), String> {
         if !可装载 {
             continue;
         }
-        let Some(目录) = 类.取("目录").and_then(|值| 值.串()) else {
+        let Some(目录) = 类.取成员("目录").and_then(|值| 值.串()) else {
             continue;
         };
         let 目录 = PathBuf::from(目录);

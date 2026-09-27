@@ -34,7 +34,7 @@ pub struct 件 {
 ///
 /// `路径` 必须是**已经百分号解码过**的路径 —— 解码在协议层做（`路由.rs`），
 /// 这里只认解码后的形态，不重复解一次（同一件事两处做，两处会分叉）。
-pub fn 取(根: &Path, 路径: &str) -> Option<件> {
+pub fn 取件(根: &Path, 路径: &str) -> Option<件> {
     let 相对 = 安全相对路径(路径)?;
     let 全 = 根.join(&相对);
     // 目录与不存在的件一律 `None`（口径 4：不列表、不重写）。
@@ -103,15 +103,15 @@ mod 静态件测试 {
     #[test]
     fn 根路径回首页且取得到前端自身的件() {
         let 根 = 前端根();
-        let 首页 = 取(&根, "/").expect("`/` 必须回 index.html");
+        let 首页 = 取件(&根, "/").expect("`/` 必须回 index.html");
         assert_eq!(首页.内容类型, "text/html; charset=utf-8");
         assert!(首页.字节.starts_with(b"<!DOCTYPE html>"), "该是真 index.html");
 
-        let 样式 = 取(&根, "/样式.css").expect("样式.css 在托管根下");
+        let 样式 = 取件(&根, "/样式.css").expect("样式.css 在托管根下");
         assert_eq!(样式.内容类型, "text/css; charset=utf-8");
         assert!(!样式.字节.is_empty());
 
-        let 脚本 = 取(&根, "/取接口.js").expect("取接口.js 在托管根下");
+        let 脚本 = 取件(&根, "/取接口.js").expect("取接口.js 在托管根下");
         assert_eq!(脚本.内容类型, "text/javascript; charset=utf-8");
     }
 
@@ -127,10 +127,10 @@ mod 静态件测试 {
             "//Cargo.toml",
             "/a\\b",
         ] {
-            assert!(取(&根, 路).is_none(), "「{路}」不许取到（托管根之外）");
+            assert!(取件(&根, 路).is_none(), "「{路}」不许取到（托管根之外）");
         }
         // 不存在的件、目录请求（子目录）也不给件 —— 不列表、不重写。
-        assert!(取(&根, "/没有这个件.txt").is_none());
-        assert!(取(&根, "/项目文档/").is_none());
+        assert!(取件(&根, "/没有这个件.txt").is_none());
+        assert!(取件(&根, "/项目文档/").is_none());
     }
 }
