@@ -3,7 +3,7 @@
 
 from .常量 import 命令项大小, 命令字段
 from .字段 import 读字段
-from .形状 import 解析错误
+from PE形状 import 解析错误
 
 
 def 探物理槽数(pe, 字典):

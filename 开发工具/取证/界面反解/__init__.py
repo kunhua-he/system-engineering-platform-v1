@@ -21,7 +21,7 @@ from .常量 import (
     资源类型名, 预定义控件类, 菜单选项位, 控件样式位, 对话框样式位,
     按钮样式, 编辑样式, 静态样式, 组合框样式, 虚拟键名, 压缩签名,
 )
-from .形状 import PE, 解析错误
+from PE形状 import PE, 解析错误
 from .资源树 import 走资源树
 from .菜单 import 解菜单
 from .对话框 import _变量数组, 解对话框, 类名, 文字显示

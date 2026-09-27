@@ -4,7 +4,7 @@
 import struct
 
 from .常量 import 数值格式
-from .形状 import 解析错误
+from PE形状 import 解析错误
 
 
 def 读字段(pe, 基偏移, 表):

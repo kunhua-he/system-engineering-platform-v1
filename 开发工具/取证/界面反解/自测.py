@@ -5,7 +5,7 @@ import os
 import struct
 
 from .反解 import 反解, 反解数据
-from .形状 import PE, 解析错误
+from PE形状 import PE, 解析错误
 from .资源树 import 走资源树
 
 
@@ -16,6 +16,7 @@ def 自测(样本="/tmp/易语言源码/e.exe"):
           ("随机字节流", bytes(range(256)) * 8)]
     try:
         pe = PE(好)
+        pe.要资源目录()
         叶 = 走资源树(pe)
         定位 = {}
         for 叶项 in 叶:

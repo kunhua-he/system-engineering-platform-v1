@@ -40,7 +40,9 @@ pub fn 写(值: &值) -> String {
     出
 }
 
-fn 缩进(出: &mut String, 层: usize) {
+/// 缩进一个单位（两空格）并换行。**公开**：`对外接口面/调用接口面/src/协议写出.rs` 也用它 ——
+/// 同一套排版只许有一份实现。
+pub fn 缩进(出: &mut String, 层: usize) {
     出.push('\n');
     for _ in 0..层 {
         出.push_str("  ");
@@ -92,7 +94,9 @@ fn 写值(出: &mut String, 值: &值, 层: usize) {
 }
 
 /// 写一个 JSON 字符串：只转 `"` `\` 与 `U+0000..U+001F`（见文件头）。
-fn 写文本(出: &mut String, 文: &str) {
+/// 把一个字符串按 JSON 规则转义着写进去。**公开**：转义表是**正确性资产**
+/// （少转一个控制字符就产出非法 JSON）⇒ 只许有一份，上层复用本函数。
+pub fn 写文本(出: &mut String, 文: &str) {
     出.push('"');
     for 字 in 文.chars() {
         match 字 {

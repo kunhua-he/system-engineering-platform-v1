@@ -6,7 +6,7 @@ import struct
 from collections import Counter
 
 from .常量 import 压缩签名
-from .形状 import 解析错误
+from PE形状 import 解析错误
 
 
 def 容器识别(数据字节):

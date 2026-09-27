@@ -20,7 +20,7 @@ from .常量 import (
     库格式号, 导出名, 库信息大小, 命令项大小, 参数项大小, 常量项大小, 类型项大小,
     库信息字段, 命令字段, 参数字段, 常量字段, 类型字段, 命令状态位, 库状态位, 数值格式,
 )
-from .形状 import PE, 解析错误
+from PE形状 import PE, 解析错误
 from .接缝 import 解接缝
 from .字段 import 读字段, 解表
 from .物理槽 import 探物理槽数, 计数判定

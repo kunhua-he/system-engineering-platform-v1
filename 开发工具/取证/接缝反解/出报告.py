@@ -6,7 +6,7 @@ import struct
 from .常量 import (库信息大小, 导出名, 命令项大小, 命令字段, 参数项大小, 参数字段,
                    常量项大小, 常量字段, 类型项大小, 类型字段, 命令状态位, 库状态位)
 from .字段 import 解表
-from .形状 import 解析错误
+from PE形状 import 解析错误
 
 
 def 出报告(读数):

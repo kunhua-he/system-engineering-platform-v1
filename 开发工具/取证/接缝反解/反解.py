@@ -6,7 +6,7 @@ import struct
 from .常量 import 库信息大小, 库格式号, 库信息字段, 命令项大小, 命令字段
 from .接缝 import 解接缝
 from .字段 import 读字段, 解表
-from .形状 import PE, 解析错误
+from PE形状 import PE, 解析错误
 from .物理槽 import 探物理槽数
 
 

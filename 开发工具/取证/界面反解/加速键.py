@@ -4,7 +4,7 @@
 import struct
 
 from .常量 import 虚拟键名
-from .形状 import 解析错误
+from PE形状 import 解析错误
 
 
 def 解加速键(表字节, 资源id):

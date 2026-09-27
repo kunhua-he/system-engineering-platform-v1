@@ -6,7 +6,7 @@ from .压缩 import 压缩判定
 from .图标组 import 解图标组
 from .字符串表 import 解字符串表
 from .对话框 import 解对话框
-from .形状 import PE, 解析错误
+from PE形状 import PE, 解析错误
 from .版本 import 解版本
 from .菜单 import 解菜单
 from .资源树 import 走资源树
@@ -20,6 +20,7 @@ def 反解(路径):
 
 def 反解数据(数据, 路径="<内存>"):
     pe = PE(数据, 路径)
+    pe.要资源目录()   # 本工具反解的就是资源；没有资源目录 ⇒ 当场抛（fail-closed）
     叶子 = 走资源树(pe)
     分类 = {}
     for 叶 in 叶子:

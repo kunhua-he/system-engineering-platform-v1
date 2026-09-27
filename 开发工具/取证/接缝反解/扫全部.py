@@ -6,7 +6,7 @@ import os
 
 from .常量 import 命令项大小
 from .反解 import 反解
-from .形状 import PE, 解析错误
+from PE形状 import PE, 解析错误
 from .物理槽 import 计数判定
 
 

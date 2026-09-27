@@ -10,19 +10,15 @@
 //!    调用方解析不了的东西。宁可写 `null`（= 无值），也不产出非法 JSON。
 
 use crate::协议值::协议值;
+// 转义表与缩进**不在这里再写一份**：那是正确性资产（少转一个控制字符就产出非法 JSON），
+// 只许有一份 —— 下沉在 `跨语言适配/适配器实现/src/小写出.rs`（本层只依赖适配器，不新增依赖边）。
+use v1_adapter::小写出::{写文本, 缩进};
 
 /// 序列化为缩进版 JSON 文本（**不含**结尾换行）。
 pub fn 写(值: &协议值) -> String {
     let mut 出 = String::new();
     写值(&mut 出, 值, 0);
     出
-}
-
-fn 缩进(出: &mut String, 层: usize) {
-    出.push('\n');
-    for _ in 0..层 {
-        出.push_str("  ");
-    }
 }
 
 fn 写值(出: &mut String, 值: &协议值, 层: usize) {
@@ -80,27 +76,6 @@ fn 写值(出: &mut String, 值: &协议值, 层: usize) {
 
 /// 写一个 JSON 字符串。非 ASCII 原样走 UTF-8（响应头声明 `charset=utf-8`），
 /// 不转成 `\uXXXX`——转了体积大三倍且更难读。
-fn 写文本(出: &mut String, 文: &str) {
-    出.push('"');
-    for 字 in 文.chars() {
-        match 字 {
-            '"' => 出.push_str("\\\""),
-            '\\' => 出.push_str("\\\\"),
-            '\n' => 出.push_str("\\n"),
-            '\r' => 出.push_str("\\r"),
-            '\t' => 出.push_str("\\t"),
-            '\u{08}' => 出.push_str("\\b"),
-            '\u{0C}' => 出.push_str("\\f"),
-            // 其余控制字符必须转义（裸控制字符不是合法 JSON）。
-            字 if (字 as u32) < 0x20 => {
-                出.push_str(&format!("\\u{:04x}", 字 as u32));
-            }
-            字 => 出.push(字),
-        }
-    }
-    出.push('"');
-}
-
 #[cfg(test)]
 mod 写出测试 {
     use super::*;

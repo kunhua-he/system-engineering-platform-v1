@@ -5,7 +5,7 @@
 import struct
 
 from .常量 import 预定义控件类
-from .形状 import 解析错误
+from PE形状 import 解析错误
 
 
 def _变量数组(模板字节, 游标, 资源id, 字段):

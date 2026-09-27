@@ -3,7 +3,7 @@
 
 import struct
 
-from .形状 import 解析错误
+from PE形状 import 解析错误
 
 
 def 走资源树(pe):
