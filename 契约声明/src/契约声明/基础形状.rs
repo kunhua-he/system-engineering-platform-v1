@@ -5,30 +5,49 @@
 
 use crate::类型标签;
 
-/// 版本三元组（含构建号）。
+/// 实现版本（三段 `i32`：主 · 次 · 构建）。
+///
+/// 型名逐字不变（`v1_contract::版本三元组`）—— 它本来就是「三件」：主 · 次 · 构建。
+/// 2026-09-27 前这里是 `4×u16`（多一个 `修订` 段），属**无理由偏离**：参照实现 `LIB_INFO`
+/// 的 `m_nMajorVersion` + `m_nMinorVersion` + `m_nBuildNumber` 是 **3×i32**
+/// （`项目文档/设计文档/接缝实测.md` §七.1）。拉齐走 `契约声明/冻结登记.json` 的旁路。
 #[repr(C)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct 版本三元组 {
-    pub 主: u16,
-    pub 次: u16,
-    pub 修订: u16,
-    pub 构建: u16,
+    pub 主: i32,
+    pub 次: i32,
+    pub 构建: i32,
 }
 
 impl 版本三元组 {
-    pub const fn 新(主: u16, 次: u16, 修订: u16, 构建: u16) -> Self {
-        Self { 主, 次, 修订, 构建 }
+    pub const fn 新(主: i32, 次: i32, 构建: i32) -> Self {
+        Self { 主, 次, 构建 }
     }
 
-    /// 本版本是否满足「要求版本」：主次修订逐位比较，构建号不参与。
-    pub const fn 满足(&self, 要求: &版本三元组) -> bool {
+    /// 本版本是否满足「版本要求」：**先比主、再比次**（要求无修订段；构建号不参与）。
+    pub const fn 满足(&self, 要求: &版本要求) -> bool {
         if self.主 != 要求.主 {
             return self.主 > 要求.主;
         }
-        if self.次 != 要求.次 {
-            return self.次 > 要求.次;
-        }
-        self.修订 >= 要求.修订
+        self.次 >= 要求.次
+    }
+}
+
+/// 版本要求（两段 `i32`：主 · 次）—— **无修订段**。
+///
+/// 与 `版本三元组` 是**两个型**：被比较的一方（要求）只有两段，照参照实现
+/// `m_nRqSysMajorVer` + `m_nRqSysMinorVer`（2×i32，`项目文档/设计文档/接缝实测.md` §七.1）。
+/// 判「满足」的是 `版本三元组::满足`（提供方拿本型当门槛）。
+#[repr(C)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct 版本要求 {
+    pub 主: i32,
+    pub 次: i32,
+}
+
+impl 版本要求 {
+    pub const fn 新(主: i32, 次: i32) -> Self {
+        Self { 主, 次 }
     }
 }
 

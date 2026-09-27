@@ -110,8 +110,8 @@ def 健康(端口: int) -> tuple:
     except ValueError:
         return 状, "返回不是 JSON（{} 字节）".format(len(文))
     版 = 描.get("契约版本") or {}
-    return 状, "契约版本 {}.{}.{}.{} · 实际端口 {} · 能力 {} 条".format(
-        版.get("主", "?"), 版.get("次", "?"), 版.get("修订", "?"), 版.get("构建", "?"),
+    return 状, "契约版本 {}.{}.{} · 实际端口 {} · 能力 {} 条".format(
+        版.get("主", "?"), 版.get("次", "?"), 版.get("构建", "?"),
         描.get("实际端口"), len(描.get("能力", [])),
     )
 
