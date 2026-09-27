@@ -69,24 +69,24 @@ impl 配额账本 {
     }
 
     /// 某个能力号累计的真实耗时（毫秒）。
-    pub fn 累计耗时毫秒(&self, 号: 能力号) -> u64 {
+    pub fn 累计耗时毫秒(&self, 命令号: 能力号) -> u64 {
         let 记录 = self.耗时记录.lock().unwrap_or_else(|中毒| 中毒.into_inner());
-        *记录.get(&号).unwrap_or(&0)
+        *记录.get(&命令号).unwrap_or(&0)
     }
 
     /// 该号有没有被记过账。真实耗时为 0 毫秒时 `累计耗时毫秒` 也是 0，
     /// 分不出「没记账」与「记了但耗时为 0」，故另给这个口。
-    pub fn 耗时记录键存在(&self, 号: 能力号) -> bool {
+    pub fn 耗时记录键存在(&self, 命令号: 能力号) -> bool {
         let 记录 = self.耗时记录.lock().unwrap_or_else(|中毒| 中毒.into_inner());
-        记录.contains_key(&号)
+        记录.contains_key(&命令号)
     }
 
     /// 取用一次配额。超限返回 `false`，**不是 panic**。
-    fn 取用(&self, 号: 能力号) -> bool {
+    fn 取用(&self, 命令号: 能力号) -> bool {
         let 现在 = self.现在毫秒();
         // 锁中毒不许崩：中毒只说明别人 panic 过，账本本身照样能记账。
         let mut 记录 = self.记录.lock().unwrap_or_else(|中毒| 中毒.into_inner());
-        let 项 = 记录.entry(号).or_insert(窗口用量 { 窗口起点毫秒: 现在, 已用: 0 });
+        let 项 = 记录.entry(命令号).or_insert(窗口用量 { 窗口起点毫秒: 现在, 已用: 0 });
         if 现在.saturating_sub(项.窗口起点毫秒) >= self.窗口毫秒 {
             *项 = 窗口用量 { 窗口起点毫秒: 现在, 已用: 0 };
         }
@@ -104,16 +104,16 @@ impl 配额账本 {
 
 impl 调用账本 for 配额账本 {
     /// 执行**前**问一次：配额够就 `true`（放行），不够就 `false`（**不许进执行函数**）。
-    fn 准调(&self, 号: 能力号) -> bool {
-        self.取用(号)
+    fn 准调(&self, 命令号: 能力号) -> bool {
+        self.取用(命令号)
     }
 
     /// 执行**后**记一次。本账本的配额是**按次数**判的，不参与耗时——
     /// 但真实耗时仍然要收下（它是超时唯一口径的来源之一），所以不做 `_耗时毫秒` 丢弃。
     /// 现在只累加留痕；将来若要按耗时限速，改这里，不改契约。
-    fn 记账(&self, 号: 能力号, 耗时毫秒: u64) {
+    fn 记账(&self, 命令号: 能力号, 耗时毫秒: u64) {
         let mut 记录 = self.耗时记录.lock().unwrap_or_else(|中毒| 中毒.into_inner());
-        let 项 = 记录.entry(号).or_insert(0);
+        let 项 = 记录.entry(命令号).or_insert(0);
         *项 = 项.saturating_add(耗时毫秒);
     }
 }

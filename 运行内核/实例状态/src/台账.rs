@@ -35,9 +35,9 @@ impl 实例表 {
     /// 开一个实例，返回句柄。
     pub fn 开启(&mut self) -> 实例句柄 {
         let 令牌 = Box::new(0u8);
-        let 号 = &*令牌 as *const u8 as u64;
-        self.记录.insert(号, 实例记录 { _令牌: 令牌, 已释放: false });
-        实例句柄(号)
+        let 句柄值 = &*令牌 as *const u8 as u64;
+        self.记录.insert(句柄值, 实例记录 { _令牌: 令牌, 已释放: false });
+        实例句柄(句柄值)
     }
 
     /// 关一个实例。
