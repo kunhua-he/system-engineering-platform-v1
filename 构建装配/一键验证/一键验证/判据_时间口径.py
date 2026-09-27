@@ -15,8 +15,8 @@ _标识符 = re.compile(r"[A-Za-z_\u4e00-\u9fff][0-9A-Za-z_\u4e00-\u9fff]*")
 
 def _去注释(行: str) -> str:
     """去掉行注释（`//` 之后）。本判据只看**代码里的标识符**，不看注释里的散文。"""
-    i = 行.find("//")
-    return 行[:i] if i >= 0 else 行
+    注释起 = 行.find("//")
+    return 行[:注释起] if 注释起 >= 0 else 行
 
 
 # 「量」的声明形：常量 / 静态量（`const 名: 类型`）与结构体字段（`pub 名: 类型`）。
@@ -44,7 +44,7 @@ def _抽量名(文本: str) -> set:
                 出.add(命.group(1))
         命 = _再导出.match(码)
         if 命:
-            出 |= {x.strip() for x in 命.group(1).split(",") if x.strip()}
+            出 |= {名字.strip() for 名字 in 命.group(1).split(",") if 名字.strip()}
     return 出
 
 

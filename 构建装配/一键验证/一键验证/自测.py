@@ -86,12 +86,12 @@ def 自测(源仓根: Path) -> int:
     全过 = 全过 and 正过
     print(f"【正向样本·干净合成仓】不注入任何东西    结果：{'过' if 正过 else '不过'}")
     print(
-        f"  通过 {len(结果['通过'])} 项 · 失败 {len([x for x in 结果['失败'] if isinstance(x, str)])} 项 · "
-        f"未判 {len([x for x in 结果['未判'] if isinstance(x, str)])} 项 · "
+        f"  通过 {len(结果['通过'])} 项 · 失败 {len([明细条 for 明细条 in 结果['失败'] if isinstance(明细条, str)])} 项 · "
+        f"未判 {len([明细条 for 明细条 in 结果['未判'] if isinstance(明细条, str)])} 项 · "
         f"疑似瞬时 {len(结果['疑似瞬时'])} 项"
     )
     if not 正过:
-        for 条 in [x for x in 结果["失败"] + 结果["未判"] if isinstance(x, dict)][:6]:
+        for 条 in [明细条 for 明细条 in 结果["失败"] + 结果["未判"] if isinstance(明细条, dict)][:6]:
             print(f"  ✗ 干净输入上仍报：{条['检查']} ｜ {条['位置']} ｜ 缺什么：{条['缺什么'][:160]}")
     print("")
 
@@ -125,7 +125,7 @@ def 自测(源仓根: Path) -> int:
         元 = 判据元数据.get(名, {})
         反 = 元.get("反向样本")
         正 = 元.get("正向样本")
-        有反 = bool(反) and 反 in {x[0] for x in 自测用例}
+        有反 = bool(反) and 反 in {用例条[0] for 用例条 in 自测用例}
         有正 = bool(正) and 正 == "干净合成仓"
         if not (有反 and 有正):
             缺证.append(名)

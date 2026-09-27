@@ -25,11 +25,11 @@ def _形二豁免(行表: list, 序: int, 列: int, 行号: int) -> str:
     上 = 行表[序 - 1].strip() if 序 >= 1 else ""
     if 上.startswith("```"):
         内容行数 = 0
-        i = 序 - 2
-        while i >= 0 and not 行表[i].strip().startswith("```"):
+        探位 = 序 - 2
+        while 探位 >= 0 and not 行表[探位].strip().startswith("```"):
             内容行数 += 1
-            i -= 1
-        if i >= 0 and 行号 <= 内容行数:
+            探位 -= 1
+        if 探位 >= 0 and 行号 <= 内容行数:
             return f"语料原文行（紧跟围栏块，块内 {内容行数} 行）"
     return ""
 
@@ -83,7 +83,7 @@ def 检查15_禁按行号引用(上: dict) -> list:
                 )
             # ── 形二：`第 N 行`（md 行号引用同罪）──
             for 命 in 行号引用_第几行.finditer(行):
-                号表 = [int(x) for x in re.split(r"[/、,]", 命.group(1)) if x.strip().isdigit()]
+                号表 = [int(号片) for 号片 in re.split(r"[/、,]", 命.group(1)) if 号片.strip().isdigit()]
                 for 号 in 号表:
                     if 号 <= 1:
                         continue

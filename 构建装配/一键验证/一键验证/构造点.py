@@ -30,9 +30,9 @@ def 找构造点(文本: str) -> list:
     净 = 去字面量(文本)
     区表 = cfg测试区(文本)
     行首表 = [0]
-    for i, c in enumerate(净):
-        if c == "\n":
-            行首表.append(i + 1)
+    for 游标, 字符 in enumerate(净):
+        if 字符 == "\n":
+            行首表.append(游标 + 1)
 
     def 行号(位: int) -> int:
         低, 高 = 0, len(行首表) - 1
@@ -62,13 +62,13 @@ def 找构造点(文本: str) -> list:
         起 = 命.end() - 1
         深 = 0
         止 = None
-        for i in range(起, len(净)):
-            if 净[i] == "{":
+        for 游标 in range(起, len(净)):
+            if 净[游标] == "{":
                 深 += 1
-            elif 净[i] == "}":
+            elif 净[游标] == "}":
                 深 -= 1
                 if 深 == 0:
-                    止 = i
+                    止 = 游标
                     break
         if 止 is None:
             止 = len(净) - 1
@@ -93,12 +93,12 @@ def 找构造点(文本: str) -> list:
             for _ in range(3):  # 最多上溯三层（mod 套 fn 之类）
                 块起 = -1
                 深 = 0
-                for i in range(位 - 1, -1, -1):
-                    if 净[i] == "}":
+                for 游标 in range(位 - 1, -1, -1):
+                    if 净[游标] == "}":
                         深 += 1
-                    elif 净[i] == "{":
+                    elif 净[游标] == "{":
                         if 深 == 0:
-                            块起 = i
+                            块起 = 游标
                             break
                         深 -= 1
                 if 块起 < 0:
@@ -116,7 +116,7 @@ def 找构造点(文本: str) -> list:
                 "行号": 行,
                 "头行": 行文(命.start()),
                 "字段": 字段,
-                "测试区": any(a <= 命.start() <= b for a, b in 区表),
+                "测试区": any(区起 <= 命.start() <= 区止 for 区起, 区止 in 区表),
                 "具名项": 具名,
             }
         )
@@ -132,7 +132,7 @@ def _抽版本三元组(文本: str, 常量名: str):
     命中 = 形.search(文本)
     if not 命中:
         return None
-    return ".".join(命中.group(i) for i in (1, 2, 3, 4))
+    return ".".join(命中.group(组序) for 组序 in (1, 2, 3, 4))
 
 
 def 跑生成器检查(仓根: Path, 生成器: Path) -> tuple:
@@ -232,20 +232,20 @@ def _cfg属性(掩: str, 起: int):
     配 = re.match(r"#\[\s*cfg\s*\(", 掩[起:])
     if not 配:
         return None
-    k = 起 + 配.end()
-    n = len(掩)
+    位置 = 起 + 配.end()
+    长度 = len(掩)
     深 = 1
-    while k < n and 深:
-        if 掩[k] == "(":
+    while 位置 < 长度 and 深:
+        if 掩[位置] == "(":
             深 += 1
-        elif 掩[k] == ")":
+        elif 掩[位置] == ")":
             深 -= 1
-        k += 1
+        位置 += 1
     if 深:
         return None
-    j = k
-    while j < n and 掩[j] in " \t\r\n":
-        j += 1
-    if j >= n or 掩[j] != "]":
+    收尾 = 位置
+    while 收尾 < 长度 and 掩[收尾] in " \t\r\n":
+        收尾 += 1
+    if 收尾 >= 长度 or 掩[收尾] != "]":
         return None
-    return 掩[起 : j + 1], j + 1
+    return 掩[起 : 收尾 + 1], 收尾 + 1

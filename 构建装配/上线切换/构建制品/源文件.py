@@ -9,7 +9,7 @@ from .常量 import 仓根, 跳过目录, 源后缀
 
 def 走源文件(目录: Path):
     for 根, 目录表, 文件表 in os.walk(目录):
-        目录表[:] = [d for d in 目录表 if d not in 跳过目录]
+        目录表[:] = [目录名 for 目录名 in 目录表 if 目录名 not in 跳过目录]
         for 名 in 文件表:
             if 名.endswith(源后缀):
                 yield Path(根) / 名

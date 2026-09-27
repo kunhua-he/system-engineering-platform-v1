@@ -91,8 +91,8 @@ def 生产区文本(文本: str, 保串: bool = False) -> str:
     净 = 去字面量(文本) if not 保串 else 去注释保串(文本)
     出区 = list(净)
     for 起, 止 in cfg测试区(文本):
-        for i in range(起, min(止 + 1, len(出区))):
-            出区[i] = " "
+        for 游标 in range(起, min(止 + 1, len(出区))):
+            出区[游标] = " "
     return "".join(出区)
 
 

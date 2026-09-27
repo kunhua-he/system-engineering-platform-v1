@@ -66,13 +66,13 @@ def 自检_整份夹具跳过() -> list:
             return 验证(临根)
 
     挂了, 没挂 = 跑(True), 跑(False)
-    失败数 = lambda r: len([x for x in r["失败"] if isinstance(x, str)])  # noqa: E731
+    失败数 = lambda 结果: len([明细条 for 明细条 in 结果["失败"] if isinstance(明细条, str)])  # noqa: E731
     出.append(
         (
             "对照：不挂载 ⇒ 同一份文件被抓到（证明「跳过」不是空转）",
             失败数(挂了) == 0 and 失败数(没挂) > 0,
             f"挂了：失败 {失败数(挂了)} 项 · 没挂：失败 {失败数(没挂)} 项 "
-            f"{[x for x in 没挂['失败'] if isinstance(x, str)]}",
+            f"{[明细条 for 明细条 in 没挂['失败'] if isinstance(明细条, str)]}",
         )
     )
     return 出

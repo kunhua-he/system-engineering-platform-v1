@@ -30,12 +30,12 @@ from .常量 import (
 # ════════════════════════════════════════════════════════════════════════════
 
 def _样本_编号文件(上):
-    return sum(len(v) for v in 上["编号表"].values())
+    return sum(len(记录表) for 记录表 in 上["编号表"].values())
 
 
 def _样本_号段图(上):
     图 = 上["号段图"] or {}
-    return sum(len(图.get(k) or []) for k in 号段图四节)
+    return sum(len(图.get(节键) or []) for 节键 in 号段图四节)
 
 
 def _样本_能力声明(上):
@@ -138,7 +138,7 @@ def _样本_仓树条目(上):
     仓根 = 上["仓根"]
     数 = 0
     for 根, 目录表, 文件表 in os.walk(仓根):
-        目录表[:] = [d for d in 目录表 if d != ".git"]
+        目录表[:] = [目录名 for 目录名 in 目录表 if 目录名 != ".git"]
         数 += len(目录表) + len(文件表)
     return 数
 

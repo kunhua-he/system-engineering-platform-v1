@@ -25,13 +25,13 @@ _枚举变体声明形 = re.compile(r"^载入\s*\([^;]*\)\s*,?\s*$")
 def _配平括号(文本: str, 开: int) -> int:
     """`文本[开]` 是 `(` ⇒ 返回与它配对的 `)` 的下标（配不平就返回 len）。"""
     深 = 0
-    for i in range(开, len(文本)):
-        if 文本[i] == "(":
+    for 游标 in range(开, len(文本)):
+        if 文本[游标] == "(":
             深 += 1
-        elif 文本[i] == ")":
+        elif 文本[游标] == ")":
             深 -= 1
             if 深 == 0:
-                return i
+                return 游标
     return len(文本)
 
 

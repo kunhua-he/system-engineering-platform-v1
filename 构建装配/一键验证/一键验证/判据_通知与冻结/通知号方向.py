@@ -60,7 +60,7 @@ def 检查8_通知号落在对应方向的号段内(上: dict) -> list:
                 )
             )
             continue
-        命中 = [s for s in 段表 if s[0] <= 号 <= s[1]]
+        命中 = [段项 for 段项 in 段表 if 段项[0] <= 号 <= 段项[1]]
         if not 命中:
             出.append(
                 违规(

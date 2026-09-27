@@ -95,8 +95,8 @@ def 自检_剥字面量剥序() -> list:
         净 = list(去字面量(文))
         起 = 文.find("/*")
         止 = 文.find("*/") + 2
-        for p in range(起, 止):
-            净[p] = " "
+        for 位 in range(起, 止):
+            净[位] = " "
         return "".join(净)
 
     旧净 = 旧抹法(带块注释)
