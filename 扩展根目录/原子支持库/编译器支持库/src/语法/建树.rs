@@ -70,21 +70,21 @@ pub(super) struct 建树器<'a> {
 
 // ── 小工具（全是纯函数，不碰 self）────────────────────────────────────────────
 
-pub(super) fn 文(原文: &[u8], t: 记号) -> &[u8] {
-    原文.get(t.起 as usize..t.止 as usize).unwrap_or(&[])
+pub(super) fn 文(原文: &[u8], 该记号: 记号) -> &[u8] {
+    原文.get(该记号.起 as usize..该记号.止 as usize).unwrap_or(&[])
 }
 
 /// 去掉 `[起, 止)` 两端的 `空白` 记号；没有内容记号就返回 `None`。
 pub(super) fn 去空白(表: &[记号], 起: usize, 止: usize) -> Option<(usize, usize)> {
-    let mut a = 起;
-    let mut b = 止;
-    while a < b && 表[a].种类 == 记号种类::空白 {
-        a += 1;
+    let mut 前界 = 起;
+    let mut 后界 = 止;
+    while 前界 < 后界 && 表[前界].种类 == 记号种类::空白 {
+        前界 += 1;
     }
-    while b > a && 表[b - 1].种类 == 记号种类::空白 {
-        b -= 1;
+    while 后界 > 前界 && 表[后界 - 1].种类 == 记号种类::空白 {
+        后界 -= 1;
     }
-    if a < b { Some((a, b)) } else { None }
+    if 前界 < 后界 { Some((前界, 后界)) } else { None }
 }
 
 /// 按**顶层**（括号深度 0）半角逗号切段。
@@ -92,16 +92,16 @@ pub(super) fn 切字段(表: &[记号], 原文: &[u8], 起: usize, 止: usize) -
     let mut 出 = Vec::new();
     let mut 段起 = 起;
     let mut 深 = 0i32;
-    for (k, t) in 表[起..止].iter().enumerate() {
-        if t.种类 != 记号种类::界符 {
+    for (偏移, 该记号) in 表[起..止].iter().enumerate() {
+        if 该记号.种类 != 记号种类::界符 {
             continue;
         }
-        match 文(原文, *t) {
+        match 文(原文, *该记号) {
             b"(" | b"[" | b"{" => 深 += 1,
             b")" | b"]" | b"}" => 深 -= 1,
             b"," if 深 <= 0 => {
-                出.push((段起, 起 + k));
-                段起 = 起 + k + 1;
+                出.push((段起, 起 + 偏移));
+                段起 = 起 + 偏移 + 1;
             }
             _ => {}
         }
@@ -113,17 +113,17 @@ pub(super) fn 切字段(表: &[记号], 原文: &[u8], 起: usize, 止: usize) -
 /// 顶层赋值号（`＝`）的记号下标。
 pub(super) fn 顶层赋值号(表: &[记号], 原文: &[u8], 起: usize, 止: usize) -> Option<usize> {
     let mut 深 = 0i32;
-    for (k, t) in 表[起..止].iter().enumerate() {
-        if t.种类 != 记号种类::界符 && t.种类 != 记号种类::运算符 {
+    for (偏移, 该记号) in 表[起..止].iter().enumerate() {
+        if 该记号.种类 != 记号种类::界符 && 该记号.种类 != 记号种类::运算符 {
             continue;
         }
-        let w = 文(原文, *t);
-        match w {
+        let 记号文 = 文(原文, *该记号);
+        match 记号文 {
             b"(" | b"[" | b"{" => 深 += 1,
             b")" | b"]" | b"}" => 深 -= 1,
             _ => {
-                if 深 <= 0 && t.种类 == 记号种类::运算符 && w == 赋值号 {
-                    return Some(起 + k);
+                if 深 <= 0 && 该记号.种类 == 记号种类::运算符 && 记号文 == 赋值号 {
+                    return Some(起 + 偏移);
                 }
             }
         }
@@ -132,12 +132,12 @@ pub(super) fn 顶层赋值号(表: &[记号], 原文: &[u8], 起: usize, 止: us
 }
 
 /// 行里第一个非 `空白` 记号的**记号下标**（缩进到哪里为止）。
-pub(super) fn 首非空白(表: &[记号], h: &行) -> usize {
-    let mut i = h.记号起;
-    while i < h.记号止 && 表[i].种类 == 记号种类::空白 {
-        i += 1;
+pub(super) fn 首非空白(表: &[记号], 此行: &行) -> usize {
+    let mut 记号下标 = 此行.记号起;
+    while 记号下标 < 此行.记号止 && 表[记号下标].种类 == 记号种类::空白 {
+        记号下标 += 1;
     }
-    i
+    记号下标
 }
 
 // ── 建树器 ────────────────────────────────────────────────────────────────────
@@ -147,8 +147,8 @@ impl<'a> 建树器<'a> {
         self.流.全文长()
     }
 
-    pub(super) fn 行关键字文(&self, h: &行) -> &[u8] {
-        match h.关键字 {
+    pub(super) fn 行关键字文(&self, 此行: &行) -> &[u8] {
+        match 此行.关键字 {
             Some((起, 止)) => self.流.原文.get(起 as usize..止 as usize).unwrap_or(&[]),
             None => &[],
         }
@@ -163,9 +163,9 @@ impl<'a> 建树器<'a> {
     }
 
     /// 缩进空白叶：`[字节起, 缩进止)`。无缩进返回 `None`。
-    pub(super) fn 缩进叶(&mut self, h: &行) -> Option<u32> {
-        if h.缩进止 > h.字节起 {
-            Some(self.草稿.叶(节点种类::空白, h.字节起, h.缩进止))
+    pub(super) fn 缩进叶(&mut self, 此行: &行) -> Option<u32> {
+        if 此行.缩进止 > 此行.字节起 {
+            Some(self.草稿.叶(节点种类::空白, 此行.字节起, 此行.缩进止))
         } else {
             None
         }
@@ -175,66 +175,66 @@ impl<'a> 建树器<'a> {
     ///
     /// 从 `max(内容记号止, 首个非空白记号)` 起扫 —— 于是**不会**把已作缩进叶的
     /// 那一段空白再认领一次（空行就是这样：缩进止 == 内容记号起）。
-    pub(super) fn 尾叶(&mut self, h: &行) -> Vec<u32> {
+    pub(super) fn 尾叶(&mut self, 此行: &行) -> Vec<u32> {
         let 流 = self.流;
         let 表 = &流.记号表;
         let mut 出 = Vec::new();
-        let mut i = h.内容记号止.max(首非空白(表, h));
+        let mut 记号下标 = 此行.内容记号止.max(首非空白(表, 此行));
         let mut 空白起: Option<u32> = None;
         let mut 空白止 = 0u32;
-        while i < h.记号止 {
-            let t = 表[i];
-            match t.种类 {
+        while 记号下标 < 此行.记号止 {
+            let 该记号 = 表[记号下标];
+            match 该记号.种类 {
                 记号种类::空白 => {
                     if 空白起.is_none() {
-                        空白起 = Some(t.起);
+                        空白起 = Some(该记号.起);
                     }
-                    空白止 = t.止;
+                    空白止 = 该记号.止;
                 }
                 _ => {
                     if let Some(起) = 空白起.take() {
                         出.push(self.草稿.叶(节点种类::空白, 起, 空白止));
                     }
-                    match t.种类 {
-                        记号种类::注释 => 出.push(self.草稿.叶(节点种类::注释, t.起, t.止)),
-                        记号种类::换行 => 出.push(self.草稿.叶(节点种类::换行, t.起, t.止)),
+                    match 该记号.种类 {
+                        记号种类::注释 => 出.push(self.草稿.叶(节点种类::注释, 该记号.起, 该记号.止)),
+                        记号种类::换行 => 出.push(self.草稿.叶(节点种类::换行, 该记号.起, 该记号.止)),
                         _ => {}
                     }
                 }
             }
-            i += 1;
+            记号下标 += 1;
         }
         if let Some(起) = 空白起 {
-            出.push(self.草稿.叶(节点种类::空白, 起, h.字节止));
+            出.push(self.草稿.叶(节点种类::空白, 起, 此行.字节止));
         }
         出
     }
 
     /// 声明头行的字段：顶层逗号切段，每段解一个表达式。
-    pub(super) fn 声明字段(&mut self, h: &行) -> Vec<u32> {
+    pub(super) fn 声明字段(&mut self, 此行: &行) -> Vec<u32> {
         let 流 = self.流;
-        let 起 = if h.关键字.is_some() { h.内容记号起 + 1 } else { h.内容记号起 };
+        let 起 = if 此行.关键字.is_some() { 此行.内容记号起 + 1 } else { 此行.内容记号起 };
         let mut 出 = Vec::new();
-        if 起 > h.内容记号止 {
+        if 起 > 此行.内容记号止 {
             return 出;
         }
-        for (a, b) in 切字段(&流.记号表, &流.原文, 起, h.内容记号止) {
-            if let Some(n) = self.表达式(a, b) {
-                出.push(n);
+        for (字段起, 字段止) in 切字段(&流.记号表, &流.原文, 起, 此行.内容记号止) {
+            if let Some(节点下标) = self.表达式(字段起, 字段止) {
+                出.push(节点下标);
             }
         }
         出
     }
 
     /// 行里第一个 `(` 的实参表（块头条件 / `置入代码` 的 `({ … })`）。
-    pub(super) fn 括号实参(&mut self, h: &行) -> Vec<u32> {
+    pub(super) fn 括号实参(&mut self, 此行: &行) -> Vec<u32> {
         let 流 = self.流;
-        let 起 = if h.关键字.is_some() { h.内容记号起 + 1 } else { h.内容记号起 };
-        if 起 >= h.内容记号止 {
+        let 起 = if 此行.关键字.is_some() { 此行.内容记号起 + 1 } else { 此行.内容记号起 };
+        if 起 >= 此行.内容记号止 {
             return Vec::new();
         }
         let mut 器 = 分析器::新(&流.原文, &流.记号表, &mut self.草稿);
-        器.解析括号实参(起, h.内容记号止)
+        器.解析括号实参(起, 此行.内容记号止)
     }
 }
 
@@ -246,8 +246,8 @@ impl 建树器<'_> {
         let 段首: Vec<usize> = 行表
             .iter()
             .enumerate()
-            .filter(|(_, h)| h.类 == 行类::版本)
-            .map(|(i, _)| i)
+            .filter(|(_, 此行)| 此行.类 == 行类::版本)
+            .map(|(行下标, _)| 行下标)
             .collect();
         let mut 子: Vec<u32> = Vec::new();
         if 段首.is_empty() {
@@ -257,17 +257,17 @@ impl 建树器<'_> {
         } else {
             // 首个 `.版本` 之前的零散行 → 程序的直属子。
             子.extend(self.建体(行表, 0, 段首[0]));
-            for k in 0..段首.len() {
-                let 头 = 段首[k];
-                let 体止行 = 段首.get(k + 1).copied().unwrap_or(行表.len());
-                let 止 = 行表.get(体止行).map(|h| h.字节起).unwrap_or(全文长);
-                let h = 行表[头];
-                let 起 = h.关键字.map(|x| x.0).unwrap_or(h.内容起);
-                if let Some(n) = self.缩进叶(&h) {
-                    子.push(n);
+            for 段号 in 0..段首.len() {
+                let 头 = 段首[段号];
+                let 体止行 = 段首.get(段号 + 1).copied().unwrap_or(行表.len());
+                let 止 = 行表.get(体止行).map(|此行| 此行.字节起).unwrap_or(全文长);
+                let 此行 = 行表[头];
+                let 起 = 此行.关键字.map(|关键字对| 关键字对.0).unwrap_or(此行.内容起);
+                if let Some(节点下标) = self.缩进叶(&此行) {
+                    子.push(节点下标);
                 }
-                let mut 体 = self.声明字段(&h);
-                体.extend(self.尾叶(&h));
+                let mut 体 = self.声明字段(&此行);
+                体.extend(self.尾叶(&此行));
                 体.extend(self.建体(行表, 头 + 1, 体止行));
                 子.push(self.草稿.节点(节点种类::源单元, (起, 止), 体));
             }
@@ -279,42 +279,42 @@ impl 建树器<'_> {
 
     pub(super) fn 建体(&mut self, 行表: &[行], 起: usize, 止: usize) -> Vec<u32> {
         let mut 出: Vec<u32> = Vec::new();
-        let mut i = 起;
-        while i < 止 {
-            let h = 行表[i];
-            if let Some(n) = self.缩进叶(&h) {
-                出.push(n);
+        let mut 行下标 = 起;
+        while 行下标 < 止 {
+            let 此行 = 行表[行下标];
+            if let Some(节点下标) = self.缩进叶(&此行) {
+                出.push(节点下标);
             }
-            match h.类 {
+            match 此行.类 {
                 行类::子程序 => {
-                    let j = self.段末(行表, i, 止, 段末判据::段首);
-                    出.push(self.建头带体(行表, i, j, 节点种类::子程序, true));
-                    i = j;
+                    let 段末行 = self.段末(行表, 行下标, 止, 段末判据::段首);
+                    出.push(self.建头带体(行表, 行下标, 段末行, 节点种类::子程序, true));
+                    行下标 = 段末行;
                 }
                 行类::程序集 => {
-                    let j = self.段末(行表, i, 止, 段末判据::程序集变量);
-                    出.push(self.建头带体(行表, i, j, 节点种类::程序集, true));
-                    i = j;
+                    let 段末行 = self.段末(行表, 行下标, 止, 段末判据::程序集变量);
+                    出.push(self.建头带体(行表, 行下标, 段末行, 节点种类::程序集, true));
+                    行下标 = 段末行;
                 }
                 行类::数据类型 => {
-                    let j = self.段末(行表, i, 止, 段末判据::成员);
-                    出.push(self.建头带体(行表, i, j, 节点种类::数据类型声明, true));
-                    i = j;
+                    let 段末行 = self.段末(行表, 行下标, 止, 段末判据::成员);
+                    出.push(self.建头带体(行表, 行下标, 段末行, 节点种类::数据类型声明, true));
+                    行下标 = 段末行;
                 }
                 行类::块首 if self.深度 < 块深上限 => {
-                    let j = self.块末(行表, i, 止);
-                    出.push(self.建块(行表, i, j));
-                    i = j;
+                    let 段末行 = self.块末(行表, 行下标, 止);
+                    出.push(self.建块(行表, 行下标, 段末行));
+                    行下标 = 段末行;
                 }
                 行类::空行 => {
-                    出.extend(self.尾叶(&h));
-                    i += 1;
+                    出.extend(self.尾叶(&此行));
+                    行下标 += 1;
                 }
                 _ => {
                     // 行尾空白 / 注释 / 换行由本行节点自己认领（`语句.rs::建单行` 的区间到行字节止）
                     // —— 「最内层包含它的节点」正是本行节点（`语言面形状.md` §3.5）。
-                    出.push(self.建单行(&h));
-                    i += 1;
+                    出.push(self.建单行(&此行));
+                    行下标 += 1;
                 }
             }
         }
@@ -323,18 +323,18 @@ impl 建树器<'_> {
 
     /// 段末：从 `头+1` 起，第一条满足判据的行（或 `止`）。
     pub(super) fn 段末(&self, 行表: &[行], 头: usize, 止: usize, 判据: 段末判据) -> usize {
-        let mut i = 头 + 1;
-        while i < 止 {
-            let c = 行表[i].类;
+        let mut 行下标 = 头 + 1;
+        while 行下标 < 止 {
+            let 该行类 = 行表[行下标].类;
             let 到 = match 判据 {
-                段末判据::段首 => c.是否段首(),
-                段末判据::程序集变量 => c != 行类::程序集变量 && c != 行类::空行,
-                段末判据::成员 => c != 行类::成员 && c != 行类::空行,
+                段末判据::段首 => 该行类.是否段首(),
+                段末判据::程序集变量 => 该行类 != 行类::程序集变量 && 该行类 != 行类::空行,
+                段末判据::成员 => 该行类 != 行类::成员 && 该行类 != 行类::空行,
             };
             if 到 {
-                return i;
+                return 行下标;
             }
-            i += 1;
+            行下标 += 1;
         }
         止
     }
@@ -348,11 +348,11 @@ impl 建树器<'_> {
         种类: 节点种类,
         有体: bool,
     ) -> u32 {
-        let h = 行表[头];
-        let 起 = h.关键字.map(|x| x.0).unwrap_or(h.内容起);
-        let 止 = 行表.get(末).map(|x| x.字节起).unwrap_or(self.全文长());
-        let mut 子 = self.声明字段(&h);
-        子.extend(self.尾叶(&h));
+        let 此行 = 行表[头];
+        let 起 = 此行.关键字.map(|关键字对| 关键字对.0).unwrap_or(此行.内容起);
+        let 止 = 行表.get(末).map(|行项| 行项.字节起).unwrap_or(self.全文长());
+        let mut 子 = self.声明字段(&此行);
+        子.extend(self.尾叶(&此行));
         if 有体 {
             self.深度 += 1;
             子.extend(self.建体(行表, 头 + 1, 末));
