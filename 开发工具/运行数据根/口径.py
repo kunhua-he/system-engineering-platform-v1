@@ -30,8 +30,8 @@ from pathlib import Path
 默认目录名 = "系统工程平台V1"
 子目录名 = ("数据库", "缓存", "日志", "临时件")
 # 三个平台基（与 解析.rs::默认基 逐条对应）。
-macOS基片段 = ("Library", "Application Support")
-Linux退回片段 = (".local", "share")
+苹果基片段 = ("Library", "Application Support")
+利努克斯退回片段 = (".local", "share")
 XDG变量名 = "XDG_DATA_HOME"
 应用数据变量名 = "APPDATA"
 家目录变量名 = "HOME"
@@ -54,7 +54,7 @@ def 默认基(家目录, xdg数据目录, 应用数据目录, 平台: str):
     """平台数据目录（**不含** `默认目录名` 那一层）。三条规则互不重叠，无一条落在当前目录。"""
     if 平台 == "macos":
         if 家目录:
-            return Path(家目录).joinpath(*macOS基片段)
+            return Path(家目录).joinpath(*苹果基片段)
         return None
     if 平台 == "windows":
         if 应用数据目录:
@@ -63,7 +63,7 @@ def 默认基(家目录, xdg数据目录, 应用数据目录, 平台: str):
     if xdg数据目录:
         return Path(xdg数据目录)
     if 家目录:
-        return Path(家目录).joinpath(*Linux退回片段)
+        return Path(家目录).joinpath(*利努克斯退回片段)
     return None
 
 
