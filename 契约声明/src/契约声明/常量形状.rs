@@ -6,7 +6,7 @@ use crate::{常量号, 类型标签};
 
 /// 常量排布。
 pub mod 常量排布 {
-    pub const 空: u16 = 0;
+    pub const 无值: u16 = 0;
     pub const 数值: u16 = 1;
     pub const 逻辑: u16 = 2;
     pub const 文本: u16 = 3;

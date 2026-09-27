@@ -315,5 +315,5 @@ pub const 错误码信息表: [v1_contract::错误码信息; 42] = [
 ];
 /// `平台信息.错误码表` 直接可用：项数 + 项表。
 pub const fn 错误码信息表段() -> v1_contract::表段<v1_contract::错误码信息> {
-    v1_contract::表段::新(错误码信息表.as_ptr(), 42)
+    v1_contract::表段::新建(错误码信息表.as_ptr(), 42)
 }

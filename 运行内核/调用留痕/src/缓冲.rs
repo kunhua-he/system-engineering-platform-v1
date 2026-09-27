@@ -59,21 +59,21 @@ impl 留痕槽 {
     /// 落字段。发布由调用方在落完之后写 `就绪` 完成。
     fn 落字段(&self, 一条: &留痕) {
         self.实例.store(一条.实例, Ordering::Relaxed);
-        self.能力号.store(一条.能力号.取(), Ordering::Relaxed);
+        self.能力号.store(一条.能力号.取号值(), Ordering::Relaxed);
         self.入参指纹.store(一条.入参指纹, Ordering::Relaxed);
         self.结果码.store(一条.结果码, Ordering::Relaxed);
         self.耗时微秒.store(一条.耗时微秒, Ordering::Relaxed);
         self.追踪号.store(一条.追踪号, Ordering::Relaxed);
         self.调用类.store(一条.调用类 as u8, Ordering::Relaxed);
-        self.资源号.store(一条.资源号.取(), Ordering::Relaxed);
-        self.操作号.store(一条.操作号.取(), Ordering::Relaxed);
+        self.资源号.store(一条.资源号.取号值(), Ordering::Relaxed);
+        self.操作号.store(一条.操作号.取号值(), Ordering::Relaxed);
     }
 
     /// 读字段。调用方须用 `就绪` 校验前后一致（顺序锁）。
     fn 读字段(&self) -> 留痕 {
         留痕 {
             实例: self.实例.load(Ordering::Relaxed),
-            能力号: 能力号::新(self.能力号.load(Ordering::Relaxed)),
+            能力号: 能力号::新建(self.能力号.load(Ordering::Relaxed)),
             入参指纹: self.入参指纹.load(Ordering::Relaxed),
             结果码: self.结果码.load(Ordering::Relaxed),
             耗时微秒: self.耗时微秒.load(Ordering::Relaxed),
@@ -84,8 +84,8 @@ impl 留痕槽 {
                 0 => 调用类::能力,
                 _ => 调用类::资源,
             },
-            资源号: 资源号::新(self.资源号.load(Ordering::Relaxed)),
-            操作号: 操作号::新(self.操作号.load(Ordering::Relaxed)),
+            资源号: 资源号::新建(self.资源号.load(Ordering::Relaxed)),
+            操作号: 操作号::新建(self.操作号.load(Ordering::Relaxed)),
         }
     }
 }

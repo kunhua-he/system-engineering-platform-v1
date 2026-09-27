@@ -114,7 +114,7 @@ fn 写错误项(出: &mut Vec<u8>, 错: &接口错误项) {
 /// 不拆成五个字段写：槽形状是**冻结项**，拆写等于在本件里复刻一份槽布局，
 /// 将来槽加宽就会两处不同步。直接按冻结的那五个字段拼一遍是最少知识。
 fn 写槽(出: &mut Vec<u8>, 槽: &v1_contract::数据槽) {
-    出.extend_from_slice(&槽.类型标签.取().to_le_bytes());
+    出.extend_from_slice(&槽.类型标签.取号值().to_le_bytes());
     出.extend_from_slice(&槽.标志.to_le_bytes());
     出.extend_from_slice(&槽.保留.to_le_bytes());
     出.extend_from_slice(&槽.长度.to_le_bytes());
@@ -195,7 +195,7 @@ impl<'a> 读器<'a> {
         let 长度 = self.读八字节()?;
         let 值 = self.读八字节()?;
         Some(v1_contract::数据槽 {
-            类型标签: v1_contract::类型标签::新(类型标签),
+            类型标签: v1_contract::类型标签::新建(类型标签),
             标志,
             保留,
             长度,
