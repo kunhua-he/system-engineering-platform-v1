@@ -87,17 +87,17 @@ impl<'a> 分析器<'a> {
 
     /// 从 `游标`（停在开界符上）找配对的闭界符下标。认不出返回 `None`。
     pub(super) fn 配对(&self, 开符: &[u8], 闭符: &[u8]) -> Option<usize> {
-        let mut 深 = 0i32;
+        let mut 括号深度 = 0i32;
         let mut 记号下标 = self.游标;
         while 记号下标 < self.止 {
             let 该记号 = self.记号表[记号下标];
             if 该记号.种类 == 记号种类::界符 {
-                let 文 = self.取记号原文(该记号);
-                if 文 == 开符 {
-                    深 += 1;
-                } else if 文 == 闭符 {
-                    深 -= 1;
-                    if 深 == 0 {
+                let 文本 = self.取记号原文(该记号);
+                if 文本 == 开符 {
+                    括号深度 += 1;
+                } else if 文本 == 闭符 {
+                    括号深度 -= 1;
+                    if 括号深度 == 0 {
                         return Some(记号下标);
                     }
                 }
@@ -112,10 +112,10 @@ impl<'a> 分析器<'a> {
         if self.游标 >= 区间终点 {
             return None;
         }
-        let 起 = self.记号表[self.游标].起;
-        let 终 = self.记号表[区间终点 - 1].止;
+        let 区间起点 = self.记号表[self.游标].起;
+        let 末记号止 = self.记号表[区间终点 - 1].止;
         self.游标 = 区间终点;
-        Some(self.草稿.追加叶节点(兜底种类, 起, 终))
+        Some(self.草稿.追加叶节点(兜底种类, 区间起点, 末记号止))
     }
 
     /// 公开口：在 `[区间起点, 区间终点)` 上解一个表达式（供行层调用）。
@@ -127,7 +127,7 @@ impl<'a> 分析器<'a> {
         let 保存止 = self.止;
         self.游标 = 区间起点;
         self.止 = 区间终点;
-        let 果 = match self.二元() {
+        let 结果 = match self.二元() {
             Some(节点下标) => {
                 self.兜底到(区间终点);
                 Some(节点下标)
@@ -136,7 +136,7 @@ impl<'a> 分析器<'a> {
         };
         self.止 = 保存止;
         self.游标 = 保存游标;
-        果
+        结果
     }
 
     pub(super) fn 二元(&mut self) -> Option<u32> {
@@ -144,9 +144,9 @@ impl<'a> 分析器<'a> {
             return None;
         }
         self.深度 += 1;
-        let 果 = self.二元体();
+        let 结果 = self.二元体();
         self.深度 -= 1;
-        果
+        结果
     }
 
     /// 左结合链：`a ＋ b ＋ c` ⇒ `二元运算(二元运算(a,b), c)`。
@@ -154,22 +154,22 @@ impl<'a> 分析器<'a> {
     /// 草稿是自由的树，左结合**不会**撞上节点表的布局约束（那条约束只在扁平化时生效，
     /// 由 `草稿::扁平化` 统一处理）—— 这正是要草稿这一层的原因。
     fn 二元体(&mut self) -> Option<u32> {
-        let mut 左 = self.一元()?;
+        let mut 左操作数 = self.一元()?;
         loop {
             let 保存 = self.游标;
             self.跳过空白();
             let 是运算符 = matches!(self.当前(), Some(该记号) if 该记号.种类 == 记号种类::运算符);
             if !是运算符 {
                 self.游标 = 保存;
-                return Some(左);
+                return Some(左操作数);
             }
             self.游标 += 1;
             match self.一元() {
                 Some(右) => {
-                    let 区间 = (self.草稿.取原文起点(左), self.草稿.取原文终点(右));
-                    左 = self.草稿.节点(节点种类::二元运算, 区间, vec![左, 右]);
+                    let 区间 = (self.草稿.取原文起点(左操作数), self.草稿.取原文终点(右));
+                    左操作数 = self.草稿.节点(节点种类::二元运算, 区间, vec![左操作数, 右]);
                 }
-                None => return Some(左),
+                None => return Some(左操作数),
             }
         }
     }
@@ -180,18 +180,18 @@ impl<'a> 分析器<'a> {
             let 该记号 = self.当前()?;
             self.游标 += 1;
             let 操作数 = self.一元();
-            let 止 = 操作数.map(|节点下标| self.草稿.取原文终点(节点下标)).unwrap_or(该记号.止);
-            let 子 = match 操作数 {
+            let 区间终点 = 操作数.map(|节点下标| self.草稿.取原文终点(节点下标)).unwrap_or(该记号.止);
+            let 子节点表 = match 操作数 {
                 Some(节点下标) => vec![节点下标],
                 None => Vec::new(),
             };
-            return Some(self.草稿.节点(节点种类::一元运算, (该记号.起, 止), 子));
+            return Some(self.草稿.节点(节点种类::一元运算, (该记号.起, 区间终点), 子节点表));
         }
         self.后置()
     }
 
     fn 后置(&mut self) -> Option<u32> {
-        let mut 基 = self.分析主式()?;
+        let mut 基节点 = self.分析主式()?;
         loop {
             let 保存 = self.游标;
             self.跳过空白();
@@ -202,63 +202,63 @@ impl<'a> 分析器<'a> {
                     Some(成员记号) if 成员记号.种类 == 记号种类::标识符 => {
                         self.游标 += 1;
                         let 成员 = self.草稿.追加叶节点(节点种类::标识符引用, 成员记号.起, 成员记号.止);
-                        let 区间 = (self.草稿.取原文起点(基), 成员记号.止);
-                        基 = self.草稿.节点(节点种类::成员访问, 区间, vec![基, 成员]);
+                        let 区间 = (self.草稿.取原文起点(基节点), 成员记号.止);
+                        基节点 = self.草稿.节点(节点种类::成员访问, 区间, vec![基节点, 成员]);
                     }
                     _ => {
                         self.游标 = 保存;
-                        return Some(基);
+                        return Some(基节点);
                     }
                 }
             } else if self.是界符(b"[") {
                 let Some(闭) = self.配对(b"[", b"]") else {
                     self.游标 = 保存;
-                    return Some(基);
+                    return Some(基节点);
                 };
-                let 开 = self.游标;
-                let 下标 = self.子区间(开 + 1, 闭);
+                let 开符 = self.游标;
+                let 下标 = self.子区间(开符 + 1, 闭);
                 self.游标 = 闭 + 1;
                 let Some(下标) = 下标 else {
                     self.游标 = 保存;
-                    return Some(基);
+                    return Some(基节点);
                 };
-                let 区间 = (self.草稿.取原文起点(基), self.记号表[闭].止);
-                基 = self.草稿.节点(节点种类::下标访问, 区间, vec![基, 下标]);
+                let 区间 = (self.草稿.取原文起点(基节点), self.记号表[闭].止);
+                基节点 = self.草稿.节点(节点种类::下标访问, 区间, vec![基节点, 下标]);
             } else if self.是界符(b"(") {
                 let Some(闭) = self.配对(b"(", b")") else {
                     self.游标 = 保存;
-                    return Some(基);
+                    return Some(基节点);
                 };
-                let 开 = self.游标;
-                let 实参 = self.实参表在(开, 闭);
+                let 开符 = self.游标;
+                let 实参 = self.实参表在(开符, 闭);
                 self.游标 = 闭 + 1;
-                let 止 = self.记号表[闭].止;
-                match self.草稿.种类(基) {
+                let 区间终点 = self.记号表[闭].止;
+                match self.草稿.种类(基节点) {
                     节点种类::标识符引用 => {
                         // `名 (实参表)` ⇒ 命令调用：子 = [名, 实参…]
-                        let mut 子 = Vec::with_capacity(实参.len() + 1);
-                        子.push(基);
-                        子.extend(实参);
-                        基 = self.草稿.节点(节点种类::命令调用, (self.草稿.取原文起点(基), 止), 子);
+                        let mut 子节点表 = Vec::with_capacity(实参.len() + 1);
+                        子节点表.push(基节点);
+                        子节点表.extend(实参);
+                        基节点 = self.草稿.节点(节点种类::命令调用, (self.草稿.取原文起点(基节点), 区间终点), 子节点表);
                     }
                     节点种类::成员访问 => {
                         // 成员调用：实参追加为成员访问的子（`成员访问` 自身覆盖调用形状）。
-                        let mut 子: Vec<u32> = self.草稿.取子节点(基).to_vec();
-                        子.extend(实参);
-                        let 起 = self.草稿.取原文起点(基);
-                        基 = self.草稿.节点(节点种类::成员访问, (起, 止), 子);
+                        let mut 子节点表: Vec<u32> = self.草稿.取子节点(基节点).to_vec();
+                        子节点表.extend(实参);
+                        let 区间起点 = self.草稿.取原文起点(基节点);
+                        基节点 = self.草稿.节点(节点种类::成员访问, (区间起点, 区间终点), 子节点表);
                     }
                     _ => {
                         // `f ()()` 之类：实参挂在基节点之下，基的种类不动。
-                        let mut 子: Vec<u32> = self.草稿.取子节点(基).to_vec();
-                        子.extend(实参);
-                        let 起 = self.草稿.取原文起点(基);
-                        基 = self.草稿.节点(self.草稿.种类(基), (起, 止), 子);
+                        let mut 子节点表: Vec<u32> = self.草稿.取子节点(基节点).to_vec();
+                        子节点表.extend(实参);
+                        let 区间起点 = self.草稿.取原文起点(基节点);
+                        基节点 = self.草稿.节点(self.草稿.种类(基节点), (区间起点, 区间终点), 子节点表);
                     }
                 }
             } else {
                 self.游标 = 保存;
-                return Some(基);
+                return Some(基节点);
             }
         }
     }
@@ -286,11 +286,11 @@ impl<'a> 分析器<'a> {
                 Some(self.草稿.追加叶节点(节点种类::标识符引用, 该记号.起, 该记号.止))
             }
             记号种类::界符 if self.取记号原文(该记号) == b"(" => {
-                let 闭 = self.配对(b"(", b")")?;
-                let 开 = self.游标;
-                let 内 = self.子区间(开 + 1, 闭);
-                self.游标 = 闭 + 1;
-                内
+                let 闭符 = self.配对(b"(", b")")?;
+                let 开符 = self.游标;
+                let 内层 = self.子区间(开符 + 1, 闭符);
+                self.游标 = 闭符 + 1;
+                内层
             }
             _ => None,
         }
@@ -302,7 +302,7 @@ impl<'a> 分析器<'a> {
         let 保存止 = self.止;
         self.游标 = 区间起点;
         self.止 = 区间终点;
-        let 果 = match self.二元() {
+        let 结果 = match self.二元() {
             Some(节点下标) => {
                 self.兜底到(区间终点);
                 Some(节点下标)
@@ -311,6 +311,6 @@ impl<'a> 分析器<'a> {
         };
         self.止 = 保存止;
         self.游标 = 保存游标;
-        果
+        结果
     }
 }

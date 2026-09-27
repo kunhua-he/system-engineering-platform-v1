@@ -68,9 +68,9 @@ impl 语法树 {
                 节点.子区间 = Self::先序子区间(位置 as u32, 0);
             }
         }
-        let 树 = Self { 记号流, 节点表, 根: 根目录 };
-        树.校验()?;
-        Ok(树)
+        let 语法树 = Self { 记号流, 节点表, 根: 根目录 };
+        语法树.校验()?;
+        Ok(语法树)
     }
 
     pub fn 全文(&self) -> &[u8] {
@@ -105,10 +105,10 @@ impl 语法树 {
     pub fn 子树止(&self, 起于: u32) -> Option<u32> {
         let 上限 = self.节点表.len() as u32;
         let mut 当前 = 起于;
-        let mut 步 = 0u32;
+        let mut 步序 = 0u32;
         loop {
-            步 += 1;
-            if 步 > 上限 {
+            步序 += 1;
+            if 步序 > 上限 {
                 return None;
             }
             let 本节点 = self.节点表.get(当前 as usize)?;
@@ -180,22 +180,22 @@ impl 语法树 {
         }
 
         // ── 不变量 T1：根节点的原文区间 == 全文 ──
-        let 根 = &self.节点表[self.根 as usize];
-        if 根.取原文起点() != 0 || 根.取原文终点() != 全文长 {
-            return Err(根区间不等于全文 { 起: 根.取原文起点(), 止: 根.取原文终点(), 全文长 });
+        let 根目录 = &self.节点表[self.根 as usize];
+        if 根目录.取原文起点() != 0 || 根目录.取原文终点() != 全文长 {
+            return Err(根区间不等于全文 { 起: 根目录.取原文起点(), 止: 根目录.取原文终点(), 全文长 });
         }
 
         // ── 不变量 T4：父引用唯一（根无父、无孤儿、无重复父）──
         let mut 父表: Vec<Option<u32>> = vec![None; self.节点表.len()];
-        for 父 in 0..节点数 {
-            for 子 in self.直接子(父) {
-                if 子 == self.根 {
-                    return Err(根被当作子节点 { 节点: 子, 父 });
+        for 父角色 in 0..节点数 {
+            for 子下标 in self.直接子(父角色) {
+                if 子下标 == self.根 {
+                    return Err(根被当作子节点 { 节点: 子下标, 父: 父角色 });
                 }
-                if let Some(已有) = 父表[子 as usize] {
-                    return Err(同一节点有两个父 { 节点: 子, 首父: 已有, 次父: 父 });
+                if let Some(已有) = 父表[子下标 as usize] {
+                    return Err(同一节点有两个父 { 节点: 子下标, 首父: 已有, 次父: 父角色 });
                 }
-                父表[子 as usize] = Some(父);
+                父表[子下标 as usize] = Some(父角色);
             }
         }
         for (节点下标, 父) in 父表.iter().enumerate() {
@@ -208,15 +208,15 @@ impl 语法树 {
         // ── 不变量 T4 续：从根可达全部节点（唯一父 + 全覆盖 ⇒ 是树，无环）──
         {
             let mut 到过 = vec![false; self.节点表.len()];
-            let mut 栈 = vec![self.根];
+            let mut 遍历栈 = vec![self.根];
             let mut 计数 = 0u32;
-            while let Some(当前) = 栈.pop() {
+            while let Some(当前) = 遍历栈.pop() {
                 if 到过[当前 as usize] {
                     return Err(节点被重复到达 { 节点: 当前 });
                 }
                 到过[当前 as usize] = true;
                 计数 += 1;
-                栈.extend(self.直接子(当前));
+                遍历栈.extend(self.直接子(当前));
             }
             if 计数 != 节点数 {
                 for (节点下标, 到) in 到过.iter().enumerate() {
@@ -229,20 +229,20 @@ impl 语法树 {
 
         // ── 不变量 T2：父节点原文区间包住每个子节点 ──
         // ── 不变量 T3：兄弟原文区间按序两两不重叠 ──
-        for 父 in 0..节点数 {
-            let 本节点 = &self.节点表[父 as usize];
+        for 父角色 in 0..节点数 {
+            let 本节点 = &self.节点表[父角色 as usize];
             let mut 前一: Option<(u32, u32)> = None; // (下标, 止)
-            for 子 in self.直接子(父) {
-                let 子节点 = &self.节点表[子 as usize];
+            for 子下标 in self.直接子(父角色) {
+                let 子节点 = &self.节点表[子下标 as usize];
                 if !本节点.包住(子节点.取原文起点(), 子节点.取原文终点()) {
-                    return Err(父未包住子 { 父, 子 });
+                    return Err(父未包住子 { 父: 父角色, 子: 子下标 });
                 }
                 if let Some((前下标, 前止)) = 前一
                     && 子节点.取原文起点() < 前止
                 {
-                    return Err(兄弟重叠 { 父, 前: 前下标, 后: 子 });
+                    return Err(兄弟重叠 { 父: 父角色, 前: 前下标, 后: 子下标 });
                 }
-                前一 = Some((子, 子节点.取原文终点()));
+                前一 = Some((子下标, 子节点.取原文终点()));
             }
         }
 
@@ -251,22 +251,22 @@ impl 语法树 {
         // 于是这里只剩两件要判的事：每一步不许**越过** `子区间.止`（越过 ⇒ 该子节点的子树
         // 伸出了父声明的区间），且末子必须**正好**落在 `子区间.止`（不许留空档）。
         // 有了它，同一棵树只有一种节点表写法，且子树可 O(1) 切出。
-        for 父 in 0..节点数 {
-            let (子起, 子止) = self.节点表[父 as usize].子区间;
+        for 父角色 in 0..节点数 {
+            let (子起, 子止) = self.节点表[父角色 as usize].子区间;
             if 子起 >= 子止 {
                 continue;
             }
             let mut 末子 = 子起;
-            let mut 到 = 子起;
-            for 子 in self.直接子(父) {
-                末子 = 子;
-                到 = self.子树止(子).unwrap_or(u32::MAX);
-                if 到 > 子止 {
-                    return Err(非先序连续 { 父, 子, 子树止: 到 });
+            let mut 子树终点 = 子起;
+            for 子下标 in self.直接子(父角色) {
+                末子 = 子下标;
+                子树终点 = self.子树止(子下标).unwrap_or(u32::MAX);
+                if 子树终点 > 子止 {
+                    return Err(非先序连续 { 父: 父角色, 子: 子下标, 子树止: 子树终点 });
                 }
             }
-            if 到 != 子止 {
-                return Err(非先序连续 { 父, 子: 末子, 子树止: 到 });
+            if 子树终点 != 子止 {
+                return Err(非先序连续 { 父: 父角色, 子: 末子, 子树止: 子树终点 });
             }
         }
 

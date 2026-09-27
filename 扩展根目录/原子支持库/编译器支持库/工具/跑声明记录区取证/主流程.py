@@ -18,8 +18,8 @@ def 入口函数(参数):
     if 分片:
         # 只算一片：全量的计算就靠跑齐这些片（本脚本不自行循环 —— 一条命令 5 秒内）
         码, 出 = 跑取证(["--分片", 分片, "--目录", 语料根])
-        for 行 in 出.rstrip().splitlines():
-            print("    | " + 行)
+        for 输出行 in 出.rstrip().splitlines():
+            print("    | " + 输出行)
         print("结论：第 %s 片跑完，退出码 %d（全量读数由 --全部 归并）" % (分片, 码))
         return 码
     print("声明记录区取证 · 复跑（取证器 %s）" % os.path.relpath(取证器, 仓库根))
