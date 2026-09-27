@@ -61,19 +61,19 @@ pub(crate) fn 判号段表(表: 表段<号段>, 名: &'static str) -> Result<(),
     }
     let 段s = 号段切片(表);
     for (序, 段) in 段s.iter().enumerate() {
-        let 序 = 序 as u32;
+        let 项序 = 序 as u32;
         if 段.起 > 段.止 {
-            return Err(载入错误::号段非法 { 表: 名, 序 });
+            return Err(载入错误::号段非法 { 表: 名, 序: 项序 });
         }
         let 类 = 段.止.取() / 号段类宽度;
         if 段.起.取() / 号段类宽度 != 类 || 类 >= 号段类个数 {
             return Err(载入错误::号段冲突 { 起: 段.起.取(), 止: 段.止.取() });
         }
-        for (另序, 另段) in 段s[..序 as usize].iter().enumerate() {
+        for (另序, 另段) in 段s[..项序 as usize].iter().enumerate() {
             if 段.相交(另段) {
                 return Err(载入错误::号段表内重叠 {
                     表: 名,
-                    序,
+                    序: 项序,
                     另序: 另序 as u32,
                 });
             }
@@ -144,21 +144,21 @@ pub(crate) fn 依赖清单合法(
     }
     for 序 in 0..项数 as usize {
         // SAFETY: 项数 > 0 且项表非空，序 < 项数。
-        let 项 = unsafe { *声明.依赖清单.项表.add(序) };
+        let 依赖项 = unsafe { *声明.依赖清单.项表.add(序) };
         // SAFETY: 依赖项按契约是静态只读的 NUL 结尾标识串。
-        let Some(串) = (unsafe { 读串(项, 标识串字节数 + 1) }) else {
+        let Some(串) = (unsafe { 读串(依赖项, 标识串字节数 + 1) }) else {
             return false;
         };
         if !是合法标识串(串) || 串 == 自身 {
             return false;
         }
-        if !台账.是否已载入(项) {
+        if !台账.是否已载入(依赖项) {
             return false; // 依赖不在台账里 ⇒ 依赖缺失
         }
-        if 已见[..序].contains(&项) {
+        if 已见[..序].contains(&依赖项) {
             return false; // 重复依赖：清单不自洽
         }
-        已见[序] = 项;
+        已见[序] = 依赖项;
     }
     true
 }

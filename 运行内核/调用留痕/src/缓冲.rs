@@ -154,41 +154,41 @@ impl 留痕缓冲 {
         }
 
         // 唯一的共享写点：原子领号。拿到唯一序号后，落格互不相干。
-        let 序 = self.写序号.fetch_add(1, Ordering::Relaxed);
+        let 写序号 = self.写序号.fetch_add(1, Ordering::Relaxed);
         let 容量 = self.容量 as u64;
         if 容量 == 0 {
             self.丢弃数.fetch_add(1, Ordering::Relaxed);
             return;
         }
 
-        let 满 = 序 >= 容量;
+        let 满 = 写序号 >= 容量;
         // 丢最新：保历史。满了之后新来的一律丢弃，不入槽。
         if 满 && self.策略 == 丢弃策略::丢最新 {
             self.丢弃数.fetch_add(1, Ordering::Relaxed);
             return;
         }
 
-        let Some(槽) = self.槽表.get((序 % 容量) as usize) else {
+        let Some(槽) = self.槽表.get((写序号 % 容量) as usize) else {
             // 槽表与容量不一致（不应发生）。**不 panic**，按丢弃处理。
             self.丢弃数.fetch_add(1, Ordering::Relaxed);
             return;
         };
 
         // 认领：同格写者串行化，保证发布出去的一条内部自洽。有界重试，绝不等待。
-        if !Self::认领(槽, 序) {
+        if !Self::认领(槽, 写序号) {
             self.丢弃数.fetch_add(1, Ordering::Relaxed);
             return;
         }
         // 认领后再看一眼：若该格已被更新的序号占住，本条已过时，让位（丢最旧下重并发才会出现）。
         let 就绪 = 槽.就绪.load(Ordering::Acquire);
-        if 就绪 != 无序号 && 就绪 >= 序 {
+        if 就绪 != 无序号 && 就绪 >= 写序号 {
             槽.在写.store(无序号, Ordering::Release);
             self.丢弃数.fetch_add(1, Ordering::Relaxed);
             return;
         }
 
         槽.落字段(&一条);
-        槽.就绪.store(序, Ordering::Release);
+        槽.就绪.store(写序号, Ordering::Release);
         槽.在写.store(无序号, Ordering::Release);
 
         // 丢最旧：满了 ⇒ 本条覆盖掉了最旧的一条，计一次丢弃。
