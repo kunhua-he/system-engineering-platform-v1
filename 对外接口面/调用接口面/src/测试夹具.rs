@@ -149,10 +149,10 @@ pub fn 取请求(路径: &str) -> String {
 }
 
 /// 一条 POST 请求（原始文本）。`Content-Length` 按**字节数**算，与冻结件一致。
-pub fn 交请求(路径: &str, 应答体: &str) -> String {
+pub fn 交请求(路径: &str, 请求体: &str) -> String {
     format!(
-        "POST {路径} HTTP/1.1\r\nHost: 127.0.0.1\r\nContent-Type: application/json; charset=utf-8\r\nContent-Length: {}\r\n\r\n{应答体}",
-        应答体.len()
+        "POST {路径} HTTP/1.1\r\nHost: 127.0.0.1\r\nContent-Type: application/json; charset=utf-8\r\nContent-Length: {}\r\n\r\n{请求体}",
+        请求体.len()
     )
 }
 
