@@ -17,40 +17,40 @@ export function 装对话框(取) {
   const 台 = 取("对话框台");
   const 读 = 取("对话框读数");
 
-  for (const d of 对话框) {
+  for (const 话 of 对话框) {
     const 项 = document.createElement("option");
-    项.value = d.编号;
-    项.textContent = d.编号 + " · " + d.标题 + "（" + d.控件数 + " 控件）";
+    项.value = 话.编号;
+    项.textContent = 话.编号 + " · " + 话.标题 + "（" + 话.控件数 + " 控件）";
     选.append(项);
   }
 
   const 摆 = (编号) => {
-    const d = 对话框.find((x) => x.编号 === 编号);
+    const 话 = 对话框.find((候) => 候.编号 === 编号);
     const 框 = document.createElement("div");
     框.className = "易对话框";
-    框.style.width = d.cx + "px";
-    框.style.height = d.cy + "px";
+    框.style.width = 话.cx + "px";
+    框.style.height = 话.cy + "px";
     // 字号照资源的「字号」字段给；**字体族不在这里给** —— 进前端的这 18 个全是「宋体」，
     // 族链（宋体 → SimSun → Songti SC）只在 `样式.css` 里写一份，两处写就是两个来源。
     // 实测过：这里写 `fontFamily = "宋体"` 会在 macOS 上落到默认族（量到 PingFang SC），
     // 因为本机没有叫「宋体」的字面；走 CSS 那条链才会落到 Songti SC。资源的字体名照旧显示在读数里。
-    框.style.fontSize = d.字号 + "pt";
-    for (const c of d.控件) {
+    框.style.fontSize = 话.字号 + "pt";
+    for (const 控项 of 话.控件) {
       const 控 = document.createElement("div");
-      控.className = "易控件 " + (类样式[c.类] || "他") + (c.禁用 ? " 灰" : "");
-      控.style.left = c.x + "px";
-      控.style.top = c.y + "px";
-      控.style.width = c.cx + "px";
-      控.style.height = c.cy + "px";
-      控.textContent = c.标题;
-      控.title = "类 " + c.类 + " · id " + c.id + " · 样式 " + c.样式
-        + (c.禁用 ? " · WS_DISABLED" : "");
+      控.className = "易控件 " + (类样式[控项.类] || "他") + (控项.禁用 ? " 灰" : "");
+      控.style.left = 控项.左 + "px";
+      控.style.top = 控项.上 + "px";
+      控.style.width = 控项.cx + "px";
+      控.style.height = 控项.cy + "px";
+      控.textContent = 控项.标题;
+      控.title = "类 " + 控项.类 + " · id " + 控项.id + " · 样式 " + 控项.样式
+        + (控项.禁用 ? " · WS_DISABLED" : "");
       框.append(控);
     }
     台.replaceChildren(框);
-    读.textContent = "对话框 " + d.编号 + " · " + d.标题 + " · 字体 " + d.字体 + " " + d.字号
-      + "pt · 尺寸 " + d.cx + "×" + d.cy + " 对话框单位 · 控件 " + d.控件数
-      + " · 可达命令 " + d.依据 + " · 只摆样子，未接动作";
+    读.textContent = "对话框 " + 话.编号 + " · " + 话.标题 + " · 字体 " + 话.字体 + " " + 话.字号
+      + "pt · 尺寸 " + 话.cx + "×" + 话.cy + " 对话框单位 · 控件 " + 话.控件数
+      + " · 可达命令 " + 话.依据 + " · 只摆样子，未接动作";
   };
 
   选.addEventListener("change", () => 摆(选.value));
