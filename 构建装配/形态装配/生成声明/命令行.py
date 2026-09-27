@@ -150,6 +150,6 @@ def 入口函数(参数):
             % (计数["号段类宽度"], 计数["号段类个数"])
         )
         return 0
-    except 生成失败 as 错:
-        print("生成失败（fail-closed，产物未动）：%s" % 错, file=sys.stderr)
+    except 生成失败 as 错误:
+        print("生成失败（fail-closed，产物未动）：%s" % 错误, file=sys.stderr)
         return 2

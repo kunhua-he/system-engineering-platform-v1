@@ -53,8 +53,8 @@ def 检查预构建(纳入的扩展: list) -> str:
         return "没有预构建戳（{}）⇒ 产物与源的关系未知".format(预构建戳.relative_to(仓根).as_posix())
     try:
         戳内指纹 = json.loads(预构建戳.read_text(encoding="utf-8")).get("预构建指纹")
-    except (OSError, ValueError) as 错:
-        return "预构建戳读不出来（{}）".format(错)
+    except (OSError, ValueError) as 错误:
+        return "预构建戳读不出来（{}）".format(错误)
     if 戳内指纹 != 当前:
         return "预构建戳与当前源不符（戳 {} · 当前 {}）".format((戳内指纹 or "（空）")[:16], 当前[:16])
     return ""

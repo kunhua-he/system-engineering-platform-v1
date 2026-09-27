@@ -26,10 +26,10 @@ def 解析只跑(词表: list) -> tuple:
     词表 = [词.strip() for 词 in 词表 if 词.strip()]
     if not 词表:
         return set(), "`--只跑` 后面要给判据名的一段（逗号分隔），如 `--只跑 超时设置,命名防回潮`"
-    没命中表 = [词 for 词 in 词表 if not any(词 in 名 for 名 in 检查名)]
+    没命中表 = [关键词 for 关键词 in 词表 if not any(关键词 in 名称 for 名称 in 检查名)]
     if 没命中表:
         return set(), "这些词一条判据也没命中：%s" % " · ".join(没命中表)
-    return {名 for 名 in 检查名 if any(词 in 名 for 词 in 词表)}, None
+    return {名称 for 名称 in 检查名 if any(关键词 in 名称 for 关键词 in 词表)}, None
 
 
 # ════════════════════════════════════════════════════════════════════════════

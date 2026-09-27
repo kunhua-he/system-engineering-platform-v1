@@ -21,7 +21,7 @@ def 读清单(标识: str) -> dict:
 def 列制品() -> list:
     if not 制品落点.is_dir():
         return []
-    return sorted(路.name for 路 in 制品落点.iterdir() if (路 / "制品清单.json").is_file())
+    return sorted(路径.name for 路径 in 制品落点.iterdir() if (路径 / "制品清单.json").is_file())
 
 
 def 不可变读数(标识: str) -> tuple:
@@ -34,9 +34,9 @@ def 不可变读数(标识: str) -> tuple:
     for 路径 in sorted(目录.rglob("*")):
         if 路径.is_file() and 路径.name != "制品清单.json":
             现在[路径.relative_to(目录).as_posix()] = hashlib.sha256(路径.read_bytes()).hexdigest()
-    不符 = [键 for 键, 值 in 记的.items() if 现在.get(键) != 值]
-    多余 = [键 for 键 in 现在 if 键 not in 记的]
-    缺件 = [键 for 键 in 记的 if 键 not in 现在]
+    不符 = [键名 for 键名, 待处理值 in 记的.items() if 现在.get(键名) != 待处理值]
+    多余 = [键名 for 键名 in 现在 if 键名 not in 记的]
+    缺件 = [键名 for 键名 in 记的 if 键名 not in 现在]
     return 不符, 多余, 缺件
 
 

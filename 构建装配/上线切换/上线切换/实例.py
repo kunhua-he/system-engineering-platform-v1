@@ -80,8 +80,8 @@ def 停实例(记录: dict) -> str:
         return "pid {} 已不在".format(pid or "?")
     try:
         os.kill(pid, signal.SIGTERM)
-    except OSError as 错:
-        return "发信号失败：{}".format(错)
+    except OSError as 错误:
+        return "发信号失败：{}".format(错误)
     截止 = time.time() + 停等秒
     while time.time() < 截止 and 活着(pid):
         time.sleep(0.05)
@@ -100,11 +100,11 @@ def 健康(端口: int) -> tuple:
     """
     路径 = urllib.parse.quote("/接口")
     try:
-        with urllib.request.urlopen("http://127.0.0.1:{}{}".format(端口, 路径), timeout=5) as 应:
-            文本 = 应.read().decode("utf-8")
-            状态码 = 应.status
-    except (urllib.error.URLError, socket.timeout, ConnectionError) as 错:
-        return 0, "连不上：{}".format(错)
+        with urllib.request.urlopen("http://127.0.0.1:{}{}".format(端口, 路径), timeout=5) as 应答:
+            文本 = 应答.read().decode("utf-8")
+            状态码 = 应答.status
+    except (urllib.error.URLError, socket.timeout, ConnectionError) as 错误:
+        return 0, "连不上：{}".format(错误)
     try:
         应答描述 = json.loads(文本)
     except ValueError:
@@ -135,10 +135,10 @@ def 端口空着(端口: int) -> bool:
     判法是**连一次**：连得上 ⇒ 还有东西在听（不空）；连接被拒 ⇒ 空。
     **不是**看进程在不在（同 §二 判据 5 的口径：进程活着但答不了 ≠ 起得来，反过来也一样）。
     """
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as 套:
-        套.settimeout(0.5)
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as 套接字:
+        套接字.settimeout(0.5)
         try:
-            套.connect(("127.0.0.1", 端口))
+            套接字.connect(("127.0.0.1", 端口))
             return False
         except OSError:
             return True

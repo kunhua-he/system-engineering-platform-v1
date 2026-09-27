@@ -31,11 +31,11 @@ def 建测试文件集(文件: dict) -> set:
     # 一遍预扫：把每份 .rs 的挂载声明解析成「相对父文件目录的目标路径」。
     # 注意 `#[path = "…"]` 的值写在字符串里 ⇒ 去字面量会把它抹成空白，必须回**原文**取引号内内容。
     挂载 = []
-    for 父键, 项 in 文件.items():
-        if not 父键.endswith(".rs") or 项["文本"] is None:
+    for 父键, 一项 in 文件.items():
+        if not 父键.endswith(".rs") or 一项["文本"] is None:
             continue
-        净文本 = 去字面量(项["文本"])
-        原文 = 项["文本"]
+        净文本 = 去字面量(一项["文本"])
+        原文 = 一项["文本"]
         父目录 = 父键.rsplit("/", 1)[0] if "/" in 父键 else ""
         for 命中 in _夹具挂载形.finditer(净文本):
             属性 = _条件编译属性(净文本, 命中.start())
@@ -129,9 +129,9 @@ def 并行生产区(件表: list, 测试文件集=frozenset(), 保串: bool = Fa
     with ThreadPoolExecutor(max_workers=并发度) as 线程池:
         return dict(
             线程池.map(
-                lambda 项: (
-                    项[0],
-                    "" if 项[0] in 测试文件集 else 生产区文本(项[1], 保串),
+                lambda 一项: (
+                    一项[0],
+                    "" if 一项[0] in 测试文件集 else 生产区文本(一项[1], 保串),
                 ),
                 件表,
             )

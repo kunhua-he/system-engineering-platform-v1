@@ -20,12 +20,12 @@ def 读字节(相对路径):
 def 读JSON件(相对路径):
     try:
         文本 = 读字节(相对路径).decode("utf-8")
-    except UnicodeDecodeError as 错:
-        raise 生成失败("%s 不是合法 UTF-8：%s" % (相对路径, 错))
+    except UnicodeDecodeError as 错误:
+        raise 生成失败("%s 不是合法 UTF-8：%s" % (相对路径, 错误))
     try:
         return json.loads(文本)
-    except json.JSONDecodeError as 错:
-        raise 生成失败("%s 不是合法 JSON：%s" % (相对路径, 错))
+    except json.JSONDecodeError as 错误:
+        raise 生成失败("%s 不是合法 JSON：%s" % (相对路径, 错误))
 
 
 def 源指纹(相对路径):

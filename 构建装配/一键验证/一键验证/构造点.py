@@ -151,7 +151,7 @@ def 跑生成器检查(仓根: Path, 生成器: Path) -> tuple:
             text=True,
             timeout=5,
         )
-    except (OSError, subprocess.SubprocessError) as 错:
+    except (OSError, subprocess.SubprocessError) as 错误:
         return 127, f"起不动生成器：{错误}"
     输出 = (结果.stdout or "").strip() or (结果.stderr or "").strip()
     return 结果.returncode, 输出.replace("\n", " ／ ")[:400]

@@ -89,29 +89,29 @@ def 扫超时(件表: dict) -> list:
         if not 文本:
             continue
         注释符 = 行注释符.get(_后缀(键名))
-        for 号, 原行 in enumerate(文本.split("\n"), 1):
+        for 号值, 原行 in enumerate(文本.split("\n"), 1):
             源码行 = _去行注释(原行, 注释符) if 注释符 else 原行
-            for 名, 值 in _赋值.findall(源码行):
-                个数 = float(值)
-                if "毫秒" in 名:
+            for 名称, 待处理值 in _赋值.findall(源码行):
+                个数 = float(待处理值)
+                if "毫秒" in 名称:
                     if 个数 > 毫秒上限:
-                        输出缓冲.append((键名, 号, "`%s = %s`（毫秒）> 上限 %d 毫秒" % (名, 值, 毫秒上限), False))
+                        输出缓冲.append((键名, 号值, "`%s = %s`（毫秒）> 上限 %d 毫秒" % (名称, 待处理值, 毫秒上限), False))
                 elif 个数 > 秒上限:
-                    输出缓冲.append((键名, 号, "`%s = %s`（秒）> 上限 %g 秒" % (名, 值, 秒上限), False))
+                    输出缓冲.append((键名, 号值, "`%s = %s`（秒）> 上限 %g 秒" % (名称, 待处理值, 秒上限), False))
             for 待处理值 in _超时参.findall(源码行):
                 个数 = float(待处理值)
                 if 秒上限 < 个数 <= 100:
-                    输出缓冲.append((键名, 号, "`timeout=%s`（按秒）> 上限 %g 秒" % (待处理值, 秒上限), False))
+                    输出缓冲.append((键名, 号值, "`timeout=%s`（按秒）> 上限 %g 秒" % (待处理值, 秒上限), False))
                 elif 个数 >= 1000 and 个数 > 毫秒上限:
-                    输出缓冲.append((键名, 号, "`timeout=%s`（按毫秒）> 上限 %d 毫秒" % (待处理值, 毫秒上限), False))
+                    输出缓冲.append((键名, 号值, "`timeout=%s`（按毫秒）> 上限 %d 毫秒" % (待处理值, 毫秒上限), False))
                 elif 100 < 个数 < 1000:
-                    输出缓冲.append((键名, 号, "`timeout=%s`：**单位分不出**（101–999）" % 待处理值, True))
+                    输出缓冲.append((键名, 号值, "`timeout=%s`：**单位分不出**（101–999）" % 待处理值, True))
             for 待处理值 in _秒实参模式.findall(源码行):
                 if float(待处理值) > 秒上限:
-                    输出缓冲.append((键名, 号, "`Duration::from_secs(%s)` > 上限 %g 秒" % (待处理值, 秒上限), False))
+                    输出缓冲.append((键名, 号值, "`Duration::from_secs(%s)` > 上限 %g 秒" % (待处理值, 秒上限), False))
             for 待处理值 in _毫秒实参模式.findall(源码行):
                 if float(待处理值) > 毫秒上限:
-                    输出缓冲.append((键名, 号, "`Duration::from_millis(%s)` > 上限 %d 毫秒" % (待处理值, 毫秒上限), False))
+                    输出缓冲.append((键名, 号值, "`Duration::from_millis(%s)` > 上限 %d 毫秒" % (待处理值, 毫秒上限), False))
     return 输出缓冲
 
 
@@ -126,9 +126,9 @@ def 超时面(上层读数: dict) -> dict:
     if 键名 in _超时面缓存:
         return _超时面缓存[键名]
     件表 = [
-        (键_件, 项["文本"])
-        for 键_件, 项 in 上层读数["文件"].items()
-        if 项.get("文本") is not None and 键_件.endswith(代码后缀)
+        (键_件, 一项["文本"])
+        for 键_件, 一项 in 上层读数["文件"].items()
+        if 一项.get("文本") is not None and 键_件.endswith(代码后缀)
     ]
     扫描面 = 并行生产区(件表, 上层读数.get("测试文件集") or frozenset(), 保串=False)
     _超时面缓存[键名] = 扫描面
@@ -171,8 +171,8 @@ def 检查37_超时设置上限五秒(上层读数: dict) -> list:
         "⇒ 报「未判」而不是「通过」。修法：把单位写进名字（具名常量 `超时毫秒 = 300`，"
         "照 ㉑「单位进名字」）或直接用别的两形之一 ⇒ 只能由该设置的作者改"
     )
-    for 路径, 号, 说明, 是未判 in 扫超时(件表):
-        位置 = f"{路径}:{号}"
+    for 路径, 号值, 说明, 是未判 in 扫超时(件表):
+        位置 = f"{路径}:{号值}"
         if 是未判:
             判不了(检查名[36], 位置, 说明, 口径_未判)
         else:
@@ -202,11 +202,11 @@ def 自检_超时扫描() -> list:
         "构建装配/样例/不结尾.py": "秒上限 = 5.0\n毫秒上限 = 5000.0\n# 那时 健康超时秒 = 15.0\n",
     }
     匹配结果 = 扫超时(样本)
-    违规件 = {键 for 键, _号, _说, 是未判 in 匹配结果 if not 是未判}
+    违规件 = {键名 for 键名, _号, _说, 是未判 in 匹配结果 if not 是未判}
     说明文字 = " | ".join("%s:%d %s%s" % (条[0], 条[1], 条[2], "（未判）" if 条[3] else "") for 条 in 匹配结果)
 
     def 那件(路径: str, 未判=None) -> list:
-        return [条 for 条 in 匹配结果 if 条[0] == 路径 and (未判 is None or 条[3] == 未判)]
+        return [一条 for 一条 in 匹配结果 if 一条[0] == 路径 and (未判 is None or 一条[3] == 未判)]
 
     return [
         ("反向样本：形①「秒」与形②「毫秒」都抓得住（含 Rust 带类型标注的 `const`）",

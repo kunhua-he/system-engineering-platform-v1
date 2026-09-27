@@ -91,10 +91,10 @@ def 真调(端口: int, 被调号: int, 程序文本: str) -> dict:
     )
     状态, 应体 = 0, ""
     try:
-        with urllib.request.urlopen(请求对象, timeout=HTTP超时秒) as 应:
-            状态, 应体 = 应.status, 应.read().decode("utf-8")
-    except urllib.error.HTTPError as 错:
-        状态, 应体 = 错.code, 错.read().decode("utf-8", errors="replace")
+        with urllib.request.urlopen(请求对象, timeout=HTTP超时秒) as 应答:
+            状态, 应体 = 应答.status, 应答.read().decode("utf-8")
+    except urllib.error.HTTPError as 错误:
+        状态, 应体 = 错误.code, 错误.read().decode("utf-8", errors="replace")
     输出缓冲 = {"HTTP状态": 状态, "成功": None, "返回字节数": None, "耗时微秒": None}
     try:
         结果 = json.loads(应体)
@@ -127,8 +127,8 @@ def 停网关(进程) -> dict:
         return {"读法": "poll", "结果": "已不在", "退出码": 进程.returncode}
     try:
         进程.send_signal(signal.SIGTERM)
-    except OSError as 错:
-        return {"读法": "poll", "结果": "发信号失败", "原因": str(错)}
+    except OSError as 错误:
+        return {"读法": "poll", "结果": "发信号失败", "原因": str(错误)}
     截止 = time.time() + 停等秒
     while time.time() < 截止:
         if 进程.poll() is not None:
@@ -138,8 +138,8 @@ def 停网关(进程) -> dict:
     try:
         进程.kill()
         进程.wait(timeout=2.0)
-    except (OSError, subprocess.TimeoutExpired) as 错:
-        return {"读法": "poll", "结果": "强杀没收住", "原因": str(错)}
+    except (OSError, subprocess.TimeoutExpired) as 错误:
+        return {"读法": "poll", "结果": "强杀没收住", "原因": str(错误)}
     return {"读法": "poll", "结果": "已停", "停法": "强杀（SIGKILL）", "退出码": 进程.returncode}
 
 
@@ -274,10 +274,10 @@ def 跑主链(壳起表=None) -> int:
             "1101成功真": 调用读数["1101"]["HTTP状态"] == 200 and 调用读数["1101"]["成功"] is True,
             "1102成功真": 调用读数["1102"]["HTTP状态"] == 200 and 调用读数["1102"]["成功"] is True,
         }
-    except Exception as 死:
-        回执["失败"] = {"死在哪一层": 死层, "原因": str(死)}
+    except Exception as 错误:
+        回执["失败"] = {"死在哪一层": 死层, "原因": str(错误)}
         回执["判据"] = {"到过判定": False}
-        打印("✗ 死在{}：{}".format(死层, 死))
+        打印("✗ 死在{}：{}".format(死层, 错误))
     finally:
         # ── 第 6 步：收工清理（失败也要清：网关必停、暂存必删）───────────────
         打印("⑤ 收工清理")
@@ -295,9 +295,9 @@ def 跑主链(壳起表=None) -> int:
         if 暂存 is not None and 暂存.is_dir():
             try:
                 shutil.rmtree(暂存)
-            except OSError as 错:
-                清理["暂存清理失败"] = str(错)
-                打印("   暂存清不掉：{}".format(错))
+            except OSError as 错误:
+                清理["暂存清理失败"] = str(错误)
+                打印("   暂存清不掉：{}".format(错误))
             else:
                 清理["暂存已删"] = not 暂存.exists()
                 打印("   暂存已删 {}".format(暂存))

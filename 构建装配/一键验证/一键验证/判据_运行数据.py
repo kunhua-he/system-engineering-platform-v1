@@ -117,9 +117,9 @@ def 运行数据面(上层读数: dict) -> dict:
     if 键名 in _运行数据面缓存:
         return _运行数据面缓存[键名]
     件表 = [
-        (键_件, 项["文本"])
-        for 键_件, 项 in 上层读数["文件"].items()
-        if 项.get("文本") is not None
+        (键_件, 一项["文本"])
+        for 键_件, 一项 in 上层读数["文件"].items()
+        if 一项.get("文本") is not None
         and 键_件.endswith(代码后缀)
         and 键_件.rsplit("/", 1)[-1] not in 判据自身件
     ]
@@ -138,8 +138,8 @@ def _读基线(基线件) -> tuple:
         return {}, f"基线文件不存在（{运行数据基线路径}）"
     try:
         数据 = json.loads(基线件.read_text(encoding="utf-8"))
-    except Exception as 错:
-        return {}, f"基线文件解析不了（{type(错).__name__}）"
+    except Exception as 错误:
+        return {}, f"基线文件解析不了（{type(错误).__name__}）"
     项表 = {}
     for 一条 in 数据.get("债务") or []:
         try:
@@ -306,7 +306,7 @@ def 自检_运行数据扫描() -> list:
         ),
         (
             "正向样本：普通件（无那四个形）0 命中",
-            not any(键 == "运行内核/实例状态/src/干净.rs" for 键, _形 in 匹配结果),
+            not any(键名 == "运行内核/实例状态/src/干净.rs" for 键名, _形 in 匹配结果),
             "不误伤普通件",
         ),
     ]
