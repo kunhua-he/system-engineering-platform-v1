@@ -60,8 +60,8 @@ impl<'a> 分析器<'a> {
         Self { 原文, 记号表, 草稿, 游标: 0, 止: 记号表.len(), 深度: 0 }
     }
 
-    pub(super) fn 文(&self, t: 记号) -> &'a [u8] {
-        self.原文.get(t.起 as usize..t.止 as usize).unwrap_or(&[])
+    pub(super) fn 文(&self, 该记号: 记号) -> &'a [u8] {
+        self.原文.get(该记号.起 as usize..该记号.止 as usize).unwrap_or(&[])
     }
 
     pub(super) fn 当前(&self) -> Option<记号> {
@@ -74,7 +74,7 @@ impl<'a> 分析器<'a> {
 
     pub(super) fn 是界符(&self, 文: &[u8]) -> bool {
         match self.当前() {
-            Some(t) => t.种类 == 记号种类::界符 && self.文(t) == 文,
+            Some(该记号) => 该记号.种类 == 记号种类::界符 && self.文(该记号) == 文,
             None => false,
         }
     }
@@ -88,21 +88,21 @@ impl<'a> 分析器<'a> {
     /// 从 `游标`（停在开界符上）找配对的闭界符下标。认不出返回 `None`。
     pub(super) fn 配对(&self, 开: &[u8], 闭: &[u8]) -> Option<usize> {
         let mut 深 = 0i32;
-        let mut i = self.游标;
-        while i < self.止 {
-            let t = self.记号表[i];
-            if t.种类 == 记号种类::界符 {
-                let 文 = self.文(t);
+        let mut 记号下标 = self.游标;
+        while 记号下标 < self.止 {
+            let 该记号 = self.记号表[记号下标];
+            if 该记号.种类 == 记号种类::界符 {
+                let 文 = self.文(该记号);
                 if 文 == 开 {
                     深 += 1;
                 } else if 文 == 闭 {
                     深 -= 1;
                     if 深 == 0 {
-                        return Some(i);
+                        return Some(记号下标);
                     }
                 }
             }
-            i += 1;
+            记号下标 += 1;
         }
         None
     }
@@ -128,9 +128,9 @@ impl<'a> 分析器<'a> {
         self.游标 = 起;
         self.止 = 止;
         let 果 = match self.二元() {
-            Some(n) => {
+            Some(节点下标) => {
                 self.兜底到(止);
-                Some(n)
+                Some(节点下标)
             }
             None => self.兜底到(止),
         };
@@ -158,7 +158,7 @@ impl<'a> 分析器<'a> {
         loop {
             let 保存 = self.游标;
             self.跳过空白();
-            let 是运算符 = matches!(self.当前(), Some(t) if t.种类 == 记号种类::运算符);
+            let 是运算符 = matches!(self.当前(), Some(该记号) if 该记号.种类 == 记号种类::运算符);
             if !是运算符 {
                 self.游标 = 保存;
                 return Some(左);
@@ -177,15 +177,15 @@ impl<'a> 分析器<'a> {
     fn 一元(&mut self) -> Option<u32> {
         self.跳过空白();
         if self.是界符(b"&") {
-            let t = self.当前()?;
+            let 该记号 = self.当前()?;
             self.游标 += 1;
             let 操作数 = self.一元();
-            let 止 = 操作数.map(|n| self.草稿.止(n)).unwrap_or(t.止);
+            let 止 = 操作数.map(|节点下标| self.草稿.止(节点下标)).unwrap_or(该记号.止);
             let 子 = match 操作数 {
-                Some(n) => vec![n],
+                Some(节点下标) => vec![节点下标],
                 None => Vec::new(),
             };
-            return Some(self.草稿.节点(节点种类::一元运算, (t.起, 止), 子));
+            return Some(self.草稿.节点(节点种类::一元运算, (该记号.起, 止), 子));
         }
         self.后置()
     }
@@ -199,10 +199,10 @@ impl<'a> 分析器<'a> {
                 self.游标 += 1;
                 self.跳过空白();
                 match self.当前() {
-                    Some(m) if m.种类 == 记号种类::标识符 => {
+                    Some(成员记号) if 成员记号.种类 == 记号种类::标识符 => {
                         self.游标 += 1;
-                        let 成员 = self.草稿.叶(节点种类::标识符引用, m.起, m.止);
-                        let 区间 = (self.草稿.起(基), m.止);
+                        let 成员 = self.草稿.叶(节点种类::标识符引用, 成员记号.起, 成员记号.止);
+                        let 区间 = (self.草稿.起(基), 成员记号.止);
                         基 = self.草稿.节点(节点种类::成员访问, 区间, vec![基, 成员]);
                     }
                     _ => {
@@ -265,25 +265,25 @@ impl<'a> 分析器<'a> {
 
     fn 主(&mut self) -> Option<u32> {
         self.跳过空白();
-        let t = self.当前()?;
-        match t.种类 {
+        let 该记号 = self.当前()?;
+        match 该记号.种类 {
             记号种类::文本字面量 => {
                 self.游标 += 1;
-                Some(self.草稿.叶(节点种类::文本字面量, t.起, t.止))
+                Some(self.草稿.叶(节点种类::文本字面量, 该记号.起, 该记号.止))
             }
             记号种类::数值字面量 => {
                 self.游标 += 1;
-                Some(self.草稿.叶(节点种类::数值字面量, t.起, t.止))
+                Some(self.草稿.叶(节点种类::数值字面量, 该记号.起, 该记号.止))
             }
             记号种类::常量引用 => {
                 self.游标 += 1;
-                Some(self.草稿.叶(节点种类::常量引用, t.起, t.止))
+                Some(self.草稿.叶(节点种类::常量引用, 该记号.起, 该记号.止))
             }
             记号种类::标识符 => {
                 self.游标 += 1;
-                Some(self.草稿.叶(节点种类::标识符引用, t.起, t.止))
+                Some(self.草稿.叶(节点种类::标识符引用, 该记号.起, 该记号.止))
             }
-            记号种类::界符 if self.文(t) == b"(" => {
+            记号种类::界符 if self.文(该记号) == b"(" => {
                 let 闭 = self.配对(b"(", b")")?;
                 let 开 = self.游标;
                 let 内 = self.子区间(开 + 1, 闭);
@@ -301,9 +301,9 @@ impl<'a> 分析器<'a> {
         self.游标 = 起;
         self.止 = 止;
         let 果 = match self.二元() {
-            Some(n) => {
+            Some(节点下标) => {
                 self.兜底到(止);
-                Some(n)
+                Some(节点下标)
             }
             None => self.兜底到(止),
         };

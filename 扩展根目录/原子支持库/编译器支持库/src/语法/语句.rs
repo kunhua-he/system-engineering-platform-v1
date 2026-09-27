@@ -11,7 +11,7 @@ use crate::语言面::节点种类;
 impl 建树器<'_> {
     // ── 单行节点 ────────────────────────────────────────────────────────────
 
-    pub(super) fn 建单行(&mut self, h: &行) -> u32 {
+    pub(super) fn 建单行(&mut self, 此行: &行) -> u32 {
         // 区间到**行字节止**：行尾空白 / 注释 / 换行由本节点认领 ——
         // 它们是「包含它的最内层语句级或声明级节点」的子（`语言面形状.md` §3.5）。
         // 旧读法（把先序子树区间逐下标当直接子）下这做不到：行尾叶排在行内容之后，
@@ -23,35 +23,35 @@ impl 建树器<'_> {
         // **同一条路**。`声明字段` 从「内容记号起 + 1」起切字段（这些行的行首关键字
         // 恒为 `Some`），故关键字本身不落进任何子节点。于是全扩展只剩一条规则：
         // 声明头字段（子 0 = 名字，子 ≥1 = 类型候选）一律是子节点。
-        let (起, 止) = (h.内容起, h.字节止);
-        let (种类, mut 子) = match 单行声明种类(h.类) {
-            Some(种类) => (种类, self.声明字段(h)),
-            None => match h.类 {
+        let (起, 止) = (此行.内容起, 此行.字节止);
+        let (种类, mut 子) = match 单行声明种类(此行.类) {
+            Some(种类) => (种类, self.声明字段(此行)),
+            None => match 此行.类 {
                 行类::返回 => {
-                    let 起2 = h.内容记号起 + 1;
-                    let 子 = self.表达式(起2, h.内容记号止).into_iter().collect();
+                    let 起2 = 此行.内容记号起 + 1;
+                    let 子 = self.表达式(起2, 此行.内容记号止).into_iter().collect();
                     (节点种类::返回语句, 子)
                 }
-                行类::置入代码 => (节点种类::置入代码语句, self.括号实参(h)),
+                行类::置入代码 => (节点种类::置入代码语句, self.括号实参(此行)),
                 // 没配对上的块关键字：当单行块语句（条件照收），不 panic。
-                行类::块首 | 行类::块中 | 行类::块尾 => (节点种类::块语句, self.括号实参(h)),
+                行类::块首 | 行类::块中 | 行类::块尾 => (节点种类::块语句, self.括号实参(此行)),
                 行类::语句 => {
                     let 流 = self.流;
-                    let 等号 = 顶层赋值号(&流.记号表, &流.原文, h.内容记号起, h.内容记号止);
+                    let 等号 = 顶层赋值号(&流.记号表, &流.原文, 此行.内容记号起, 此行.内容记号止);
                     let mut 子 = Vec::new();
                     match 等号 {
-                        Some(i) => {
-                            if let Some(n) = self.表达式(h.内容记号起, i) {
-                                子.push(n);
+                        Some(等号下标) => {
+                            if let Some(节点下标) = self.表达式(此行.内容记号起, 等号下标) {
+                                子.push(节点下标);
                             }
-                            if let Some(n) = self.表达式(i + 1, h.内容记号止) {
-                                子.push(n);
+                            if let Some(节点下标) = self.表达式(等号下标 + 1, 此行.内容记号止) {
+                                子.push(节点下标);
                             }
                             (节点种类::赋值语句, 子)
                         }
                         None => {
-                            if let Some(n) = self.表达式(h.内容记号起, h.内容记号止) {
-                                子.push(n);
+                            if let Some(节点下标) = self.表达式(此行.内容记号起, 此行.内容记号止) {
+                                子.push(节点下标);
                             }
                             (节点种类::调用语句, 子)
                         }
@@ -59,11 +59,11 @@ impl 建树器<'_> {
                 }
                 // 其余行类（版本 / 数据类型 / 子程序 / 空行）不该走到这里；
                 // 真走到也只按声明头铺字段，不 panic、不另造。
-                _ => (兜底种类, self.声明字段(h)),
+                _ => (兜底种类, self.声明字段(此行)),
             },
         };
         // 行尾叶挂在本行节点之下（区间已含到行字节止）。
-        子.extend(self.尾叶(h));
+        子.extend(self.尾叶(此行));
         self.草稿.节点(种类, (起, 止), 子)
     }
 
@@ -73,22 +73,22 @@ impl 建树器<'_> {
     pub(super) fn 扫块(&self, 行表: &[行], 头: usize, 止: usize) -> (Option<usize>, Vec<usize>) {
         let mut 深 = 1i32;
         let mut 分支行 = Vec::new();
-        let mut i = 头 + 1;
-        while i < 止 {
-            match 行表[i].类 {
+        let mut 行下标 = 头 + 1;
+        while 行下标 < 止 {
+            match 行表[行下标].类 {
                 行类::块首 => 深 += 1,
                 行类::块尾 => {
                     深 -= 1;
                     if 深 == 0 {
-                        return (Some(i), 分支行);
+                        return (Some(行下标), 分支行);
                     }
                 }
                 行类::块中 if 深 == 1 => {
-                    分支行.push(i);
+                    分支行.push(行下标);
                 }
                 _ => {}
             }
-            i += 1;
+            行下标 += 1;
         }
         (None, 分支行)
     }
@@ -96,36 +96,36 @@ impl 建树器<'_> {
     /// 块末：配对块尾行的下标；没配对就取 `止`（**不报错** —— 缩进/配对不是不变量）。
     pub(super) fn 块末(&self, 行表: &[行], 头: usize, 止: usize) -> usize {
         match self.扫块(行表, 头, 止).0 {
-            Some(k) => k + 1,
+            Some(块尾下标) => 块尾下标 + 1,
             None => 止,
         }
     }
 
     pub(super) fn 建块(&mut self, 行表: &[行], 头: usize, 止行: usize) -> u32 {
         let (块尾行, 分支行) = self.扫块(行表, 头, 止行);
-        let h = 行表[头];
-        let 起 = h.关键字.map(|x| x.0).unwrap_or(h.内容起);
+        let 此行 = 行表[头];
+        let 起 = 此行.关键字.map(|关键字对| 关键字对.0).unwrap_or(此行.内容起);
         let 体末 = 块尾行.unwrap_or(止行);
         let 止 = match 块尾行 {
-            Some(k) => 行表[k].字节止,
-            None => 行表.get(止行).map(|x| x.字节起).unwrap_or(self.全文长()),
+            Some(块尾下标) => 行表[块尾下标].字节止,
+            None => 行表.get(止行).map(|行项| 行项.字节起).unwrap_or(self.全文长()),
         };
-        let 判断 = self.行关键字文(&h) == ".判断开始".as_bytes();
-        let mut 子 = self.括号实参(&h);
-        子.extend(self.尾叶(&h));
+        let 判断 = self.行关键字文(&此行) == ".判断开始".as_bytes();
+        let mut 子 = self.括号实参(&此行);
+        子.extend(self.尾叶(&此行));
 
         let mut 段起 = 头 + 1;
-        for (k, &分支) in 分支行.iter().enumerate() {
-            let 下一 = 分支行.get(k + 1).copied().unwrap_or(体末);
+        for (分支号, &分支) in 分支行.iter().enumerate() {
+            let 下一 = 分支行.get(分支号 + 1).copied().unwrap_or(体末);
             self.深度 += 1;
             子.extend(self.建体(行表, 段起, 分支));
             self.深度 -= 1;
             let bh = 行表[分支];
-            if let Some(n) = self.缩进叶(&bh) {
-                子.push(n);
+            if let Some(节点下标) = self.缩进叶(&bh) {
+                子.push(节点下标);
             }
-            let 分支止 = 行表.get(下一).map(|x| x.字节起).unwrap_or(self.全文长());
-            let 分支起 = bh.关键字.map(|x| x.0).unwrap_or(bh.内容起);
+            let 分支止 = 行表.get(下一).map(|行项| 行项.字节起).unwrap_or(self.全文长());
+            let 分支起 = bh.关键字.map(|关键字对| 关键字对.0).unwrap_or(bh.内容起);
             let mut 分支子 = self.括号实参(&bh);
             分支子.extend(self.尾叶(&bh));
             self.深度 += 1;
@@ -140,10 +140,10 @@ impl 建树器<'_> {
             子.extend(self.建体(行表, 头 + 1, 体末));
             self.深度 -= 1;
         }
-        if let Some(k) = 块尾行 {
-            let kh = 行表[k];
-            if let Some(n) = self.缩进叶(&kh) {
-                子.push(n);
+        if let Some(块尾下标) = 块尾行 {
+            let kh = 行表[块尾下标];
+            if let Some(节点下标) = self.缩进叶(&kh) {
+                子.push(节点下标);
             }
             子.extend(self.尾叶(&kh));
         }
