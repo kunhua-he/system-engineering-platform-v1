@@ -65,7 +65,7 @@ export const 图形 = {
 };
 
 /** 建一个 SVG 节点。`名` 不在表里就给一个空框（宁可空着，也不编一个形状出来）。 */
-export function 画(名) {
+export function 画图标(名) {
   const 图 = 图形[名] || { 路径: "M1 1h14v14H1z" };
   const 节 = document.createElementNS(命名空间, "svg");
   节.setAttribute("viewBox", "0 0 16 16");

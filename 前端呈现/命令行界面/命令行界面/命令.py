@@ -8,22 +8,22 @@ from .常量 import 默认端口, 用法, 路径_声明, 路径_能力, 路径_�
 from .参数 import 取端口, 用法错
 from .显示 import 印应答, 印失败, 印调用成功
 from .请求体 import 拼值
-from .连接 import 发, 连不上
+from .连接 import 发请求, 连不上
 
-# 本次真正用的端口（main 里定下来）。**只为把报错话说准**：连不上时要说清是哪个端口连不上，
+# 本次真正用的端口（入口函数 里定下来）。**只为把报错话说准**：连不上时要说清是哪个端口连不上，
 # 报默认值会指错方向（端口可能是 --端口 或环境变量给的）。
 当前端口 = 默认端口
 
 
 def 命令清单(端口: int, 显示: bool) -> int:
-    状态, 体 = 发(端口, "GET", 路径_根, None, 显示)
+    状态, 体 = 发请求(端口, "GET", 路径_根, None, 显示)
     return 印应答(状态, 体)
 
 
 def 命令契约(端口: int, 参数: list, 显示: bool) -> int:
     if len(参数) != 1:
         raise 用法错("契约 要一个编号：契约 <编号>")
-    状态, 体 = 发(端口, "GET", 路径_能力 + 参数[0], None, 显示)
+    状态, 体 = 发请求(端口, "GET", 路径_能力 + 参数[0], None, 显示)
     return 印应答(状态, 体)
 
 
@@ -34,7 +34,7 @@ def 命令调用(端口: int, 参数: list, 显示: bool) -> int:
     编号 = int(编号文)  # 只做「是不是十进制数」的搬运，不查它存不存在（那是后端的判）
     体 = {"编号": 编号, "值": [拼值(一项) for 一项 in 值参数]}
     体文本 = json.dumps(体, ensure_ascii=False)
-    状态, 应答 = 发(端口, "POST", 路径_调用, 体文本, 显示)
+    状态, 应答 = 发请求(端口, "POST", 路径_调用, 体文本, 显示)
     try:
         解析后 = json.loads(应答)
     except ValueError:
@@ -52,7 +52,7 @@ def 命令声明(端口: int, 参数: list, 显示: bool) -> int:
     # **原样转发**：不解析、不校验（面校验是后端的事，前端校验就是第二条腿）。
     with open(参数[0], "rb") as 文件:
         体文本 = 文件.read().decode("utf-8")
-    状态, 体 = 发(端口, "POST", 路径_声明, 体文本, 显示)
+    状态, 体 = 发请求(端口, "POST", 路径_声明, 体文本, 显示)
     return 印应答(状态, 体)
 
 
@@ -64,7 +64,7 @@ def 命令声明(端口: int, 参数: list, 显示: bool) -> int:
 }
 
 
-def main(参数: list) -> int:
+def 入口函数(参数: list) -> int:
     global 当前端口
     参数 = list(参数)
     显示 = "--显示请求" in 参数
@@ -80,10 +80,10 @@ def main(参数: list) -> int:
     return 命令表[命令](端口, 剩余, 显示)
 
 
-def 跑(参数: list) -> None:
+def 跑命令行(参数: list) -> None:
     """命令行主流程 —— 与拆分前入口的 `__main__` 块逐字同义（含退出码）。"""
     try:
-        sys.exit(main(参数))
+        sys.exit(入口函数(参数))
     except 用法错 as 错:
         print("用法错：{}".format(错), file=sys.stderr)
         print("（本地参数写错，不是后端的判断）", file=sys.stderr)

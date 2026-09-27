@@ -8,13 +8,13 @@
 // 它同时兜住「不许假成功」那条：每个按钮点下去，这里一定多一行，且那行是**真读数**
 // （HTTP 几 · 码几 · 取回多少字符），不是「操作成功」这种话。
 
-import { 建, 清空 } from "./呈现.js";
+import { 建元素, 清空 } from "./呈现.js";
 
 const 流水 = [];
 const 上限 = 300;
 
 /** 一行：时刻 · 触发者 · 读数。`类` 是触发者，`文` 是真实读数。 */
-export function 记(类, 文) {
+export function 记流水(类, 文) {
   const 时 = new Date();
   const 补 = (数) => String(数).padStart(2, "0");
   流水.push({
@@ -23,23 +23,23 @@ export function 记(类, 文) {
     文,
   });
   if (流水.length > 上限) 流水.splice(0, 流水.length - 上限);
-  画();
+  画流水();
 }
 
-function 画() {
+function 画流水() {
   const 列表 = document.getElementById("史列表");
   const 状态 = document.getElementById("史状态");
   if (!列表) return;
   清空(列表);
   if (!流水.length) {
-    列表.append(建("div", "史空", "还没有动作。点工具条上的图标、或上面任一按钮，这里就多一行。"));
+    列表.append(建元素("div", "史空", "还没有动作。点工具条上的图标、或上面任一按钮，这里就多一行。"));
     if (状态) 状态.textContent = "0 行";
     return;
   }
   // 新的在上：一眼看到刚发生的那一条。
   for (const 条 of [...流水].reverse()) {
-    const 行 = 建("div", "史行");
-    行.append(建("span", "史时", 条.时), 建("span", "史类", 条.类), 建("span", "文", 条.文));
+    const 行 = 建元素("div", "史行");
+    行.append(建元素("span", "史时", 条.时), 建元素("span", "史类", 条.类), 建元素("span", "文", 条.文));
     列表.append(行);
   }
   if (状态) 状态.textContent = 流水.length + " 行";
@@ -47,6 +47,6 @@ function 画() {
 
 /** 装好这一格（先把空状态摆上）。 */
 export function 装剪辑历史() {
-  画();
-  return { 记 };
+  画流水();
+  return { 记流水 };
 }

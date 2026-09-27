@@ -10,26 +10,26 @@
 // 摆法一律走 `呈现.js`：不看键名，只看值的类型。所以后端加字段本页不改一行。
 
 import { 取根, 取能力 } from "./取接口.js";
-import { 建, 清空, 摆, 摆应答, 摆消息, 写状态 } from "./呈现.js";
+import { 建元素, 清空, 摆值, 摆应答, 摆消息, 写状态 } from "./呈现.js";
 
 /** 顶层每一个值 → 一行读数；是数组就再把整张表摊在它下面。键名照抄应答，不翻译。 */
 function 摆变量(容器, 体) {
   清空(容器);
   if (!体 || typeof 体 !== "object" || Array.isArray(体)) {
-    容器.append(建("p", "提示 坏", "应答顶层不是对象，摆不出「变量表」。"));
+    容器.append(建元素("p", "提示 坏", "应答顶层不是对象，摆不出「变量表」。"));
     return;
   }
   for (const 键 of Object.keys(体)) {
     const 值 = 体[键];
-    const 行 = 建("div", "行内");
-    行.append(建("span", "键", 键 + "："));
-    行.append(建("span", "文", Array.isArray(值) ? "表 " + 值.length + " 项"
+    const 行 = 建元素("div", "行内");
+    行.append(建元素("span", "键", 键 + "："));
+    行.append(建元素("span", "文", Array.isArray(值) ? "表 " + 值.length + " 项"
       : 值 !== null && typeof 值 === "object" ? "对象 " + Object.keys(值).length + " 键"
         : String(值)));
     容器.append(行);
     if (Array.isArray(值)) {
-      const 盒 = 建("div", "果");
-      摆(盒, 值);
+      const 盒 = 建元素("div", "果");
+      摆值(盒, 值);
       容器.append(盒);
     }
   }

@@ -3,7 +3,7 @@
 import json
 
 
-def 是(值) -> str:
+def 显示真假(值) -> str:
     return "是" if 值 is True else ("否" if 值 is False else str(值))
 
 
@@ -38,12 +38,12 @@ def 印失败(状态行: str, 体: dict) -> int:
         print("  错误码：{}".format(错误.get("码")))
         print("  段位  ：{}".format(错误.get("段位")))
         print("  名称  ：{}".format(错误.get("名称") or "（未登记，后端没编名字）"))
-        print("  可重试：{}".format(是(错误.get("可重试"))))
-        print("  可自愈：{}".format(是(错误.get("可自愈"))))
-        print("  需人工：{}".format(是(错误.get("需人工"))))
+        print("  可重试：{}".format(显示真假(错误.get("可重试"))))
+        print("  可自愈：{}".format(显示真假(错误.get("可自愈"))))
+        print("  需人工：{}".format(显示真假(错误.get("需人工"))))
         if "已登记" in 错误:
             print("  已登记：{}（旁路项；否 = 这个码在已装载声明里查不到，是一条缺陷证据）"
-                  .format(是(错误.get("已登记"))))
+                  .format(显示真假(错误.get("已登记"))))
     elif isinstance(体.get("校验"), list):
         # `POST /接口/声明` 的失败形状（§四）：逐条「项 · 缺什么 · 为什么不能自愈」。
         print("  校验（{} 条）：".format(len(体["校验"])))

@@ -11,7 +11,7 @@
 import { 发程序文本 } from "./取接口.js";
 import { 选中路径 } from "./编辑器.js";
 import { 摆应答, 摆消息, 摘要, 写状态, 清空 } from "./呈现.js";
-import { 记 } from "./剪辑历史.js";
+import { 记流水 } from "./剪辑历史.js";
 
 export function 装程序文本(取元素) {
   const 状态 = 取元素("程序文本状态");
@@ -19,7 +19,7 @@ export function 装程序文本(取元素) {
   const 选 = 取元素("示例选");
   const 编辑 = 取元素("编辑区");
 
-  async function 发(动作) {
+  async function 发动作(动作) {
     // 路径由调用方给：取「载入示例」下拉选中的那条；没选带路径的语料就发空串（后端回 9008）。
     const 路径 = 选中路径(选);
     const 正文 = 动作 === "写" ? 编辑.value : undefined;
@@ -31,13 +31,13 @@ export function 装程序文本(取元素) {
       const 词 = 摘要(应答.体);
       写状态(状态, "HTTP " + 应答.状态 + " · " + 词.词,
         词.类 === "好" ? true : 词.类 === "坏" ? false : undefined);
-      记("程序文本", 动作 + " · " + (路径 || "（未选路径）") + " · HTTP " + 应答.状态 + " · " + 词.词);
+      记流水("程序文本", 动作 + " · " + (路径 || "（未选路径）") + " · HTTP " + 应答.状态 + " · " + 词.词);
     } catch (错) {
       摆消息(果, "发不出去：" + 错.message);
       写状态(状态, "发不出去", false);
     }
   }
 
-  取元素("程序文本读").addEventListener("click", () => 发("读"));
-  取元素("程序文本写").addEventListener("click", () => 发("写"));
+  取元素("程序文本读").addEventListener("click", () => 发动作("读"));
+  取元素("程序文本写").addEventListener("click", () => 发动作("写"));
 }

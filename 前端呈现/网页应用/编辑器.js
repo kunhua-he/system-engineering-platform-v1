@@ -64,7 +64,7 @@ export function 置文本(编辑, 文) {
 }
 
 /**
- * 装好编辑器。返回 `{ 编辑, 刷 }`。
+ * 装好编辑器。返回 `{ 编辑, 重绘 }`。
  * `取元素` 是 `(id) => 节点`，由 `应用.js` 给（本文件不认 id 字符串之外的页面结构）。
  */
 export function 装编辑器(取元素) {
@@ -80,7 +80,7 @@ export function 装编辑器(取元素) {
     行列.textContent = 行 + " : " + 列;
   }
 
-  function 刷() {
+  function 重绘() {
     const 文 = 编辑.value;
     const 行数 = 文.split("\n").length;
     if (号.dataset.行数 !== String(行数)) {
@@ -93,7 +93,7 @@ export function 装编辑器(取元素) {
     刷光标();
   }
 
-  编辑.addEventListener("input", 刷);
+  编辑.addEventListener("input", 重绘);
   编辑.addEventListener("keyup", 刷光标);
   编辑.addEventListener("click", 刷光标);
   编辑.addEventListener("scroll", () => {
@@ -104,7 +104,7 @@ export function 装编辑器(取元素) {
     if (事.key !== "Tab" || 事.ctrlKey || 事.metaKey || 事.altKey) return;
     事.preventDefault();
     编辑.setRangeText("    ", 编辑.selectionStart, 编辑.selectionEnd, "end");
-    刷();
+    重绘();
   });
 
   // 示例下拉与载入按钮
@@ -152,6 +152,6 @@ export function 装编辑器(取元素) {
   });
   取元素("清空按钮").addEventListener("click", 清空编辑);
 
-  刷();
-  return { 编辑, 刷, 载入示例, 清空: 清空编辑 };
+  重绘();
+  return { 编辑, 重绘, 载入示例, 清空: 清空编辑 };
 }

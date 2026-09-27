@@ -23,7 +23,7 @@ import sys
 import time
 from pathlib import Path
 
-起 = time.monotonic()  # 壳起表点：必须在 import 业务包（构建装配.门禁）之前
+起始时刻 = time.monotonic()  # 壳起表点：必须在 import 业务包（构建装配.门禁）之前
 
 仓根 = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(仓根))  # 仓根：取共享门禁
@@ -36,7 +36,7 @@ from 构建装配.门禁 import 自门禁  # noqa: E402
 参考尺寸 = (1426, 755)
 
 
-def 主(参数):
+def 入口函数(参数):
     if not 参数:
         print(__doc__)
         return 1
@@ -107,6 +107,6 @@ def 主(参数):
 
 
 if __name__ == "__main__":
-    sys.exit(自门禁(起, 主(sys.argv[1:]), 尾巴余量毫秒=200,
+    sys.exit(自门禁(起始时刻, 入口函数(sys.argv[1:]), 尾巴余量毫秒=200,
                     修法="渲染慢就降尺寸（喂两个更小的整数）：重活是 playwright 起 chromium 与页面加载，"
-                         "`主` 里的 `wait_for_timeout(800)` 也可按需收小。"))
+                         "`入口函数` 里的 `wait_for_timeout(800)` 也可按需收小。"))

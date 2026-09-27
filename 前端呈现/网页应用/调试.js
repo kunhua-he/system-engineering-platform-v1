@@ -11,22 +11,22 @@
 // 本页把它摆出来 —— 这正是「判定在后端」该有的样子。
 
 import { 调用能力, 写声明 } from "./取接口.js";
-import { 建, 摆应答, 摆消息, 写状态 } from "./呈现.js";
+import { 建元素, 摆应答, 摆消息, 写状态 } from "./呈现.js";
 
 export function 装调试(取元素) {
   // ── 调用 ────────────────────────────────────────────────────────────────
   function 加值行(标签初值 = "0", 值初值 = "0") {
-    const 行 = 建("div", "值行");
-    const 序 = 建("span", "序");
-    const 标签 = 建("input", "标签");
+    const 行 = 建元素("div", "值行");
+    const 序 = 建元素("span", "序");
+    const 标签 = 建元素("input", "标签");
     标签.type = "text";
     标签.inputMode = "numeric";
     标签.value = 标签初值;
-    const 值 = 建("input", "值");
+    const 值 = 建元素("input", "值");
     值.type = "text";
     值.value = 值初值;
     值.placeholder = '值的原文：文本带引号如 "你好"；字节集填 base64 如 "aGk="；整数填 0';
-    const 删 = 建("button", "次 小", "删");
+    const 删 = 建元素("button", "次 小", "删");
     删.addEventListener("click", () => {
       行.remove();
       重排值行();

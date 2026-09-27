@@ -48,12 +48,12 @@ export async function 取能力(编号) {
 
 /** `POST /接口/调用`。`体文` 是调用方拼好的请求体原文，**原样发出**。 */
 export async function 调用能力(体文) {
-  return 交(路径_调用, 体文);
+  return 发请求(路径_调用, 体文);
 }
 
 /** `POST /接口/声明`。`体文` 原样发出。 */
 export async function 写声明(体文) {
-  return 交(路径_声明, 体文);
+  return 发请求(路径_声明, 体文);
 }
 
 /**
@@ -72,7 +72,7 @@ export async function 取案例() {
 
 /** `POST /接口/案例/跑`，体 `{"案例标识":"…"}`。 */
 export async function 跑案例(标识) {
-  return 交(路径_案例跑, '{"案例标识":' + JSON.stringify(标识) + "}");
+  return 发请求(路径_案例跑, '{"案例标识":' + JSON.stringify(标识) + "}");
 }
 
 /**
@@ -81,7 +81,7 @@ export async function 跑案例(标识) {
  */
 export async function 发导出(目标, 标识) {
   const 尾 = 标识 ? ',"标识":' + JSON.stringify(标识) : "";
-  return 交(路径_导出, '{"目标":' + JSON.stringify(目标) + 尾 + "}");
+  return 发请求(路径_导出, '{"目标":' + JSON.stringify(目标) + 尾 + "}");
 }
 
 /**
@@ -93,13 +93,13 @@ export async function 发导出(目标, 标识) {
  */
 export async function 发程序文本(动作, 路径, 正文) {
   const 尾 = 正文 === undefined ? "" : ',"正文":' + JSON.stringify(正文);
-  return 交(路径_程序文本, '{"动作":' + JSON.stringify(动作)
+  return 发请求(路径_程序文本, '{"动作":' + JSON.stringify(动作)
     + ',"路径":' + JSON.stringify(路径 || "") + 尾 + "}");
 }
 
 /** `POST /接口/菜单命令`，体 `{"编号":"0xe100"}`。后端此刻一律回 `9001`，本页如实显示。 */
 export async function 发菜单命令(编号) {
-  return 交(路径_菜单命令, '{"编号":' + JSON.stringify(编号) + "}");
+  return 发请求(路径_菜单命令, '{"编号":' + JSON.stringify(编号) + "}");
 }
 
 /** 契约里的类型标签：`4` = 文本 · `0` = 空（`契约声明/类型声明/0004.json` · `0000.json`）。 */
@@ -136,22 +136,22 @@ export async function 取静态件(路) {
 
 async function 取应答(路径) {
   const 应答 = await fetch(路径, { headers: { Accept: "application/json" } });
-  return 收(应答);
+  return 收应答(应答);
 }
 
-async function 交(路径, 体文) {
+async function 发请求(路径, 体文) {
   const 应答 = await fetch(路径, {
     method: "POST",
     headers: { "Content-Type": "application/json; charset=utf-8" },
     body: 体文,
   });
-  return 收(应答);
+  return 收应答(应答);
 }
 
 // 收一条应答。**本页不看键名、不判定内容**：只把状态码与原文带回去。
 // 体用 `clone().json()` 试一次；拿不到就当原文摆出来（例如静态服务把 /接口 当文件找、
 // 回一段 HTML —— 那是同源托管没接上，不是本页能修的事）。
-async function 收(应答) {
+async function 收应答(应答) {
   let 体 = null;
   try {
     体 = await 应答.clone().json();
