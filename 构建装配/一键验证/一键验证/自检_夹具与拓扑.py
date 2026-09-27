@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""整份夹具跳过 · 拓扑判据收窄的身份证。"""
+"""整份夹具跳过 · 拓扑判据收窄 · ①类三判据的收窄身份证。"""
 
 from __future__ import annotations
 
@@ -9,7 +9,7 @@ from pathlib import Path
 from .Rust文本 import 载入调用点
 from .合成仓 import 造干净仓
 from .小工具 import 相对
-from .常量 import 资源出入口形
+from .常量 import 边界业务判断模式, 边界状态模式, 监听模式, 资源出入口形
 from .测试件 import 建测试文件集
 from .验证 import 验证
 
@@ -163,5 +163,51 @@ def 自检_拓扑判据收窄() -> list:
         "对照：真定义 + 文档串 + 调用点 + 私有助手混在一起 ⇒ 仍恰好 1 处",
         len(资源出入口形.findall(混4)) == 1,
         f"混装文里数到 {len(资源出入口形.findall(混4))} 处（要求 1）——收窄前这里会数成 3 处",
+    )
+
+    # ── ⑪-1 / ⑫-3 / ⑫-4：三条 ①类判据的**收窄身份证**（#33）──
+    # 这三条编译期断言不了（构造口在实现侧 / 是否定存在性），故按 #33 口径迁到
+    # 「写清为什么 + 留一条能跑的读数」那一档。读数就是下面这几份：**类型提及 / 普通判断 /
+    # 非模块级写法这些「收窄前会数错的形状」必须数不到；该数的那一处必须数得到**。
+    # （反向样本仍归 `自测用例`：`注入_第二处对外监听` / `注入_边界里出现业务判断` / `注入_边界里出现状态`。）
+    断言(
+        "⑪-1 收窄：监听**调用点**数得到（`TcpListener::bind` / `.listen(` / `.serve(`）",
+        len(监听模式.findall('let 监听 = TcpListener::bind("127.0.0.1:0");\n')) == 1
+        and len(监听模式.findall("服务.listen(端口);\n")) == 1
+        and len(监听模式.findall("服务.serve(处理);\n")) == 1,
+        "三种真实开监听的调用形各数一处（要求都 1）",
+    )
+    断言(
+        "⑪-1 收窄：**类型提及**不算监听点（导入 / 字段声明 / 结构体字段）",
+        len(监听模式.findall("use std::net::{TcpListener, TcpStream};\n")) == 0
+        and len(监听模式.findall("    监听: TcpListener,\n")) == 0
+        and len(监听模式.findall("pub struct 网关 { 监听: TcpListener }\n")) == 0,
+        "这三个形状原来会把读数从 1 抬到 6（实测）—— 收窄后必须都 0",
+    )
+    断言(
+        "⑫-3 收窄：边界里的业务判断（`if 能力号 ==` / `match 编号 {`）数得到",
+        len(边界业务判断模式.findall("if 能力号 == 1 { 1 } else { 0 }\n")) == 1
+        and len(边界业务判断模式.findall("match 编号 { _ => 0 }\n")) == 1,
+        "两种按号分派的形状各数一处（要求都 1）",
+    )
+    断言(
+        "⑫-3 收窄：**不是按号特例**的判断不算业务判断（普通 if 与普通 match）",
+        len(边界业务判断模式.findall("if 表.is_empty() { 返回() }\n")) == 0
+        and len(边界业务判断模式.findall("if 结果状态 == 成功 { 好() }\n")) == 0
+        and len(边界业务判断模式.findall("match 参数类型 { _ => 0 }\n")) == 0,
+        "按「号」字族特判才是业务判断——别类判断在边界里合法（协议翻译必需）",
+    )
+    断言(
+        "⑫-4 收窄：**模块级** `static`（行首，可带 pub / mut）数得到",
+        len(边界状态模式.findall("static 缓存: u32 = 0;\n")) == 1
+        and len(边界状态模式.findall("pub static 表: [u32; 2] = [0, 0];\n")) == 1
+        and len(边界状态模式.findall("static mut 计: u32 = 0;\n")) == 1,
+        "三种模块级 static 各数一处（要求都 1）",
+    )
+    断言(
+        "⑫-4 收窄：**不是模块级 static** 的写法不算状态（局部 `let` / `const`）",
+        len(边界状态模式.findall("    let 缓存 = 0;\n")) == 0
+        and len(边界状态模式.findall("const 上限: u32 = 5;\n")) == 0,
+        "`const` 是编译期常量不是状态；局部变量不在模块级（模式本来就要求行首）",
     )
     return 出
