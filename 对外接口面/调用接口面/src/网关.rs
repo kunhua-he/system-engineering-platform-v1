@@ -209,16 +209,16 @@ impl 服务 {
     /// 单列一个口（而不是只给 `跑`）：它让「真起服务真发请求」的测试不必开线程 ——
     /// 客户端先 `connect`（内核的 accept 队列会接住），再调本函数，再读应答。
     pub fn 处理一个连接(&self) -> std::io::Result<()> {
-        let (mut 流, _) = self.监听.accept()?;
+        let (mut 输出流, _) = self.监听.accept()?;
         let 超时 = Some(Duration::from_millis(读超时毫秒));
-        流.set_read_timeout(超时)?;
-        流.set_write_timeout(超时)?;
-        let 应答 = match 读报文(&mut 流) {
+        输出流.set_read_timeout(超时)?;
+        输出流.set_write_timeout(超时)?;
+        let 应答 = match 读报文(&mut 输出流) {
             Ok(报文) => self.应答(&报文),
             // 请求本身不合法 ⇒ 400（**协议层**失败，不是业务失败）。
             Err(说明) => 应答::协议(400, &说明),
         };
-        写响应(&mut 流, &应答)
+        写响应(&mut 输出流, &应答)
     }
 
     /// 一直服务下去（生产入口；`跑` 不返回 `Ok`）。

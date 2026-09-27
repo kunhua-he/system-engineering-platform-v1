@@ -61,7 +61,7 @@ pub fn 跑命令(程序: &Path, 参数: &[&str], 工作目录: &Path) -> Result<
         .args(参数)
         .current_dir(工作目录)
         .output()
-        .map_err(|错| format!("起不了 {}：{错}", 程序.display()))?;
+        .map_err(|错误| format!("起不了 {}：{错误}", 程序.display()))?;
     Ok(读数 {
         退出码: 命令输出.status.code().unwrap_or(-1),
         标准输出: 转文本(&命令输出.stdout),

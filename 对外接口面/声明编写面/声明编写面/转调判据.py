@@ -33,11 +33,11 @@ def 加载(仓根):
             return None, "%s 不是可加载的 Python 源（取不到 loader）" % 判据器相对路径
         判据模块 = importlib.util.module_from_spec(模块规格)
         模块规格.loader.exec_module(判据模块)
-    except BaseException as 错:  # SyntaxError 也算：半成品期间读进来就是编译不过
+    except BaseException as 错误:  # SyntaxError 也算：半成品期间读进来就是编译不过
         return None, "判据器 %s 加载失败（它可能正被改动）：%s: %s" % (
             判据器相对路径,
-            type(错).__name__,
-            错,
+            type(错误).__name__,
+            错误,
         )
     if not hasattr(判据模块, "验证"):
         return None, "判据器 %s 里没有 验证(仓根) 入口（入口形状变了，面不敢猜怎么调）" % 判据器相对路径
@@ -47,10 +47,10 @@ def 加载(仓根):
 def 跑判据(判据器, 仓根):
     """→ (判据器原始结果, 三元读数)。读数口径照判据器自身的 打印()：按检查项计。"""
     结果 = 判据器.验证(仓根)
-    通过 = [项 for 项 in 结果.get("通过", []) if isinstance(项, str)]
-    失败 = [项 for 项 in 结果.get("失败", []) if isinstance(项, str)]
+    通过 = [一项 for 一项 in 结果.get("通过", []) if isinstance(一项, str)]
+    失败 = [一项 for 一项 in 结果.get("失败", []) if isinstance(一项, str)]
     未判 = sorted(
-        {项 for 项 in 结果.get("未判", []) if isinstance(项, str)}
+        {一项 for 一项 in 结果.get("未判", []) if isinstance(一项, str)}
         | {项["检查"] for 项 in 结果.get("未判", []) if isinstance(项, dict)}
     )
     读数 = {

@@ -41,7 +41,7 @@ mod 程序文本测试;
 static 跑者门: Mutex<()> = Mutex::new(());
 
 fn 独占跑者() -> MutexGuard<'static, ()> {
-    跑者门.lock().unwrap_or_else(|错| 错.into_inner())
+    跑者门.lock().unwrap_or_else(|错误| 错误.into_inner())
 }
 
 /// 一件临时工具根：§七 工具族的**部署事实**（案例库 / 扩展根 / 外部 CLI 的所在）。
@@ -137,7 +137,7 @@ fn 根端点_旁路字段交出九个而冻结的端点表仍是四个() {
 
     let 路径: Vec<String> = 数组(&根应答, "旁路端点")
         .iter()
-        .map(|项| 文本(项, "路径"))
+        .map(|一项| 文本(一项, "路径"))
         .collect();
     assert_eq!(
         路径,

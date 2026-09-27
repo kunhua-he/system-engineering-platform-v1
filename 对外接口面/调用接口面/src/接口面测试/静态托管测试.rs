@@ -39,15 +39,15 @@ fn 静态托管_根路径回首页() {
 #[test]
 fn 静态托管_前端自身的件按扩展名给内容类型() {
     let 服务 = 起服务();
-    for (路, 类型, 特征) in [
+    for (路径, 类型, 特征) in [
         ("/样式.css", "text/css; charset=utf-8", "{"),
         ("/取接口.js", "text/javascript; charset=utf-8", "fetch"),
         ("/应用.js", "text/javascript; charset=utf-8", "import"),
     ] {
-        let 应答 = 发请求(&服务, &取请求(路));
-        assert_eq!(应答.状态, 200, "「{路}」该取得到");
-        assert!(应答.头.contains(类型), "「{路}」的内容类型该是 {类型}：\n{}", 应答.头);
-        assert!(应答.体.contains(特征), "「{路}」该是真件：\n{}", 应答.体);
+        let 应答 = 发请求(&服务, &取请求(路径));
+        assert_eq!(应答.状态, 200, "「{路径}」该取得到");
+        assert!(应答.头.contains(类型), "「{路径}」的内容类型该是 {类型}：\n{}", 应答.头);
+        assert!(应答.体.contains(特征), "「{路径}」该是真件：\n{}", 应答.体);
     }
     // 浏览器发的是百分号编码路径（`/样式.css` → `/%E6%A0%B7%E5%BC%8F.css`）。
     let 应答 = 发请求(&服务, &取请求("/%E6%A0%B7%E5%BC%8F.css"));

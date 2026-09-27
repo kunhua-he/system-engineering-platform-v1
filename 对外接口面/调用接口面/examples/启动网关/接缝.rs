@@ -24,10 +24,10 @@ pub(crate) const RTLD_NOW: c_int = 2;
 /// ② 取符号 `GetPlatformInfo`；③ 调它拿静态常量指针。
 pub(crate) fn 取扩展声明(扩展目录: &Path) -> Result<&'static 平台信息, String> {
     let 库文件: Vec<std::path::PathBuf> = fs::read_dir(扩展目录)
-        .map_err(|错| format!("读不到目录：{错}"))?
-        .filter_map(|项| 项.ok())
-        .map(|项| 项.path())
-        .filter(|路| 是可装载库(路))
+        .map_err(|错误| format!("读不到目录：{错误}"))?
+        .filter_map(|一项| 一项.ok())
+        .map(|一项| 一项.path())
+        .filter(|路径| 是可装载库(路径))
         .collect();
     if 库文件.len() != 1 {
         return Err(format!("可装载库文件 {} 个（要求恰好 1 个）", 库文件.len()));

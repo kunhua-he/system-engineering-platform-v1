@@ -18,7 +18,7 @@ pub(crate) enum JSON值 {
 impl JSON值 {
     pub(crate) fn 取成员(&self, 键名: &str) -> Option<&JSON值> {
         match self {
-            JSON值::对象(项) => 项.iter().find(|(名, _)| 名 == 键名).map(|(_, 值)| 值),
+            JSON值::对象(项) => 项.iter().find(|(名称, _)| 名称 == 键名).map(|(_, 待处理值)| 待处理值),
             _ => None,
         }
     }
@@ -173,13 +173,13 @@ impl<'a> 读器<'a> {
         while self
             .字节
             .get(self.位)
-            .is_some_and(|字| 字.is_ascii_digit() || matches!(字, b'-' | b'+' | b'.' | b'e' | b'E'))
+            .is_some_and(|字符表| 字符表.is_ascii_digit() || matches!(字符表, b'-' | b'+' | b'.' | b'e' | b'E'))
         {
             self.位 += 1;
         }
         core::str::from_utf8(&self.字节[区间起点..self.位])
             .ok()
-            .and_then(|文| 文.parse::<f64>().ok())
+            .and_then(|文本| 文本.parse::<f64>().ok())
             .map(JSON值::数值)
             .ok_or_else(|| format!("第 {区间起点} 字节处不是合法 JSON 值"))
     }

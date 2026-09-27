@@ -89,10 +89,10 @@ impl 错误对象 {
         Self {
             码: 错误码,
             段位: 错误码 / 号段类宽度,
-            名称: 登记.as_ref().map_or_else(String::new, |项| 项.名称.clone()),
-            可重试: 登记.as_ref().is_some_and(|项| 项.可重试),
-            可自愈: 登记.as_ref().is_some_and(|项| 项.可自愈),
-            需人工: 登记.as_ref().is_some_and(|项| 项.需人工),
+            名称: 登记.as_ref().map_or_else(String::new, |一项| 一项.名称.clone()),
+            可重试: 登记.as_ref().is_some_and(|一项| 一项.可重试),
+            可自愈: 登记.as_ref().is_some_and(|一项| 一项.可自愈),
+            需人工: 登记.as_ref().is_some_and(|一项| 一项.需人工),
             已登记: 登记.is_some(),
         }
     }
@@ -131,7 +131,7 @@ fn 查登记(适配器: &适配器, 被调号: u32, 错误码: u32) -> Option<�
     适配器
         .声明错误码表(被调号)
         .into_iter()
-        .find(|项| 项.码 == 错误码)
+        .find(|一项| 一项.码 == 错误码)
 }
 
 /// 协议层失败（HTTP 400 / 404 / 405）的返回体。

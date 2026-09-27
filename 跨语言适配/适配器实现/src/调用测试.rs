@@ -212,7 +212,7 @@ impl 假分配器 {
     }
 
     fn 释放(&mut self, 地址: u64) -> Result<(), &'static str> {
-        match self.活块.iter().position(|块| *块 == 地址) {
+        match self.活块.iter().position(|块地址| *块地址 == 地址) {
             Some(位) => {
                 self.活块.remove(位);
                 Ok(())
@@ -334,6 +334,6 @@ fn 可重入_多线程并发调用结果一致() {
 
 /// 判据：一组结果非空且逐位相同。
 fn 结果全一致(结果: &[(i32, 数据槽)]) -> bool {
-    !结果.is_empty() && 结果.iter().all(|项| *项 == 结果[0])
+    !结果.is_empty() && 结果.iter().all(|一项| *一项 == 结果[0])
 }
 
