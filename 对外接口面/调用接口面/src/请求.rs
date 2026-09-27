@@ -37,14 +37,14 @@ pub fn 解析调用(体: &协议值) -> Result<调用请求, 形状错误> {
         ));
     }
     let 编号 = 体
-        .取("编号")
+        .取成员("编号")
         .and_then(协议值::取无符号)
         .ok_or_else(|| 形状错误::新(None, "缺少 编号，或它不是非负整数"))?;
     let 编号 = u32::try_from(编号)
         .map_err(|_| 形状错误::新(None, "编号 超出 32 位，不是本平台的编号"))?;
 
     let mut 值 = Vec::new();
-    if let Some(项表) = 体.取("值") {
+    if let Some(项表) = 体.取成员("值") {
         let 项表 = 项表
             .取数组()
             .ok_or_else(|| 形状错误::新(None, "值 必须是数组（每一项是一个带类型标签的槽）"))?;
@@ -72,7 +72,7 @@ fn 要文本(体: &协议值, 键: &str, 形状: &str) -> Result<String, String>
     if !matches!(体, 协议值::对象(_)) {
         return Err(format!("请求体必须是对象：{形状}"));
     }
-    体.取(键)
+    体.取成员(键)
         .and_then(协议值::取文本)
         .map(str::to_owned)
         .ok_or_else(|| format!("缺少 {键}，或它不是文本：{形状}"))
@@ -108,7 +108,7 @@ pub fn 解析导出(体: &协议值) -> Result<导出请求, String> {
         "目标",
         "{\"目标\":\"案例|支持库|模块|技能|制品\",\"标识\":…}",
     )?;
-    let 标识 = match 体.取("标识") {
+    let 标识 = match 体.取成员("标识") {
         None => None,
         Some(值) => Some(
             值.取文本()

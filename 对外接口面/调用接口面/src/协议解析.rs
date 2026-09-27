@@ -301,7 +301,7 @@ mod 解析测试 {
         };
         assert_eq!(成员[0].0, "次项", "键序 = 插入序");
         assert_eq!(成员[1].0, "首项");
-        assert_eq!(值.取("首项").and_then(协议值::取数组).map(<[_]>::len), Some(2));
+        assert_eq!(值.取成员("首项").and_then(协议值::取数组).map(<[_]>::len), Some(2));
     }
 
     #[test]

@@ -70,39 +70,39 @@ fn 槽编码_返回值编码与指针型旁路字段() {
     let 文 = String::from("反解容器");
     let 槽 = 数据槽::指针(4.into(), 文.as_ptr() as u64, 文.len() as u64, false);
     let 出 = crate::槽编码::到协议值(&槽);
-    assert_eq!(出.取("类型标签").and_then(协议值::取无符号), Some(4));
-    assert_eq!(出.取("值").and_then(协议值::取文本), Some("反解容器"));
+    assert_eq!(出.取成员("类型标签").and_then(协议值::取无符号), Some(4));
+    assert_eq!(出.取成员("值").and_then(协议值::取文本), Some("反解容器"));
 
     // 字节集：指针 + 长度 → base64 字符串。
     let 字节 = vec![1u8, 2, 3];
     let 槽 = 数据槽::指针(5.into(), 字节.as_ptr() as u64, 字节.len() as u64, false);
     let 出 = crate::槽编码::到协议值(&槽);
     let 期望 = crate::转码::base64编码(&字节);
-    assert_eq!(出.取("值").and_then(协议值::取文本), Some(期望.as_str()));
+    assert_eq!(出.取成员("值").and_then(协议值::取文本), Some(期望.as_str()));
 
     // 指针型（非文本/字节集）：**跨不过去**，给地址 + 两个旁路字段。
     // 用地址 0 走这条分支：空地址不许解引用。
     let 槽 = 数据槽::指针(0.into(), 0, 64, false);
     let 出 = crate::槽编码::到协议值(&槽);
-    assert_eq!(出.取("引用"), Some(&协议值::真));
-    assert_eq!(出.取("长度").and_then(协议值::取无符号), Some(0));
+    assert_eq!(出.取成员("引用"), Some(&协议值::真));
+    assert_eq!(出.取成员("长度").and_then(协议值::取无符号), Some(0));
 
     // 内联槽：整数按 i64 读回，双精度按位读回。
     assert_eq!(
         crate::槽编码::到协议值(&数据槽::内联(1.into(), 42, 0))
-            .取("值")
+            .取成员("值")
             .and_then(协议值::取有符号),
         Some(42)
     );
     assert_eq!(
         crate::槽编码::到协议值(&数据槽::内联(2.into(), 1.5f64.to_bits(), 0))
-            .取("值")
+            .取成员("值")
             .and_then(协议值::取数值),
         Some(1.5)
     );
     // 空槽的形状就是冻结件里的空位写法。
     let 空槽出 = crate::槽编码::到协议值(&数据槽::空槽());
-    assert_eq!(空槽出.取("类型标签").and_then(协议值::取无符号), Some(0));
-    assert_eq!(空槽出.取("值").and_then(协议值::取有符号), Some(0));
+    assert_eq!(空槽出.取成员("类型标签").and_then(协议值::取无符号), Some(0));
+    assert_eq!(空槽出.取成员("值").and_then(协议值::取有符号), Some(0));
 }
 

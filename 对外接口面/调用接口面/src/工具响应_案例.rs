@@ -37,7 +37,7 @@ fn 最新回执<'行表>(
 ) -> Option<&'行表 协议值> {
     行表.iter().rev().find_map(|行| {
         行.as_ref()
-            .filter(|值| 值.取("案例名").and_then(协议值::取文本) == Some(案例名))
+            .filter(|值| 值.取成员("案例名").and_then(协议值::取文本) == Some(案例名))
     })
 }
 
@@ -89,7 +89,7 @@ pub fn 列案例(适配器: &适配器, 工具根: &Path) -> 协议值 {
             }
         };
         let 案例名 = 声明
-            .取("案例名")
+            .取成员("案例名")
             .and_then(协议值::取文本)
             .unwrap_or(&标识)
             .to_owned();
@@ -106,7 +106,7 @@ pub fn 列案例(适配器: &适配器, 工具根: &Path) -> 协议值 {
                 },
             ),
         ];
-        if let Some(说明) = 声明.取("说明").and_then(协议值::取文本) {
+        if let Some(说明) = 声明.取成员("说明").and_then(协议值::取文本) {
             成员.push(键文("说明", 说明));
         }
         match 回执 {
@@ -164,7 +164,7 @@ pub fn 跑案例(适配器: &适配器, 工具根: &Path, 案例标识: &str) ->
     }
     let 案例名 = 读JSON(&声明件)
         .ok()
-        .and_then(|值| 值.取("案例名").and_then(协议值::取文本).map(str::to_owned))
+        .and_then(|值| 值.取成员("案例名").and_then(协议值::取文本).map(str::to_owned))
         .unwrap_or_else(|| 案例标识.to_owned());
 
     // 跑前先数行：**只认新增的行**。不数行的话，「跑完了但没落回执」会被上一次的旧回执
@@ -191,12 +191,12 @@ pub fn 跑案例(适配器: &适配器, 工具根: &Path, 案例标识: &str) ->
     let 新行: Vec<Option<协议值>> = 行表.into_iter().skip(跑前行数).collect();
     let 本案例 = 新行.iter().rev().find_map(|行| {
         行.as_ref()
-            .filter(|值| 值.取("案例名").and_then(协议值::取文本) == Some(案例名.as_str()))
+            .filter(|值| 值.取成员("案例名").and_then(协议值::取文本) == Some(案例名.as_str()))
     });
 
     match 本案例 {
         Some(回执) => {
-            let 案例结果 = 回执.取("结果").cloned().unwrap_or(协议值::空);
+            let 案例结果 = 回执.取成员("结果").cloned().unwrap_or(协议值::空);
             成功(
                 协议值::对象(vec![
                     键文("案例标识", 案例标识),
