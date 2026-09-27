@@ -230,16 +230,16 @@ fn 读步骤(清单: &JSON值, 目录: &Path) -> Result<Vec<步骤>, String> {
     Ok(累积表)
 }
 
-fn 读期望(路: &Path, 步骤数: usize, 目录: &Path) -> Result<Vec<期望>, String> {
-    let 根 = 读JSON件(路)?;
+fn 读期望(路径: &Path, 步骤数: usize, 目录: &Path) -> Result<Vec<期望>, String> {
+    let 根 = 读JSON件(路径)?;
     let 表 = 根
         .取成员("步骤")
         .and_then(|一| 一.取数组())
-        .ok_or_else(|| format!("{}：`步骤` 缺失或不是数组", 路.display()))?;
+        .ok_or_else(|| format!("{}：`步骤` 缺失或不是数组", 路径.display()))?;
     if 表.len() != 步骤数 {
         return Err(format!(
             "{}：期望有 {} 条、步骤有 {步骤数} 条 —— 必须一一对应（不等就是案例自身写坏了）",
-            路.display(),
+            路径.display(),
             表.len()
         ));
     }
@@ -248,20 +248,20 @@ fn 读期望(路: &Path, 步骤数: usize, 目录: &Path) -> Result<Vec<期望>,
         let 结果 = 一
             .取成员("结果")
             .and_then(|一| 一.取字符串())
-            .ok_or_else(|| format!("{}：步骤[{序}] 缺 `结果`", 路.display()))?;
+            .ok_or_else(|| format!("{}：步骤[{序}] 缺 `结果`", 路径.display()))?;
         let 定 = match 结果 {
             "成功" => 期望::成功 { 产物: 读产物(一, 目录)? },
             "失败" => {
                 let 层 = 一
                     .取成员("死在哪一层")
                     .and_then(|一| 一.取字符串())
-                    .ok_or_else(|| format!("{}：步骤[{序}] 结果=失败，必须有 `死在哪一层`", 路.display()))?
+                    .ok_or_else(|| format!("{}：步骤[{序}] 结果=失败，必须有 `死在哪一层`", 路径.display()))?
                     .to_owned();
                 let 码项 = 一
                     .取成员("错误码")
-                    .ok_or_else(|| format!("{}：步骤[{序}] 结果=失败，必须有 `错误码`", 路.display()))?;
+                    .ok_or_else(|| format!("{}：步骤[{序}] 结果=失败，必须有 `错误码`", 路径.display()))?;
                 let 错误码 = 错误码期望 {
-                    码: 要整数(码项, "码", 路)?,
+                    码: 要整数(码项, "码", 路径)?,
                     名称: 要串(码项, "名称")?.to_owned(),
                     可重试: 要真假(码项, "可重试")?,
                     可自愈: 要真假(码项, "可自愈")?,
@@ -272,7 +272,7 @@ fn 读期望(路: &Path, 步骤数: usize, 目录: &Path) -> Result<Vec<期望>,
             其 => {
                 return Err(format!(
                     "{}：步骤[{序}] 的 `结果` 不认：`{其}`（只认 成功 / 失败 —— 没有「跳过」这一档）",
-                    路.display()
+                    路径.display()
                 ));
             }
         };
@@ -281,8 +281,8 @@ fn 读期望(路: &Path, 步骤数: usize, 目录: &Path) -> Result<Vec<期望>,
     Ok(累积表)
 }
 
-fn 读产物(一: &JSON值, 目录: &Path) -> Result<产物判据, String> {
-    let Some(产物) = 一.取成员("产物") else {
+fn 读产物(一条: &JSON值, 目录: &Path) -> Result<产物判据, String> {
+    let Some(产物) = 一条.取成员("产物") else {
         return Ok(产物判据::不判);
     };
     let 判定值 = 产物
@@ -311,16 +311,16 @@ fn 读产物(一: &JSON值, 目录: &Path) -> Result<产物判据, String> {
 }
 
 /// 相对路径按案例目录解；绝对路径原样用（只读语料在仓外）。
-pub fn 解路(目录: &Path, 路: &Path) -> PathBuf {
-    if 路.is_absolute() {
-        路.to_path_buf()
+pub fn 解路(目录: &Path, 路径: &Path) -> PathBuf {
+    if 路径.is_absolute() {
+        路径.to_path_buf()
     } else {
-        目录.join(路)
+        目录.join(路径)
     }
 }
 
-pub fn 解十六进制(文: &str) -> Result<Vec<u8>, String> {
-    let 净: Vec<u8> = 文.bytes().filter(|字| !matches!(字, b' ' | b'\n' | b'\r' | b'\t')).collect();
+pub fn 解十六进制(文本: &str) -> Result<Vec<u8>, String> {
+    let 净: Vec<u8> = 文本.bytes().filter(|字| !matches!(字, b' ' | b'\n' | b'\r' | b'\t')).collect();
     if !净.len().is_multiple_of(2) {
         return Err(format!("十六进制位数是奇数（{}）", 净.len()));
     }
@@ -333,24 +333,24 @@ pub fn 解十六进制(文: &str) -> Result<Vec<u8>, String> {
     Ok(累积表)
 }
 
-fn 读JSON件(路: &Path) -> Result<JSON值, String> {
-    let 文 = std::fs::read_to_string(路).map_err(|错| format!("读不到 {}：{错}", 路.display()))?;
-    最小JSON::解析(&文).map_err(|错| format!("{} 不是合法 JSON：{错}", 路.display()))
+fn 读JSON件(路径: &Path) -> Result<JSON值, String> {
+    let 文 = std::fs::read_to_string(路径).map_err(|错| format!("读不到 {}：{错}", 路径.display()))?;
+    最小JSON::解析(&文).map_err(|错| format!("{} 不是合法 JSON：{错}", 路径.display()))
 }
 
-fn 要串<'a>(项: &'a JSON值, 键: &str) -> Result<&'a str, String> {
-    项.取成员(键).and_then(|一| 一.取字符串()).ok_or_else(|| format!("缺 `{键}`（或不是字符串）"))
+fn 要串<'a>(一项: &'a JSON值, 键名: &str) -> Result<&'a str, String> {
+    一项.取成员(键名).and_then(|一| 一.取字符串()).ok_or_else(|| format!("缺 `{键名}`（或不是字符串）"))
 }
 
-fn 要整数(项: &JSON值, 键: &str, 路: &Path) -> Result<u32, String> {
-    项.取成员(键)
+fn 要整数(一项: &JSON值, 键名: &str, 路径: &Path) -> Result<u32, String> {
+    一项.取成员(键名)
         .and_then(|一| 一.整数())
         .and_then(|数| u32::try_from(数).ok())
-        .ok_or_else(|| format!("{}：`{键}` 缺失或不是 32 位整数", 路.display()))
+        .ok_or_else(|| format!("{}：`{键名}` 缺失或不是 32 位整数", 路径.display()))
 }
 
-fn 要真假(项: &JSON值, 键: &str) -> Result<bool, String> {
-    项.取成员(键).and_then(|一| 一.真假()).ok_or_else(|| format!("缺 `{键}`（或不是 true/false）"))
+fn 要真假(一项: &JSON值, 键名: &str) -> Result<bool, String> {
+    一项.取成员(键名).and_then(|一| 一.真假()).ok_or_else(|| format!("缺 `{键名}`（或不是 true/false）"))
 }
 
 #[cfg(test)]

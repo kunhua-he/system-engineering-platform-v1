@@ -78,8 +78,8 @@ def _按编号找命令(单元: dict, 编号) -> object:
     return None
 
 
-def _参数表名(条: dict) -> object:
-    原 = 条["字段"].get("参数表", {}).get("原文")
+def _参数表名(一条: dict) -> object:
+    原 = 一条["字段"].get("参数表", {}).get("原文")
     if 原 is None:
         return None
     匹配 = re.match(r"([^\s.]+)", 原.strip())
@@ -91,13 +91,13 @@ def _参数表名(条: dict) -> object:
     return 名
 
 
-def _落点(单元: dict, 名: str) -> object:
-    """本单元里名为 `名` 的 const（③g / ③h 的编译期断言落点）；没有返回 None。
+def _落点(单元: dict, 名称: str) -> object:
+    """本单元里名为 `名称` 的 const（③g / ③h 的编译期断言落点）；没有返回 None。
 
     为什么按**名**取 const 而不扫表声明：落点是**声明过的契约名**（只在一处定义，
     改口径只改那一处），而扫声明文本会因换个命名 / 挪个位置就漏（假绿）。
     """
     for 条目 in 单元["常量"]:
-        if 条目["名"] == 名:
+        if 条目["名"] == 名称:
             return 条目
     return None
