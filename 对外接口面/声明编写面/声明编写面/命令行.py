@@ -8,7 +8,8 @@ import sys
 
 from .编排 import 声明根默认
 
-用法 = "python 对外接口面/声明编写面/声明编写面.py --请求 '<JSON>' | --分配 <类别>"
+用法 = ("python 对外接口面/声明编写面/声明编写面.py --请求 '<JSON>' | --分配 <类别>"
+      "（类别：能力 · 类型 · 错误码 · 通知号 · 作废；作废只能走 --请求，它没有可分配的号）")
 
 
 def 建解析器() -> argparse.ArgumentParser:
