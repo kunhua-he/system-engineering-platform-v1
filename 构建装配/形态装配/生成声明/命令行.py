@@ -74,42 +74,42 @@ def 入口函数(参数):
     检查模式 = False
     接缝模式 = False
     未知 = []
-    序 = 0
-    while 序 < len(参数):
-        词 = 参数[序]
-        if 词 == "--检查":
+    序号 = 0
+    while 序号 < len(参数):
+        参数词 = 参数[序号]
+        if 参数词 == "--检查":
             检查模式 = True
-        elif 词 == "--接缝":
+        elif 参数词 == "--接缝":
             接缝模式 = True
-        elif 词 in ("-h", "--帮助"):
-            for 行 in 帮助文本():
-                print(行)
+        elif 参数词 in ("-h", "--帮助"):
+            for 源码行 in 帮助文本():
+                print(源码行)
             return 0
-        elif 词 == "--声明根":
-            if 序 + 1 >= len(参数):
+        elif 参数词 == "--声明根":
+            if 序号 + 1 >= len(参数):
                 print("--声明根 后面要跟一个目录", file=sys.stderr)
                 print(用法行, file=sys.stderr)
                 return 2
-            序 += 1
-            声明根参数 = 参数[序]
-        elif 词.startswith("--声明根="):
-            声明根参数 = 词.split("=", 1)[1]
+            序号 += 1
+            声明根参数 = 参数[序号]
+        elif 参数词.startswith("--声明根="):
+            声明根参数 = 参数词.split("=", 1)[1]
         else:
-            未知.append(词)
-        序 += 1
+            未知.append(参数词)
+        序号 += 1
     if 未知:
         print("不认的参数：%s" % " ".join(sorted(未知)), file=sys.stderr)
         print(用法行, file=sys.stderr)
         return 2
     try:
-        根 = 建声明根(声明根参数)
+        根目录 = 建声明根(声明根参数)
         if 接缝模式:
-            return 出接缝(根, 检查模式)
+            return 出接缝(根目录, 检查模式)
         if 检查模式:
-            return 检查(根)
-        新件, 计数, 提醒 = 生成(根)
+            return 检查(根目录)
+        新件, 计数, 提醒 = 生成(根目录)
         总字节 = 0
-        for 相对 in 落盘件表(根):
+        for 相对 in 落盘件表(根目录):
             新字节 = 新件[相对]
             总字节 += len(新字节)
             with open(os.path.join(仓根, 相对), "wb") as 句柄:
@@ -120,8 +120,8 @@ def 入口函数(参数):
             )
         报提醒(提醒)
         print("共 %d 件（路由件 %s · 子件 %d 件 · 合计 %d 字节）"
-              % (len(落盘件表(根)), 根.落盘件, len(落盘件表(根)) - 1, 总字节))
-        print("  声明根：%s" % 根.根)
+              % (len(落盘件表(根目录)), 根目录.落盘件, len(落盘件表(根目录)) - 1, 总字节))
+        print("  声明根：%s" % 根目录.根)
         print(
             "  覆盖：类型 %d · 命令 %d · 命令类别 %d · 错误码 %d · 通知号 %d · 作废号 %d · 能力号段 %d · 通知号段 %d · 错误段位 %d"
             % (

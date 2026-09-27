@@ -24,20 +24,20 @@ def 载入构建制品():
     """进程内加载 `构建装配/上线切换/构建制品.py`（转调它的扩展产物节点，不复制它的 cargo 命令）。"""
     清单 = 仓根 / "构建装配" / "上线切换" / "构建制品.py"
     规格 = importlib.util.spec_from_file_location("构建制品", 清单)
-    模 = importlib.util.module_from_spec(规格)
-    规格.loader.exec_module(模)
-    return 模
+    制品模块 = importlib.util.module_from_spec(规格)
+    规格.loader.exec_module(制品模块)
+    return 制品模块
 
 
 def 符号导出读数(动态库: Path) -> dict:
     """`nm -gU` 取全局导出，验接缝符号 `GetPlatformInfo` 在（那次实证的同一验法）。"""
-    成 = subprocess.run(["/usr/bin/nm", "-gU", str(动态库)], capture_output=True, text=True)
-    if 成.returncode != 0:
-        return {"命令成了": False, "接缝符号在": False, "说明": 成.stderr.strip()[:200]}
-    导出 = [行.split()[-1] for 行 in 成.stdout.splitlines() if 行.strip()]
+    运行结果 = subprocess.run(["/usr/bin/nm", "-gU", str(动态库)], capture_output=True, text=True)
+    if 运行结果.returncode != 0:
+        return {"命令成了": False, "接缝符号在": False, "说明": 运行结果.stderr.strip()[:200]}
+    导出 = [行.split()[-1] for 行 in 运行结果.stdout.splitlines() if 行.strip()]
     # macOS 的 C 符号带前导下划线（_GetPlatformInfo），Linux 不带 —— 两种都认。
-    在 = any(名.lstrip("_") == "GetPlatformInfo" for 名 in 导出)
-    return {"命令成了": True, "接缝符号在": 在, "全局导出数": len(导出)}
+    是否导出 = any(名.lstrip("_") == "GetPlatformInfo" for 名 in 导出)
+    return {"命令成了": True, "接缝符号在": 是否导出, "全局导出数": len(导出)}
 
 
 def 清扫残部() -> list:
@@ -50,14 +50,14 @@ def 清扫残部() -> list:
     清了的 = []
     if not 暂存根.is_dir():
         return 清了的
-    for 旧 in sorted(暂存根.iterdir()):
-        if not 旧.is_dir():
+    for 旧暂存 in sorted(暂存根.iterdir()):
+        if not 旧暂存.is_dir():
             continue
-        if time.time() - 旧.stat().st_mtime < 600:
+        if time.time() - 旧暂存.stat().st_mtime < 600:
             continue
-        成 = subprocess.run(["/usr/bin/pkill", "-f", str(旧)], capture_output=True, text=True)
-        清了的.append("{}（pkill 退出码 {}）".format(旧.name, 成.returncode))
-        shutil.rmtree(旧, ignore_errors=True)
+        运行结果 = subprocess.run(["/usr/bin/pkill", "-f", str(旧暂存)], capture_output=True, text=True)
+        清了的.append("{}（pkill 退出码 {}）".format(旧暂存.name, 运行结果.returncode))
+        shutil.rmtree(旧暂存, ignore_errors=True)
     return 清了的
 
 
@@ -73,14 +73,14 @@ def 搭暂存(动态库: Path) -> Path:
     shutil.copy2(网关产物, 暂存 / "网关")
     (暂存 / "网关").chmod(0o755)
 
-    源 = json.loads(扩展根声明源.read_text(encoding="utf-8"))
-    声明 = dict(源)
+    来源 = json.loads(扩展根声明源.read_text(encoding="utf-8"))
+    声明 = dict(来源)
     声明["说明"] = (
         "演示暂存副本（在系统临时目录，仓内一字未改）：种类[].目录 改指本次暂存下编出的扩展，"
         "形状与 扩展装载/扩展根声明.json 一致。生成器：构建装配/演示/起演示.py"
     )
     声明["种类"] = [
-        dict(类, 目录=str(扩展树 / Path(类.get("目录", "")).name)) for 类 in 源.get("种类", [])
+        dict(类, 目录=str(扩展树 / Path(类.get("目录", "")).name)) for 类 in 来源.get("种类", [])
     ]
     (暂存 / "扩展根声明.json").write_text(
         json.dumps(声明, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"

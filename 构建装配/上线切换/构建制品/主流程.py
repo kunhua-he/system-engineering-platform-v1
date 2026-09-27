@@ -52,46 +52,46 @@ def 检查预构建(纳入的扩展: list) -> str:
     if not 预构建戳.is_file():
         return "没有预构建戳（{}）⇒ 产物与源的关系未知".format(预构建戳.relative_to(仓根).as_posix())
     try:
-        戳 = json.loads(预构建戳.read_text(encoding="utf-8")).get("预构建指纹")
+        戳内指纹 = json.loads(预构建戳.read_text(encoding="utf-8")).get("预构建指纹")
     except (OSError, ValueError) as 错:
         return "预构建戳读不出来（{}）".format(错)
-    if 戳 != 当前:
-        return "预构建戳与当前源不符（戳 {} · 当前 {}）".format((戳 or "（空）")[:16], 当前[:16])
+    if 戳内指纹 != 当前:
+        return "预构建戳与当前源不符（戳 {} · 当前 {}）".format((戳内指纹 or "（空）")[:16], 当前[:16])
     return ""
 
 
 def 入口函数() -> int:
-    解 = argparse.ArgumentParser(description="构建制品（可装载的整包）")
-    解.add_argument("--变体", default=None, help="装配变体名（进构建指纹）")
-    解.add_argument("--不含扩展", action="store_true", help="只装底座（形态裁剪：同一套源出另一种整包）")
-    解.add_argument("--检查", default=None, help="只查一份已产出制品的不可变判据，不构建")
-    解.add_argument("--预构建", action="store_true", help="环境步：只编底座与扩展的 release 产物 + 写戳，不装配")
-    参 = 解.parse_args()
+    解析器 = argparse.ArgumentParser(description="构建制品（可装载的整包）")
+    解析器.add_argument("--变体", default=None, help="装配变体名（进构建指纹）")
+    解析器.add_argument("--不含扩展", action="store_true", help="只装底座（形态裁剪：同一套源出另一种整包）")
+    解析器.add_argument("--检查", default=None, help="只查一份已产出制品的不可变判据，不构建")
+    解析器.add_argument("--预构建", action="store_true", help="环境步：只编底座与扩展的 release 产物 + 写戳，不装配")
+    参数 = 解析器.parse_args()
 
-    if 参.检查:
-        目录 = 制品落点 / 参.检查
+    if 参数.检查:
+        目录 = 制品落点 / 参数.检查
         if not (目录 / "制品清单.json").is_file():
             打印("制品不存在或没有清单：{}".format(目录))
             return 1
         不符, 多余, 缺件 = 检查制品(目录)
-        打印("制品 {} ｜ 指纹不符 {} ｜ 清单外文件 {} ｜ 缺件 {}".format(参.检查, len(不符), len(多余), len(缺件)))
-        for 项 in 不符:
-            打印("  不符 {}".format(项))
-        for 项 in 多余:
-            打印("  清单外 {}".format(项))
-        for 项 in 缺件:
-            打印("  缺件 {}".format(项))
+        打印("制品 {} ｜ 指纹不符 {} ｜ 清单外文件 {} ｜ 缺件 {}".format(参数.检查, len(不符), len(多余), len(缺件)))
+        for 一项 in 不符:
+            打印("  不符 {}".format(一项))
+        for 一项 in 多余:
+            打印("  清单外 {}".format(一项))
+        for 一项 in 缺件:
+            打印("  缺件 {}".format(一项))
         return 0 if not (不符 or 多余 or 缺件) else 1
 
     声明文本 = 扩展根声明.read_text(encoding="utf-8")
     声明 = json.loads(声明文本)
-    变体 = 参.变体 or ("仅底座" if 参.不含扩展 else "全量")
+    变体 = 参数.变体 or ("仅底座" if 参数.不含扩展 else "全量")
 
     扫到的 = 扫扩展(声明)
-    纳入的 = [] if 参.不含扩展 else 扫到的
+    纳入的 = [] if 参数.不含扩展 else 扫到的
 
     # 环境步在**算制品标识之前**分岔：它不装配，也不看制品是否已存在（它的产物是构建缓存）。
-    if 参.预构建:
+    if 参数.预构建:
         return 预构建(扫到的)
 
     指纹 = 源指纹(声明文本, 纳入的, 变体)
@@ -129,13 +129,13 @@ def 入口函数() -> int:
     # 不编 cdylib、不 dlopen ⇒ 不进制品（裁决 9）。
     装入 = []
     for 扩展 in 纳入的:
-        库 = 找扩展产物(扩展)
+        动态库 = 找扩展产物(扩展)
         # 制品内的种类目录名 = 扩展根声明里那个 目录 的**末段**（当前只有「原子支持库」是可装载件；
         # 模块/技能的目录不产可装载库，故不出现）。与下面改写声明时用的是同一个名字 ——
         # 两处不一致就是「制品自身找不到自身的扩展」（实测撞到过）。
-        目标 = 目录 / "扩展" / Path(扩展["目录"]).name / 扩展["名"] / "{}{}".format(扩展["名"], 库.suffix)
+        目标 = 目录 / "扩展" / Path(扩展["目录"]).name / 扩展["名"] / "{}{}".format(扩展["名"], 动态库.suffix)
         目标.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(库, 目标)
+        shutil.copy2(动态库, 目标)
         装入.append({"种类": 扩展["种类"], "扩展目录": 扩展["名"], "制品内落点": 目标.relative_to(目录).as_posix()})
         打印("  装入扩展 {} → {}".format(扩展["落点"].relative_to(仓根).as_posix(), 装入[-1]["制品内落点"]))
 

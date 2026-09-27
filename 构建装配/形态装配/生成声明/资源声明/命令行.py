@@ -31,27 +31,27 @@ def 主资源声明(参数):
     声明根参数 = None
     检查模式 = False
     未知 = []
-    序 = 0
-    while 序 < len(参数):
-        词 = 参数[序]
-        if 词 == "--检查":
+    序号 = 0
+    while 序号 < len(参数):
+        参数词 = 参数[序号]
+        if 参数词 == "--检查":
             检查模式 = True
-        elif 词 in ("-h", "--帮助"):
-            for 行 in 帮助文本():
-                print(行)
+        elif 参数词 in ("-h", "--帮助"):
+            for 源码行 in 帮助文本():
+                print(源码行)
             return 0
-        elif 词 == "--声明根":
-            if 序 + 1 >= len(参数):
+        elif 参数词 == "--声明根":
+            if 序号 + 1 >= len(参数):
                 print("--声明根 后面要跟一个目录", file=sys.stderr)
                 print(用法行, file=sys.stderr)
                 return 2
-            序 += 1
-            声明根参数 = 参数[序]
-        elif 词.startswith("--声明根="):
-            声明根参数 = 词.split("=", 1)[1]
+            序号 += 1
+            声明根参数 = 参数[序号]
+        elif 参数词.startswith("--声明根="):
+            声明根参数 = 参数词.split("=", 1)[1]
         else:
-            未知.append(词)
-        序 += 1
+            未知.append(参数词)
+        序号 += 1
     if 未知:
         print("不认的参数：%s" % " ".join(sorted(未知)), file=sys.stderr)
         print(用法行, file=sys.stderr)
@@ -61,10 +61,10 @@ def 主资源声明(参数):
         print(用法行, file=sys.stderr)
         return 2
     try:
-        根 = 建资源根(声明根参数)
+        根目录 = 建资源根(声明根参数)
         if 检查模式:
-            return 检查资源声明(根)
-        return 生成资源声明(根)
+            return 检查资源声明(根目录)
+        return 生成资源声明(根目录)
     except 生成失败 as 错:
         print("生成失败（fail-closed，产物未动）：%s" % 错, file=sys.stderr)
         return 2
