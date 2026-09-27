@@ -183,6 +183,17 @@ def 干净合成仓() -> dict:
             "    关口结果::成功\n"
             "}\n"
         ),
+        # 时间口径的两个主人（判据 ㉑ 的扫描面）——正向样本要它们存在，否则判据报未判。
+        "运行内核/调用调度/Cargo.toml": '[package]\nname = "v1-sched"\nversion = "0.1.0"\n',
+        "运行内核/调用调度/src/调度核心.rs": (
+            "use std::time::Instant;\n"
+            "pub const 单项超时毫秒: u64 = 500;\n"
+            "pub fn 调度() -> u64 { let 起 = Instant::now(); let _ = 起; 单项超时毫秒 }\n"
+        ),
+        "运行内核/调用留痕/Cargo.toml": '[package]\nname = "v1-trace"\nversion = "0.1.0"\n',
+        "运行内核/调用留痕/src/形状.rs": (
+            "pub struct 留痕条 { pub 耗时微秒: u64 }\n"
+        ),
         "跨语言适配/适配器实现/Cargo.toml": '[package]\nname = "v1-adapter"\nversion = "0.1.0"\n',
         "跨语言适配/适配器实现/src/lib.rs": (
             "use v1_loader::载入;\n"
