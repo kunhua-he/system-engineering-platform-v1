@@ -58,5 +58,5 @@ mod 接缝;
 mod 装配;
 
 fn main() -> Result<(), String> {
-    装配::跑()
+    装配::跑网关()
 }

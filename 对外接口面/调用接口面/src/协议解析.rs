@@ -37,7 +37,7 @@ pub fn 解析(源: &str) -> Result<协议值, 解析错误> {
     let 值 = 游标.取值(0)?;
     游标.跳空白();
     if 游标.位 != 游标.字节.len() {
-        return Err(游标.错("尾部还有多余内容"));
+        return Err(游标.报错("尾部还有多余内容"));
     }
     Ok(值)
 }
@@ -49,19 +49,19 @@ struct 游标<'a> {
 }
 
 impl<'a> 游标<'a> {
-    fn 错(&self, 说明: &str) -> 解析错误 {
+    fn 报错(&self, 说明: &str) -> 解析错误 {
         解析错误 {
             位置: self.位,
             说明: 说明.to_owned(),
         }
     }
 
-    fn 看(&self) -> Option<u8> {
+    fn 取当前字节(&self) -> Option<u8> {
         self.字节.get(self.位).copied()
     }
 
-    fn 进(&mut self) -> Option<u8> {
-        let 字 = self.看();
+    fn 前进一字节(&mut self) -> Option<u8> {
+        let 字 = self.取当前字节();
         if 字.is_some() {
             self.位 += 1;
         }
@@ -69,25 +69,25 @@ impl<'a> 游标<'a> {
     }
 
     fn 跳空白(&mut self) {
-        while matches!(self.看(), Some(b' ' | b'\t' | b'\n' | b'\r')) {
+        while matches!(self.取当前字节(), Some(b' ' | b'\t' | b'\n' | b'\r')) {
             self.位 += 1;
         }
     }
 
     fn 取值(&mut self, 深度: usize) -> Result<协议值, 解析错误> {
         if 深度 >= 最大深度 {
-            return Err(self.错("嵌套深度超出上限"));
+            return Err(self.报错("嵌套深度超出上限"));
         }
-        match self.看() {
+        match self.取当前字节() {
             Some(b'{') => self.取对象(深度),
             Some(b'[') => self.取数组(深度),
             Some(b'"') => self.取文本().map(协议值::文本),
-            Some(b't') => self.取字面(b"true", 协议值::真),
-            Some(b'f') => self.取字面(b"false", 协议值::假),
-            Some(b'n') => self.取字面(b"null", 协议值::空),
+            Some(b't') => self.取字面(b"true", 协议值::逻辑真),
+            Some(b'f') => self.取字面(b"false", 协议值::逻辑假),
+            Some(b'n') => self.取字面(b"null", 协议值::空值),
             Some(b'-' | b'0'..=b'9') => self.取数(),
-            Some(_) => Err(self.错("这里不是一个 JSON 值")),
-            None => Err(self.错("值没写完就到头了")),
+            Some(_) => Err(self.报错("这里不是一个 JSON 值")),
+            None => Err(self.报错("值没写完就到头了")),
         }
     }
 
@@ -96,39 +96,39 @@ impl<'a> 游标<'a> {
             self.位 += 期望.len();
             return Ok(值);
         }
-        Err(self.错("字面量写错了"))
+        Err(self.报错("字面量写错了"))
     }
 
     fn 取对象(&mut self, 深度: usize) -> Result<协议值, 解析错误> {
         self.位 += 1; // '{'
         let mut 成员: Vec<(String, 协议值)> = Vec::new();
         self.跳空白();
-        if self.看() == Some(b'}') {
+        if self.取当前字节() == Some(b'}') {
             self.位 += 1;
             return Ok(协议值::对象(成员));
         }
         loop {
             self.跳空白();
-            if self.看() != Some(b'"') {
-                return Err(self.错("对象的键必须是字符串"));
+            if self.取当前字节() != Some(b'"') {
+                return Err(self.报错("对象的键必须是字符串"));
             }
             let 键 = self.取文本()?;
             if 成员.iter().any(|(名, _)| *名 == 键) {
                 // 重复键有两解。**不猜**：猜一个就是把语义改错。
-                return Err(self.错("同一个键出现了两次"));
+                return Err(self.报错("同一个键出现了两次"));
             }
             self.跳空白();
-            if self.进() != Some(b':') {
-                return Err(self.错("键后面必须是冒号"));
+            if self.前进一字节() != Some(b':') {
+                return Err(self.报错("键后面必须是冒号"));
             }
             self.跳空白();
             let 值 = self.取值(深度 + 1)?;
             成员.push((键, 值));
             self.跳空白();
-            match self.进() {
+            match self.前进一字节() {
                 Some(b',') => continue,
                 Some(b'}') => return Ok(协议值::对象(成员)),
-                _ => return Err(self.错("对象里缺少逗号或右花括号")),
+                _ => return Err(self.报错("对象里缺少逗号或右花括号")),
             }
         }
     }
@@ -137,7 +137,7 @@ impl<'a> 游标<'a> {
         self.位 += 1; // '['
         let mut 项: Vec<协议值> = Vec::new();
         self.跳空白();
-        if self.看() == Some(b']') {
+        if self.取当前字节() == Some(b']') {
             self.位 += 1;
             return Ok(协议值::数组(项));
         }
@@ -145,10 +145,10 @@ impl<'a> 游标<'a> {
             self.跳空白();
             项.push(self.取值(深度 + 1)?);
             self.跳空白();
-            match self.进() {
+            match self.前进一字节() {
                 Some(b',') => continue,
                 Some(b']') => return Ok(协议值::数组(项)),
-                _ => return Err(self.错("数组里缺少逗号或右方括号")),
+                _ => return Err(self.报错("数组里缺少逗号或右方括号")),
             }
         }
     }
@@ -157,20 +157,20 @@ impl<'a> 游标<'a> {
         self.位 += 1; // 开引号
         let mut 出: Vec<u8> = Vec::new();
         loop {
-            match self.进() {
-                None => return Err(self.错("字符串没写完就到头了")),
+            match self.前进一字节() {
+                None => return Err(self.报错("字符串没写完就到头了")),
                 Some(b'"') => break,
                 Some(b'\\') => self.取转义(&mut 出)?,
                 // 未转义的控制字符在 JSON 里不合法（含裸换行）。
-                Some(字) if 字 < 0x20 => return Err(self.错("字符串里有未转义的控制字符")),
+                Some(字) if 字 < 0x20 => return Err(self.报错("字符串里有未转义的控制字符")),
                 Some(字) => 出.push(字),
             }
         }
-        String::from_utf8(出).map_err(|_| self.错("字符串不是合法 UTF-8"))
+        String::from_utf8(出).map_err(|_| self.报错("字符串不是合法 UTF-8"))
     }
 
     fn 取转义(&mut self, 出: &mut Vec<u8>) -> Result<(), 解析错误> {
-        let 字 = self.进().ok_or_else(|| self.错("转义没写完"))?;
+        let 字 = self.前进一字节().ok_or_else(|| self.报错("转义没写完"))?;
         match 字 {
             b'"' => 出.push(b'"'),
             b'\\' => 出.push(b'\\'),
@@ -184,24 +184,24 @@ impl<'a> 游标<'a> {
                 let 码 = self.取四位十六进制()?;
                 // 代理对：高代理必须紧跟一个低代理，合起来才是一个码点。
                 let 码点 = if (0xD800..0xDC00).contains(&码) {
-                    if self.进() != Some(b'\\') || self.进() != Some(b'u') {
-                        return Err(self.错("高代理后面必须紧跟一个 \\u 低代理"));
+                    if self.前进一字节() != Some(b'\\') || self.前进一字节() != Some(b'u') {
+                        return Err(self.报错("高代理后面必须紧跟一个 \\u 低代理"));
                     }
                     let 低 = self.取四位十六进制()?;
                     if !(0xDC00..0xE000).contains(&低) {
-                        return Err(self.错("代理对的后半不是低代理"));
+                        return Err(self.报错("代理对的后半不是低代理"));
                     }
                     0x1_0000 + ((u32::from(码) - 0xD800) << 10) + (u32::from(低) - 0xDC00)
                 } else if (0xDC00..0xE000).contains(&码) {
-                    return Err(self.错("单个低代理不构成码点"));
+                    return Err(self.报错("单个低代理不构成码点"));
                 } else {
                     u32::from(码)
                 };
-                let 字 = char::from_u32(码点).ok_or_else(|| self.错("码点不合法"))?;
+                let 字 = char::from_u32(码点).ok_or_else(|| self.报错("码点不合法"))?;
                 let mut 缓 = [0u8; 4];
                 出.extend_from_slice(字.encode_utf8(&mut 缓).as_bytes());
             }
-            _ => return Err(self.错("不认识的转义")),
+            _ => return Err(self.报错("不认识的转义")),
         }
         Ok(())
     }
@@ -209,10 +209,10 @@ impl<'a> 游标<'a> {
     fn 取四位十六进制(&mut self) -> Result<u16, 解析错误> {
         let mut 值: u16 = 0;
         for _ in 0..4 {
-            let 字 = self.进().ok_or_else(|| self.错("\\u 后面要跟四位十六进制"))?;
+            let 字 = self.前进一字节().ok_or_else(|| self.报错("\\u 后面要跟四位十六进制"))?;
             let 数 = (字 as char)
                 .to_digit(16)
-                .ok_or_else(|| self.错("\\u 后面要跟四位十六进制"))?;
+                .ok_or_else(|| self.报错("\\u 后面要跟四位十六进制"))?;
             值 = 值 * 16 + 数 as u16;
         }
         Ok(值)
@@ -220,54 +220,54 @@ impl<'a> 游标<'a> {
 
     fn 取数(&mut self) -> Result<协议值, 解析错误> {
         let 起 = self.位;
-        if self.看() == Some(b'-') {
+        if self.取当前字节() == Some(b'-') {
             self.位 += 1;
         }
         // 前导零不合法（`01` 与 `1` 是两种写法，JSON 只认后者）。
-        if self.看() == Some(b'0') && matches!(self.字节.get(self.位 + 1), Some(b'0'..=b'9')) {
-            return Err(self.错("数字不许有前导零"));
+        if self.取当前字节() == Some(b'0') && matches!(self.字节.get(self.位 + 1), Some(b'0'..=b'9')) {
+            return Err(self.报错("数字不许有前导零"));
         }
-        while matches!(self.看(), Some(b'0'..=b'9')) {
+        while matches!(self.取当前字节(), Some(b'0'..=b'9')) {
             self.位 += 1;
         }
         let mut 是小数 = false;
-        if self.看() == Some(b'.') {
+        if self.取当前字节() == Some(b'.') {
             是小数 = true;
             self.位 += 1;
-            if !matches!(self.看(), Some(b'0'..=b'9')) {
-                return Err(self.错("小数点后面必须有数字"));
+            if !matches!(self.取当前字节(), Some(b'0'..=b'9')) {
+                return Err(self.报错("小数点后面必须有数字"));
             }
-            while matches!(self.看(), Some(b'0'..=b'9')) {
+            while matches!(self.取当前字节(), Some(b'0'..=b'9')) {
                 self.位 += 1;
             }
         }
-        if matches!(self.看(), Some(b'e' | b'E')) {
+        if matches!(self.取当前字节(), Some(b'e' | b'E')) {
             是小数 = true;
             self.位 += 1;
-            if matches!(self.看(), Some(b'+' | b'-')) {
+            if matches!(self.取当前字节(), Some(b'+' | b'-')) {
                 self.位 += 1;
             }
-            if !matches!(self.看(), Some(b'0'..=b'9')) {
-                return Err(self.错("指数后面必须有数字"));
+            if !matches!(self.取当前字节(), Some(b'0'..=b'9')) {
+                return Err(self.报错("指数后面必须有数字"));
             }
-            while matches!(self.看(), Some(b'0'..=b'9')) {
+            while matches!(self.取当前字节(), Some(b'0'..=b'9')) {
                 self.位 += 1;
             }
         }
         let 文本 = core::str::from_utf8(&self.字节[起..self.位])
-            .map_err(|_| self.错("数字不是合法 UTF-8"))?;
+            .map_err(|_| self.报错("数字不是合法 UTF-8"))?;
         if 是小数 {
             return 文本
                 .parse::<f64>()
                 .map(协议值::小数)
-                .map_err(|_| self.错("小数超出 64 位浮点能表达的范围"));
+                .map_err(|_| self.报错("小数超出 64 位浮点能表达的范围"));
         }
         // 整数：先试有符号，再试无符号（`数据槽.值` 是 u64，高位句柄不许被静默改写）。
         文本
             .parse::<i64>()
             .map(协议值::整数)
             .or_else(|_| 文本.parse::<u64>().map(协议值::无符号))
-            .map_err(|_| self.错("整数超出 64 位范围"))
+            .map_err(|_| self.报错("整数超出 64 位范围"))
     }
 }
 
@@ -277,9 +277,9 @@ mod 解析测试 {
 
     #[test]
     fn 基本形状_都解析得出来() {
-        assert!(matches!(解析("null"), Ok(协议值::空)));
-        assert!(matches!(解析(" true "), Ok(协议值::真)));
-        assert!(matches!(解析("false"), Ok(协议值::假)));
+        assert!(matches!(解析("null"), Ok(协议值::空值)));
+        assert!(matches!(解析(" true "), Ok(协议值::逻辑真)));
+        assert!(matches!(解析("false"), Ok(协议值::逻辑假)));
         assert!(matches!(解析("-12"), Ok(协议值::整数(-12))));
         // 超出 i64 但仍在 u64 内：单列一支，不许静默改写。
         assert!(matches!(

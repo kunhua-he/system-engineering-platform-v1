@@ -75,7 +75,7 @@ const 提示号: u32 = 0;
 /// 成功返回：`成功: true` + `数据` + `耗时微秒`。
 pub(super) fn 成功(数据: 协议值, 起: &Instant) -> 协议值 {
     协议值::对象(vec![
-        ("成功".to_owned(), 协议值::真),
+        ("成功".to_owned(), 协议值::逻辑真),
         ("数据".to_owned(), 数据),
         ("耗时微秒".to_owned(), 微秒(起)),
     ])
@@ -86,7 +86,7 @@ pub(super) fn 成功(数据: 协议值, 起: &Instant) -> 协议值 {
 /// `数据` 给 `None` 时不出现这个键 —— 不编一个空对象出来（空对象与「没有回执」不可区分）。
 pub(super) fn 失败(适配器: &适配器, 码: u32, 数据: Option<协议值>, 起: &Instant) -> 协议值 {
     let mut 成员 = vec![
-        ("成功".to_owned(), 协议值::假),
+        ("成功".to_owned(), 协议值::逻辑假),
         (
             "错误".to_owned(),
             错误对象::由码(适配器, 提示号, 码).到协议值(),
@@ -107,13 +107,13 @@ fn 微秒(起: &Instant) -> 协议值 {
     }
 }
 
-pub(super) fn 文(值: &str) -> 协议值 {
+pub(super) fn 造文本值(值: &str) -> 协议值 {
     协议值::文本(值.to_owned())
 }
 
 /// 一对「键 → 文本」。
 pub(super) fn 键文(键: &str, 值: &str) -> (String, 协议值) {
-    (键.to_owned(), 文(值))
+    (键.to_owned(), 造文本值(值))
 }
 
 /// 回执里报路径一律报**相对工具根**的（绝对路径会把部署位置写进回执，
@@ -126,7 +126,7 @@ pub(super) fn 相对(工具根: &Path, 路: &Path) -> String {
 }
 
 /// 读一件 JSON。读不到 / 解不了都**原样带回**（不吞、不给默认值）。
-pub(super) fn 读JSON(路: &Path) -> Result<协议值, String> {
+pub(super) fn 读JSON件(路: &Path) -> Result<协议值, String> {
     let 文本 = std::fs::read_to_string(路).map_err(|错| format!("读不到 {}：{错}", 路.display()))?;
     crate::协议解析::解析(&文本)
         .map_err(|错| format!("{} 不是合法 JSON：{}（第 {} 字节）", 路.display(), 错.说明, 错.位置))

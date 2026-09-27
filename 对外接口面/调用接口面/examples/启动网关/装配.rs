@@ -5,7 +5,7 @@
 //!
 //! **2026-09-27 非纯搬一处**：第二步扫候选收窄到 `可装载件 = true`
 //! （缺键 / 非布尔 ⇒ fail-closed 指路），与装配侧 `扩展.py::可装载种类` 同一条规则。
-//! 细节见 `跑()` 内第二步那段注释。
+//! 细节见 `跑网关()` 内第二步那段注释。
 
 use std::env;
 use std::fs;
@@ -35,7 +35,7 @@ fn 取值(名: &str) -> Option<String> {
 }
 
 /// 跑完整条链。命令行参数、端口与日志输出**逐字不变**（上线切换靠 `监听 127.0.0.1:<端口>` 一行拿端口）。
-pub(crate) fn 跑() -> Result<(), String> {
+pub(crate) fn 跑网关() -> Result<(), String> {
     let 声明根路径 =
         PathBuf::from(取值("--声明根").unwrap_or_else(|| "扩展装载/扩展根声明.json".to_owned()));
     let 端口: Option<u16> = match 取值("--端口") {
@@ -53,12 +53,12 @@ pub(crate) fn 跑() -> Result<(), String> {
     // ── 第一步：读扩展根声明 ────────────────────────────────────────────────
     let 文本 = fs::read_to_string(&声明根路径)
         .map_err(|错| format!("读不到扩展根声明 {}：{错}", 声明根路径.display()))?;
-    let 根 = 读器::新(&文本)
-        .值()
+    let 根 = 读器::新建(&文本)
+        .读一个值()
         .map_err(|错| format!("扩展根声明不是合法 JSON：{错}"))?;
     let 种类 = 根
         .取成员("种类")
-        .and_then(|值| 值.列())
+        .and_then(|值| 值.取数组())
         .ok_or_else(|| "扩展根声明缺 `种类` 段".to_owned())?;
     println!(
         "扩展根声明 {} · 种类 {} 类",
@@ -82,7 +82,7 @@ pub(crate) fn 跑() -> Result<(), String> {
     let mut 装上的: Vec<String> = Vec::new();
     let mut 剔除的: Vec<(String, String)> = Vec::new();
     for 类 in 种类 {
-        let 类名 = 类.取成员("种类").and_then(|值| 值.串()).unwrap_or("?");
+        let 类名 = 类.取成员("种类").and_then(|值| 值.取字符串()).unwrap_or("?");
         let Some(可装载) = 类.取成员("可装载件").and_then(|值| 值.布尔()) else {
             return Err(format!(
                 "扩展根声明的 种类[{类名}] 缺 `可装载件`（或不是布尔）。\n  \
@@ -94,7 +94,7 @@ pub(crate) fn 跑() -> Result<(), String> {
         if !可装载 {
             continue;
         }
-        let Some(目录) = 类.取成员("目录").and_then(|值| 值.串()) else {
+        let Some(目录) = 类.取成员("目录").and_then(|值| 值.取字符串()) else {
             continue;
         };
         let 目录 = PathBuf::from(目录);
@@ -159,6 +159,6 @@ pub(crate) fn 跑() -> Result<(), String> {
         服务.适配器().已装载声明数(),
         服务.适配器().能力清单().len()
     );
-    let _ = 服务.跑();
+    let _ = 服务.跑服务();
     Ok(())
 }
