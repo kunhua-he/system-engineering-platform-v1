@@ -35,26 +35,26 @@ _再导出 = re.compile(r"^\s*pub\s+use\s+[^;{]*\{([^}]*)\}")
 
 def _抽量名(文本: str) -> set:
     """抽**量**的名字：常量 / 静态量 · 结构体字段 · `pub use` 再导出的名字。段位名与函数名不在内。"""
-    出 = set()
-    for 行 in 文本.split("\n"):
-        码 = _去注释(行)
-        for 形 in (_常量声明, _字段声明):
-            命 = 形.match(码)
-            if 命:
-                出.add(命.group(1))
-        命 = _再导出.match(码)
-        if 命:
-            出 |= {名字.strip() for 名字 in 命.group(1).split(",") if 名字.strip()}
-    return 出
+    输出缓冲 = set()
+    for 源码行 in 文本.split("\n"):
+        代码行 = _去注释(源码行)
+        for 格式器 in (_常量声明, _字段声明):
+            匹配结果 = 格式器.match(代码行)
+            if 匹配结果:
+                输出缓冲.add(匹配结果.group(1))
+        匹配结果 = _再导出.match(代码行)
+        if 匹配结果:
+            输出缓冲 |= {名字.strip() for 名字 in 匹配结果.group(1).split(",") if 名字.strip()}
+    return 输出缓冲
 
 
 def _抽标识符(文本: str) -> set:
     """抽全部标识符（只用来确认「主人还在」这一条 sanity，不用来判违规）。"""
-    出 = set()
-    for 行 in 文本.split("\n"):
-        for 命 in _标识符.finditer(_去注释(行)):
-            出.add(命.group(0))
-    return 出
+    输出缓冲 = set()
+    for 源码行 in 文本.split("\n"):
+        for 匹配结果 in _标识符.finditer(_去注释(源码行)):
+            输出缓冲.add(匹配结果.group(0))
+    return 输出缓冲
 
 
 def 检查21_时间口径(上层读数: dict) -> list:
@@ -71,7 +71,7 @@ def 检查21_时间口径(上层读数: dict) -> list:
     三元读数：**通过** = 扫描面非空且 0 命中；**失败** = 命中逐条报出；
     **未判** = 扫描面下 0 个件，或两个量一个都找不到（那说明主人被搬走/改名，不是「没问题」）。
     """
-    出 = []
+    输出缓冲 = []
     件表 = {
         键: 项["文本"]
         for 键, 项 in 上层读数["文件"].items()
@@ -87,16 +87,16 @@ def 检查21_时间口径(上层读数: dict) -> list:
             "判据的可信性.md 第二节：空集是**未判**，不是通过。要么扫描面坏了、"
             "要么主人被搬走 —— 两种都只能由该实现方确认（读数为 0 不许当成绿）",
         )
-        return 出
+        return 输出缓冲
 
-    for 键 in sorted(件表):
-        for 序, 行 in enumerate(件表[键].split("\n")):
+    for 键名 in sorted(件表):
+        for 序, 行 in enumerate(件表[键名].split("\n")):
             if "SystemTime" not in _去注释(行):
                 continue
-            出.append(
+            输出缓冲.append(
                 违规(
                     检查名[20],
-                    f"{键} 第 {序 + 1} 行",
+                    f"{键名} 第 {序 + 1} 行",
                     f"时间主人里出现墙钟 `SystemTime`（原文：{行.strip()[:80]}）",
                     "决策记录 2026-09-27_补主人与核心预算.md §一 第 3 条：时间口径一律 "
                     "`std::time::Instant`（单调时钟）—— **墙钟会跳**（对时 / 夏令时 / 手动改表），"
@@ -106,19 +106,19 @@ def 检查21_时间口径(上层读数: dict) -> list:
             )
 
     缺单位 = []
-    见 = {"超时": False, "耗时": False}
-    for 键 in sorted(件表):
-        量名 = _抽量名(件表[键])
-        for 名 in sorted(_抽标识符(件表[键])):
-            for 类 in ("超时", "耗时"):
-                if 类 in 名:
-                    见[类] = True   # sanity 用全部标识符：主人还在就够
-        for 名 in sorted(量名):
-            for 类 in ("超时", "耗时"):
-                if 类 in 名 and not any(单位 in 名 for 单位 in 单位词表):
-                    缺单位.append((键, 名, 类))
+    见过表 = {"超时": False, "耗时": False}
+    for 键名 in sorted(件表):
+        量名 = _抽量名(件表[键名])
+        for 名称 in sorted(_抽标识符(件表[键名])):
+            for 类别 in ("超时", "耗时"):
+                if 类别 in 名称:
+                    见过表[类别] = True   # sanity 用全部标识符：主人还在就够
+        for 名称 in sorted(量名):
+            for 类别 in ("超时", "耗时"):
+                if 类别 in 名称 and not any(单位 in 名称 for 单位 in 单位词表):
+                    缺单位.append((键名, 名称, 类别))
     for 键, 名, 类 in 缺单位:
-        出.append(
+        输出缓冲.append(
             违规(
                 检查名[20],
                 f"{键}::{名}",
@@ -128,7 +128,7 @@ def 检查21_时间口径(上层读数: dict) -> list:
                 "（「这个数是秒还是毫秒」猜错一次就是一次线上误判）⇒ 只能由该实现方改名",
             )
         )
-    缺谁 = [类 for 类, 有 in 见.items() if not 有]
+    缺谁 = [类 for 类, 有 in 见过表.items() if not 有]
     if 缺谁:
         判不了(
             检查名[20],
@@ -137,4 +137,4 @@ def 检查21_时间口径(上层读数: dict) -> list:
             "这两个量是时间口径**唯一主人**的公开面（调用调度 · 调用留痕）；一个都找不到，"
             "说明主人被搬走或改名了 ⇒ 只能由该实现方确认（找不到不许当成绿）",
         )
-    return 出
+    return 输出缓冲
