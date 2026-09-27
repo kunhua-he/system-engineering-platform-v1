@@ -52,7 +52,7 @@ def 注入_准入死键(临根: Path) -> str:
     )
 
 
-def 注入_准入crate_type(临根: Path) -> str:
+def 注入_准入制品类型(临根: Path) -> str:
     """往扩展 Cargo.toml 注入 [lib] crate-type ⇒ ㉛ 必红。"""
     return _改(
         临根, "扩展根目录/原子支持库/样例支持库/Cargo.toml",

@@ -48,8 +48,8 @@ _Rust转义字符 = re.compile(r"b?'\\u\{[0-9A-Fa-f]+\}'")
 _Rust生命周期 = re.compile(r"(?<=')[A-Za-z_][0-9A-Za-z_]*")
 
 # Python：三引号 / 普通引号，可带 `r/b/f/u` 前缀（大小写皆可，最多三个）。
-_Py三引号 = re.compile(r'[rRbBuUfF]{0,3}("""|\'\'\')')
-_Py引号 = re.compile(r'[rRbBuUfF]{0,3}("|\')')
+_Python三引号 = re.compile(r'[rRbBuUfF]{0,3}("""|\'\'\')')
+_Python引号 = re.compile(r'[rRbBuUfF]{0,3}("|\')')
 
 # `.vue`：只取 `<script …>…</script>` 块（模板散文里有中文，但它不是标识符面）。
 _Vue脚本块 = re.compile(r"<script[^>]*>(.*?)</script>", re.S | re.I)
@@ -80,7 +80,7 @@ def 剥Python(文本: str) -> str:
             _抹(文本, 出, 指, 止)
             指 = 止
             continue
-        配 = _Py三引号.match(文本, 指)
+        配 = _Python三引号.match(文本, 指)
         if 配:
             引 = 配.group(1)
             终 = 文本.find(引, 配.end())
@@ -88,7 +88,7 @@ def 剥Python(文本: str) -> str:
             _抹(文本, 出, 指, 终)
             指 = 终
             continue
-        配 = _Py引号.match(文本, 指)
+        配 = _Python引号.match(文本, 指)
         if 配:
             引 = 配.group(1)
             步 = 配.end()
