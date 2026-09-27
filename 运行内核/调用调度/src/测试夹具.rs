@@ -27,7 +27,7 @@ pub(crate) static 拒绝次数: AtomicUsize = AtomicUsize::new(0);
 /// 契约类型里带裸指针（`*const u8` 等），裸指针不实现 `Sync`，而 `static` 必须 `Sync`。
 /// 表在编译期冻结且只读，别处拿到的只会是共享引用，故安全。
 /// **真实扩展的静态声明必须做同一件事**，这里顺手把这条路走通。
-pub(crate) struct 静态<T>(pub(crate) T);
+pub(crate) struct 静态<项类型>(pub(crate) 项类型);
 // SAFETY: 只读、无内部可变性，跨线程共享不产生数据竞争。
 unsafe impl Sync for 静态<[参数信息; 2]> {}
 // SAFETY: 同上。

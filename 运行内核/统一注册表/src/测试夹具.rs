@@ -22,7 +22,7 @@ pub(crate) const 测试错误段位表: [u32; 1] = [1];
 // ── 夹具零件 ────────────────────────────────────────────────────────────
 
 /// 执行函数甲：把「参数个数」原样写进返回槽的 值。
-pub(crate) unsafe extern "C" fn 执行_甲(返回槽: *mut 数据槽, 参数个数: u32, _参数表: *const 数据槽) {
+pub(crate) unsafe extern "C" fn 执行_首(返回槽: *mut 数据槽, 参数个数: u32, _参数表: *const 数据槽) {
     if !返回槽.is_null() {
         // SAFETY: 空指针已挡；非空由调用契约保证可写。
         unsafe { *返回槽 = 数据槽::内联(v1_contract::类型标签::新(1), u64::from(参数个数), 0) };
@@ -30,7 +30,7 @@ pub(crate) unsafe extern "C" fn 执行_甲(返回槽: *mut 数据槽, 参数个�
 }
 
 /// 执行函数乙：写「参数个数 + 100」——与甲不同，用来验证取到的函数是对的。
-pub(crate) unsafe extern "C" fn 执行_乙(返回槽: *mut 数据槽, 参数个数: u32, _参数表: *const 数据槽) {
+pub(crate) unsafe extern "C" fn 执行_次(返回槽: *mut 数据槽, 参数个数: u32, _参数表: *const 数据槽) {
     if !返回槽.is_null() {
         unsafe { *返回槽 = 数据槽::内联(v1_contract::类型标签::新(2), u64::from(参数个数) + 100, 0) };
     }
@@ -176,7 +176,7 @@ pub(crate) fn 正常声明() -> &'static 平台信息 {
             造命令(测试命令首号, "甲", 参数, 1),
             造命令(测试命令首号 + 1, "乙", &[], 0),
         ]));
-        let 函数: &'static [执行函数] = Box::leak(Box::new([执行_甲, 执行_乙]));
+        let 函数: &'static [执行函数] = Box::leak(Box::new([执行_首, 执行_次]));
         let 命令号: &'static [u32] = Box::leak(Box::new([测试命令首号]));
         let 事件: &'static [事件信息] = Box::leak(Box::new([造事件(参数)]));
         let 类型: &'static [数据类型信息] = Box::leak(Box::new([造类型(1, 命令号, 事件)]));

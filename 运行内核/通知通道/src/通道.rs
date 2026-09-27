@@ -210,20 +210,20 @@ impl 通知通道 {
 ///
 /// # Safety
 /// 两个非空指针都必须指向 NUL 结尾的字节串（契约：标识串 = 32 位十六进制 + NUL）。
-unsafe fn 标识串相同(甲: *const u8, 乙: *const u8) -> bool {
-    if 甲.is_null() || 乙.is_null() {
+unsafe fn 标识串相同(左串: *const u8, 右串: *const u8) -> bool {
+    if 左串.is_null() || 右串.is_null() {
         return false;
     }
     let mut 位移: usize = 0;
     while 位移 < 标识串上限 {
         // SAFETY: 调用方保证两个指针都指向可读的 NUL 结尾字节串。
-        let 甲字节 = unsafe { *甲.add(位移) };
+        let 左字节 = unsafe { *左串.add(位移) };
         // SAFETY: 同上。
-        let 乙字节 = unsafe { *乙.add(位移) };
-        if 甲字节 != 乙字节 {
+        let 右字节 = unsafe { *右串.add(位移) };
+        if 左字节 != 右字节 {
             return false;
         }
-        if 甲字节 == 0 {
+        if 左字节 == 0 {
             return true;
         }
         位移 += 1;

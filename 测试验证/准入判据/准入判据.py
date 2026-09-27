@@ -59,17 +59,17 @@ def main(参数) -> int:
         return 0
     世 = 世界(根)
     if "--判" in 参数:
-        i = 参数.index("--判")
-        if i + 1 >= len(参数):
+        判位 = 参数.index("--判")
+        if 判位 + 1 >= len(参数):
             print("用法：--判 <编号>（如 --判 ⑧）")
             return 1
-        return 单条(世, 参数[i + 1])
+        return 单条(世, 参数[判位 + 1])
     起 = time.perf_counter()
     结果 = 扫(世)
     毫秒 = int((time.perf_counter() - 起) * 1000)
     打印(结果, 毫秒, 读数="--读数" in 参数)
-    失败 = sum(1 for _, _, _, r in 结果 if r[0] == "失败")
-    未判 = sum(1 for _, _, _, r in 结果 if r[0] == "未判")
+    失败 = sum(1 for _, _, _, 项 in 结果 if 项[0] == "失败")
+    未判 = sum(1 for _, _, _, 项 in 结果 if 项[0] == "未判")
     # 16 条口径：机器可判 10 条 + 不可机器判 6 条（恒未判）
     return 0 if (失败 == 0 and 未判 == 0 and len(结果) == 16) else 1
 

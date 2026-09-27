@@ -47,11 +47,11 @@ def 加载(仓根):
 def 跑(判据器, 仓根):
     """→ (判据器原始结果, 三元读数)。读数口径照判据器自己的 打印()：按检查项计。"""
     结果 = 判据器.验证(仓根)
-    通过 = [x for x in 结果.get("通过", []) if isinstance(x, str)]
-    失败 = [x for x in 结果.get("失败", []) if isinstance(x, str)]
+    通过 = [项 for 项 in 结果.get("通过", []) if isinstance(项, str)]
+    失败 = [项 for 项 in 结果.get("失败", []) if isinstance(项, str)]
     未判 = sorted(
-        {x for x in 结果.get("未判", []) if isinstance(x, str)}
-        | {x["检查"] for x in 结果.get("未判", []) if isinstance(x, dict)}
+        {项 for 项 in 结果.get("未判", []) if isinstance(项, str)}
+        | {项["检查"] for 项 in 结果.get("未判", []) if isinstance(项, dict)}
     )
     读数 = {
         "通过": len(通过),
