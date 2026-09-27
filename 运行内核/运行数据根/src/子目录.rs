@@ -43,7 +43,7 @@ pub fn 子目录路径(根目录: &Path, 类别: 子目录) -> PathBuf {
 
 /// 建出某一类子目录并交出路径（父目录一并建）。
 pub fn 确保子目录(根目录: &Path, 类别: 子目录) -> std::io::Result<PathBuf> {
-    let 路 = 子目录路径(根目录, 类别);
-    std::fs::create_dir_all(&路)?;
-    Ok(路)
+    let 路径 = 子目录路径(根目录, 类别);
+    std::fs::create_dir_all(&路径)?;
+    Ok(路径)
 }

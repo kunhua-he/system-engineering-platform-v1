@@ -155,13 +155,13 @@ impl 通知通道 {
         // ① 把该标识串的端点全部摘下。借用只在这一小段里，不跨越外部调用。
         let mut 摘下: Vec<通知端点> = Vec::new();
         {
-            let mut 表 = self.端点表.borrow_mut();
-            let 原表 = core::mem::take(&mut *表);
+            let mut 项表 = self.端点表.borrow_mut();
+            let 原表 = core::mem::take(&mut *项表);
             for 端点 in 原表 {
                 if unsafe { 标识串相同(端点.标识串, 标识串) } {
                     摘下.push(端点);
                 } else {
-                    表.push(端点);
+                    项表.push(端点);
                 }
             }
         }
@@ -203,11 +203,11 @@ impl 通知通道 {
     /// 把端点放回端点表。已在表里的标识串不再放第二次——
     /// 卸载期扩展若回手调过 `注册`，也不许把「标识串唯一」这条不变量破坏掉。
     fn 放回(&self, 端点集: Vec<通知端点>) {
-        let mut 表 = self.端点表.borrow_mut();
+        let mut 项表 = self.端点表.borrow_mut();
         for 端点 in 端点集 {
-            let 已在 = 表.iter().any(|已有| unsafe { 标识串相同(已有.标识串, 端点.标识串) });
+            let 已在 = 项表.iter().any(|已有| unsafe { 标识串相同(已有.标识串, 端点.标识串) });
             if !已在 {
-                表.push(端点);
+                项表.push(端点);
             }
         }
     }

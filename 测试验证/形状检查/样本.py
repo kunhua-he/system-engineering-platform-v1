@@ -34,55 +34,55 @@ from .形状 import 扫案例
 
 def 样本() -> int:
     """返回 0 = 正向合格 + 两种坏法都报红 / 1 = 有不对 / 2 = 工具错误。"""
-    源 = 案例根 / 样本案例名
-    if not 源.is_dir():
-        print(f"工具错误：找不到真案例 {源}", file=sys.stderr)
+    来源 = 案例根 / 样本案例名
+    if not 来源.is_dir():
+        print(f"工具错误：找不到真案例 {来源}", file=sys.stderr)
         return 2
-    好 = True
+    合格样本 = True
     print("─" * 78)
     print(f"正向样本：真案例 `{样本案例名}`（期望已写关键值断言）")
-    报告, 错 = 扫案例(案例根)
-    if 错:
-        print(f"工具错误：{错}", file=sys.stderr)
+    报告, 错误 = 扫案例(案例根)
+    if 错误:
+        print(f"工具错误：{错误}", file=sys.stderr)
         return 2
-    print(f"  ✓ 该例无违反" if not [条 for 条 in 报告 if 条[2] == 判定_违反 and 样本案例名 in 条[0]]
-          else f"  ✗ 真案例被报违反：{[条 for 条 in 报告 if 条[2] == 判定_违反]}")
+    print(f"  ✓ 该例无违反" if not [报告项 for 报告项 in 报告 if 报告项[2] == 判定_违反 and 样本案例名 in 报告项[0]]
+          else f"  ✗ 真案例被报违反：{[报告项 for 报告项 in 报告 if 报告项[2] == 判定_违反]}")
     print("")
     print("反向样本：把该例复制到 /tmp，**把断言写坏** ⇒ 必须报红。两种坏法各验一次：")
     with tempfile.TemporaryDirectory() as 临时:
-        根 = Path(临时)
+        根目录 = Path(临时)
         # 坏法 A：比对目标不存在
-        shutil.copytree(源, 根 / 样本案例名)
-        (根 / 样本案例名 / 样本比对目标).unlink()
-        比对目标缺报告, 比对目标缺错 = 扫案例(根)
+        shutil.copytree(来源, 根目录 / 样本案例名)
+        (根目录 / 样本案例名 / 样本比对目标).unlink()
+        比对目标缺报告, 比对目标缺错 = 扫案例(根目录)
         if 比对目标缺错:
             print(f"  ✓ 坏法 A（比对目标不存在）被抓到 → {比对目标缺错}")
         else:
-            好 = False
+            合格样本 = False
             print(f"  ✗ 坏法 A 没抓到（判定={比对目标缺报告}）")
         # 坏法 B：备好关键值却把断言降级成 `非空字节集`
-        shutil.rmtree(根 / 样本案例名)
-        shutil.copytree(源, 根 / 样本案例名)
-        (根 / 样本案例名 / 期望结果文件名).write_bytes(
-            (根 / 样本案例名 / 样本比对目标).read_bytes())
-        期 = 根 / 样本案例名 / "期望.json"
-        期.write_text(
-            期.read_text(encoding="utf-8").replace(
+        shutil.rmtree(根目录 / 样本案例名)
+        shutil.copytree(来源, 根目录 / 样本案例名)
+        (根目录 / 样本案例名 / 期望结果文件名).write_bytes(
+            (根目录 / 样本案例名 / 样本比对目标).read_bytes())
+        期望路径 = 根目录 / 样本案例名 / "期望.json"
+        期望路径.write_text(
+            期望路径.read_text(encoding="utf-8").replace(
                 f'"判据": "逐字节等于文件", "文件": "{样本比对目标}"',
                 '"判据": "非空字节集"', 1),
             encoding="utf-8",
         )
-        断言降级报告, 断言降级错 = 扫案例(根)
+        断言降级报告, 断言降级错 = 扫案例(根目录)
         if 断言降级错:
-            好 = False
+            合格样本 = False
             print(f"  ✗ 坏法 B 反而工具错误：{断言降级错}")
         else:
-            命中 = [条 for 条 in 断言降级报告 if 条[2] == 判定_违反 and "关键值就在手边" in 条[1]]
+            命中 = [报告项 for 报告项 in 断言降级报告 if 报告项[2] == 判定_违反 and "关键值就在手边" in 报告项[1]]
             if 命中:
                 print(f"  ✓ 坏法 B（断言降级成非空）被抓到 → {命中[0][1][:110]}…")
             else:
-                好 = False
+                合格样本 = False
                 print(f"  ✗ 坏法 B 没抓到（判定={断言降级报告}）")
     print("")
-    print("查案例形状样本：" + ("正向合格 + 反向报红，两条都对" if 好 else "有不对的"))
-    return 0 if 好 else 1
+    print("查案例形状样本：" + ("正向合格 + 反向报红，两条都对" if 合格样本 else "有不对的"))
+    return 0 if 合格样本 else 1

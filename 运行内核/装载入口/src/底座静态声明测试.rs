@@ -76,13 +76,13 @@ fn 导出符号_返回底座静态声明且形状完整() {
 
 #[test]
 fn 底座执行函数_把平台信息放进返回槽() {
-    let mut 槽 = 数据槽::空槽();
+    let mut 数据槽 = 数据槽::空槽();
     // SAFETY: 占位执行函数按契约形状调用；参数个数 0，参数表空。
-    unsafe { 底座取平台信息(&mut 槽, 0, core::ptr::null()) };
-    assert!(槽.是否引用());
-    assert!(!槽.交出了所有权());
-    assert_eq!(槽.长度, core::mem::size_of::<平台信息>() as u64);
-    assert_eq!(槽.值, 取平台信息() as u64);
+    unsafe { 底座取平台信息(&mut 数据槽, 0, core::ptr::null()) };
+    assert!(数据槽.是否引用());
+    assert!(!数据槽.交出了所有权());
+    assert_eq!(数据槽.长度, core::mem::size_of::<平台信息>() as u64);
+    assert_eq!(数据槽.值, 取平台信息() as u64);
 }
 
 #[test]
@@ -170,8 +170,8 @@ fn 底座命令表_名称与说明逐字等于能力声明() {
 /// 的理由），而本测试只要两个顶层字符串字段；搬一个通用 JSON 读取器进来就是
 /// 「同一件事两套实现」（`项目文档/决策记录/2026-09-27_短期红可接受与反漂移选型.md` §二）。
 fn 取顶层字符串(文本: &str, 键名: &str) -> Option<String> {
-    let 字: Vec<char> = 文本.chars().collect();
-    let mut 位 = 0usize;
+    let 字符表: Vec<char> = 文本.chars().collect();
+    let mut 位置 = 0usize;
 
     fn 跳空白(字符表: &[char], 位置: &mut usize) {
         while 字符表.get(*位置).is_some_and(|当前字| 当前字.is_whitespace()) {
@@ -185,36 +185,36 @@ fn 取顶层字符串(文本: &str, 键名: &str) -> Option<String> {
             return None;
         }
         *位置 += 1;
-        let mut 出 = String::new();
+        let mut 输出缓冲 = String::new();
         loop {
             let 当前字 = *字符表.get(*位置)?;
             *位置 += 1;
             match 当前字 {
-                '"' => return Some(出),
+                '"' => return Some(输出缓冲),
                 '\\' => {
-                    let 转 = *字符表.get(*位置)?;
+                    let 转义字符 = *字符表.get(*位置)?;
                     *位置 += 1;
-                    match 转 {
-                        '"' => 出.push('"'),
-                        '\\' => 出.push('\\'),
-                        '/' => 出.push('/'),
-                        'n' => 出.push('\n'),
-                        'r' => 出.push('\r'),
-                        't' => 出.push('\t'),
-                        'b' => 出.push('\u{8}'),
-                        'f' => 出.push('\u{c}'),
+                    match 转义字符 {
+                        '"' => 输出缓冲.push('"'),
+                        '\\' => 输出缓冲.push('\\'),
+                        '/' => 输出缓冲.push('/'),
+                        'n' => 输出缓冲.push('\n'),
+                        'r' => 输出缓冲.push('\r'),
+                        't' => 输出缓冲.push('\t'),
+                        'b' => 输出缓冲.push('\u{8}'),
+                        'f' => 输出缓冲.push('\u{c}'),
                         'u' => {
-                            let mut 码 = 0u32;
+                            let mut 码位 = 0u32;
                             for _ in 0..4 {
-                                码 = 码 * 16 + (*字符表.get(*位置)?).to_digit(16)?;
+                                码位 = 码位 * 16 + (*字符表.get(*位置)?).to_digit(16)?;
                                 *位置 += 1;
                             }
-                            出.push(char::from_u32(码)?);
+                            输出缓冲.push(char::from_u32(码位)?);
                         }
                         _ => return None,
                     }
                 }
-                _ => 出.push(当前字),
+                _ => 输出缓冲.push(当前字),
             }
         }
     }
@@ -227,16 +227,16 @@ fn 取顶层字符串(文本: &str, 键名: &str) -> Option<String> {
                 读串(字符表, 位置)?;
             }
             '{' | '[' => {
-                let (开, 闭) = if *字符表.get(*位置)? == '{' { ('{', '}') } else { ('[', ']') };
-                let mut 深 = 0i32;
+                let (开符, 闭符) = if *字符表.get(*位置)? == '{' { ('{', '}') } else { ('[', ']') };
+                let mut 嵌套深度 = 0i32;
                 loop {
                     let 当前字 = *字符表.get(*位置)?;
                     *位置 += 1;
-                    if 当前字 == 开 {
-                        深 += 1;
-                    } else if 当前字 == 闭 {
-                        深 -= 1;
-                        if 深 == 0 {
+                    if 当前字 == 开符 {
+                        嵌套深度 += 1;
+                    } else if 当前字 == 闭符 {
+                        嵌套深度 -= 1;
+                        if 嵌套深度 == 0 {
                             return Some(());
                         }
                     } else if 当前字 == '"' {
@@ -254,33 +254,33 @@ fn 取顶层字符串(文本: &str, 键名: &str) -> Option<String> {
         Some(())
     }
 
-    跳空白(&字, &mut 位);
-    if *字.get(位)? != '{' {
+    跳空白(&字符表, &mut 位置);
+    if *字符表.get(位置)? != '{' {
         return None;
     }
-    位 += 1;
+    位置 += 1;
     loop {
-        跳空白(&字, &mut 位);
-        if *字.get(位)? == '}' {
+        跳空白(&字符表, &mut 位置);
+        if *字符表.get(位置)? == '}' {
             return None; // 扫完顶层还没找到该键
         }
-        let 顶层键名 = 读串(&字, &mut 位)?;
-        跳空白(&字, &mut 位);
-        if *字.get(位)? != ':' {
+        let 顶层键名 = 读串(&字符表, &mut 位置)?;
+        跳空白(&字符表, &mut 位置);
+        if *字符表.get(位置)? != ':' {
             return None;
         }
-        位 += 1;
-        跳空白(&字, &mut 位);
+        位置 += 1;
+        跳空白(&字符表, &mut 位置);
         if 顶层键名 == 键名 {
-            if *字.get(位)? != '"' {
+            if *字符表.get(位置)? != '"' {
                 return None; // 该键的值不是字符串 ⇒ fail-closed
             }
-            return 读串(&字, &mut 位);
+            return 读串(&字符表, &mut 位置);
         }
-        跳值(&字, &mut 位)?;
-        跳空白(&字, &mut 位);
-        match 字.get(位)? {
-            ',' => 位 += 1,
+        跳值(&字符表, &mut 位置)?;
+        跳空白(&字符表, &mut 位置);
+        match 字符表.get(位置)? {
+            ',' => 位置 += 1,
             _ => return None,
         }
     }

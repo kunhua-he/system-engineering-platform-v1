@@ -28,18 +28,18 @@ def 读JSON件(路径: Path):
 
 def 找旁路键(待处理值, 路径: str = "") -> list:
     """在期望对象里递归找旁路键名；返回 [(位置, 键名)]。"""
-    出 = []
+    输出缓冲 = []
     if isinstance(待处理值, dict):
-        for 键, 子 in 待处理值.items():
-            小写 = str(键).strip().lower()
-            小写位 = f"{路径}/{键}" if 路径 else str(键)
+        for 键名, 子值 in 待处理值.items():
+            小写 = str(键名).strip().lower()
+            小写位 = f"{路径}/{键名}" if 路径 else str(键名)
             if 小写 in 旁路键名:
-                出.append((小写位, 键))
-            出.extend(找旁路键(子, 小写位))
+                输出缓冲.append((小写位, 键名))
+            输出缓冲.extend(找旁路键(子值, 小写位))
     elif isinstance(待处理值, list):
-        for 序, 子 in enumerate(待处理值):
-            出.extend(找旁路键(子, f"{路径}[{序}]"))
-    return 出
+        for 序号, 子值 in enumerate(待处理值):
+            输出缓冲.extend(找旁路键(子值, f"{路径}[{序号}]"))
+    return 输出缓冲
 
 
 def 查一步(目录: Path, 步序: dict, 位置: str, 备了关键值: bool, 报告: list) -> int:
@@ -97,16 +97,16 @@ def 查一步(目录: Path, 步序: dict, 位置: str, 备了关键值: bool, �
 
 def 查一份(目录: Path, 期望: dict, 报告: list) -> int:
     """查一份 `期望.json`。返回未判条数。"""
-    名 = 目录.name
+    名称 = 目录.name
     步表 = 期望.get("步骤")
     if not isinstance(步表, list) or not 步表:
-        raise 形状错(f"{名}/期望.json：`步骤` 缺失、不是数组、或是空集（空集不算通过）")
+        raise 形状错(f"{名称}/期望.json：`步骤` 缺失、不是数组、或是空集（空集不算通过）")
     备了关键值 = (目录 / 期望结果文件名).is_file()
     未判 = 0
-    for 序, 步 in enumerate(步表):
-        if not isinstance(步, dict):
-            raise 形状错(f"{名}/期望.json 步骤[{序}]：不是对象")
-        未判 += 查一步(目录, 步, f"{名}/期望.json 步骤[{序}]", 备了关键值, 报告)
+    for 序号, 步序 in enumerate(步表):
+        if not isinstance(步序, dict):
+            raise 形状错(f"{名称}/期望.json 步骤[{序号}]：不是对象")
+        未判 += 查一步(目录, 步序, f"{名称}/期望.json 步骤[{序号}]", 备了关键值, 报告)
     return 未判
 
 
@@ -116,14 +116,14 @@ def 扫案例(根目录: Path) -> tuple:
     未判 = 0
     有案例 = False
     for 目录 in sorted(一个 for 一个 in 根目录.iterdir() if 一个.is_dir()):
-        期 = 目录 / "期望.json"
-        if not 期.is_file():
+        期望路径 = 目录 / "期望.json"
+        if not 期望路径.is_file():
             continue  # 非案例目录（`跑案例/` 那类）
         有案例 = True
         try:
-            未判 += 查一份(目录, 读JSON件(期), 报告)
-        except 形状错 as 错:
-            return [], str(错)
+            未判 += 查一份(目录, 读JSON件(期望路径), 报告)
+        except 形状错 as 错误:
+            return [], str(错误)
     if not 有案例:
         return [], f"案例根 {根目录} 下 0 份 期望.json —— 空集不算通过（判据的可信性.md 第二节）"
     return 报告, None
@@ -131,15 +131,15 @@ def 扫案例(根目录: Path) -> tuple:
 
 def 查根(根目录: Path) -> int:
     """查一个案例根并打读数。返回退出码（0 = 无违反无未判）。"""
-    报告, 错 = 扫案例(根目录)
-    if 错:
-        print(f"工具错误：{错}", file=sys.stderr)
+    报告, 错误 = 扫案例(根目录)
+    if 错误:
+        print(f"工具错误：{错误}", file=sys.stderr)
         return 2
-    违反 = [条 for 条 in 报告 if 条[2] == 判定_违反]
-    未判 = [条 for 条 in 报告 if 条[2] == 判定_未判]
+    违反 = [报告项 for 报告项 in 报告 if 报告项[2] == 判定_违反]
+    未判 = [报告项 for 报告项 in 报告 if 报告项[2] == 判定_未判]
     print(f"形状检查：违反 {len(违反)} 条 · 未判 {len(未判)} 条 · 案例根 {根目录}")
-    for 位, 说, _ in 违反:
-        print(f"- 违反 ｜ {位} ｜ {说}")
-    for 位, 说, _ in 未判:
-        print(f"- 未判 ｜ {位} ｜ {说}")
+    for 位置, 说明, _ in 违反:
+        print(f"- 违反 ｜ {位置} ｜ {说明}")
+    for 位置, 说明, _ in 未判:
+        print(f"- 未判 ｜ {位置} ｜ {说明}")
     return 0 if (not 违反 and not 未判) else 1

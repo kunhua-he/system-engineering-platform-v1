@@ -60,17 +60,17 @@ pub(crate) fn 判号段表(项表: 表段<号段>, 名称: &'static str) -> Resu
         return Err(载入错误::号段非法 { 表: 名称, 序: 0 });
     }
     let 段s = 号段切片(项表);
-    for (序, 段) in 段s.iter().enumerate() {
-        let 项序 = 序 as u32;
-        if 段.起 > 段.止 {
+    for (序号, 号段) in 段s.iter().enumerate() {
+        let 项序 = 序号 as u32;
+        if 号段.起 > 号段.止 {
             return Err(载入错误::号段非法 { 表: 名称, 序: 项序 });
         }
-        let 类 = 段.止.取号值() / 号段类宽度;
-        if 段.起.取号值() / 号段类宽度 != 类 || 类 >= 号段类个数 {
-            return Err(载入错误::号段冲突 { 起: 段.起.取号值(), 止: 段.止.取号值() });
+        let 类别 = 号段.止.取号值() / 号段类宽度;
+        if 号段.起.取号值() / 号段类宽度 != 类别 || 类别 >= 号段类个数 {
+            return Err(载入错误::号段冲突 { 起: 号段.起.取号值(), 止: 号段.止.取号值() });
         }
         for (另序, 另段) in 段s[..项序 as usize].iter().enumerate() {
-            if 段.相交(另段) {
+            if 号段.相交(另段) {
                 return Err(载入错误::号段表内重叠 {
                     表: 名称,
                     序: 项序,
@@ -107,9 +107,9 @@ pub(crate) fn 判命令编号不与作废号冲突(
     if 项数 == 0 || 声明.命令表.项表.is_null() {
         return Ok(());
     }
-    for 序 in 0..项数 as usize {
+    for 序号 in 0..项数 as usize {
         // SAFETY: 项数 > 0 且项表非空，序 < 项数。
-        let 命令 = unsafe { &*声明.命令表.项表.add(序) };
+        let 命令 = unsafe { &*声明.命令表.项表.add(序号) };
         let 命令号 = 命令.编号;
         if 号已作废(作废表, 命令号) {
             return Err(载入错误::号段冲突 { 起: 命令号.取号值(), 止: 命令号.取号值() });
@@ -142,23 +142,23 @@ pub(crate) fn 依赖清单合法(
     if 项数 as usize > 依赖清单上限 {
         return false;
     }
-    for 序 in 0..项数 as usize {
+    for 序号 in 0..项数 as usize {
         // SAFETY: 项数 > 0 且项表非空，序 < 项数。
-        let 依赖项 = unsafe { *声明.依赖清单.项表.add(序) };
+        let 依赖项 = unsafe { *声明.依赖清单.项表.add(序号) };
         // SAFETY: 依赖项按契约是静态只读的 NUL 结尾标识串。
-        let Some(串) = (unsafe { 读串(依赖项, 标识串字节数 + 1) }) else {
+        let Some(字节串) = (unsafe { 读串(依赖项, 标识串字节数 + 1) }) else {
             return false;
         };
-        if !是合法标识串(串) || 串 == 自身 {
+        if !是合法标识串(字节串) || 字节串 == 自身 {
             return false;
         }
         if !台账.是否已载入(依赖项) {
             return false; // 依赖不在台账里 ⇒ 依赖缺失
         }
-        if 已见[..序].contains(&依赖项) {
+        if 已见[..序号].contains(&依赖项) {
             return false; // 重复依赖：清单不自洽
         }
-        已见[序] = 依赖项;
+        已见[序号] = 依赖项;
     }
     true
 }
@@ -272,15 +272,15 @@ pub(crate) fn 判声明自洽(声明: &平台信息) -> Result<(), 载入错误>
         if 类型.元素个数 > 0 && 类型.元素表.is_null() {
             return Err(载入错误::声明不自洽 { 命令号: 能力号::新建(0) });
         }
-        for 位 in 0..类型.命令个数 {
+        for 位置 in 0..类型.命令个数 {
             // SAFETY: 命令个数 > 0 且命令号表非空，位 < 命令个数。
             // 命令号表存的是**裸 `u32` 编号**（表段<u32>，与 `命令信息.编号` 同源），
             // 过闸处包成 `能力号` —— 号空间在闸的形参上立住。
-            let 命令号 = 能力号::新建(unsafe { *类型.命令号表.add(位 as usize) });
+            let 命令号 = 能力号::新建(unsafe { *类型.命令号表.add(位置 as usize) });
             if !命令表含编号(声明, 命令号) {
                 return Err(载入错误::声明不自洽 { 命令号 });
             }
-            for 前位 in 0..位 {
+            for 前位 in 0..位置 {
                 // SAFETY: 同上，前位 < 位 < 命令个数。
                 if 能力号::新建(unsafe { *类型.命令号表.add(前位 as usize) }) == 命令号 {
                     return Err(载入错误::声明不自洽 { 命令号 });
@@ -324,9 +324,9 @@ fn 命令表含编号(声明: &平台信息, 命令号: 能力号) -> bool {
     if 项数 == 0 || 声明.命令表.项表.is_null() {
         return false;
     }
-    for 序 in 0..项数 as usize {
+    for 序号 in 0..项数 as usize {
         // SAFETY: 项数 > 0 且项表非空，序 < 项数。
-        if unsafe { (*声明.命令表.项表.add(序)).编号 } == 命令号 {
+        if unsafe { (*声明.命令表.项表.add(序号)).编号 } == 命令号 {
             return true;
         }
     }
@@ -341,8 +341,8 @@ pub(crate) fn 读段位表(项表: 表段<u32>) -> Result<&'static [u32], 载入
     }
     // SAFETY: 契约保证错误段位表指向静态只读数组；项数 > 0 且项表非空。
     let 段s = unsafe { core::slice::from_raw_parts(项表.项表, 项表.项数 as usize) };
-    for (序, 段位) in 段s.iter().enumerate() {
-        if 段s[..序].contains(段位) {
+    for (序号, 段位) in 段s.iter().enumerate() {
+        if 段s[..序号].contains(段位) {
             return Err(载入错误::错误段位重复 { 段位: *段位 });
         }
     }
