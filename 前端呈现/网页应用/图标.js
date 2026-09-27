@@ -64,9 +64,9 @@ export const 图形 = {
   剪辑历史: { 路径: "M8 2.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM8 5v3.5l2.5 1.5" },
 };
 
-/** 建一个 SVG 节点。`名` 不在表里就给一个空框（宁可空着，也不编一个形状出来）。 */
-export function 画图标(名) {
-  const 图 = 图形[名] || { 路径: "M1 1h14v14H1z" };
+/** 建一个 SVG 节点。`名称` 不在表里就给一个空框（宁可空着，也不编一个形状出来）。 */
+export function 画图标(名称) {
+  const 图 = 图形[名称] || { 路径: "M1 1h14v14H1z" };
   const 节 = document.createElementNS(命名空间, "svg");
   节.setAttribute("viewBox", "0 0 16 16");
   节.setAttribute("aria-hidden", "true");

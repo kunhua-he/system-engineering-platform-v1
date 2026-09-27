@@ -80,10 +80,10 @@ function 摆卡(取元素) {
   const 盒 = 取元素("出口卡");
   const 项 = 选中(取元素);
   清空(盒);
-  const 行 = (键, 值, 类名) => {
+  const 行 = (键名, 待处理值, 类名) => {
     const 节 = 建元素("div", "键值行");
-    节.append(建元素("div", "键", 键));
-    节.append(建元素("div", 类名 || "内", 值));
+    节.append(建元素("div", "键", 键名));
+    节.append(建元素("div", 类名 || "内", 待处理值));
     盒.append(节);
   };
   行("产物形态", 项.形态);
@@ -189,10 +189,10 @@ async function 触发导出(取元素) {
 /** 装好导出目标这一区：下拉五个选项 + 一个真调按钮。 */
 export function 装导出目标(取元素, 编辑) {
   const 选 = 取元素("出口选");
-  出口表.forEach((项, 位) => {
+  出口表.forEach((一项, 位置) => {
     const 项节 = document.createElement("option");
-    项节.value = String(位);
-    项节.textContent = 项.名 + " · " + 项.号段;
+    项节.value = String(位置);
+    项节.textContent = 一项.名 + " · " + 一项.号段;
     选.append(项节);
   });
   选.addEventListener("change", () => 摆卡(取元素));

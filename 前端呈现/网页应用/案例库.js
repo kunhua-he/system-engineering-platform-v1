@@ -21,16 +21,16 @@ import { 置文本 } from "./编辑器.js";
 import { 记流水 } from "./剪辑历史.js";
 
 /** 把用户敲的路径补成同源绝对路径（只补一个前导斜杠，其余原样）。 */
-function 成路(文) {
-  const 净 = (文 || "").trim();
+function 成路(文本) {
+  const 净 = (文本 || "").trim();
   if (!净) return "";
   return 净.startsWith("/") ? 净 : "/" + 净;
 }
 
 /** 按值的类型给一句状态（成功 / 失败），**不读键名**（同 `呈现.js::摘要`）。 */
-function 报状态(状态, 应答, 尾) {
+function 报状态(状态, 应答, 尾部) {
   const 词 = 摘要(应答.体);
-  写状态(状态, "HTTP " + 应答.状态 + " · " + 词.词 + (尾 ? " · " + 尾 : ""),
+  写状态(状态, "HTTP " + 应答.状态 + " · " + 词.词 + (尾部 ? " · " + 尾部 : ""),
     词.类 === "好" ? true : 词.类 === "坏" ? false : undefined);
   return 词;
 }
@@ -75,8 +75,8 @@ export function 装案例库(取元素, 编辑) {
 
   取元素("案例列按钮").addEventListener("click", 列案例);
   取元素("案例跑按钮").addEventListener("click", 跑一个);
-  取元素("案例标识").addEventListener("keydown", (事) => {
-    if (事.key === "Enter") 跑一个();
+  取元素("案例标识").addEventListener("keydown", (事件) => {
+    if (事件.key === "Enter") 跑一个();
   });
 
   // ── 通用同源只读口（静态件，不是端点）──────────────────────────────────

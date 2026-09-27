@@ -31,15 +31,15 @@ export function 装底页签() {
   const 体 = document.getElementById("页签体");
   const 钮表 = new Map();
 
-  function 切页签(名) {
+  function 切页签(名称) {
     for (const [格名, 钮] of 钮表) {
-      const 选 = 格名 === 名;
+      const 选 = 格名 === 名称;
       钮.classList.toggle("选", 选);
       钮.setAttribute("aria-selected", 选 ? "true" : "false");
     }
     for (const [, id] of 页签表) {
       const 格 = document.getElementById(id);
-      if (格) 格.classList.toggle("选", id === 页签表.find(([格名]) => 格名 === 名)[1]);
+      if (格) 格.classList.toggle("选", id === 页签表.find(([格名]) => 格名 === 名称)[1]);
     }
     体.scrollTop = 0;
   }

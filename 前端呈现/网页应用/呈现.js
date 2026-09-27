@@ -22,42 +22,42 @@ export function 清空(容器) {
 }
 
 /** 标量 → 显示文本。 */
-export function 字面(值) {
-  if (值 === null || 值 === undefined) return "null";
-  if (typeof 值 === "boolean") return 值 ? "true" : "false";
-  return String(值);
+export function 字面(待处理值) {
+  if (待处理值 === null || 待处理值 === undefined) return "null";
+  if (typeof 待处理值 === "boolean") return 待处理值 ? "true" : "false";
+  return String(待处理值);
 }
 
 /** 标量 → 类名（只看类型）。 */
-export function 取类别(值) {
-  if (值 === null || 值 === undefined) return "空";
-  if (typeof 值 === "boolean") return 值 ? "真" : "假";
-  if (typeof 值 === "number") return "数";
+export function 取类别(待处理值) {
+  if (待处理值 === null || 待处理值 === undefined) return "空";
+  if (typeof 待处理值 === "boolean") return 待处理值 ? "真" : "假";
+  if (typeof 待处理值 === "number") return "数";
   return "文";
 }
 
-function 是对象(值) {
-  return 值 !== null && typeof 值 === "object" && !Array.isArray(值);
+function 是对象(待处理值) {
+  return 待处理值 !== null && typeof 待处理值 === "object" && !Array.isArray(待处理值);
 }
 
 /** 任意 JSON 值 → DOM。深度只用于缩进类名。 */
-export function 摆值(容器, 值, 深度 = 0) {
-  if (值 === null || 值 === undefined) {
+export function 摆值(容器, 待处理值, 深度 = 0) {
+  if (待处理值 === null || 待处理值 === undefined) {
     容器.append(建元素("span", "空", "null"));
     return;
   }
-  if (typeof 值 !== "object") {
-    容器.append(建元素("span", 取类别(值), 字面(值)));
+  if (typeof 待处理值 !== "object") {
+    容器.append(建元素("span", 取类别(待处理值), 字面(待处理值)));
     return;
   }
-  if (Array.isArray(值)) {
+  if (Array.isArray(待处理值)) {
     const 表 = 建元素("div", "表 数组");
-    if (值.length === 0) 表.append(建元素("div", "空", "（空表）"));
-    值.forEach((项, 位) => {
+    if (待处理值.length === 0) 表.append(建元素("div", "空", "（空表）"));
+    待处理值.forEach((一项, 位置) => {
       const 行 = 建元素("div", "数组项");
-      行.append(建元素("div", "位", "第 " + (位 + 1) + " 项"));
+      行.append(建元素("div", "位", "第 " + (位置 + 1) + " 项"));
       const 内 = 建元素("div", "内");
-      摆值(内, 项, 深度 + 1);
+      摆值(内, 一项, 深度 + 1);
       行.append(内);
       表.append(行);
     });
@@ -65,13 +65,13 @@ export function 摆值(容器, 值, 深度 = 0) {
     return;
   }
   const 表 = 建元素("div", "表 对象");
-  const 键集 = Object.keys(值);
+  const 键集 = Object.keys(待处理值);
   if (键集.length === 0) 表.append(建元素("div", "空", "（空对象）"));
   for (const 键 of 键集) {
     const 行 = 建元素("div", "键值行");
     行.append(建元素("div", "键", 键));
     const 内 = 建元素("div", "内");
-    摆值(内, 值[键], 深度 + 1);
+    摆值(内, 待处理值[键], 深度 + 1);
     行.append(内);
     表.append(行);
   }
@@ -79,23 +79,23 @@ export function 摆值(容器, 值, 深度 = 0) {
 }
 
 /** 一层对象 → 一行「键 值 · 键 值」（标签取自数据本身，不是源码里写死的名字）。 */
-export function 扁平(值) {
-  if (!是对象(值)) return 字面(值);
-  return Object.keys(值)
-    .map((键) => 键 + " " + 字面(值[键]))
+export function 扁平(待处理值) {
+  if (!是对象(待处理值)) return 字面(待处理值);
+  return Object.keys(待处理值)
+    .map((键名) => 键名 + " " + 字面(待处理值[键名]))
     .join(" · ");
 }
 
 /** 摆成「一行读数」：顶层每个键值对一行内联，够一眼扫出来。 */
-export function 摆行内(容器, 值) {
-  if (!是对象(值)) {
-    容器.append(建元素("span", 取类别(值), 字面(值)));
+export function 摆行内(容器, 待处理值) {
+  if (!是对象(待处理值)) {
+    容器.append(建元素("span", 取类别(待处理值), 字面(待处理值)));
     return;
   }
-  for (const 键 of Object.keys(值)) {
+  for (const 键 of Object.keys(待处理值)) {
     const 对 = 建元素("span", "对");
     对.append(建元素("span", "键", 键 + "："));
-    对.append(建元素("span", "文", 扁平(值[键])));
+    对.append(建元素("span", "文", 扁平(待处理值[键])));
     容器.append(对);
   }
 }
@@ -104,13 +104,13 @@ export function 摆行内(容器, 值) {
  * 按值的类型扫出一个词：顶层有 `false` ⇒ 失败；只有 `true` ⇒ 成功；都不是 ⇒ 未知。
  * **不读键名**，所以后端把字段改名也不影响它。
  */
-export function 摘要(体) {
-  if (!是对象(体)) return { 词: "未知", 类: "灰" };
+export function 摘要(应答体) {
+  if (!是对象(应答体)) return { 词: "未知", 类: "灰" };
   let 见真 = false;
   let 见假 = false;
-  for (const 键 of Object.keys(体)) {
-    if (体[键] === true) 见真 = true;
-    if (体[键] === false) 见假 = true;
+  for (const 键 of Object.keys(应答体)) {
+    if (应答体[键] === true) 见真 = true;
+    if (应答体[键] === false) 见假 = true;
   }
   if (见假) return { 词: "失败", 类: "坏" };
   if (见真) return { 词: "成功", 类: "好" };
@@ -143,29 +143,29 @@ export function 摆应答(容器, 应答) {
 }
 
 /** 一份静态件 → DOM：HTTP 状态 + 原文。 */
-export function 摆件(容器, 路, 件) {
+export function 摆件(容器, 路径, 节点件) {
   清空(容器);
   const 头 = 建元素("div", "应答头");
-  头.append(建元素("span", 件.状态 === 200 ? "状态 好" : "状态 坏", "HTTP " + 件.状态));
-  头.append(建元素("span", "步号", 路));
+  头.append(建元素("span", 节点件.状态 === 200 ? "状态 好" : "状态 坏", "HTTP " + 节点件.状态));
+  头.append(建元素("span", "步号", 路径));
   容器.append(头);
   const 体盒 = 建元素("div", "体盒");
-  if (件.状态 !== 200) {
+  if (节点件.状态 !== 200) {
     体盒.append(建元素("p", "提示 坏", "取不到。同源静态托管那一侧没把这个路径交出来（接口面只实现四个端点，实测请求 / 回 404）—— 这是托管侧的缺口，不是本页能补的。"));
   }
-  体盒.append(建元素("pre", "原文", 件.文));
+  体盒.append(建元素("pre", "原文", 节点件.文));
   容器.append(体盒);
 }
 
 /** 一段说明文字（用于网络层失败这类本页自身要报的事）。 */
-export function 摆消息(容器, 文) {
+export function 摆消息(容器, 文本) {
   清空(容器);
-  容器.append(建元素("p", "提示 坏", 文));
+  容器.append(建元素("p", "提示 坏", 文本));
 }
 
-/** 给一个状态节点写一句话。`好` 三态：true 绿 · false 红 · undefined 灰。 */
-export function 写状态(节点, 文, 好) {
+/** 给一个状态节点写一句话。`是否好` 三态：true 绿 · false 红 · undefined 灰。 */
+export function 写状态(节点, 文本, 是否好) {
   if (!节点) return;
-  节点.textContent = 文 || "";
-  节点.className = "状态" + (好 === undefined ? "" : 好 ? " 好" : " 坏");
+  节点.textContent = 文本 || "";
+  节点.className = "状态" + (是否好 === undefined ? "" : 是否好 ? " 好" : " 坏");
 }

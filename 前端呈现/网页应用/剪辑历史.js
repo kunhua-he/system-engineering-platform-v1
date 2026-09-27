@@ -13,14 +13,14 @@ import { 建元素, 清空 } from "./呈现.js";
 const 流水 = [];
 const 上限 = 300;
 
-/** 一行：时刻 · 触发者 · 读数。`类` 是触发者，`文` 是真实读数。 */
-export function 记流水(类, 文) {
+/** 一行：时刻 · 触发者 · 读数。`类别` 是触发者，`文本` 是真实读数。 */
+export function 记流水(类别, 文本) {
   const 时 = new Date();
-  const 补 = (数) => String(数).padStart(2, "0");
+  const 补 = (个数) => String(个数).padStart(2, "0");
   流水.push({
     时: 补(时.getHours()) + ":" + 补(时.getMinutes()) + ":" + 补(时.getSeconds()),
-    类,
-    文,
+    类: 类别,
+    文: 文本,
   });
   if (流水.length > 上限) 流水.splice(0, 流水.length - 上限);
   画流水();

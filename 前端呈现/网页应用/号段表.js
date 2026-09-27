@@ -77,10 +77,10 @@ export async function 拉扩展表() {
 
 /** 一个编号落在哪一段。落不进任何一段就回 `null`（洞是合法的：号只增不复用）。 */
 export function 找段(编号) {
-  return 号段.find((段) => 编号 >= 段.起 && 编号 <= 段.止) || null;
+  return 号段.find((号段) => 编号 >= 号段.起 && 编号 <= 号段.止) || null;
 }
 
 /** 一个编号落在哪个扩展里。落不进任何扩展就回 `null`（底座自有那一段、或清单还没拉到时）。 */
 export function 找扩展(编号) {
-  return 扩展表.find((扩) => 编号 >= 扩.起 && 编号 <= 扩.止) || null;
+  return 扩展表.find((扩展) => 编号 >= 扩展.起 && 编号 <= 扩展.止) || null;
 }
