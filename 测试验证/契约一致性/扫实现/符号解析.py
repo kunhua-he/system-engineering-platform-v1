@@ -40,13 +40,13 @@ def 解表达式(文本, 项表: dict) -> object:
     裸值 = 解整数(文本)
     if 裸值 is not None:
         return 裸值
-    换 = 文本
-    for 名 in sorted(项表, key=len, reverse=True):
-        值 = 项表[名]
-        if 值 is None:
+    代换文本 = 文本
+    for 名称 in sorted(项表, key=len, reverse=True):
+        待处理值 = 项表[名称]
+        if 待处理值 is None:
             continue
-        换 = re.sub(r"(?<![\w:])" + re.escape(名) + r"(?![\w:])", str(值), 换)
-    return 解整数(换)
+        代换文本 = re.sub(r"(?<![\w:])" + re.escape(名称) + r"(?![\w:])", str(待处理值), 代换文本)
+    return 解整数(代换文本)
 
 
 def 末段(文本: str) -> str:
@@ -76,12 +76,12 @@ def 解构造器(文本: str, 符号表: dict = None, 本表: dict = None) -> ob
     # `路径::类型名::新(<内层>)`
     匹配 = re.fullmatch(r"[\w:]+::新建\s*\(\s*(.+?)\s*\)", 文本)
     if 匹配:
-        内 = 匹配.group(1)
-        数 = 解整数(内)
-        if 数 is not None:
-            return 数
+        内层 = 匹配.group(1)
+        个数 = 解整数(内层)
+        if 个数 is not None:
+            return 个数
         if 符号表 is not None and 本表 is not None:
-            return 解符号(内, 符号表, 本表)
+            return 解符号(内层, 符号表, 本表)
         return None
     # `<整数字面量>.into()`（可带类型后缀：`0u32.into()` / `0_usize.into()`）
     匹配 = re.fullmatch(r"(\d+)\s*(?:[a-zA-Z]\w*)?\s*\.\s*into\s*\(\s*\)", 文本)
@@ -112,19 +112,19 @@ def 解符号(文本, 符号表: dict, 本表: dict) -> object:
     # 先按**全路径**（含模块限定名）找，再退回**末段** —— 同名的常量分属不同 `pub mod` 时，
     # 只有全路径能消歧（`槽标志::空槽标志` 与 `常量排布::无值` 是两个数）。
     候选 = [文本]
-    for 前 in ("v1_contract::", "crate::"):
-        if 文本.startswith(前):
-            候选.append(文本[len(前):])
-    for 候 in 候选:
-        if 候 in 本表:
-            return 本表[候]
-        if 候 in 符号表:
-            return 符号表[候]
-    名 = 末段(文本)
-    if 名 in 本表:
-        return 本表[名]
-    if 名 in 符号表:
-        return 符号表[名]
+    for 前缀 in ("v1_contract::", "crate::"):
+        if 文本.startswith(前缀):
+            候选.append(文本[len(前缀):])
+    for 候选 in 候选:
+        if 候选 in 本表:
+            return 本表[候选]
+        if 候选 in 符号表:
+            return 符号表[候选]
+    名称 = 末段(文本)
+    if 名称 in 本表:
+        return 本表[名称]
+    if 名称 in 符号表:
+        return 符号表[名称]
     return 解表达式(文本, {**符号表, **本表})
 
 
@@ -149,39 +149,39 @@ def 建符号表(件表: dict, 掩表: dict = None) -> dict:
     `通知返回` / `常量排布` 就静默丢出表。改成扫 `契约源目录` 下全部 `.rs`（含子目录）⇒
     下次再搬也不丢（同一类病：坏了没人知道）。
     """
-    表 = {}
+    项表 = {}
     掩表 = 掩表 or {}
-    for 键 in sorted(件表):
-        if not (键.startswith(契约源目录) and 键.endswith(".rs")):
+    for 键名 in sorted(件表):
+        if not (键名.startswith(契约源目录) and 键名.endswith(".rs")):
             continue
-        文 = 件表.get(键)
-        if 文 is None:
+        文本 = 件表.get(键名)
+        if 文本 is None:
             continue
-        掩 = 掩表.get(键) or 掩码(文)
+        掩码文本 = 掩表.get(键名) or 掩码(文本)
         # `pub const <名>: <t> = <整数字面量>;`（顶层或缩进都认；`pub const fn` 不匹配）
         for 匹配 in re.finditer(
-            r"(?m)^\s*pub\s+const\s+([^\s:]+)\s*:\s*[^=;]*?=\s*([^;]+);", 掩
+            r"(?m)^\s*pub\s+const\s+([^\s:]+)\s*:\s*[^=;]*?=\s*([^;]+);", 掩码文本
         ):
             裸值 = 解常量值(匹配.group(2))
             if 裸值 is not None:
-                表[匹配.group(1)] = 裸值
+                项表[匹配.group(1)] = 裸值
         # `pub mod <M> { … pub const <名>: <t> = <整数字面量>; … }`
         # 同时收**模块限定名**（`M::名`）与**末段名**（`名`）两种键。
-        for mm in re.finditer(r"pub\s+mod\s+([^\s{]+)\s*\{", 掩):
-            止 = 配对(掩, mm.end() - 1)
-            if 止 < 0:
+        for mm in re.finditer(r"pub\s+mod\s+([^\s{]+)\s*\{", 掩码文本):
+            区间终点 = 配对(掩码文本, mm.end() - 1)
+            if 区间终点 < 0:
                 continue
-            模 = mm.group(1)
+            模块名 = mm.group(1)
             for 常量配 in re.finditer(
-                r"pub\s+const\s+([^\s:]+)\s*:\s*[^=;]*?=\s*([^;]+);", 掩[mm.end() : 止]
+                r"pub\s+const\s+([^\s:]+)\s*:\s*[^=;]*?=\s*([^;]+);", 掩码文本[mm.end() : 区间终点]
             ):
                 裸值 = 解常量值(常量配.group(2))
                 if 裸值 is not None:
-                    表[常量配.group(1)] = 裸值
-                    表[f"{模}::{常量配.group(1)}"] = 裸值
+                    项表[常量配.group(1)] = 裸值
+                    项表[f"{模块名}::{常量配.group(1)}"] = 裸值
         # `pub use <路径>::<原名> as <别名>;`
-        for 匹配 in re.finditer(r"pub\s+use\s+([^\s;]+?)\s+as\s+([^\s;]+)\s*;", 掩):
+        for 匹配 in re.finditer(r"pub\s+use\s+([^\s;]+?)\s+as\s+([^\s;]+)\s*;", 掩码文本):
             原名 = 匹配.group(1).split("::")[-1]
-            if 原名 in 表:
-                表[匹配.group(2)] = 表[原名]
-    return 表
+            if 原名 in 项表:
+                项表[匹配.group(2)] = 项表[原名]
+    return 项表
