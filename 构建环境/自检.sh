@@ -17,13 +17,19 @@ if [ "$PINNED" = "$ACTUAL" ]; then echo "① Rust 工具链  $ACTUAL == 钉的 $
 else echo "① Rust 工具链  实际 $ACTUAL != 钉的 $PINNED  ✗"; exit 1; fi
 
 MEMBERS=0
-for d in 契约声明 运行内核/*/; do
+for d in 契约声明 运行内核/*/ 跨语言适配/*/ 对外接口面/*/ 测试验证/案例/*/; do
   [ -f "$d/Cargo.toml" ] && MEMBERS=$((MEMBERS+1))
 done
 LOCKED=0
 [ -f Cargo.lock ] && LOCKED="$(grep -c '^\[\[package\]\]' Cargo.lock || true)"
-if [ "$LOCKED" -le "$MEMBERS" ]; then echo "② Rust 依赖    lock 里 $LOCKED 个包 · 本仓成员 $MEMBERS 个 ⇒ 无第三方  ✓"
-else echo "② Rust 依赖    lock 里 $LOCKED 个包 > 本仓成员 $MEMBERS 个 ⇒ 有第三方  ✗"; exit 1; fi
+# ③ 第三方的**定义**：lock 里带 `source =` 的包（来自 registry 或 git）。仓内件（工作区成员 ·
+#    被 exclude 但仍是路径依赖的扩展）**没有** source 字段 ⇒ 问「有没有 source」才是直接问法。
+#    ★ 不许改成「数包数 ≤ 数成员」：那个口径实测**假红**（2026-09-27）——成员得自己数，
+#    数漏一个就误判；而被 exclude 的扩展仍进 lock。当时 lock 15 包 = 工作区 14 成员 + 1 被 exclude 的扩展，
+#    旧口径只数出 10 个成员 ⇒ 假报「有第三方」，把零依赖的仓判成违规。
+THIRD_PKG="$(grep -c '^source = ' Cargo.lock || true)"
+if [ "$THIRD_PKG" -eq 0 ]; then echo "② Rust 依赖    lock 里 $LOCKED 个包（本仓 $MEMBERS 个成员）· 无一来自 registry/git ⇒ 无第三方  ✓"
+else echo "② Rust 依赖    lock 里 $THIRD_PKG 个包来自 registry/git ⇒ 有第三方  ✗"; exit 1; fi
 
 START=$(python3 -c 'import time;print(int(time.time()*1000))')
 cargo check --workspace --locked >/dev/null 2>&1 || { echo "③ Rust 静态检查  失败  ✗"; exit 1; }
