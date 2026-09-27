@@ -1,4 +1,8 @@
-"""核心 —— 第六节硬数的机器判据：扫描 · 判定 · 报读数 · 自测。"""
+"""核心 —— 第六节硬数的机器判据：扫描 · 判定 · 报读数 · 自测。
+
+几条行模式各管一种写法（名字自明）：`顶层项行模式` = Rust 顶层项 · `定义行模式` = `def`/`class` ·
+`赋值行模式` = 模块级赋值 · `主入口行模式` = 脚本主入口。
+"""
 import os
 import re
 import tempfile
@@ -13,16 +17,17 @@ import tempfile
 # 只堵住将来。
 源码后缀 = (".rs", ".py", ".js", ".css", ".html", ".sh", ".swift")
 跳过目录 = {".git", "构建环境", "__pycache__"}
-RUST入口名 = {"lib.rs", "main.rs", "mod.rs"}
+入口件名 = {"lib.rs", "main.rs", "mod.rs"}
 
-# Rust 顶层项定义（含 `pub` / `pub(crate)` / `unsafe` / `extern "C"` 前缀）。
-RUST定义 = re.compile(
+# Rust 语法的顶层项定义（含 `pub` / `pub(crate)` / `unsafe` / `extern "C"` 前缀）——
+# 名字不带「Rust」二字：与它并列的那几条是 Python 语法，各由注释与本名自明。
+顶层项行模式 = re.compile(
     r"^(?:pub(?:\s*\([^)]*\))?\s+)?(?:unsafe\s+)?(?:extern\s+\"[^\"]*\"\s+)?"
     r"(fn|struct|enum|trait|impl|const|static|type|union|macro_rules!)\b"
 )
-PY定义 = re.compile(r"^(?:async\s+)?(?:def|class)\s+([0-9A-Za-z_\u4e00-\u9fff]+)")
-PY赋值 = re.compile(r"^([0-9A-Za-z_\u4e00-\u9fff]+)\s*(?::[^=]+)?=(?!=)")
-PY主入口 = re.compile(r"^if __name__ == ['\"]__main__['\"]:", re.M)
+定义行模式 = re.compile(r"^(?:async\s+)?(?:def|class)\s+([0-9A-Za-z_\u4e00-\u9fff]+)")
+赋值行模式 = re.compile(r"^([0-9A-Za-z_\u4e00-\u9fff]+)\s*(?::[^=]+)?=(?!=)")
+主入口行模式 = re.compile(r"^if __name__ == ['\"]__main__['\"]:", re.M)
 
 
 def 是源码(名):
@@ -47,11 +52,11 @@ def 读文本(路):
 def 入口类(相对路, 文本):
     """返回入口类别；不是入口给 None。"""
     名 = os.path.basename(相对路)
-    if 名 in RUST入口名:
+    if 名 in 入口件名:
         return "rust"
     if 名 == "__init__.py":
         return "py-init"
-    if 名.endswith(".py") and PY主入口.search(文本):
+    if 名.endswith(".py") and 主入口行模式.search(文本):
         return "py-script"
     return None
 
@@ -63,24 +68,24 @@ def 入口实现项(类别, 相对路, 文本):
         # 二进制入口 `main.rs` 的 `fn main` 是语言强制，不是「实现」——唯一豁免。
         豁免主函数 = os.path.basename(相对路) == "main.rs"
         for 序, 行 in enumerate(文本.splitlines(), 1):
-            匹配 = RUST定义.match(行.strip())
+            匹配 = 顶层项行模式.match(行.strip())
             if 匹配:
                 if 豁免主函数 and 匹配.group(1) == "fn" and 行.strip().startswith(("fn main(", "pub fn main(")):
                     continue
                 命中表.append((序, 匹配.group(1), 行.strip()))
     elif 类别 == "py-init":
         for 序, 行 in enumerate(文本.splitlines(), 1):
-            匹配 = PY定义.match(行)
+            匹配 = 定义行模式.match(行)
             if 匹配:
                 命中表.append((序, "def/class " + 匹配.group(1), 行.strip()))
                 continue
-            匹配 = PY赋值.match(行)
+            匹配 = 赋值行模式.match(行)
             if 匹配 and 匹配.group(1) != "__all__":
                 命中表.append((序, "赋值 " + 匹配.group(1), 行.strip()))
     else:  # py-script：只许一个入口函数
         定义 = []
         for 序, 行 in enumerate(文本.splitlines(), 1):
-            匹配 = PY定义.match(行)
+            匹配 = 定义行模式.match(行)
             if 匹配:
                 定义.append((序, 匹配.group(1), 行.strip()))
         if len(定义) > 1:

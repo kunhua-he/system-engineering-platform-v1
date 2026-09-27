@@ -53,8 +53,8 @@ _赋值 = re.compile(r"([\w.\[\]]*(?:毫秒|秒))\s*(?::[^=\n]*)?=\s*([0-9]+(?:\
 # 同样由 `[:=]` 单字符挡掉 `==` / `>=` / `<=`。
 _超时参 = re.compile(r"\btimeout\s*[:=]\s*([0-9]+(?:\.[0-9]+)?)")
 # Rust：`Duration::from_secs(N)` / `Duration::from_millis(N)`。
-_Rust秒 = re.compile(r"from_secs\s*\(\s*([0-9]+(?:\.[0-9]+)?)\s*\)")
-_Rust毫秒 = re.compile(r"from_millis\s*\(\s*([0-9]+(?:\.[0-9]+)?)\s*\)")
+_秒实参模式 = re.compile(r"from_secs\s*\(\s*([0-9]+(?:\.[0-9]+)?)\s*\)")
+_毫秒实参模式 = re.compile(r"from_millis\s*\(\s*([0-9]+(?:\.[0-9]+)?)\s*\)")
 
 # 行注释符：**本判据自身按后缀认**（见模块 docstring 的「行注释」段）。
 # `.js`/`.ts`/`.go`/`.java`/`.c*` 都是 `//`，已由共享解析器覆盖；`.sh` 不在 `代码后缀` 内。
@@ -106,10 +106,10 @@ def 扫超时(件表: dict) -> list:
                     出.append((键, 号, "`timeout=%s`（按毫秒）> 上限 %d 毫秒" % (值, 毫秒上限), False))
                 elif 100 < 数 < 1000:
                     出.append((键, 号, "`timeout=%s`：**单位分不出**（101–999）" % 值, True))
-            for 值 in _Rust秒.findall(行):
+            for 值 in _秒实参模式.findall(行):
                 if float(值) > 秒上限:
                     出.append((键, 号, "`Duration::from_secs(%s)` > 上限 %g 秒" % (值, 秒上限), False))
-            for 值 in _Rust毫秒.findall(行):
+            for 值 in _毫秒实参模式.findall(行):
                 if float(值) > 毫秒上限:
                     出.append((键, 号, "`Duration::from_millis(%s)` > 上限 %d 毫秒" % (值, 毫秒上限), False))
     return 出

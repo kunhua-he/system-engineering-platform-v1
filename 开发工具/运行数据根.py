@@ -33,10 +33,10 @@ def main(argv=None):
     python路 = 一致性判据.镜像源
     if "--python" in 参:
         python路 = Path(参[参.index("--python") + 1])
-    解析路 = 一致性判据.Rust解析
+    解析路 = 一致性判据.真源解析路径
     if "--rust" in 参:
         解析路 = Path(参[参.index("--rust") + 1])
-    子目录路 = 一致性判据.Rust子目录
+    子目录路 = 一致性判据.真源子目录路径
     if "--rust子目录" in 参:
         子目录路 = Path(参[参.index("--rust子目录") + 1])
     if "--反向样本" in 参:
