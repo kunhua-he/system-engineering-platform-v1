@@ -12,29 +12,29 @@ def 解版本(块字节, 资源id):
     def 遍历版本块(区间起点, 止, 层级):
         块起 = 区间起点
         while 块起 + 6 <= 止:
-            长, 值长, 型 = struct.unpack_from("<HHH", 块字节, 块起)
-            if 长 == 0:
+            长度, 值长, 类型 = struct.unpack_from("<HHH", 块字节, 块起)
+            if 长度 == 0:
                 break
-            if 长 < 6 or 块起 + 长 > 止:
-                raise 解析错误("版本资源 %s 的子块长度 %d 越界 @0x%x" % (资源id, 长, 块起))
+            if 长度 < 6 or 块起 + 长度 > 止:
+                raise 解析错误("版本资源 %s 的子块长度 %d 越界 @0x%x" % (资源id, 长度, 块起))
             键末 = 块起 + 6
             while True:
-                if 键末 + 2 > 块起 + 长:
+                if 键末 + 2 > 块起 + 长度:
                     raise 解析错误("版本资源 %s 的键没有 NUL 结尾 @0x%x" % (资源id, 块起))
                 if struct.unpack_from("<H", 块字节, 键末)[0] == 0:
                     break
                 键末 += 2
             键名 = 块字节[块起 + 6:键末].decode("utf-16le")
             值起 = (键末 + 2 + 3) & ~3
-            字节数 = 值长 * 2 if 型 == 1 else 值长
-            if 值起 + 字节数 > 块起 + 长:
+            字节数 = 值长 * 2 if 类型 == 1 else 值长
+            if 值起 + 字节数 > 块起 + 长度:
                 raise 解析错误("版本资源 %s 的子块 %r 的值越界" % (资源id, 键名))
-            if 型 == 1:
+            if 类型 == 1:
                 out.append((层级, 键名, 块字节[值起:值起 + 字节数].decode("utf-16le").rstrip("\0")))
             else:
                 out.append((层级, 键名, "<%d 字节二进制> %s" % (值长, 块字节[值起:值起 + 字节数][:12].hex(" "))))
-            遍历版本块(值起 + 字节数, 块起 + 长, 层级 + 1)     # 型 0 的根块也有子块（StringFileInfo/VarFileInfo）
-            块起 = (块起 + 长 + 3) & ~3
+            遍历版本块(值起 + 字节数, 块起 + 长度, 层级 + 1)     # 型 0 的根块也有子块（StringFileInfo/VarFileInfo）
+            块起 = (块起 + 长度 + 3) & ~3
     遍历版本块(0, len(块字节), 0)
     if not out:
         raise 解析错误("版本资源 %s 没解出任何键" % 资源id)

@@ -45,12 +45,12 @@ def 入口函数(参数):
     出图 = Path(参数[0])
     if len(参数) >= 3:
         try:
-            宽, 高 = int(参数[1]), int(参数[2])
+            宽度, 高度 = int(参数[1]), int(参数[2])
         except ValueError:
             print(f"宽高要是整数：{参数[1]!r} {参数[2]!r}", file=sys.stderr)
             return 1
     else:
-        宽, 高 = 参考尺寸
+        宽度, 高度 = 参考尺寸
     if not 前端目录.is_dir():
         print(f"起不来：前端目录不存在 {前端目录}", file=sys.stderr)
         return 1
@@ -83,7 +83,7 @@ def 入口函数(参数):
                 print("  装法：playwright install chromium", file=sys.stderr)
                 return 1
             try:
-                页面 = 浏览器.new_page(viewport={"width": 宽, "height": 高})
+                页面 = 浏览器.new_page(viewport={"width": 宽度, "height": 高度})
                 # `load` 而不是 `networkidle`：本页会周期性拉 `/接口`，networkidle 可能永远不达。
                 页面.goto(f"http://127.0.0.1:{端口}/", wait_until="load", timeout=5000)
                 页面.wait_for_timeout(800)  # 让首帧布局与字体落定
@@ -97,7 +97,7 @@ def 入口函数(参数):
     if not 出图.is_file():
         print(f"渲染失败：没写出来 {出图}", file=sys.stderr)
         return 1
-    print(f"出图 {出图} · {宽}x{高} · {出图.stat().st_size} 字节 · 静态服务端口 {端口}")
+    print(f"出图 {出图} · {宽度}x{高度} · {出图.stat().st_size} 字节 · 静态服务端口 {端口}")
     print(f"对拍：python3 开发工具/取证/配色对拍.py {参考图.relative_to(仓根)} {出图}")
     return 0
 

@@ -13,14 +13,14 @@ def 探物理槽数(pe, 字典):
         return 0, []
     if not (字典["m_pCmdsFunc"] and 字典["m_pBeginCmdInfo"]):
         return None, []
-    起, 止 = pe.取址(字典["m_pBeginCmdInfo"]), pe.取址(字典["m_pCmdsFunc"])
-    if 止 <= 起 or (止 - 起) % 命令项大小:
+    区间起点, 区间终点 = pe.取址(字典["m_pBeginCmdInfo"]), pe.取址(字典["m_pCmdsFunc"])
+    if 区间终点 <= 区间起点 or (区间终点 - 区间起点) % 命令项大小:
         return None, []
-    槽数 = (止 - 起) // 命令项大小
+    槽数 = (区间终点 - 区间起点) // 命令项大小
     多余槽表 = []
     for 命令序 in range(字典["m_nCmdCount"], min(槽数, 字典["m_nCmdCount"] + 16)):
         try:
-            字段表 = {字段项[2]: (字段项[4], 字段项[5]) for 字段项 in 读字段(pe, pe.转偏移(起 + 命令序 * 命令项大小), 命令字段)}
+            字段表 = {字段项[2]: (字段项[4], 字段项[5]) for 字段项 in 读字段(pe, pe.转偏移(区间起点 + 命令序 * 命令项大小), 命令字段)}
             多余槽表.append((命令序, 字段表["m_szName"][0], 字段表["m_szName"][1]))
         except 解析错误:
             多余槽表.append((命令序, 0, "<解不出命令项>"))
@@ -29,9 +29,9 @@ def 探物理槽数(pe, 字典):
 
 def 计数判定(读数):
     """齐 / 不齐 / 不适用。**不齐必须有证据**：表外那一槽得真解出一个命令名指针。"""
-    声明数, (槽数, 多) = 读数["字典"]["m_nCmdCount"], 读数["物理槽"]
+    声明数, (槽数, 多余槽表) = 读数["字典"]["m_nCmdCount"], 读数["物理槽"]
     if 槽数 is None:
         return "不适用"
     if 槽数 == 声明数:
         return "齐"
-    return "不齐" if (多 and 多[0][1]) else "不适用（间距不是表扩展）"
+    return "不齐" if (多余槽表 and 多余槽表[0][1]) else "不适用（间距不是表扩展）"

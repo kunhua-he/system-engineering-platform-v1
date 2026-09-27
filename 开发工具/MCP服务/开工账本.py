@@ -106,14 +106,14 @@ def 读开工(连接, 开工号: str):
 
 
 def 列开工(连接, 上限: int = 20) -> list:
-    return [dict(行) for 行 in 连接.execute(
+    return [dict(数据行) for 数据行 in 连接.execute(
         "select * from 开工 order by 开工号 desc limit ?", (上限,))]
 
 
 def 搜开工(连接, 关键词: str, 上限: int = 20) -> list:
     """按关键词搜历史：面 = 工作内容 + 认领路径 + 改动路径（**不含 diff**，见文件头）。"""
     匹配模式 = "%" + 关键词 + "%"
-    return [dict(行) for 行 in 连接.execute(
+    return [dict(数据行) for 数据行 in 连接.execute(
         "select distinct 开工.* from 开工 "
         "left join 认领 on 认领.开工号 = 开工.开工号 "
         "left join 改动 on 改动.开工号 = 开工.开工号 "
@@ -139,7 +139,7 @@ def 认领文件(连接, 开工号: str, 路径指纹表: dict) -> None:
 
 
 def 读认领(连接, 开工号: str) -> dict:
-    return {行["路径"]: 行["指纹"] for 行 in 连接.execute(
+    return {数据行["路径"]: 数据行["指纹"] for 数据行 in 连接.execute(
         "select 路径, 指纹 from 认领 where 开工号 = ?", (开工号,))}
 
 
@@ -156,7 +156,7 @@ def 查跨开工冲突(连接, 开工号: str, 路径表) -> dict:
             "where 认领.路径 = ? and 认领.开工号 <> ? and 开工.状态 <> ?",
             (路径, 开工号, 状态_已释放)).fetchall()
         if 行表:
-            占表[路径] = sorted(行[0] for 行 in 行表)
+            占表[路径] = sorted(数据行[0] for 数据行 in 行表)
     return 占表
 
 
@@ -170,7 +170,7 @@ def 查同内容未释放(连接, 工作内容: str, 排除开工号: str) -> li
     内容 = 工作内容.strip()
     if not 内容:
         return []
-    return [(行["开工号"], 行["工作内容"]) for 行 in 连接.execute(
+    return [(数据行["开工号"], 数据行["工作内容"]) for 数据行 in 连接.execute(
         "select 开工号, 工作内容 from 开工 "
         "where 工作内容 = ? and 开工号 <> ? and 状态 <> ? order by 开工号",
         (内容, 排除开工号, 状态_已释放))]
@@ -232,9 +232,9 @@ def 记改动(连接, 开工号: str, 路径: str, 功能: str, 写前指纹: st
 
 
 def 读改动(连接, 开工号: str) -> list:
-    return [dict(行) for 行 in 连接.execute(
+    return [dict(数据行) for 数据行 in 连接.execute(
         "select * from 改动 where 开工号 = ? order by 编号", (开工号,))]
 
 
 def 全部开工(连接) -> list:
-    return [dict(行) for 行 in 连接.execute("select * from 开工 order by 开工号")]
+    return [dict(数据行) for 数据行 in 连接.execute("select * from 开工 order by 开工号")]

@@ -60,16 +60,16 @@ def 派发(方法, 参数, 仓根, 工具表):
     if 方法 == "tools/list":
         # 工具表每条 = `(实现, 标题, 说明, 模式)` —— 标题是**中文显示名**，说明是给模型的原文。
         return {"tools": [
-            {"name": 名, "title": 标题, "description": 说明, "inputSchema": 模式}
-            for 名, (_实现, 标题, 说明, 模式) in 工具表.items()
+            {"name": 名称, "title": 标题, "description": 说明, "inputSchema": 模式}
+            for 名称, (_实现, 标题, 说明, 模式) in 工具表.items()
         ]}, None
     if 方法 == "tools/call":
         名称 = 参数.get("name")
         if 名称 not in 工具表:
             return None, {"code": -32602, "message": "没有这个工具：%r" % (名称,)}
         实现 = 工具表[名称][0]
-        码, 出 = 实现(参数.get("arguments") or {}, 仓根)
-        return {"content": [{"type": "text", "text": 出}], "isError": 码 != 0}, None
+        退出码, 输出文本 = 实现(参数.get("arguments") or {}, 仓根)
+        return {"content": [{"type": "text", "text": 输出文本}], "isError": 退出码 != 0}, None
     return None, {"code": -32601, "message": "方法不存在：%r" % (方法,)}
 
 
@@ -87,6 +87,6 @@ def 服务(仓根, 工具表, 输入=None, 输出=None):
         错误码 = 请求.get("id")
         if 错误码 is None:
             continue                       # 通知：不回应
-        结果, 错 = 派发(请求.get("method"), 请求.get("params") or {}, 仓根, 工具表)
-        _回(输出, 错误码, 结果, 错)
+        结果, 错误 = 派发(请求.get("method"), 请求.get("params") or {}, 仓根, 工具表)
+        _回(输出, 错误码, 结果, 错误)
     return 0

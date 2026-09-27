@@ -23,9 +23,9 @@ def 容器识别(数据字节):
     if 数据字节[:2] == b"MZ":
         return "PE 映像（嵌套可执行）"
     if len(数据字节) >= 6:
-        保留, 型, 数 = struct.unpack_from("<HHH", 数据字节, 0)
-        if 保留 == 0 and 型 in (1, 2) and 0 < 数 <= 64 and 6 + 16 * 数 <= len(数据字节):
-            return "ICONDIR（type=%d · %d 条）" % (型, 数)
+        保留, 类型, 个数 = struct.unpack_from("<HHH", 数据字节, 0)
+        if 保留 == 0 and 类型 in (1, 2) and 0 < 个数 <= 64 and 6 + 16 * 个数 <= len(数据字节):
+            return "ICONDIR（type=%d · %d 条）" % (类型, 个数)
     return None
 
 

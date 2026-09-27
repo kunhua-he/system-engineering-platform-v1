@@ -16,19 +16,19 @@ def 压暗(通道值):
 
 def 分析(路径):
     im = Image.open(路径).convert("RGB")
-    宽, 高 = im.size
+    宽度, 高度 = im.size
     px = im.load()
     颜色 = collections.Counter()
-    for 纵坐标 in range(0, 高, 2):
-        for 横坐标 in range(0, 宽, 2):
+    for 纵坐标 in range(0, 高度, 2):
+        for 横坐标 in range(0, 宽度, 2):
             颜色[px[横坐标, 纵坐标]] += 1
     黑像素数 = 0
     强边 = 0
     斜面 = 0
     逐行黑 = []
-    for 纵坐标 in range(高):
+    for 纵坐标 in range(高度):
         此行黑 = 0
-        for 横坐标 in range(0, 宽, 2):
+        for 横坐标 in range(0, 宽度, 2):
             if 压暗(px[横坐标, 纵坐标]):
                 此行黑 += 1
             if 纵坐标:
@@ -41,11 +41,11 @@ def 分析(路径):
         黑像素数 += 此行黑 * 2
     return {
         "路径": 路径,
-        "尺寸": (宽, 高),
+        "尺寸": (宽度, 高度),
         "色数": len(颜色),
         "众数": 颜色.most_common(8),
         "黑": 黑像素数,
-        "黑占比": 黑像素数 * 100.0 / (宽 * 高),
+        "黑占比": 黑像素数 * 100.0 / (宽度 * 高度),
         "强边": 强边,
         "斜面": 斜面,
         "逐行黑": 逐行黑,
