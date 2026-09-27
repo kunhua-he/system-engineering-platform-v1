@@ -29,7 +29,7 @@ import sys
 import time
 from pathlib import Path
 
-起 = time.monotonic()  # 壳起表点：必须在 import 业务包**之前**（见 构建装配/门禁/壳.py）
+起始时刻 = time.monotonic()  # 壳起表点：必须在 import 业务包**之前**（见 构建装配/门禁/壳.py）
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))  # 仓根：取共享门禁
 from 构建装配.门禁 import 自门禁  # noqa: E402
@@ -48,7 +48,7 @@ from 扫实现 import (  # noqa: E402
 __all__ = ["默认范围", "找仓根", "扫实现", "自测", "打印", "打印读数"]
 
 
-def main(参数: list) -> int:
+def 入口函数(参数: list) -> int:
     """命令行入口：解析参数 → 调公开面 → 打印 → 退出码。"""
     仓根 = 找仓根()
     范围 = 默认范围
@@ -72,5 +72,5 @@ def main(参数: list) -> int:
 
 if __name__ == "__main__":
     # 壳自量自门禁（裁决 §六.1）：`--自测` 也在量程内（§一：范围含 `--自测`）。
-    sys.exit(自门禁(起, main(sys.argv[1:]), 尾巴余量毫秒=200,
+    sys.exit(自门禁(起始时刻, 入口函数(sys.argv[1:]), 尾巴余量毫秒=200,
                    修法="本件按范围扫实现面；范围调小（`--范围`）或把重活移出命令路（裁决 §三.3）"))

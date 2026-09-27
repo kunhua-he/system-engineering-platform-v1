@@ -14,7 +14,7 @@ import sys
 import time
 from pathlib import Path
 
-起 = time.monotonic()  # 壳起表点：必须在 import 业务包**之前**（见 构建装配/门禁/壳.py）
+起始时刻 = time.monotonic()  # 壳起表点：必须在 import 业务包**之前**（见 构建装配/门禁/壳.py）
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))  # 仓根：取共享门禁
 from 构建装配.门禁 import 报告环境步, 自门禁  # noqa: E402
@@ -24,7 +24,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from 准入判据.长活原语 import 判定, 找仓根, 自测, 预编  # noqa: E402
 
 
-def main(参数: list) -> int:
+def 入口函数(参数: list) -> int:
     """命令行入口：分发到 `长活原语` 的公开面。阈值与注入只从 `构建装配/门禁/` 取。"""
     if "--自测" in 参数:
         return 自测()
@@ -34,17 +34,17 @@ def main(参数: list) -> int:
 
 
 if __name__ == "__main__":
-    参 = sys.argv[1:]
-    if "--预编" in 参:
+    命令行参数 = sys.argv[1:]
+    if "--预编" in 命令行参数:
         sys.exit(
             报告环境步(
-                起, main(参), "单文件 Rust 考题的一次性编译（rustc --test，不碰 cargo 锁）"
+                起始时刻, 入口函数(命令行参数), "单文件 Rust 考题的一次性编译（rustc --test，不碰 cargo 锁）"
             )
         )
     sys.exit(
         自门禁(
-            起,
-            main(参),
+            起始时刻,
+            入口函数(命令行参数),
             尾巴余量毫秒=200,
             修法="考题只编 / 跑一个单文件（~0.7 s）；慢了先查 rustc 是不是在重编依赖",
         )

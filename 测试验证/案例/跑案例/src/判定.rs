@@ -163,7 +163,7 @@ mod 测试 {
     use crate::错误码::登记;
     use std::path::PathBuf;
 
-    fn 观(结果: &'static str, 层: Option<&str>, 码: Option<登记>, 产物: 观测产物) -> 观测 {
+    fn 造观测(结果: &'static str, 层: Option<&str>, 码: Option<登记>, 产物: 观测产物) -> 观测 {
         观测 {
             结果,
             死在哪一层: 层.map(str::to_owned),
@@ -204,14 +204,14 @@ mod 测试 {
     /// 正向样本：期望失败 + 层对 + 码与三项全对 ⇒ 通过。
     #[test]
     fn 期望失败对得上就通过() {
-        let 实 = 观("失败", Some("内核"), Some(登记1()), 观测产物::空槽);
+        let 实 = 造观测("失败", Some("内核"), Some(登记1()), 观测产物::空槽);
         assert!(matches!(比对(&期失败("内核", false), &实, Path::new("/首案例")), Ok(判定::通过(_))));
     }
 
     /// 反向样本：层错 ⇒ 报层（先报最粗的那一层，不往下比码）。
     #[test]
     fn 层错就报层() {
-        let 实 = 观("失败", Some("内核"), Some(登记1()), 观测产物::空槽);
+        let 实 = 造观测("失败", Some("内核"), Some(登记1()), 观测产物::空槽);
         let 判定值 = 比对(&期失败("扩展", true), &实, Path::new("/首案例"));
         assert!(
             matches!(&判定值, Ok(判定::不符(错)) if 错.contains("期望死在 `扩展`")),
@@ -223,7 +223,7 @@ mod 测试 {
     /// 反向样本：层对上了，三项业务判断里错一条也要逐条报出来。
     #[test]
     fn 业务判断错就报那一条() {
-        let 实 = 观("失败", Some("内核"), Some(登记1()), 观测产物::空槽);
+        let 实 = 造观测("失败", Some("内核"), Some(登记1()), 观测产物::空槽);
         let 判定值 = 比对(&期失败("内核", true), &实, Path::new("/首案例"));
         assert!(
             matches!(&判定值, Ok(判定::不符(错)) if 错.contains("需人工")),
@@ -235,7 +235,7 @@ mod 测试 {
     /// 反向样本：期望失败实到成功，必须报红（不是「差不多算通过」）。
     #[test]
     fn 期望失败实到成功要报红() {
-        let 实 = 观("成功", None, None, 观测产物::空槽);
+        let 实 = 造观测("成功", None, None, 观测产物::空槽);
         let 判定值 = 比对(&期失败("内核", false), &实, Path::new("/首案例"));
         assert!(matches!(判定值, Ok(判定::不符(_))), "该报不符，实到 {}", 描述(&判定值));
     }
@@ -246,11 +246,11 @@ mod 测试 {
         let 临时件路径 = 临时路("首案例");
         std::fs::write(&临时件路径, b"abcd").unwrap();
         let 期 = 期望::成功 { 产物: 产物判据::逐字节等于文件(临时件路径.clone()) };
-        let 同 = 比对(&期, &观("成功", None, None, 观测产物::字节集(b"abcd".to_vec())), Path::new("/"));
+        let 同 = 比对(&期, &造观测("成功", None, None, 观测产物::字节集(b"abcd".to_vec())), Path::new("/"));
         assert!(matches!(同, Ok(判定::通过(_))), "该通过，实到 {}", 描述(&同));
-        let 异 = 比对(&期, &观("成功", None, None, 观测产物::字节集(b"abXd".to_vec())), Path::new("/"));
+        let 异 = 比对(&期, &造观测("成功", None, None, 观测产物::字节集(b"abXd".to_vec())), Path::new("/"));
         assert!(matches!(&异, Ok(判定::不符(错)) if 错.contains("偏移 2")), "实到 {}", 描述(&异));
-        let 短 = 比对(&期, &观("成功", None, None, 观测产物::字节集(b"ab".to_vec())), Path::new("/"));
+        let 短 = 比对(&期, &造观测("成功", None, None, 观测产物::字节集(b"ab".to_vec())), Path::new("/"));
         assert!(matches!(&短, Ok(判定::不符(错)) if 错.contains("长度不同")), "实到 {}", 描述(&短));
         let _ = std::fs::remove_file(&临时件路径);
     }
@@ -259,14 +259,14 @@ mod 测试 {
     #[test]
     fn 比对目标读不到是工具错误() {
         let 期 = 期望::成功 { 产物: 产物判据::逐字节等于文件(PathBuf::from("/绝对不存在")) };
-        assert!(比对(&期, &观("成功", None, None, 观测产物::字节集(vec![1])), Path::new("/")).is_err());
+        assert!(比对(&期, &造观测("成功", None, None, 观测产物::字节集(vec![1])), Path::new("/")).is_err());
     }
 
     /// 期望空槽：返回了东西就该报红（「保留项不是假成功」就靠这一条）。
     #[test]
     fn 期望空槽时返回了东西要报红() {
         let 期 = 期望::成功 { 产物: 产物判据::空槽 };
-        let 实 = 观("成功", None, None, 观测产物::字节集(vec![1]));
+        let 实 = 造观测("成功", None, None, 观测产物::字节集(vec![1]));
         let 判定值 = 比对(&期, &实, Path::new("/"));
         assert!(matches!(判定值, Ok(判定::不符(_))), "该报不符，实到 {}", 描述(&判定值));
     }

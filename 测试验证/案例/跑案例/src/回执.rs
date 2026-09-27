@@ -88,7 +88,7 @@ impl 回执 {
         写可选串(&mut 文本缓冲, self.死在哪一步.as_deref());
         文本缓冲.push_str(",\"错误码\":");
         match &self.错误码 {
-            Some(码) => 文本缓冲.push_str(&码.到JSON()),
+            Some(码) => 文本缓冲.push_str(&码.转JSON文本()),
             None => 文本缓冲.push_str("null"),
         }
         文本缓冲.push_str(&format!(",\"耗时微秒\":{}", self.耗时微秒));
@@ -115,7 +115,7 @@ impl 回执 {
             写可选串(&mut 文本缓冲, 步.死在哪一步.as_deref());
             文本缓冲.push_str(",\"错误码\":");
             match &步.错误码 {
-                Some(码) => 文本缓冲.push_str(&码.到JSON()),
+                Some(码) => 文本缓冲.push_str(&码.转JSON文本()),
                 None => 文本缓冲.push_str("null"),
             }
             文本缓冲.push_str(&format!(",\"耗时微秒\":{},\"说明\":", 步.耗时微秒));
@@ -282,8 +282,8 @@ mod 测试 {
         };
         let 行 = 回.到行();
         let 解 = crate::最小JSON::解析(&行).expect("回执必须是合法 JSON");
-        assert_eq!(解.取成员("案例名").and_then(|一| 一.串()), Some("首项\"次项"));
-        assert_eq!(解.取成员("死在哪一层").and_then(|一| 一.串()), Some("内核"));
-        assert!(matches!(解.取成员("步骤").and_then(|一| 一.表()).map(<[crate::最小JSON::值]>::len), Some(1)));
+        assert_eq!(解.取成员("案例名").and_then(|一| 一.取字符串()), Some("首项\"次项"));
+        assert_eq!(解.取成员("死在哪一层").and_then(|一| 一.取字符串()), Some("内核"));
+        assert!(matches!(解.取成员("步骤").and_then(|一| 一.取数组()).map(<[crate::最小JSON::JSON值]>::len), Some(1)));
     }
 }

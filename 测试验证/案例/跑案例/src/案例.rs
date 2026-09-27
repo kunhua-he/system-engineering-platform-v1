@@ -19,7 +19,7 @@
 
 use std::path::{Path, PathBuf};
 
-use crate::最小JSON::{self, 值};
+use crate::最小JSON::{self, JSON值};
 
 /// 案例目录里放真程序文本的那一个文件名（**名字写死在一处**）。
 pub const 程序文本文件名: &str = "输入.程序文本";
@@ -151,7 +151,7 @@ pub fn 读全部(案例根: &Path) -> Result<Vec<案例>, String> {
 }
 
 fn 读一个(目录: &Path) -> Result<案例, String> {
-    let 清单 = 读JSON(&目录.join("案例.json"))?;
+    let 清单 = 读JSON件(&目录.join("案例.json"))?;
     let 名 = 要串(&清单, "案例名")?.to_owned();
     let 说明 = 要串(&清单, "说明")?.to_owned();
     let 步骤 = 读步骤(&清单, 目录)?;
@@ -162,16 +162,16 @@ fn 读一个(目录: &Path) -> Result<案例, String> {
     Ok(案例 { 名, 目录: 目录.to_path_buf(), 说明, 步骤, 期望 })
 }
 
-fn 读步骤(清单: &值, 目录: &Path) -> Result<Vec<步骤>, String> {
+fn 读步骤(清单: &JSON值, 目录: &Path) -> Result<Vec<步骤>, String> {
     let 表 = 清单
         .取成员("步骤")
-        .and_then(|一| 一.表())
+        .and_then(|一| 一.取数组())
         .ok_or_else(|| format!("{}：`步骤` 缺失或不是数组", 目录.display()))?;
     let mut 累积表 = Vec::new();
     for (序, 一) in 表.iter().enumerate() {
         let 名 = 一
             .取成员("名")
-            .and_then(|一| 一.串())
+            .and_then(|一| 一.取字符串())
             .ok_or_else(|| format!("{}：步骤[{序}] 缺 `名`", 目录.display()))?
             .to_owned();
         let 能力编号 = 一
@@ -181,7 +181,7 @@ fn 读步骤(清单: &值, 目录: &Path) -> Result<Vec<步骤>, String> {
             .ok_or_else(|| format!("{}：步骤[{序}] 的 `能力编号` 缺失或不是 32 位整数", 目录.display()))?;
         let 实参表 = 一
             .取成员("实参")
-            .and_then(|一| 一.表())
+            .and_then(|一| 一.取数组())
             .ok_or_else(|| format!("{}：步骤[{序}] 的 `实参` 缺失或不是数组", 目录.display()))?;
         let mut 实参 = Vec::new();
         for (位, 参) in 实参表.iter().enumerate() {
@@ -194,21 +194,21 @@ fn 读步骤(清单: &值, 目录: &Path) -> Result<Vec<步骤>, String> {
                 })?;
             let 来源名 = 参
                 .取成员("来源")
-                .and_then(|一| 一.串())
+                .and_then(|一| 一.取字符串())
                 .ok_or_else(|| format!("{}：步骤[{序}].实参[{位}] 缺 `来源`", 目录.display()))?;
             let 值项 = 参.取成员("值");
             let 来源 = match 来源名 {
                 "程序文本" => 实参来源::程序文本,
                 "文件" => 实参来源::文件(PathBuf::from(
                     值项
-                        .and_then(|一| 一.串())
+                        .and_then(|一| 一.取字符串())
                         .ok_or_else(|| {
                             format!("{}：步骤[{序}].实参[{位}] 来源是 `文件`，缺 `值`（路径）", 目录.display())
                         })?
                         .to_owned(),
                 )),
                 "十六进制" => {
-                    let 文 = 值项.and_then(|一| 一.串()).ok_or_else(|| {
+                    let 文 = 值项.and_then(|一| 一.取字符串()).ok_or_else(|| {
                         format!("{}：步骤[{序}].实参[{位}] 来源是 `十六进制`，缺 `值`", 目录.display())
                     })?;
                     实参来源::十六进制(解十六进制(文).map_err(|错| {
@@ -231,10 +231,10 @@ fn 读步骤(清单: &值, 目录: &Path) -> Result<Vec<步骤>, String> {
 }
 
 fn 读期望(路: &Path, 步骤数: usize, 目录: &Path) -> Result<Vec<期望>, String> {
-    let 根 = 读JSON(路)?;
+    let 根 = 读JSON件(路)?;
     let 表 = 根
         .取成员("步骤")
-        .and_then(|一| 一.表())
+        .and_then(|一| 一.取数组())
         .ok_or_else(|| format!("{}：`步骤` 缺失或不是数组", 路.display()))?;
     if 表.len() != 步骤数 {
         return Err(format!(
@@ -247,14 +247,14 @@ fn 读期望(路: &Path, 步骤数: usize, 目录: &Path) -> Result<Vec<期望>,
     for (序, 一) in 表.iter().enumerate() {
         let 结果 = 一
             .取成员("结果")
-            .and_then(|一| 一.串())
+            .and_then(|一| 一.取字符串())
             .ok_or_else(|| format!("{}：步骤[{序}] 缺 `结果`", 路.display()))?;
         let 定 = match 结果 {
             "成功" => 期望::成功 { 产物: 读产物(一, 目录)? },
             "失败" => {
                 let 层 = 一
                     .取成员("死在哪一层")
-                    .and_then(|一| 一.串())
+                    .and_then(|一| 一.取字符串())
                     .ok_or_else(|| format!("{}：步骤[{序}] 结果=失败，必须有 `死在哪一层`", 路.display()))?
                     .to_owned();
                 let 码项 = 一
@@ -281,13 +281,13 @@ fn 读期望(路: &Path, 步骤数: usize, 目录: &Path) -> Result<Vec<期望>,
     Ok(累积表)
 }
 
-fn 读产物(一: &值, 目录: &Path) -> Result<产物判据, String> {
+fn 读产物(一: &JSON值, 目录: &Path) -> Result<产物判据, String> {
     let Some(产物) = 一.取成员("产物") else {
         return Ok(产物判据::不判);
     };
     let 判定值 = 产物
         .取成员("判据")
-        .and_then(|一| 一.串())
+        .and_then(|一| 一.取字符串())
         .ok_or_else(|| format!("{}：`产物` 缺 `判据`", 目录.display()))?;
     match 判定值 {
         "空槽" => Ok(产物判据::空槽),
@@ -296,13 +296,13 @@ fn 读产物(一: &值, 目录: &Path) -> Result<产物判据, String> {
         "错误槽" => Ok(产物判据::错误槽(
             产物
                 .取成员("码")
-                .and_then(|一| 一.数())
+                .and_then(|一| 一.取数值())
                 .ok_or_else(|| "`错误槽` 缺 `码`（要一个整数）".to_owned())? as u32,
         )),
         "逐字节等于文件" => Ok(产物判据::逐字节等于文件(PathBuf::from(
             产物
                 .取成员("文件")
-                .and_then(|一| 一.串())
+                .and_then(|一| 一.取字符串())
                 .ok_or_else(|| "`逐字节等于文件` 缺 `文件`".to_owned())?
                 .to_owned(),
         ))),
@@ -333,23 +333,23 @@ pub fn 解十六进制(文: &str) -> Result<Vec<u8>, String> {
     Ok(累积表)
 }
 
-fn 读JSON(路: &Path) -> Result<值, String> {
+fn 读JSON件(路: &Path) -> Result<JSON值, String> {
     let 文 = std::fs::read_to_string(路).map_err(|错| format!("读不到 {}：{错}", 路.display()))?;
     最小JSON::解析(&文).map_err(|错| format!("{} 不是合法 JSON：{错}", 路.display()))
 }
 
-fn 要串<'a>(项: &'a 值, 键: &str) -> Result<&'a str, String> {
-    项.取成员(键).and_then(|一| 一.串()).ok_or_else(|| format!("缺 `{键}`（或不是字符串）"))
+fn 要串<'a>(项: &'a JSON值, 键: &str) -> Result<&'a str, String> {
+    项.取成员(键).and_then(|一| 一.取字符串()).ok_or_else(|| format!("缺 `{键}`（或不是字符串）"))
 }
 
-fn 要整数(项: &值, 键: &str, 路: &Path) -> Result<u32, String> {
+fn 要整数(项: &JSON值, 键: &str, 路: &Path) -> Result<u32, String> {
     项.取成员(键)
         .and_then(|一| 一.整数())
         .and_then(|数| u32::try_from(数).ok())
         .ok_or_else(|| format!("{}：`{键}` 缺失或不是 32 位整数", 路.display()))
 }
 
-fn 要真假(项: &值, 键: &str) -> Result<bool, String> {
+fn 要真假(项: &JSON值, 键: &str) -> Result<bool, String> {
     项.取成员(键).and_then(|一| 一.真假()).ok_or_else(|| format!("缺 `{键}`（或不是 true/false）"))
 }
 

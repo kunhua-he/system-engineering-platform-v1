@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""判据工具 —— `记` 与比对用的小解析（本表 · 编号 · 可抛错误码 · 落点）。"""
+"""判据工具 —— `记判据` 与比对用的小解析（本表 · 编号 · 可抛错误码 · 落点）。"""
 from __future__ import annotations
 
 import re
@@ -8,7 +8,7 @@ from .小工具 import 拆顶层项
 from .符号解析 import 解符号, 末段
 
 
-def 记(判据: str, 判定: str, 位置: str, 缺什么: str, 不能自愈: str, 红类: str = "") -> dict:
+def 记判据(判据: str, 判定: str, 位置: str, 缺什么: str, 不能自愈: str, 红类: str = "") -> dict:
     return {
         "位置": 位置,
         "缺什么": 缺什么,

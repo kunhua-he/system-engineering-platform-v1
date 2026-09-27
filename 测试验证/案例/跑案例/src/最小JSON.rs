@@ -13,66 +13,66 @@ use std::fmt::Write as _;
 
 /// 一个 JSON 值。
 #[derive(Debug, Clone, PartialEq)]
-pub enum 值 {
-    空,
-    真,
-    假,
-    数(f64),
-    串(String),
-    表(Vec<值>),
-    对象(Vec<(String, 值)>),
+pub enum JSON值 {
+    空值,
+    逻辑真,
+    逻辑假,
+    数值(f64),
+    字符串(String),
+    数组(Vec<JSON值>),
+    对象(Vec<(String, JSON值)>),
 }
 
-impl 值 {
+impl JSON值 {
     /// 按键取成员。**只对对象有意义**，其余一律 `None`（不猜、不转换）。
-    pub fn 取成员(&self, 键: &str) -> Option<&值> {
+    pub fn 取成员(&self, 键: &str) -> Option<&JSON值> {
         match self {
-            值::对象(项表) => 项表.iter().find(|(名, _)| 名 == 键).map(|(_, 值)| 值),
+            JSON值::对象(项表) => 项表.iter().find(|(名, _)| 名 == 键).map(|(_, 值)| 值),
             _ => None,
         }
     }
 
-    pub fn 串(&self) -> Option<&str> {
+    pub fn 取字符串(&self) -> Option<&str> {
         match self {
-            值::串(文) => Some(文),
+            JSON值::字符串(文) => Some(文),
             _ => None,
         }
     }
 
-    pub fn 数(&self) -> Option<f64> {
+    pub fn 取数值(&self) -> Option<f64> {
         match self {
-            值::数(数) => Some(*数),
+            JSON值::数值(数) => Some(*数),
             _ => None,
         }
     }
 
     /// 非负整数：`3.0` 算整数，`3.5` 不算（**不截断**——截断会把写错的数当对的用）。
     pub fn 整数(&self) -> Option<u64> {
-        let 数 = self.数()?;
+        let 数 = self.取数值()?;
         if 数 < 0.0 || 数.fract() != 0.0 || 数 > u64::MAX as f64 {
             return None;
         }
         Some(数 as u64)
     }
 
-    pub fn 表(&self) -> Option<&[值]> {
+    pub fn 取数组(&self) -> Option<&[JSON值]> {
         match self {
-            值::表(项表) => Some(项表),
+            JSON值::数组(项表) => Some(项表),
             _ => None,
         }
     }
 
     pub fn 真假(&self) -> Option<bool> {
         match self {
-            值::真 => Some(true),
-            值::假 => Some(false),
+            JSON值::逻辑真 => Some(true),
+            JSON值::逻辑假 => Some(false),
             _ => None,
         }
     }
 }
 
 /// 解析。错误信息带**字节位置**——案例文件写错时要能直接找到那一处。
-pub fn 解析(源: &str) -> Result<值, String> {
+pub fn 解析(源: &str) -> Result<JSON值, String> {
     let mut 读 = 读器 { 字节: 源.as_bytes(), 位: 0 };
     读.跳空白();
     let 文本缓冲 = 读.取值()?;
@@ -95,12 +95,12 @@ impl 读器<'_> {
         }
     }
 
-    fn 看(&self) -> Option<u8> {
+    fn 取当前字节(&self) -> Option<u8> {
         self.字节.get(self.位).copied()
     }
 
     fn 期望(&mut self, 字: u8) -> Result<(), String> {
-        match self.看() {
+        match self.取当前字节() {
             Some(实) if 实 == 字 => {
                 self.位 += 1;
                 Ok(())
@@ -124,26 +124,26 @@ impl 读器<'_> {
         }
     }
 
-    fn 取值(&mut self) -> Result<值, String> {
-        match self.看() {
+    fn 取值(&mut self) -> Result<JSON值, String> {
+        match self.取当前字节() {
             None => Err("第 0 字节起：没有值".to_owned()),
             Some(b'{') => self.取对象(),
             Some(b'[') => self.取数组(),
-            Some(b'"') => self.取串().map(值::串),
-            Some(b't') => self.取字面("true").map(|()| 值::真),
-            Some(b'f') => self.取字面("false").map(|()| 值::假),
-            Some(b'n') => self.取字面("null").map(|()| 值::空),
+            Some(b'"') => self.取串().map(JSON值::字符串),
+            Some(b't') => self.取字面("true").map(|()| JSON值::逻辑真),
+            Some(b'f') => self.取字面("false").map(|()| JSON值::逻辑假),
+            Some(b'n') => self.取字面("null").map(|()| JSON值::空值),
             Some(_) => self.取数(),
         }
     }
 
-    fn 取对象(&mut self) -> Result<值, String> {
+    fn 取对象(&mut self) -> Result<JSON值, String> {
         self.期望(b'{')?;
         let mut 项表 = Vec::new();
         self.跳空白();
-        if self.看() == Some(b'}') {
+        if self.取当前字节() == Some(b'}') {
             self.位 += 1;
-            return Ok(值::对象(项表));
+            return Ok(JSON值::对象(项表));
         }
         loop {
             self.跳空白();
@@ -154,11 +154,11 @@ impl 读器<'_> {
             let 值 = self.取值()?;
             项表.push((名, 值));
             self.跳空白();
-            match self.看() {
+            match self.取当前字节() {
                 Some(b',') => self.位 += 1,
                 Some(b'}') => {
                     self.位 += 1;
-                    return Ok(值::对象(项表));
+                    return Ok(JSON值::对象(项表));
                 }
                 Some(实) => return Err(format!("第 {} 字节：对象里期望 `,` 或 `}}`，实到 `{}`", self.位, 实 as char)),
                 None => return Err("对象未闭合（缺 `}`）".to_owned()),
@@ -166,23 +166,23 @@ impl 读器<'_> {
         }
     }
 
-    fn 取数组(&mut self) -> Result<值, String> {
+    fn 取数组(&mut self) -> Result<JSON值, String> {
         self.期望(b'[')?;
         let mut 项表 = Vec::new();
         self.跳空白();
-        if self.看() == Some(b']') {
+        if self.取当前字节() == Some(b']') {
             self.位 += 1;
-            return Ok(值::表(项表));
+            return Ok(JSON值::数组(项表));
         }
         loop {
             self.跳空白();
             项表.push(self.取值()?);
             self.跳空白();
-            match self.看() {
+            match self.取当前字节() {
                 Some(b',') => self.位 += 1,
                 Some(b']') => {
                     self.位 += 1;
-                    return Ok(值::表(项表));
+                    return Ok(JSON值::数组(项表));
                 }
                 Some(实) => return Err(format!("第 {} 字节：数组里期望 `,` 或 `]`，实到 `{}`", self.位, 实 as char)),
                 None => return Err("数组未闭合（缺 `]`）".to_owned()),
@@ -195,7 +195,7 @@ impl 读器<'_> {
         let mut 文本缓冲 = String::new();
         loop {
             let 起 = self.位;
-            match self.看() {
+            match self.取当前字节() {
                 None => return Err("字符串未闭合（缺 `\"`）".to_owned()),
                 Some(b'"') => {
                     self.位 += 1;
@@ -203,7 +203,7 @@ impl 读器<'_> {
                 }
                 Some(b'\\') => {
                     self.位 += 1;
-                    let 转 = self.看().ok_or_else(|| "转义符后已到末尾".to_owned())?;
+                    let 转 = self.取当前字节().ok_or_else(|| "转义符后已到末尾".to_owned())?;
                     self.位 += 1;
                     match 转 {
                         b'"' => 文本缓冲.push('"'),
@@ -268,12 +268,12 @@ impl 读器<'_> {
         Ok(数)
     }
 
-    fn 取数(&mut self) -> Result<值, String> {
+    fn 取数(&mut self) -> Result<JSON值, String> {
         let 起 = self.位;
-        if matches!(self.看(), Some(b'-' | b'+')) {
+        if matches!(self.取当前字节(), Some(b'-' | b'+')) {
             self.位 += 1;
         }
-        while matches!(self.看(), Some(b'0'..=b'9' | b'.' | b'e' | b'E' | b'+' | b'-')) {
+        while matches!(self.取当前字节(), Some(b'0'..=b'9' | b'.' | b'e' | b'E' | b'+' | b'-')) {
             self.位 += 1;
         }
         if 起 == self.位 {
@@ -281,7 +281,7 @@ impl 读器<'_> {
         }
         let 文 = std::str::from_utf8(&self.字节[起..self.位]).map_err(|_| "数字不是 UTF-8".to_owned())?;
         文.parse::<f64>()
-            .map(值::数)
+            .map(JSON值::数值)
             .map_err(|_| format!("第 {起} 字节：`{文}` 不是数"))
     }
 }
@@ -309,22 +309,22 @@ pub fn 写串(文本缓冲: &mut String, 文: &str) {
 mod 测试 {
     use super::*;
 
-    fn 解(源: &str) -> 值 {
+    fn 解析JSON(源: &str) -> JSON值 {
         解析(源).unwrap_or_else(|错| panic!("{源} 该能解析：{错}"))
     }
 
     /// 正向样本：干净输入必须通过，且读到的东西与写的一样。
     #[test]
     fn 干净输入逐字段读得对() {
-        let 值 = 解(r#"{"案例名":"反解","步骤":[{"能力编号":1105}],"结果":true,"无":null,"数":1568}"#);
-        assert_eq!(值.取成员("案例名").and_then(|一| 一.串()), Some("反解"));
-        assert_eq!(值.取成员("步骤").and_then(|一| 一.表()).map(<[值]>::len), Some(1));
+        let 值 = 解析JSON(r#"{"案例名":"反解","步骤":[{"能力编号":1105}],"结果":true,"无":null,"数":1568}"#);
+        assert_eq!(值.取成员("案例名").and_then(|一| 一.取字符串()), Some("反解"));
+        assert_eq!(值.取成员("步骤").and_then(|一| 一.取数组()).map(<[JSON值]>::len), Some(1));
         assert_eq!(
-            值.取成员("步骤").and_then(|步| 步.表()).and_then(|步| 步.first()).and_then(|步| 步.取成员("能力编号")).and_then(|一| 一.整数()),
+            值.取成员("步骤").and_then(|步| 步.取数组()).and_then(|步| 步.first()).and_then(|步| 步.取成员("能力编号")).and_then(|一| 一.整数()),
             Some(1105)
         );
         assert_eq!(值.取成员("结果").and_then(|一| 一.真假()), Some(true));
-        assert!(matches!(值.取成员("无"), Some(值::空)));
+        assert!(matches!(值.取成员("无"), Some(JSON值::空值)));
         assert_eq!(值.取成员("数").and_then(|一| 一.整数()), Some(1568));
     }
 
@@ -348,18 +348,18 @@ mod 测试 {
     /// 反向样本：`3.5` 不是整数（截断会把写错的数当对的用）。
     #[test]
     fn 小数不算整数() {
-        assert_eq!(解("3.5").整数(), None);
-        assert_eq!(解("3.0").整数(), Some(3));
-        assert_eq!(解("-1").整数(), None);
+        assert_eq!(解析JSON("3.5").整数(), None);
+        assert_eq!(解析JSON("3.0").整数(), Some(3));
+        assert_eq!(解析JSON("-1").整数(), None);
     }
 
     #[test]
     fn 串的转义与中文都读得出() {
-        assert_eq!(解(r#""a\u0041\n中""#).串(), Some("aA\n中"));
-        assert_eq!(解(r#""\ud83d\ude00""#).串(), Some("😀"));
+        assert_eq!(解析JSON(r#""a\u0041\n中""#).取字符串(), Some("aA\n中"));
+        assert_eq!(解析JSON(r#""\ud83d\ude00""#).取字符串(), Some("😀"));
         let mut 文本缓冲 = String::new();
         写串(&mut 文本缓冲, "中\n\"");
         assert_eq!(文本缓冲, "\"中\\n\\\"\"");
-        assert_eq!(解(&文本缓冲).串(), Some("中\n\""));
+        assert_eq!(解析JSON(&文本缓冲).取字符串(), Some("中\n\""));
     }
 }

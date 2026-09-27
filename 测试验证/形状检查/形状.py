@@ -22,7 +22,7 @@ from .常量 import (
 )
 
 
-def 读JSON(路: Path):
+def 读JSON件(路: Path):
     return json.loads(路.read_text(encoding="utf-8"))
 
 
@@ -121,7 +121,7 @@ def 扫案例(根: Path) -> tuple:
             continue  # 非案例目录（`跑案例/` 那类）
         有案例 = True
         try:
-            未判 += 查一份(目录, 读JSON(期), 报告)
+            未判 += 查一份(目录, 读JSON件(期), 报告)
         except 形状错 as 错:
             return [], str(错)
     if not 有案例:
