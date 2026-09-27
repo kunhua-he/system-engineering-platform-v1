@@ -18,7 +18,14 @@ import json
 import os
 import re
 import sys
+import time
 from collections import Counter, defaultdict
+from pathlib import Path
+
+起 = time.monotonic()  # 壳起表点：必须在 import 业务包**之前**（见 构建装配/门禁/壳.py）
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[4]))  # 仓根：取共享门禁
+from 构建装配.门禁 import 自门禁  # noqa: E402
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 DST = os.path.join(HERE, "真文本")
@@ -37,4 +44,10 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    # `main()` 不返回码（它只打印）⇒ 码恒 0，壳只负责「超顶即红」。
+    sys.exit(
+        自门禁(
+            起, main() or 0, 尾巴余量毫秒=200,
+            修法="本件逐条撞真文本（实测约 1.1 秒）—— 样本会长，超顶就按样本分片，别减判据条数。",
+        )
+    )

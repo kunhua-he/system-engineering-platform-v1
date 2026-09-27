@@ -53,6 +53,42 @@ if [ -z "$ROOT" ] || [ ! -f "$ROOT/rust-toolchain.toml" ]; then
 fi
 cd "$ROOT"
 
+# ── 壳自门禁（五秒硬顶）────────────────────────────────────────────────────
+# 依据：`项目文档/决策记录/2026-09-27_所有运行五秒硬顶.md` §一/§六 —— 一条命令完整跑完
+#（进程启动到退出）的墙钟 ≤ 5000 ms，取 p100，超过即 bug、无例外。
+# 阈值**不在这里写第二份**：从唯一落点 `构建装配/门禁/` 取（与判据 ⑱ 同源）。
+# 反向样本（跑绿即删）：`V1_CMD_SLOW_MS=5200 sh 开发工具/并行工作树.sh 自检` ⇒ 必红。
+# ★ 变量名 / 函数名一律 ASCII —— bash 3.2 不认非 ASCII 标识符（见本文件顶部三条实测）。
+START=$(python3 -c 'import time;print(time.monotonic())')
+gate_report() {
+  ORIG_CODE=$?
+  GATE_CODE=0
+  # ★ 必须写成 `... || GATE_CODE=$?`：本脚本有 `set -e`（`装门禁.sh` 没有），
+  #   直接 `python3 ...; GATE_CODE=$?` 在超顶时会被 `set -e` 当场带走 ——
+  #   下面那行映射变成死代码，退出码停在 3（实测）。这样写才是「接住码再映射」。
+  python3 - "$START" "$ORIG_CODE" "$ROOT" <<'PY' || GATE_CODE=$?
+import sys, time
+sys.path.insert(0, sys.argv[3])
+from 构建装配.门禁 import 硬顶毫秒, 注入人为慢
+余量毫秒 = 200
+注入毫秒 = 注入人为慢()
+墙钟毫秒 = int((time.monotonic() - float(sys.argv[1])) * 1000)
+阈值毫秒 = 硬顶毫秒 - 余量毫秒
+print("─" * 78)
+print("命令墙钟（壳自量）%d ms · 阈值 %d ms（硬顶 %d − 尾巴余量 %d）· 人为慢注入 %d ms"
+      % (墙钟毫秒, 阈值毫秒, 硬顶毫秒, 余量毫秒, 注入毫秒))
+if 墙钟毫秒 > 阈值毫秒:
+    print("✗ 超顶。本件是开发工具，慢的一档是 `git worktree` 与 `du`（规模决定）——"
+          "先量是哪一档慢（`列出` 的 `du -sh` 会随各腿构建缓存长大），再决定缓存或分片，别砍判据。",
+          file=sys.stderr)
+    sys.exit(3)
+print("✓ 在硬顶内")
+PY
+  if [ "${GATE_CODE}" -eq 3 ]; then exit 1; fi
+  exit "${ORIG_CODE}"
+}
+trap gate_report EXIT
+
 # 仓外：与仓库同级。改这一行 = 改「工作树落在哪」，全脚本只有这一处定义。
 TREES="../系统工程平台V1.工作树"
 

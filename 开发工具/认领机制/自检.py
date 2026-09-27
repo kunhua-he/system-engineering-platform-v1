@@ -25,7 +25,13 @@
 """
 
 import sys
+import time
 from pathlib import Path
+
+起 = time.monotonic()  # 壳起表点：必须在 import 业务包**之前**（见 构建装配/门禁/壳.py）
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))  # 仓根：取共享门禁
+from 构建装配.门禁 import 自门禁  # noqa: E402
 
 # 本件与同名包同目录 ⇒ 显式插一下路径：`from 自检 import ...` 装的是**同名包**
 #（同名字文件夹优先于同名 `.py`），于是 `python 本件.py` 之外的装载方式也能 import 到包。
@@ -46,4 +52,11 @@ from 自检 import (  # noqa: E402
 )
 
 if __name__ == "__main__":
-    sys.exit(main())
+    sys.exit(
+        自门禁(
+            起, main(), 尾巴余量毫秒=200,
+            修法="本命令跑 19 个样本 + 8 条判据（实测约 2.7 秒）—— 超顶就先量是哪一段："
+                 "样本可以按判据分片（照 开发工具/取证/声明记录区反解.py 的 `--分片 i/n`），"
+                 "别把样本砍掉（砍样本 = 判据失去身份证）。",
+        )
+    )

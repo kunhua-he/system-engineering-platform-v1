@@ -52,11 +52,32 @@
 # 本文件是**路由**：把参数交给包里的 `命令行界面.命令.跑`（含退出码与全部子命令）。
 # 实现按关注点拆进同名字文件夹 `命令行界面/`。
 import sys
+import time
 from pathlib import Path
+
+起 = time.monotonic()  # 壳起表点：必须在 import 业务包**之前**（见 构建装配/门禁/壳.py）
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))  # 仓根：取共享门禁
+from 构建装配.门禁 import 自门禁  # noqa: E402
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from 命令行界面.命令 import 跑  # noqa: E402
 
 if __name__ == "__main__":
-    跑(sys.argv[1:])
+    # ★ `跑` **自己就 `sys.exit(码)`**（它的退出码语义见上面「# 退出码」，含四类错的映射）
+    #   ⇒ 直接 `自门禁(起, 跑(...))` 是**死代码**：`跑` 一进去就退出，门禁那行永远跑不到。
+    #   实测证据：加壳后跑反向样本 `V1_CMD_SLOW_MS=5200 … --帮助` ⇒ 69 ms · 退出码 0（**不红**）。
+    #   故这里**接住它带的码**再交给门禁 —— 码照它算出来的保留，壳只负责「超顶即红」。
+    码 = 0
+    try:
+        跑(sys.argv[1:])
+    except SystemExit as 退:
+        码 = 退.code if isinstance(退.code, int) else 1
+    sys.exit(
+        自门禁(
+            起, 码, 尾巴余量毫秒=200,
+            修法="本件是纯转发客户端，墙钟由网关应答决定 —— 超顶先看是哪个端点在慢"
+                 "（后端节点的事），别在本件加超时去掩盖它。",
+        )
+    )

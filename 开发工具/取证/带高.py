@@ -2,47 +2,31 @@
 # -*- coding: utf-8 -*-
 """带高 —— 逐行主导色换色，数每条带的高度。只用标准库 + PIL。
 用法：python3 带高.py 图1 [图2 ...]   退出码：0 = 出完读数。
+
+本文件是**路由**：实现按关注点拆进同名字文件夹 `带高/`（一个关注点一个文件），
+入口只做三件事 —— 声明子模块 · 再导出公开面 · 零实现（`开发规范.md` §六）。
+公开面 `带` · `main` 逐字不变（`带高/__init__.py` 全导一遍）。
+
+壳自量自门禁（`项目文档/决策记录/2026-09-27_所有运行五秒硬顶.md` §六.1）：起表点在
+import 业务包**之前**，阈值 = 共享 `硬顶毫秒` − `尾巴余量毫秒`（本命令自留）。
 """
-import collections
+
 import sys
+import time
+from pathlib import Path
 
-from PIL import Image
+起 = time.monotonic()  # 壳起表点：必须在 import 业务包**之前**（见 构建装配/门禁/壳.py）
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))  # 仓根：取共享门禁
+from 构建装配.门禁 import 自门禁  # noqa: E402
 
-def 带(路径):
-    im = Image.open(路径).convert("RGB")
-    w, h = im.size
-    px = im.load()
-    主 = []
-    for y in range(h):
-        c = collections.Counter(px[x, y] for x in range(0, w, 2))
-        主.append(c.most_common(1)[0][0])
-    # 合并相邻同色行；1~2 像素的过渡行并进前一条带（避免抗锯齿缝把带切碎）
-    段 = []
-    for y, c in enumerate(主):
-        if 段 and 段[-1][0] == c:
-            段[-1][2] = y
-        else:
-            段.append([c, y, y])
-    print(f"=== {路径} ({w}x{h}) ===")
-    for c, a, b in 段:
-        if b - a + 1 >= 2:
-            print(f"  y={a:>3}..{b:>3}  高 {b - a + 1:>3}  主导 rgb{c}")
-    print()
+from 带高 import *  # noqa: E402,F401,F403 —— 再导出公开面（`带高/__init__.py::__all__`）
+from 带高 import main  # noqa: E402
 
-
-def main(argv):
-    if len(argv) < 1:
-        print(__doc__)
-        return 1
-    for p in argv:
-        try:
-            带(p)
-        except OSError as e:
-            print(f"打不开 {p}：{e}", file=sys.stderr)
-            return 1
-    return 0
-
-
+# `尾巴余量毫秒=200`：壳在 import 业务包之前起表 ⇒ 量不到「解释器启动 + 结果打印 + 进程退出」
+# 那一段；200 是它的上界，与 `构建装配/一键验证/一键验证/自检_延迟与两遍.py` 那条尾巴自证同源
+# （同一个解释器、同一段物理尾巴）。阈值 = 共享 `硬顶毫秒` − 这个余量。
 if __name__ == "__main__":
-    sys.exit(main(sys.argv[1:]))
+    sys.exit(自门禁(起, main(sys.argv[1:]), 尾巴余量毫秒=200,
+                    修法="图太多就分批喂（一条命令只喂几张图）：重活在 `带高/逐行.py::带`，"
+                         "把一次多图拆成多次调用即可。"))

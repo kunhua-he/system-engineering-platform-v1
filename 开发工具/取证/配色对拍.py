@@ -2,95 +2,31 @@
 # -*- coding: utf-8 -*-
 """配色对拍 —— 参考图 vs 我方渲染图，只出可数的像素读数，不出观感判断。
 
-为什么需要它：本地看图模型对「配色像不像」只给观感词（「更传统、更厚重」），
-观感词没法施工、也没法验收。本脚本把「厚重」翻译成三个可数的量：
-  ① 纯黑像素占比  —— 经典 Win32 界面的分隔线是**纯黑 1px**，现代平铺 CSS 常用浅灰
-  ② 强边数（相邻行亮度差 > 30）—— 边框线的数量
-  ③ 亮压暗对数（上亮下暗，差 > 12）—— **斜面**（bevel）的特征
-再加逐行的黑像素分布，用来定位「黑线在哪几行」。
+本文件是**路由**：实现按关注点拆进同名字文件夹 `配色对拍/`（一个关注点一个文件），
+入口只做三件事 —— 声明子模块 · 再导出公开面 · 零实现（`开发规范.md` §六）。
+公开面 `亮` · `暗` · `分析` · `打印` · `main` 逐字不变（`配色对拍/__init__.py` 全导一遍）；
+用法文本随 `main` 搬进 `配色对拍/命令行.py`，无参时的输出逐字不变。
 
-跑法（PIL 即可，无需 venv）：
-    python 开发工具/取证/配色对拍.py <参考图.png> <我方图.png> [更多我方图...]
-退出码：0 = 出完读数；1 = 图片打不开。
+壳自量自门禁（`项目文档/决策记录/2026-09-27_所有运行五秒硬顶.md` §六.1）：起表点在
+import 业务包**之前**，阈值 = 共享 `硬顶毫秒` − `尾巴余量毫秒`（本命令自留）。
 """
-import collections
+
 import sys
+import time
+from pathlib import Path
 
-from PIL import Image
+起 = time.monotonic()  # 壳起表点：必须在 import 业务包**之前**（见 构建装配/门禁/壳.py）
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))  # 仓根：取共享门禁
+from 构建装配.门禁 import 自门禁  # noqa: E402
 
-def 亮(c):
-    return 0.299 * c[0] + 0.587 * c[1] + 0.114 * c[2]
+from 配色对拍 import *  # noqa: E402,F401,F403 —— 再导出公开面（`配色对拍/__init__.py::__all__`）
+from 配色对拍 import main  # noqa: E402
 
-
-def 暗(c):
-    return c[0] < 40 and c[1] < 40 and c[2] < 40
-
-
-def 分析(路径):
-    im = Image.open(路径).convert("RGB")
-    w, h = im.size
-    px = im.load()
-    色 = collections.Counter()
-    for y in range(0, h, 2):
-        for x in range(0, w, 2):
-            色[px[x, y]] += 1
-    黑 = 0
-    强边 = 0
-    斜面 = 0
-    逐行黑 = []
-    for y in range(h):
-        此行黑 = 0
-        for x in range(0, w, 2):
-            if 暗(px[x, y]):
-                此行黑 += 1
-            if y:
-                a, b = 亮(px[x, y - 1]), 亮(px[x, y])
-                if abs(a - b) > 30:
-                    强边 += 1
-                if a - b > 12:
-                    斜面 += 1
-        逐行黑.append(此行黑 * 2)
-        黑 += 此行黑 * 2
-    return {
-        "路径": 路径,
-        "尺寸": (w, h),
-        "色数": len(色),
-        "众数": 色.most_common(8),
-        "黑": 黑,
-        "黑占比": 黑 * 100.0 / (w * h),
-        "强边": 强边,
-        "斜面": 斜面,
-        "逐行黑": 逐行黑,
-    }
-
-
-def 打印(读数):
-    w, h = 读数["尺寸"]
-    print(f"=== {读数['路径']} ===")
-    print(f"  尺寸 {w}x{h} · 采样色数 {读数['色数']}")
-    print(f"  纯黑 {读数['黑']} px（{读数['黑占比']:.2f}%）· 强边 {读数['强边']} · 斜面 {读数['斜面']}")
-    print("  前 8 众数色：")
-    for c, n in 读数["众数"]:
-        print(f"    rgb{c}  {n * 4} px  ({n * 4 * 100 // (w * h)}%)")
-    print("  黑像素最多的 14 行：")
-    for n, y in sorted(((n, y) for y, n in enumerate(读数["逐行黑"])), reverse=True)[:14]:
-        print(f"    y={y:>3}  黑 {n:>4}  ({n * 100 // w}%)")
-    print()
-
-
-def main(参数):
-    if len(参数) < 2:
-        print(__doc__)
-        return 1
-    for 路径 in 参数:
-        try:
-            打印(分析(路径))
-        except OSError as 错:
-            print(f"打不开 {路径}：{错}", file=sys.stderr)
-            return 1
-    return 0
-
-
+# `尾巴余量毫秒=200`：壳在 import 业务包之前起表 ⇒ 量不到「解释器启动 + 结果打印 + 进程退出」
+# 那一段；200 是它的上界，与 `构建装配/一键验证/一键验证/自检_延迟与两遍.py` 那条尾巴自证同源
+# （同一个解释器、同一段物理尾巴）。阈值 = 共享 `硬顶毫秒` − 这个余量。
 if __name__ == "__main__":
-    sys.exit(main(sys.argv[1:]))
+    sys.exit(自门禁(起, main(sys.argv[1:]), 尾巴余量毫秒=200,
+                    修法="图太大就先把图裁小/降采样再喂：重活在 `配色对拍/像素.py::分析`，"
+                         "本件逐图整幅扫两遍像素。"))

@@ -24,9 +24,15 @@ import http.server
 import socketserver
 import sys
 import threading
+import time
 from pathlib import Path
 
+起 = time.monotonic()  # 壳起表点：必须在 import 业务包（构建装配.门禁）之前（见 构建装配/门禁/壳.py）
+
 仓根 = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(仓根))  # 仓根：取共享门禁
+from 构建装配.门禁 import 自门禁  # noqa: E402
+
 前端目录 = 仓根 / "前端呈现" / "网页应用"
 参考图 = 仓根 / "项目文档" / "参考" / "易语言IDE_截图.png"
 参考尺寸 = (1426, 755)
@@ -96,5 +102,10 @@ def 主(参数):
     return 0
 
 
+# `尾巴余量毫秒=200`：壳在 import 业务包之前起表 ⇒ 量不到「解释器启动 + 结果打印 + 进程退出」
+# 那一段；200 是它的上界，与 `构建装配/一键验证/一键验证/自检_延迟与两遍.py` 那条尾巴自证同源
+# （同一个解释器、同一段物理尾巴）。阈值 = 共享 `硬顶毫秒` − 这个余量。
 if __name__ == "__main__":
-    sys.exit(主(sys.argv[1:]))
+    sys.exit(自门禁(起, 主(sys.argv[1:]), 尾巴余量毫秒=200,
+                    修法="渲染慢就降尺寸（只喂 <宽> <高> 两个更小的数）：重活是 playwright 起"
+                         "chromium 与页面加载，`主` 里的 `wait_for_timeout(800)` 也可按需收小。"))

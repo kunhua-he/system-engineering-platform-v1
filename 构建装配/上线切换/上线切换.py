@@ -23,11 +23,24 @@
 # 本文件是**路由**：把 `__doc__`（上面这段，也是「不给子命令」时打出的用法）原样交给包，
 # 再调 `上线切换.命令.main`。实现按关注点拆进同名字文件夹 `上线切换/`。
 import sys
+import time
 from pathlib import Path
+
+起 = time.monotonic()  # 壳起表点：必须在 import 业务包**之前**（见 构建装配/门禁/壳.py）
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))  # 仓根：取共享门禁
+from 构建装配.门禁 import 自门禁  # noqa: E402
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from 上线切换.命令 import main  # noqa: E402
 
 if __name__ == "__main__":
-    sys.exit(main(sys.argv[1:], __doc__))
+    sys.exit(
+        自门禁(
+            起, main(sys.argv[1:], __doc__), 尾巴余量毫秒=200,
+            修法="最坏路径的账在 上线切换/常量.py 的 `停等秒` / `健康超时秒` 上（停 2 个实例 + "
+                 "等端口 2 次）；超顶先量是哪一段吃掉的（打印里每步都有读数），再缩那个上界 —— "
+                 "别把等待改成无限等（那就把超顶换成了挂死）。",
+        )
+    )

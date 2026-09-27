@@ -34,6 +34,43 @@
 
 set -u
 
+# ── 五秒硬顶：壳自量自门禁（阈值唯一落点在 `构建装配/门禁/常量.py`，口径见 `构建装配/门禁/壳.py`）──
+#
+# 本件是**纯 shell**，没有 Python 业务包可挂壳 ⇒ 用两条 `python3 -c` 自量（本脚本本来就要 python3）。
+# 起表点必须在**第一件耗时的事之前**；用 `trap … EXIT` 覆盖**每一条** `exit` 路径
+# （本脚本有多处 `exit 1`：定位不到仓根 / 拒绝覆盖别人的钩子 / 共享钩子没显式同意 …）。
+#
+# ★ 门禁是**诊断**，不许改命令本体算出来的码：python 侧只用退出码 3 报「超顶」，
+#   别的非 0（例如 import 不到共享件）一律**保留原码** —— 否则门禁自己坏了会把一次
+#   成功的安装变成失败（那是假红，比没有门禁更坏）。
+# ★ 函数名与变量名一律 **ASCII**：bash 3.2 连函数名都不认非 ASCII
+#   （实测：`门禁报告() { … }` ⇒ `` `门禁报告': not a valid identifier ``，整个脚本退出码 2）。
+START=$(python3 -c 'import time;print(time.monotonic())')
+
+gate_report() {
+  ORIG_CODE=$?
+  python3 - "$START" "$ORIG_CODE" "$(cd "$(dirname "$0")/../.." 2>/dev/null && pwd)" <<'PY'
+import sys, time
+sys.path.insert(0, sys.argv[3])
+from 构建装配.门禁 import 硬顶毫秒, 注入人为慢
+余量毫秒 = 200   # 壳量不到「解释器启动 + 打印 + 进程退出」那一段，200 是它的上界（见 构建装配/门禁/壳.py）
+注入毫秒 = 注入人为慢()   # 反向样本：复用共享那一份（`V1_CMD_SLOW_MS=<毫秒>`），本件不另写一套
+墙钟毫秒 = int((time.monotonic() - float(sys.argv[1])) * 1000)
+阈值毫秒 = 硬顶毫秒 - 余量毫秒
+print("─" * 78, file=sys.stderr)
+print("命令墙钟（壳自量）%d ms · 阈值 %d ms（硬顶 %d − 尾巴余量 %d）· 人为慢注入 %d ms"
+      % (墙钟毫秒, 阈值毫秒, 硬顶毫秒, 余量毫秒, 注入毫秒), file=sys.stderr)
+if 墙钟毫秒 > 阈值毫秒:
+    print("✗ 超顶：完整墙钟 %d ms > %d ms —— 五秒硬顶无例外（裁决 §一）" % (墙钟毫秒, 阈值毫秒), file=sys.stderr)
+    sys.exit(3)
+print("✓ 在硬顶内", file=sys.stderr)
+PY
+  GATE_CODE=$?
+  if [ "${GATE_CODE}" -eq 3 ]; then exit 1; fi
+  exit "${ORIG_CODE}"
+}
+trap gate_report EXIT
+
 MARK='装门禁标记: v1-case-runner'
 
 # ── 定位仓根：优先「当前目录就是仓根」，否则用脚本路径 ──

@@ -15,10 +15,20 @@
 
 **本工具只报读数。** 把哪一条接进 `构建装配/一键验证/一键验证.py` 是收口那一步的事。
 实现全在 `查文件行数/核心.py`（入口零实现，照第六节「主文件是路由」）。
+
+**五秒硬顶（壳自量自门禁）**：入口在**导入业务包之前**起表，跑完按完整壳墙钟判顶 ——
+见 `构建装配/门禁/`。反向样本：`V1_CMD_SLOW_MS=5200 python3 开发工具/查文件行数.py` 必红。
 """
 import argparse
 import os
 import sys
+import time
+from pathlib import Path
+
+起 = time.monotonic()  # 壳起表点：必须在 import 业务包**之前**（见 构建装配/门禁/壳.py）
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))  # 仓根：取共享门禁
+from 构建装配.门禁 import 自门禁  # noqa: E402
 
 from 查文件行数 import 核心
 
@@ -34,4 +44,10 @@ def main(argv=None):
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    sys.exit(
+        自门禁(
+            起, main(), 尾巴余量毫秒=200,
+            修法="本命令扫全仓行数 —— 树长大它自己会超顶。修法是分片（照 "
+                 "开发工具/取证/声明记录区反解.py 的 `--分片 i/n`）或按 mtime 缓存，别砍扫描面。",
+        )
+    )

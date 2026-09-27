@@ -65,7 +65,7 @@ pub(crate) fn 跑() -> Result<(), String> {
     );
 
     // ── 第二步：扫扩展根 + 调接缝 GetPlatformInfo ──────────────────────────
-    let mut 候选: Vec<&'static 平台信息> = vec![v1_loader::底座声明()];
+    let mut 候选: Vec<&'static 平台信息> = vec![v1_adapter::底座声明()];
     let mut 装上的: Vec<String> = Vec::new();
     let mut 剔除的: Vec<(String, String)> = Vec::new();
     for 类 in 种类 {

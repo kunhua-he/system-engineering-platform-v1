@@ -24,7 +24,7 @@ def 扫扩展(声明: dict) -> list:
 
 
 def 扩展产物(扩展: dict) -> Path:
-    """把一个扩展编成**可装载库**（`GetPlatformInfo` 能被 dlopen 取到）。
+    """把一个扩展编成**可装载库**（`GetPlatformInfo` 能被 dlopen 取到），返回库文件路径。
 
     为什么要有这一步：扩展仓自己声明的是 **rlib**（`[lib]` 没写 `crate-type`），
     静态库进不了 `dlopen`。装配侧把它按 `cdylib` 再编一遍 —— 这是**装配动作**，
@@ -33,7 +33,17 @@ def 扩展产物(扩展: dict) -> Path:
     `--extern <底座依赖名>=<rlib 路径>` 是必须的：cargo 给依赖传的是**只含元数据**的
     `.rmeta`，而 `cdylib` 要的是可链接的 `.rlib`；不显式指路就报
     「crate `v1_contract` required to be available in rlib format」（实测）。
+
+    **本函数 = 建 + 找**（公开行为逐字不变：`构建装配/演示/装配.py` 转调的就是它）。
+    命令本体（装配档）**不许**用它 —— 它含构建段，会把命令顶上五秒硬顶（台账 #233）；
+    装配档用 `找扩展产物`，二进制由环境步 `--预构建` 负责。
     """
+    建扩展产物(扩展)
+    return 找扩展产物(扩展)
+
+
+def 建扩展产物(扩展: dict) -> None:
+    """**只编不找** —— 环境步（`--预构建`）用。产物落 `构建缓存/扩展/release/deps`。"""
     清单 = 扩展["落点"] / "Cargo.toml"
     缓存 = 构建缓存 / "扩展"
     环境 = dict(os.environ, CARGO_TARGET_DIR=str(缓存))
@@ -47,12 +57,23 @@ def 扩展产物(扩展: dict) -> Path:
         cwd=仓根,
         env=环境,
     )
+
+
+def 找扩展产物(扩展: dict) -> Path:
+    """**只找不编** —— 命令本体用。找不到（没预构建 / 缓存被清）即 fail-closed 指路。"""
+    清单 = 扩展["落点"] / "Cargo.toml"
+    缓存 = 构建缓存 / "扩展"
     库 = sorted((缓存 / "release" / "deps").glob("lib*.dylib")) + sorted((缓存 / "release" / "deps").glob("lib*.so"))
-    # 只认**刚编出来的那一个**：按 Cargo.toml 的 `[lib] name` 找（`[package] name` 不是库名）。
+    # 只认**编出来的那一个**：按 Cargo.toml 的 `[lib] name` 找（`[package] name` 不是库名）。
     名 = 读库名(清单)
     命中 = [库文件 for 库文件 in 库 if 名 and 库文件.name.startswith("lib{}".format(名))]
     if len(命中) != 1:
-        raise SystemExit("可装载库不唯一（找 {}）：{}".format(名, 命中))
+        raise SystemExit(
+            "找不到已编好的可装载库（按 [lib] name 找 {}，命中 {} 个）：{}\n"
+            "  先跑环境步：python3 构建装配/上线切换/构建制品.py --预构建".format(
+                名, len(命中), 缓存 / "release" / "deps"
+            )
+        )
     return 命中[0]
 
 
