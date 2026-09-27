@@ -10,7 +10,7 @@ use super::串;
 
 /// 声明格式号：**格式的身份证，不是版本号**。格式不变，它永远不变。
 /// 源：契约声明/平台声明.json.声明格式号（与 契约声明/常量表.json 的「声明格式号」条目交叉比对，不一致即 fail-closed）。
-pub const 底座声明格式号: u32 = 1398362929;
+pub const 底座声明格式号: v1_contract::格式号 = v1_contract::格式号::新(1398362929);
 
 /// 标识串内容（32 位十六进制，不含 NUL）——比对用。
 pub const 底座标识串内容: &[u8] = b"d09f2340818511d396f6aaf844c7e325";
@@ -106,15 +106,16 @@ const 类型说明_4294967295: &[u8] = "保留标签，不参与类型相容判�
 /// 各数据类型的**显式类型标签**常量（源：契约声明/类型声明/*.json 的「类型标签」字段）。
 /// 显式给标签，**不是**表内下标：下标会随合并顺序漂移，跨版本不稳定。
 /// 统一注册表 的 `类型标签_错误` 就引用这里的 `类型标签_4294967295`（不再硬写 u32::MAX）。
-pub const 类型标签_0000: u32 = 0; // 空
-pub const 类型标签_0001: u32 = 1; // 整数
-pub const 类型标签_0002: u32 = 2; // 双精度
-pub const 类型标签_0003: u32 = 3; // 逻辑
-pub const 类型标签_0004: u32 = 4; // 文本
-pub const 类型标签_0005: u32 = 5; // 字节集
-pub const 类型标签_0006: u32 = 6; // 句柄
-pub const 类型标签_0007: u32 = 7; // 任务句柄
-pub const 类型标签_4294967295: u32 = 4294967295; // 错误
+/// 型是 `v1_contract::类型标签`（号空间 newtype）：用点直接拿到号空间型，不用再包一层。
+pub const 类型标签_0000: v1_contract::类型标签 = v1_contract::类型标签::新(0); // 空
+pub const 类型标签_0001: v1_contract::类型标签 = v1_contract::类型标签::新(1); // 整数
+pub const 类型标签_0002: v1_contract::类型标签 = v1_contract::类型标签::新(2); // 双精度
+pub const 类型标签_0003: v1_contract::类型标签 = v1_contract::类型标签::新(3); // 逻辑
+pub const 类型标签_0004: v1_contract::类型标签 = v1_contract::类型标签::新(4); // 文本
+pub const 类型标签_0005: v1_contract::类型标签 = v1_contract::类型标签::新(5); // 字节集
+pub const 类型标签_0006: v1_contract::类型标签 = v1_contract::类型标签::新(6); // 句柄
+pub const 类型标签_0007: v1_contract::类型标签 = v1_contract::类型标签::新(7); // 任务句柄
+pub const 类型标签_4294967295: v1_contract::类型标签 = v1_contract::类型标签::新(4294967295); // 错误
 
 /// 数据类型信息 表（源：契约声明/类型声明/*.json，共 9 项，按 类型标签 升序）。
 /// 每一项的 `类型标签` 都来自 JSON，**不是**表内下标。
@@ -132,7 +133,7 @@ pub const 底座类型表: [v1_contract::数据类型信息; 9] = [
         属性表: core::ptr::null(),
         元素个数: 0,
         元素表: core::ptr::null(),
-        类型标签: 0,
+        类型标签: v1_contract::类型标签::新(0),
     },
     // 契约声明/类型声明/0001.json
     v1_contract::数据类型信息 {
@@ -147,7 +148,7 @@ pub const 底座类型表: [v1_contract::数据类型信息; 9] = [
         属性表: core::ptr::null(),
         元素个数: 0,
         元素表: core::ptr::null(),
-        类型标签: 1,
+        类型标签: v1_contract::类型标签::新(1),
     },
     // 契约声明/类型声明/0002.json
     v1_contract::数据类型信息 {
@@ -162,7 +163,7 @@ pub const 底座类型表: [v1_contract::数据类型信息; 9] = [
         属性表: core::ptr::null(),
         元素个数: 0,
         元素表: core::ptr::null(),
-        类型标签: 2,
+        类型标签: v1_contract::类型标签::新(2),
     },
     // 契约声明/类型声明/0003.json
     v1_contract::数据类型信息 {
@@ -177,7 +178,7 @@ pub const 底座类型表: [v1_contract::数据类型信息; 9] = [
         属性表: core::ptr::null(),
         元素个数: 0,
         元素表: core::ptr::null(),
-        类型标签: 3,
+        类型标签: v1_contract::类型标签::新(3),
     },
     // 契约声明/类型声明/0004.json
     v1_contract::数据类型信息 {
@@ -192,7 +193,7 @@ pub const 底座类型表: [v1_contract::数据类型信息; 9] = [
         属性表: core::ptr::null(),
         元素个数: 0,
         元素表: core::ptr::null(),
-        类型标签: 4,
+        类型标签: v1_contract::类型标签::新(4),
     },
     // 契约声明/类型声明/0005.json
     v1_contract::数据类型信息 {
@@ -207,7 +208,7 @@ pub const 底座类型表: [v1_contract::数据类型信息; 9] = [
         属性表: core::ptr::null(),
         元素个数: 0,
         元素表: core::ptr::null(),
-        类型标签: 5,
+        类型标签: v1_contract::类型标签::新(5),
     },
     // 契约声明/类型声明/0006.json
     v1_contract::数据类型信息 {
@@ -222,7 +223,7 @@ pub const 底座类型表: [v1_contract::数据类型信息; 9] = [
         属性表: core::ptr::null(),
         元素个数: 0,
         元素表: core::ptr::null(),
-        类型标签: 6,
+        类型标签: v1_contract::类型标签::新(6),
     },
     // 契约声明/类型声明/0007.json
     v1_contract::数据类型信息 {
@@ -237,7 +238,7 @@ pub const 底座类型表: [v1_contract::数据类型信息; 9] = [
         属性表: core::ptr::null(),
         元素个数: 0,
         元素表: core::ptr::null(),
-        类型标签: 7,
+        类型标签: v1_contract::类型标签::新(7),
     },
     // 契约声明/类型声明/4294967295.json
     v1_contract::数据类型信息 {
@@ -252,7 +253,7 @@ pub const 底座类型表: [v1_contract::数据类型信息; 9] = [
         属性表: core::ptr::null(),
         元素个数: 0,
         元素表: core::ptr::null(),
-        类型标签: 4294967295,
+        类型标签: v1_contract::类型标签::新(4294967295),
     },
 ];
 /// `平台信息.类型表` 直接可用：项数 + 项表。
