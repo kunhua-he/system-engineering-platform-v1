@@ -32,9 +32,9 @@ def 入口函数(argv=None):
         # 断言响应形状与工具表 —— 协议层坏了要当场看得出来，不许「连上了但什么也不回」。
         for 方法, 参数 in (("initialize", {"protocolVersion": "试"}),
                           ("tools/list", {}), ("没有这个方法", {})):
-            结果, 错 = 派发(方法, 参数, 仓根, 工具表)
-            if 错:
-                print("%s ⇒ 错误码 %d（%s）" % (方法, 错["code"], 错["message"]))
+            结果, 错误 = 派发(方法, 参数, 仓根, 工具表)
+            if 错误:
+                print("%s ⇒ 错误码 %d（%s）" % (方法, 错误["code"], 错误["message"]))
             else:
                 print("%s ⇒ 键 %s" % (方法, sorted(结果)))
         名表 = sorted(工具表)

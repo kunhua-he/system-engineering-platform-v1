@@ -45,18 +45,18 @@ def 扫全部(目录, 进程数=None):
     if not 项表:
         print("✗ 语料目录里没有语料件（%s 下 *.e / *.ec / *.E / *.EC）⇒ 没有可归并的东西。" % 目录)
         return 1
-    逐件, 缺 = [], []
+    逐件, 缺件表 = [], []
     for 样本路径 in 项表:
         读数 = 取缓存(缓存根目录, 样本路径)
-        (逐件 if 读数 is not None else 缺).append(读数 if 读数 is not None else 样本路径)
-    if 缺:
-        print("✗ 逐件缓存不齐：已算 %d / %d 件，缺 %d 件。" % (len(逐件), len(项表), len(缺)))
+        (逐件 if 读数 is not None else 缺件表).append(读数 if 读数 is not None else 样本路径)
+    if 缺件表:
+        print("✗ 逐件缓存不齐：已算 %d / %d 件，缺 %d 件。" % (len(逐件), len(项表), len(缺件表)))
         print("  为什么本命令不算：全量的总 CPU 时间远超单条命令的 5 秒预算 ⇒ 按裁决 §三.3"
               "把重活移出命令路，本命令只归并。")
-        for 样本路径 in 缺[:5]:
+        for 样本路径 in 缺件表[:5]:
             print("    · 缺 %s" % 样本路径)
-        if len(缺) > 5:
-            print("    … 另 %d 件" % (len(缺) - 5))
+        if len(缺件表) > 5:
+            print("    … 另 %d 件" % (len(缺件表) - 5))
         打补法(目录)
         return 1
     汇总 = 归并(逐件)

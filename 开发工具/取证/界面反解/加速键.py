@@ -12,7 +12,7 @@ def 解加速键(表字节, 资源id):
         raise 解析错误("加速键 %s 长度 %d 不是 8 的整数倍" % (资源id, len(表字节)))
     out = []
     for 项起 in range(0, len(表字节), 8):
-        fVirt, key, cmd, 垫 = struct.unpack_from("<HHHH", 表字节, 项起)
+        fVirt, key, cmd, 填充字段 = struct.unpack_from("<HHHH", 表字节, 项起)
         if fVirt & 0xFF00:
             raise 解析错误("加速键 %s 第 %d 条 fVirt=0x%04x 高字节非 0：对齐判错" % (资源id, 项起 // 8, fVirt))
         标志表 = []

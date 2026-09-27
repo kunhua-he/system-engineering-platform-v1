@@ -29,10 +29,10 @@ def 出报告(读数):
         if 类别 == "str" and 待处理值:
             print("   +0x%02x  %-22s 0x%08x  %s" % (偏移, 名称, 待处理值, 读器.split("→", 1)[-1].strip()))
     if 字典["m_nCategoryCount"]:
-        文偏移, 类 = pe.转偏移(pe.取址(字典["m_szzCategory"])), []
+        文偏移, 类别 = pe.转偏移(pe.取址(字典["m_szzCategory"])), []
         for _ in range(字典["m_nCategoryCount"]):
-            尾部 = pe.原始字节.find(b"\0", 文偏移); 类.append(pe.原始字节[文偏移:尾部].decode("gbk", "replace")); 文偏移 = 尾部 + 1
-        print("   类别表（m_nCategoryCount=%d）：%s" % (字典["m_nCategoryCount"], 类))
+            尾部 = pe.原始字节.find(b"\0", 文偏移); 类别.append(pe.原始字节[文偏移:尾部].decode("gbk", "replace")); 文偏移 = 尾部 + 1
+        print("   类别表（m_nCategoryCount=%d）：%s" % (字典["m_nCategoryCount"], 类别))
     print("④ 命令表：表项 %d 字节 · 声明数 m_nCmdCount=%d · 物理槽数(观察，非解码依据)=%s"
           % (命令项大小, 字典["m_nCmdCount"], 读数["物理槽"][0]))
     print("   表项逐字段偏移：" + " · ".join("%s@+0x%x/%dB" % (名长, 文偏移, 字段宽) for 文偏移, 字段宽, 名长, _ in 命令字段))

@@ -39,7 +39,7 @@ def 反解容器(容器字节):
     """容器字节 → [(段类型, 段数据起点, 段数据止, 段头起点)]。段边界靠扫描（本格式无段长字段）。"""
     if len(容器字节) < len(魔数) or 容器字节[:len(魔数)] != 魔数:
         raise 解析错误("无 CNWTEPRG 魔数，不是易程序容器")
-    pos, 段 = len(魔数), []
+    pos, 号段 = len(魔数), []
     while pos < len(容器字节):
         if len(容器字节) - pos < 段头长度:
             raise 解析错误("段头截断 @0x%x（剩 %d 字节）" % (pos, len(容器字节) - pos))
@@ -48,8 +48,8 @@ def 反解容器(容器字节):
         号值 = 容器字节[pos + 11]
         下一 = 找下一段头(容器字节, pos + 段头长度)
         尾部 = 下一 if 下一 is not None else len(容器字节)
-        段.append((号值, pos + 段头长度, 尾部, pos))
+        号段.append((号值, pos + 段头长度, 尾部, pos))
         if 下一 is None:
             break
         pos = 下一
-    return 段
+    return 号段

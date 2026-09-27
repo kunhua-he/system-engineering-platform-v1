@@ -32,9 +32,9 @@ def 出报告(读数):
 
     print("\n② 菜单（类型 4）：%d 个资源 · %d 项" % (len(读数["菜单"]), sum(len(表值[1]) for 表值 in 读数["菜单"].values())))
     for rid in sorted(读数["菜单"]):
-        叶, 项 = 读数["菜单"][rid]
-        print("   ── 菜单 id=%s（RVA 0x%x · %d 字节 · %d 项）" % (rid, 叶["rva"], 叶["大小"], len(项)))
-        for 菜单项 in 项:
+        叶条, 一项 = 读数["菜单"][rid]
+        print("   ── 菜单 id=%s（RVA 0x%x · %d 字节 · %d 项）" % (rid, 叶条["rva"], 叶条["大小"], len(一项)))
+        for 菜单项 in 一项:
             print("      %s%s [opt=0x%04x %s] id=%-7s @0x%04x %r"
                   % ("  " * 菜单项["层"], ">" if 菜单项["选项"] & 0x10 else " ",
                      菜单项["选项"], "|".join(名称 for 位置, 名称 in 菜单选项位.items() if 菜单项["选项"] & 位置) or "0",
@@ -44,9 +44,9 @@ def 出报告(读数):
     print("\n③ 对话框（类型 5）：%d 个资源 · %d 个控件"
           % (len(读数["对话框"]), sum(len(表值[1]["控件"]) for 表值 in 读数["对话框"].values())))
     for rid in sorted(读数["对话框"]):
-        叶, 组读数 = 读数["对话框"][rid]
+        叶条, 组读数 = 读数["对话框"][rid]
         print("   ── 对话框 id=%s（RVA 0x%x · %d 字节 · %s · 控件 %d）"
-              % (rid, 叶["rva"], 叶["大小"], "DLGTEMPLATEEX" if 组读数["扩展"] else "DLGTEMPLATE", 组读数["控件数"]))
+              % (rid, 叶条["rva"], 叶条["大小"], "DLGTEMPLATEEX" if 组读数["扩展"] else "DLGTEMPLATE", 组读数["控件数"]))
         print("      style=0x%08x exStyle=0x%08x 位置(%d,%d) 尺寸 %dx%d 标题=%r 字体=%s 菜单=%s"
               % (组读数["样式"], 组读数["扩展样式"], 组读数["x"], 组读数["y"], 组读数["cx"], 组读数["cy"],
                  组读数["标题"] if 组读数["标题形"] != "序数" else "#%d" % 组读数["标题"],
@@ -60,22 +60,22 @@ def 出报告(读数):
     print("\n④ 字符串表（类型 6）：%d 块 · %d 条非空"
           % (len(读数["字符串"]), sum(1 for 表值 in 读数["字符串"].values() for 串条 in 表值[1] if 串条)))
     for bid in sorted(读数["字符串"]):
-        叶, 串 = 读数["字符串"][bid]
-        print("   ── 块 %s（RVA 0x%x · %d 字节）" % (bid, 叶["rva"], 叶["大小"]))
-        for 控件号, 串条 in enumerate(串):
+        叶条, 字节串 = 读数["字符串"][bid]
+        print("   ── 块 %s（RVA 0x%x · %d 字节）" % (bid, 叶条["rva"], 叶条["大小"]))
+        for 控件号, 串条 in enumerate(字节串):
             if 串条:
                 print("      [%d] %r" % ((bid - 1) * 16 + 1 + 控件号, 串条))
 
     print("\n⑤ 加速键（类型 9）：%d 个资源" % len(读数["加速键"]))
     for rid in sorted(读数["加速键"]):
-        叶, 条 = 读数["加速键"][rid]
-        for 节名 in 条:
+        叶条, 一条 = 读数["加速键"][rid]
+        for 节名 in 一条:
             print("   id=%s fVirt=0x%04x(%s) key=0x%02x(%s) cmd=0x%04x"
                   % (rid, 节名["fVirt"], 节名["标志"], 节名["键"], 节名["键名"], 节名["命令"]))
 
     print("\n⑥ 图标/光标组（类型 12/14）：%d 个资源" % len(读数["图标组"]))
     for rid in sorted(读数["图标组"]):
-        叶, 组读数 = 读数["图标组"][rid]
+        叶条, 组读数 = 读数["图标组"][rid]
         print("   id=%-8s type=%d 条数=%d" % (rid, 组读数["类型"], len(组读数["条"])))
         for 条序, 菜单项 in enumerate(组读数["条"]):
             print("      [%d] %dx%d 色数=%s 平面=%d 位深=%d 字节=%d 引用id=%d"
@@ -99,9 +99,9 @@ def 出报告(读数):
             # 这里嵌的是 16 字节 ICONDIRENTRY（组资源用的是 14 字节 GRPICONDIRENTRY）——见界面实测.md §六
             个数 = struct.unpack_from("<H", 虚址, 4)[0]
             for 条序 in range(个数):
-                宽, 高, 色数, _, 平面, 位深, 字节数, 项偏移 = struct.unpack_from("<BBBBHHII", 虚址, 6 + 16 * 条序)
+                宽度, 高度, 色数, _, 平面, 位深, 字节数, 项偏移 = struct.unpack_from("<BBBBHHII", 虚址, 6 + 16 * 条序)
                 print("      图[%d] %dx%d 色数=%d 平面=%d 位深=%d 字节=%d 偏移=%d"
-                      % (条序, 宽, 高, 色数, 平面, 位深, 字节数, 项偏移))
+                      % (条序, 宽度, 高度, 色数, 平面, 位深, 字节数, 项偏移))
     print("   ── 位图(2)/图标(3)/光标(1)：%d 条，均为原始像素，不逐条列熵" % len(读数["图形"]))
     if 读数["图形"]:
         熵列 = [控件["熵"] for _, 控件 in 读数["图形"]]
