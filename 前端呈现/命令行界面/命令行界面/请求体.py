@@ -31,10 +31,10 @@ def 拼值(参数: str) -> dict:
     if 标签 == 2:
         return {"类型标签": 2, "值": float(值文)}
     if 标签 == 3:
-        低 = 值文.strip().lower()
-        if 低 in ("真", "true", "1", "是"):
+        小写文本 = 值文.strip().lower()
+        if 小写文本 in ("真", "true", "1", "是"):
             return {"类型标签": 3, "值": 1}
-        if 低 in ("假", "false", "0", "否"):
+        if 小写文本 in ("假", "false", "0", "否"):
             return {"类型标签": 3, "值": 0}
         raise 用法错("逻辑值只认 真/假/true/false/1/0：{}".format(值文))
     # 4 文本 · 5 字节集（base64 原样透传）· 其余标签原样透传 —— 不解释未登记的标签。

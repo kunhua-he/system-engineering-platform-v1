@@ -22,8 +22,8 @@ def 发请求(端口: int, 方法: str, 路径: str, 体文本: str, 显示请�
     if 数据 is not None:
         请求.add_header("Content-Type", "application/json; charset=utf-8")
     if 显示请求:
-        行 = "{} {} HTTP/1.1".format(方法, urllib.parse.quote(路径, safe="/"))
-        print("> " + 行, file=sys.stderr)
+        源码行 = "{} {} HTTP/1.1".format(方法, urllib.parse.quote(路径, safe="/"))
+        print("> " + 源码行, file=sys.stderr)
         print("> Host: {}:{}".format(回环地址, 端口), file=sys.stderr)
         if 数据 is not None:
             print("> Content-Length: {}".format(len(数据)), file=sys.stderr)
@@ -31,9 +31,9 @@ def 发请求(端口: int, 方法: str, 路径: str, 体文本: str, 显示请�
     try:
         with urllib.request.urlopen(请求, timeout=默认超时秒) as 应答:
             return 应答.status, 应答.read().decode("utf-8", "replace")
-    except urllib.error.HTTPError as 错:
+    except urllib.error.HTTPError as 错误:
         # 4xx 是**协议层**失败（请求本身不合法），体里仍是一份 JSON 说明。
-        return 错.code, 错.read().decode("utf-8", "replace")
+        return 错误.code, 错误.read().decode("utf-8", "replace")
 
 
 def 连不上(端口: int, 原因) -> int:

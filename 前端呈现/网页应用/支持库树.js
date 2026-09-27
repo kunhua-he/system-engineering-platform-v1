@@ -30,22 +30,22 @@ function 取能力表(应答体) {
  * （扩展名与号段都来自 `GET /接口/扩展` 的实时应答，本页不写任何一个名字）。
  */
 function 折树(能力表) {
-  const 枝 = new Map();
-  for (const 段 of 号段) 枝.set(段.名, { 段, 扩: new Map(), 直挂: [] });
-  for (const 能 of 能力表) {
-    const 编号 = Number(能.编号);
-    const 段 = 找段(编号);
-    if (!段) continue;
-    const 槽 = 枝.get(段.名);
-    const 扩 = 找扩展(编号);
-    if (扩) {
-      if (!槽.扩.has(扩.名)) 槽.扩.set(扩.名, { 扩, 能: [] });
-      槽.扩.get(扩.名).能.push(能);
+  const 枝表 = new Map();
+  for (const 段项 of 号段) 枝表.set(段项.名, { 段: 段项, 扩: new Map(), 直挂: [] });
+  for (const 能力 of 能力表) {
+    const 编号 = Number(能力.编号);
+    const 号段 = 找段(编号);
+    if (!号段) continue;
+    const 数据槽 = 枝表.get(号段.名);
+    const 扩展 = 找扩展(编号);
+    if (扩展) {
+      if (!数据槽.扩.has(扩展.名)) 数据槽.扩.set(扩展.名, { 扩: 扩展, 能: [] });
+      数据槽.扩.get(扩展.名).能.push(能力);
     } else {
-      槽.直挂.push(能);
+      数据槽.直挂.push(能力);
     }
   }
-  return 枝;
+  return 枝表;
 }
 
 function 种类说明(种类) {
@@ -61,15 +61,15 @@ export function 装支持库树(取元素, 钩子) {
 
   /** 一行：缩进 + 折标 + 小图 + 文字 +（可选）条数。 */
   function 建行(深度, 名称, 图名, 折标, 尾巴, 类名) {
-    const 行 = 建元素("div", "树行" + (类名 ? " " + 类名 : ""));
-    行.style.paddingLeft = 2 + 深度 * 12 + "px";
-    行.append(建元素("span", "折标", 折标 || ""));
+    const 源码行 = 建元素("div", "树行" + (类名 ? " " + 类名 : ""));
+    源码行.style.paddingLeft = 2 + 深度 * 12 + "px";
+    源码行.append(建元素("span", "折标", 折标 || ""));
     const 图槽 = 建元素("span", "图槽");
     图槽.append(画图标(图名));
-    行.append(图槽);
-    行.append(建元素("span", null, 名称));
-    if (尾巴) 行.append(建元素("span", "多", " " + 尾巴));
-    return 行;
+    源码行.append(图槽);
+    源码行.append(建元素("span", null, 名称));
+    if (尾巴) 源码行.append(建元素("span", "多", " " + 尾巴));
+    return 源码行;
   }
 
   /**
@@ -79,33 +79,33 @@ export function 装支持库树(取元素, 钩子) {
    * 承诺了「这里能收放」就得真能收放。段行、扩展行、根行三处都走这一条。
    */
   function 接折(源码行, 容器盒) {
-    const 标 = 源码行.querySelector(".折标");
-    const 翻 = () => {
-      const 收 = !容器盒.hidden;
-      容器盒.hidden = 收;
-      标.textContent = 收 ? "▸" : "▾";
-      源码行.setAttribute("aria-expanded", 收 ? "false" : "true");
+    const 折标 = 源码行.querySelector(".折标");
+    const 翻折 = () => {
+      const 是否收 = !容器盒.hidden;
+      容器盒.hidden = 是否收;
+      折标.textContent = 是否收 ? "▸" : "▾";
+      源码行.setAttribute("aria-expanded", 是否收 ? "false" : "true");
     };
     源码行.classList.add("枝");
     源码行.tabIndex = 0;
     源码行.setAttribute("role", "button");
     源码行.setAttribute("aria-expanded", "true");
-    源码行.addEventListener("click", 翻);
+    源码行.addEventListener("click", 翻折);
     源码行.addEventListener("keydown", (事件) => {
       if (事件.key === "Enter" || 事件.key === " ") {
         事件.preventDefault();
-        翻();
+        翻折();
       }
     });
   }
 
   function 建叶(深度, 能力) {
     const 编号 = Number(能力.编号);
-    const 行 = 建行(深度, 编号 + " " + String(能力.名称), "能力", "", null, "叶");
-    行.title = "点一下：真调 GET /接口/能力/" + 编号
+    const 源码行 = 建行(深度, 编号 + " " + String(能力.名称), "能力", "", null, "叶");
+    源码行.title = "点一下：真调 GET /接口/能力/" + 编号
       + "（参数 " + 能力.参数个数 + " 个 · 返回类型 " + 能力.返回类型 + "）";
-    行.addEventListener("click", () => 点叶(行, 编号));
-    return 行;
+    源码行.addEventListener("click", () => 点叶(源码行, 编号));
+    return 源码行;
   }
 
   /** 点一片叶子：真调一次契约端点，读数落到「搜寻2」那一格。 */
@@ -119,35 +119,35 @@ export function 装支持库树(取元素, 钩子) {
   }
 
   function 摆能力树(能力表) {
-    const 枝 = 折树(能力表);
+    const 枝表 = 折树(能力表);
     清空(容器);
-    let 总 = 0;
+    let 总数 = 0;
     const 根盒 = 建元素("div", "树子");
-    for (const 段 of 号段) {
-      const 槽 = 枝.get(段.名);
-      const 条数 = 槽.直挂.length + [...槽.扩.values()].reduce((累加和, 一项) => 累加和 + 一项.能.length, 0);
-      总 += 条数;
-      const 段行 = 建行(0, 段.名 + "（" + 段.起 + "–" + 段.止 + "）", "段",
+    for (const 段项 of 号段) {
+      const 数据槽 = 枝表.get(段项.名);
+      const 条数 = 数据槽.直挂.length + [...数据槽.扩.values()].reduce((累加和, 一项) => 累加和 + 一项.能.length, 0);
+      总数 += 条数;
+      const 段行 = 建行(0, 段项.名 + "（" + 段项.起 + "–" + 段项.止 + "）", "段",
         条数 ? "▾" : "", 条数 + " 条");
-      段行.title = 段.注;
+      段行.title = 段项.注;
       根盒.append(段行);
       if (!条数) continue;
       const 段盒 = 建元素("div", "树子");
-      for (const 项 of 槽.扩.values()) {
-        const 扩行 = 建行(1, 项.扩.名 + "（" + 项.扩.起 + "–" + 项.扩.止 + "）", "模块",
-          "▾", 项.能.length + " 条");
-        扩行.title = 种类说明(项.扩.种类);
+      for (const 一项 of 数据槽.扩.values()) {
+        const 扩行 = 建行(1, 一项.扩.名 + "（" + 一项.扩.起 + "–" + 一项.扩.止 + "）", "模块",
+          "▾", 一项.能.length + " 条");
+        扩行.title = 种类说明(一项.扩.种类);
         const 扩盒 = 建元素("div", "树子");
-        for (const 能 of 项.能) 扩盒.append(建叶(2, 能));
+        for (const 能力 of 一项.能) 扩盒.append(建叶(2, 能力));
         接折(扩行, 扩盒);
         段盒.append(扩行);
         段盒.append(扩盒);
       }
-      for (const 能 of 槽.直挂) 段盒.append(建叶(1, 能));
+      for (const 能力 of 数据槽.直挂) 段盒.append(建叶(1, 能力));
       接折(段行, 段盒);
       根盒.append(段盒);
     }
-    const 根行 = 建行(0, "平台扩展树", "组件", "▾", "共 " + 总 + " 条能力");
+    const 根行 = 建行(0, "平台扩展树", "组件", "▾", "共 " + 总数 + " 条能力");
     接折(根行, 根盒);
     容器.append(根行);
     容器.append(根盒);
@@ -179,9 +179,9 @@ export function 装支持库树(取元素, 钩子) {
       }
       摆能力树(能力表);
       return 应答;
-    } catch (错) {
+    } catch (错误) {
       清空(容器);
-      写状态(状态, "发不出去：" + 错.message, false);
+      写状态(状态, "发不出去：" + 错误.message, false);
       return null;
     }
   }

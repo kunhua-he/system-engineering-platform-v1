@@ -32,8 +32,8 @@ def 命令调用(端口: int, 参数: list, 显示: bool) -> int:
         raise 用法错("调用 要一个编号：调用 <编号> <值…>")
     编号文, 值参数 = 参数[0], 参数[1:]
     编号 = int(编号文)  # 只做「是不是十进制数」的搬运，不查它存不存在（那是后端的判）
-    体 = {"编号": 编号, "值": [拼值(一项) for 一项 in 值参数]}
-    体文本 = json.dumps(体, ensure_ascii=False)
+    应答体 = {"编号": 编号, "值": [拼值(一项) for 一项 in 值参数]}
+    体文本 = json.dumps(应答体, ensure_ascii=False)
     状态, 应答 = 发请求(端口, "POST", 路径_调用, 体文本, 显示)
     try:
         解析后 = json.loads(应答)
@@ -84,16 +84,16 @@ def 跑命令行(参数: list) -> None:
     """命令行主流程 —— 与拆分前入口的 `__main__` 块逐字同义（含退出码）。"""
     try:
         sys.exit(入口函数(参数))
-    except 用法错 as 错:
-        print("用法错：{}".format(错), file=sys.stderr)
+    except 用法错 as 错误:
+        print("用法错：{}".format(错误), file=sys.stderr)
         print("（本地参数写错，不是后端的判断）", file=sys.stderr)
         sys.exit(2)
-    except FileNotFoundError as 错:
-        print("文件读不到：{}".format(错), file=sys.stderr)
+    except FileNotFoundError as 错误:
+        print("文件读不到：{}".format(错误), file=sys.stderr)
         sys.exit(2)
-    except urllib.error.URLError as 错:
+    except urllib.error.URLError as 错误:
         # 报的是**本次真正用的那个端口**（可能是 --端口 或环境变量给的），不报默认值。
-        sys.exit(连不上(当前端口, 错.reason if hasattr(错, "reason") else 错))
-    except ValueError as 错:
-        print("用法错：{}（编号与端口必须是十进制数）".format(错), file=sys.stderr)
+        sys.exit(连不上(当前端口, 错误.reason if hasattr(错误, "reason") else 错误))
+    except ValueError as 错误:
+        print("用法错：{}（编号与端口必须是十进制数）".format(错误), file=sys.stderr)
         sys.exit(2)

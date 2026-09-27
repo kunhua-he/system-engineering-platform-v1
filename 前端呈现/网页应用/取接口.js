@@ -80,8 +80,8 @@ export async function 跑案例(标识) {
  * `目标` 的五种取值由调用方给（本页不在这里判它合不合法 —— 非法由后端回 `9004`）。
  */
 export async function 发导出(目标, 标识) {
-  const 尾 = 标识 ? ',"标识":' + JSON.stringify(标识) : "";
-  return 发请求(路径_导出, '{"目标":' + JSON.stringify(目标) + 尾 + "}");
+  const 尾部 = 标识 ? ',"标识":' + JSON.stringify(标识) : "";
+  return 发请求(路径_导出, '{"目标":' + JSON.stringify(目标) + 尾部 + "}");
 }
 
 /**
@@ -92,9 +92,9 @@ export async function 发导出(目标, 标识) {
  * 合法性一律在后端判（路径空 / 后缀不符 / 不存在 / 读不到 / 写不到各回一个明确码）。
  */
 export async function 发程序文本(动作, 路径, 正文) {
-  const 尾 = 正文 === undefined ? "" : ',"正文":' + JSON.stringify(正文);
+  const 尾部 = 正文 === undefined ? "" : ',"正文":' + JSON.stringify(正文);
   return 发请求(路径_程序文本, '{"动作":' + JSON.stringify(动作)
-    + ',"路径":' + JSON.stringify(路径 || "") + 尾 + "}");
+    + ',"路径":' + JSON.stringify(路径 || "") + 尾部 + "}");
 }
 
 /** `POST /接口/菜单命令`，体 `{"编号":"0xe100"}`。后端此刻一律回 `9001`，本页如实显示。 */
@@ -118,10 +118,10 @@ export const 类型标签 = { 空: 0, 文本: 4 };
  * 它不改文本一个字节、不看文本内容、不认任何关键字 —— 不是「处理程序」，是编码传输串。
  */
 export function 拼文本调用体(编号, 文本, 参数个数) {
-  const 值 = [{ 类型标签: 类型标签.文本, 值: 文本 }];
+  const 待处理值 = [{ 类型标签: 类型标签.文本, 值: 文本 }];
   const 位次 = Math.max(1, Number(参数个数) || 1);
-  for (let 位 = 1; 位 < 位次; 位 += 1) 值.push({ 类型标签: 类型标签.空, 值: 0 });
-  return '{"编号":' + 编号 + ',"值":' + JSON.stringify(值) + "}";
+  for (let 位置 = 1; 位置 < 位次; 位置 += 1) 待处理值.push({ 类型标签: 类型标签.空, 值: 0 });
+  return '{"编号":' + 编号 + ',"值":' + JSON.stringify(待处理值) + "}";
 }
 
 /**
@@ -152,12 +152,12 @@ async function 发请求(路径, 体文) {
 // 体用 `clone().json()` 试一次；拿不到就当原文摆出来（例如静态服务把 /接口 当文件找、
 // 回一段 HTML —— 那是同源托管没接上，不是本页能修的事）。
 async function 收应答(应答) {
-  let 体 = null;
+  let 应答体 = null;
   try {
-    体 = await 应答.clone().json();
+    应答体 = await 应答.clone().json();
   } catch {
-    体 = null;
+    应答体 = null;
   }
-  const 文 = await 应答.text();
-  return { 状态: 应答.status, 体, 文 };
+  const 文本 = await 应答.text();
+  return { 状态: 应答.status, 体: 应答体, 文: 文本 };
 }

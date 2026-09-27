@@ -30,7 +30,7 @@ export function 装设计视图(取元素, 钩子) {
   const 属表 = 取元素("属表");
   const 属头名 = 取元素("属头名");
   const 属头类 = 取元素("属头类");
-  const 箱 = 取元素("组件箱");
+  const 组件箱 = 取元素("组件箱");
   const 窗体身 = 取元素("窗体身");
   const 画布 = 取元素("画布");
   let 选中 = null;
@@ -41,37 +41,37 @@ export function 装设计视图(取元素, 钩子) {
     属头名.textContent = 键值对.名;
     属头类.textContent = 键值对.类;
     清空(属表);
-    for (const 名 of 属性名表) {
-      const 行 = 建元素("div", "属行");
-      行.append(建元素("div", "属名", 名));
-      行.append(建元素("div", "属值", String(键值对.值[名] ?? "（空）")));
-      属表.append(行);
+    for (const 名称 of 属性名表) {
+      const 源码行 = 建元素("div", "属行");
+      源码行.append(建元素("div", "属名", 名称));
+      源码行.append(建元素("div", "属值", String(键值对.值[名称] ?? "（空）")));
+      属表.append(源码行);
     }
   }
 
   /** 从一个真 DOM 控件读它的属性值 —— 几何读实际盒子，状态读 DOM 自身。 */
   function 读件属性(元素, 名称, 类别) {
-    const 外 = 窗体身.getBoundingClientRect();
-    const 盒 = 元素.getBoundingClientRect();
-    const 算 = getComputedStyle(元素);
+    const 窗体矩形 = 窗体身.getBoundingClientRect();
+    const 容器盒 = 元素.getBoundingClientRect();
+    const 算得样式 = getComputedStyle(元素);
     return {
       名: 名称, 类: 类别,
       值: {
         名称: 元素.id || "（未命名）",
         备注: 元素.title || "（空）",
-        左边: Math.round(盒.left - 外.left),
-        顶边: Math.round(盒.top - 外.top),
-        宽度: Math.round(盒.width),
-        高度: Math.round(盒.height),
+        左边: Math.round(容器盒.left - 窗体矩形.left),
+        顶边: Math.round(容器盒.top - 窗体矩形.top),
+        宽度: Math.round(容器盒.width),
+        高度: Math.round(容器盒.height),
         标记: 元素.dataset.标记 || "（空）",
-        可视: 算.visibility === "hidden" || 算.display === "none" ? "假" : "真",
+        可视: 算得样式.visibility === "hidden" || 算得样式.display === "none" ? "假" : "真",
         禁止: 元素.disabled ? "真" : "假",
-        鼠标指针: 算.cursor,
+        鼠标指针: 算得样式.cursor,
         默认类型: 元素.tagName.toLowerCase() === "button" ? (元素.type || "submit") : "（无）",
-        字体: 算.fontFamily.split(",")[0] + ", " + 算.fontSize,
+        字体: 算得样式.fontFamily.split(",")[0] + ", " + 算得样式.fontSize,
         界面风格: "（本平台没有这一层）",
-        矩形: [Math.round(盒.left - 外.left), Math.round(盒.top - 外.top),
-          Math.round(盒.width), Math.round(盒.height)].join(", "),
+        矩形: [Math.round(容器盒.left - 窗体矩形.left), Math.round(容器盒.top - 窗体矩形.top),
+          Math.round(容器盒.width), Math.round(容器盒.height)].join(", "),
       },
     };
   }
@@ -79,18 +79,18 @@ export function 装设计视图(取元素, 钩子) {
   /** 从一个能力读它的属性 —— 能读的都是应答里真有的字段，读不到的老实写「（应答里没有）」。 */
   function 读能属性(能力) {
     const 编号 = Number(能力.编号);
-    const 段 = 找段(编号);
-    const 扩 = 找扩展(编号);
+    const 号段 = 找段(编号);
+    const 扩展 = 找扩展(编号);
     return {
       名: String(能力.名称), 类: "能力 " + 编号,
       值: {
         名称: String(能力.名称),
-        备注: "号段 " + (段 ? 段.名 + "（" + 段.起 + "–" + 段.止 + "）" : "（落不进任何一段）"),
+        备注: "号段 " + (号段 ? 号段.名 + "（" + 号段.起 + "–" + 号段.止 + "）" : "（落不进任何一段）"),
         左边: "（不适用：能力没有屏幕位置）",
         顶边: "（不适用：能力没有屏幕位置）",
         宽度: String(能力.参数个数) + " 个参数",
         高度: "返回类型 " + String(能力.返回类型),
-        标记: 扩 ? 扩.名 + " · " + 扩.种类 : "底座自有",
+        标记: 扩展 ? 扩展.名 + " · " + 扩展.种类 : "底座自有",
         可视: "真（GET /接口 回了它）",
         禁止: "假",
         鼠标指针: "（不适用）",
@@ -123,10 +123,10 @@ export function 装设计视图(取元素, 钩子) {
 
   function 装画布() {
     清空(窗体身);
-    const 标 = 建元素("div", "窗件 标签", "系统工程平台 · 窗体1（只摆形状：拖放出代码不做，缺控件库 · 代码生成器）");
-    标.id = "标签_题";
-    摆件(标, 8, 6, 470, 16, "标签");
-    窗体身.append(标);
+    const 标签件 = 建元素("div", "窗件 标签", "系统工程平台 · 窗体1（只摆形状：拖放出代码不做，缺控件库 · 代码生成器）");
+    标签件.id = "标签_题";
+    摆件(标签件, 8, 6, 470, 16, "标签");
+    窗体身.append(标签件);
 
     const 钮表 = [
       ["按钮_清单", "取清单", () => { 钩子.切页签("搜寻1"); return 钩子.取清单(); }],
@@ -134,60 +134,60 @@ export function 装设计视图(取元素, 钩子) {
       ["按钮_编译", "编译", () => { 钩子.切页签("提示"); return 钩子.跑编译(); }],
       ["按钮_诊断", "诊断", () => { 钩子.切页签("提示"); return 钩子.跑诊断(); }],
     ];
-    钮表.forEach(([号, 文本, 动作], 位置) => {
-      const 钮 = 建元素("button", "窗件", 文本);
-      钮.id = 号;
-      摆件(钮, 8 + 位置 * 92, 30, 86, 24, "");
-      钮.addEventListener("click", (事件) => { 事件.stopPropagation(); 动作(); });
-      钮.addEventListener("mousedown", (事件) => { 事件.stopPropagation(); 选件(钮, 文本, "按钮"); });
-      窗体身.append(钮);
+    钮表.forEach(([号值, 文本, 动作], 位置) => {
+      const 按钮 = 建元素("button", "窗件", 文本);
+      按钮.id = 号值;
+      摆件(按钮, 8 + 位置 * 92, 30, 86, 24, "");
+      按钮.addEventListener("click", (事件) => { 事件.stopPropagation(); 动作(); });
+      按钮.addEventListener("mousedown", (事件) => { 事件.stopPropagation(); 选件(按钮, 文本, "按钮"); });
+      窗体身.append(按钮);
     });
 
-    const 表 = 建元素("div", "窗件 表格");
-    表.id = "表格_清单";
-    摆件(表, 8, 62, 486, 250, "表格");
-    表.title = "能力清单（真调 GET /接口 的结果）";
-    表.addEventListener("mousedown", (事件) => { 事件.stopPropagation(); 选件(表, "能力清单表", "表格"); });
-    窗体身.append(表);
+    const 项表 = 建元素("div", "窗件 表格");
+    项表.id = "表格_清单";
+    摆件(项表, 8, 62, 486, 250, "表格");
+    项表.title = "能力清单（真调 GET /接口 的结果）";
+    项表.addEventListener("mousedown", (事件) => { 事件.stopPropagation(); 选件(项表, "能力清单表", "表格"); });
+    窗体身.append(项表);
   }
 
   /** 往窗体那张表里填能力清单 —— 数据来自真应答，本页不编行。 */
   function 填表(项表) {
     if (!项表) return;
-    const 头 = 建元素("div", "表格行 表头");
-    for (const 名 of ["编号", "名称", "参数个数", "返回类型"]) 头.append(建元素("span", null, 名));
+    const 头部 = 建元素("div", "表格行 表头");
+    for (const 名称 of ["编号", "名称", "参数个数", "返回类型"]) 头部.append(建元素("span", null, 名称));
     清空(项表);
-    项表.append(头);
-    for (const 能 of 能表) {
-      const 行 = 建元素("div", "表格行");
-      for (const 值 of [能.编号, 能.名称, 能.参数个数, 能.返回类型]) 行.append(建元素("span", null, String(值)));
-      项表.append(行);
+    项表.append(头部);
+    for (const 能力 of 能表) {
+      const 源码行 = 建元素("div", "表格行");
+      for (const 待处理值 of [能力.编号, 能力.名称, 能力.参数个数, 能力.返回类型]) 源码行.append(建元素("span", null, String(待处理值)));
+      项表.append(源码行);
     }
   }
 
   // ── 组件箱：基本组件（0–999）/ 扩展组件（1000–9999）───────────────────
   function 摆箱() {
-    清空(箱);
-    const 组 = [
+    清空(组件箱);
+    const 组件组 = [
       ["基本组件 · 底座自有（0–999）", 能表.filter((能力) => Number(能力.编号) <= 999), "能力"],
       ["扩展组件 · 扩展根热载入（1000–9999）", 能表.filter((能力) => Number(能力.编号) >= 1000), "模块"],
     ];
-    for (const [名, 项表, 图名] of 组) {
-      箱.append(建元素("div", "箱组", 名 + "（" + 项表.length + "）"));
+    for (const [名称, 项表, 图名] of 组件组) {
+      组件箱.append(建元素("div", "箱组", 名称 + "（" + 项表.length + "）"));
       if (!项表.length) {
-        箱.append(建元素("div", "箱空", "本类此刻 0 条 —— 应答里没有落在这段的编号"));
+        组件箱.append(建元素("div", "箱空", "本类此刻 0 条 —— 应答里没有落在这段的编号"));
         continue;
       }
-      const 格 = 建元素("div", "箱格");
-      for (const 能 of 项表) {
-        const 钮 = 建元素("button", "箱件");
-        钮.type = "button";
-        钮.title = String(能.编号) + " " + String(能.名称) + "（点一下：属性面板看它，并真调它的契约）";
-        钮.append(画图标(图名));
-        钮.addEventListener("click", () => 点箱件(钮, 能));
-        格.append(钮);
+      const 格容器 = 建元素("div", "箱格");
+      for (const 能力 of 项表) {
+        const 按钮 = 建元素("button", "箱件");
+        按钮.type = "button";
+        按钮.title = String(能力.编号) + " " + String(能力.名称) + "（点一下：属性面板看它，并真调它的契约）";
+        按钮.append(画图标(图名));
+        按钮.addEventListener("click", () => 点箱件(按钮, 能力));
+        格容器.append(按钮);
       }
-      箱.append(格);
+      组件箱.append(格容器);
     }
   }
 

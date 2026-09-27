@@ -44,37 +44,37 @@ def 入口函数(参数):
     宽, 高 = 参考尺寸
     网关 = 声明根 = None
     只出图 = False
-    序 = 1
-    while 序 < len(参数):
-        本参 = 参数[序]
+    序号 = 1
+    while 序号 < len(参数):
+        本参 = 参数[序号]
         if 本参 == "--网关":
-            网关 = 参数[序 + 1]; 序 += 2
+            网关 = 参数[序号 + 1]; 序号 += 2
         elif 本参 == "--声明根":
-            声明根 = 参数[序 + 1]; 序 += 2
+            声明根 = 参数[序号 + 1]; 序号 += 2
         elif 本参 == "--只出图":
-            只出图 = True; 序 += 1
+            只出图 = True; 序号 += 1
         else:
-            宽, 高 = int(参数[序]), int(参数[序 + 1]); 序 += 2
+            宽, 高 = int(参数[序号]), int(参数[序号 + 1]); 序号 += 2
 
     if not (网关 and 声明根):
         print("没给 --网关 / --声明根 ⇒ 转调界面反解截图.py 的老路（只起静态服务 · 带错误文本污染）")
-        码 = subprocess.call([sys.executable, str(旧渲染件), str(出图), str(宽), str(高)])
+        错误码 = subprocess.call([sys.executable, str(旧渲染件), str(出图), str(宽), str(高)])
     else:
-        码 = 0
+        错误码 = 0
         try:
             from playwright.sync_api import sync_playwright
-        except ImportError as 错:
-            print(f"起不来：没有 playwright（{错}）", file=sys.stderr)
+        except ImportError as 错误:
+            print(f"起不来：没有 playwright（{错误}）", file=sys.stderr)
             return 1
         # 起**演示口径**的网关：端口取 0 让它自身报，静态根指我方前端目录（同源）。
         进程 = subprocess.Popen(
             [str(网关), "--声明根", str(声明根), "--端口", "0", "--静态根", str(前端目录)],
             stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
         端口 = None
-        for 行 in 进程.stdout:
-            print("  [网关] " + 行.rstrip())
-            if "监听 127.0.0.1:" in 行:
-                端口 = int(行.rsplit(":", 1)[1])
+        for 源码行 in 进程.stdout:
+            print("  [网关] " + 源码行.rstrip())
+            if "监听 127.0.0.1:" in 源码行:
+                端口 = int(源码行.rsplit(":", 1)[1])
                 break
         if not 端口:
             进程.kill()
@@ -82,21 +82,21 @@ def 入口函数(参数):
             return 1
         网址 = f"http://127.0.0.1:{端口}/"
         try:
-            with sync_playwright() as 剧:
+            with sync_playwright() as 驱动器:
                 浏览器 = 剧.chromium.launch()
                 try:
-                    页 = 浏览器.new_page(viewport={"width": 宽, "height": 高})
-                    页.goto(网址, wait_until="load", timeout=5000)
-                    页.wait_for_timeout(800)  # 让首帧布局与字体落定
-                    页.screenshot(path=str(出图))
+                    页面 = 浏览器.new_page(viewport={"width": 宽, "height": 高})
+                    页面.goto(网址, wait_until="load", timeout=5000)
+                    页面.wait_for_timeout(800)  # 让首帧布局与字体落定
+                    页面.screenshot(path=str(出图))
                 finally:
                     浏览器.close()
         finally:
             进程.kill()
             进程.wait()
 
-    if 码:
-        return 码
+    if 错误码:
+        return 错误码
     if not 出图.is_file():
         print(f"渲染失败：没写出来 {出图}", file=sys.stderr)
         return 1

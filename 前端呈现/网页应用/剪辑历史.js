@@ -15,10 +15,10 @@ const 上限 = 300;
 
 /** 一行：时刻 · 触发者 · 读数。`类别` 是触发者，`文本` 是真实读数。 */
 export function 记流水(类别, 文本) {
-  const 时 = new Date();
-  const 补 = (个数) => String(个数).padStart(2, "0");
+  const 当前时刻 = new Date();
+  const 补两位 = (个数) => String(个数).padStart(2, "0");
   流水.push({
-    时: 补(时.getHours()) + ":" + 补(时.getMinutes()) + ":" + 补(时.getSeconds()),
+    时: 补两位(当前时刻.getHours()) + ":" + 补两位(当前时刻.getMinutes()) + ":" + 补两位(当前时刻.getSeconds()),
     类: 类别,
     文: 文本,
   });
@@ -37,10 +37,10 @@ function 画流水() {
     return;
   }
   // 新的在上：一眼看到刚发生的那一条。
-  for (const 条 of [...流水].reverse()) {
-    const 行 = 建元素("div", "史行");
-    行.append(建元素("span", "史时", 条.时), 建元素("span", "史类", 条.类), 建元素("span", "文", 条.文));
-    列表.append(行);
+  for (const 一条 of [...流水].reverse()) {
+    const 源码行 = 建元素("div", "史行");
+    源码行.append(建元素("span", "史时", 一条.时), 建元素("span", "史类", 一条.类), 建元素("span", "文", 一条.文));
+    列表.append(源码行);
   }
   if (状态) 状态.textContent = 流水.length + " 行";
 }
