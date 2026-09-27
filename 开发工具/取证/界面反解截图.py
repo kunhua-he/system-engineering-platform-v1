@@ -1,0 +1,100 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""界面反解截图 —— 把**我方前端**渲染成 PNG，喂给 `配色对拍.py`。
+
+**为什么需要它**：`配色对拍.py` 只吃两张 PNG，而「我方那一张」此前是用一个**没进仓的临时脚本**
+渲染的 ⇒ 整条视觉验收链**不可复跑**（`前端呈现/说明.md` §八 记着这条待办，台账 #177）。
+本脚本把那一步落进仓：起一个本地静态服务（ES 模块必须走 http，`file://` 会被浏览器挡），
+用 playwright 的无头 chromium 按**参考图的尺寸**截图。
+
+**与 `说明.md` §八 的叫法冲突（如实记）**：§八 把 `界面反解截图.py` 说成「解**参考图**」，
+而本脚本做的是「渲染**我方**前端」。名字沿用 §八 已登记的那个（免得凭空多一个名字），
+但**两件事不同** ⇒ 若将来真要「解参考图」，那是另一件，另起名字。
+
+跑法（要 playwright 与它的 chromium；**缺什么就报什么，不许编读数**）：
+    python3 开发工具/取证/界面反解截图.py <输出.png> [宽 高]
+    # 默认尺寸 = 参考图尺寸 1426x755；输出约定落临时区，**不进制品**
+    # 出图后接着对拍：
+    python3 开发工具/取证/配色对拍.py 项目文档/参考/易语言IDE_截图.png <输出.png>
+
+退出码：0 = 出图；1 = 起不来或渲染失败（原因一律打到 stderr，**不假装成功**）。
+"""
+import functools
+import http.server
+import socketserver
+import sys
+import threading
+from pathlib import Path
+
+仓根 = Path(__file__).resolve().parents[2]
+前端目录 = 仓根 / "前端呈现" / "网页应用"
+参考图 = 仓根 / "项目文档" / "参考" / "易语言IDE_截图.png"
+参考尺寸 = (1426, 755)
+
+
+def 主(参数):
+    if not 参数:
+        print(__doc__)
+        return 1
+    出图 = Path(参数[0])
+    if len(参数) >= 3:
+        try:
+            宽, 高 = int(参数[1]), int(参数[2])
+        except ValueError:
+            print(f"宽高要是整数：{参数[1]!r} {参数[2]!r}", file=sys.stderr)
+            return 1
+    else:
+        宽, 高 = 参考尺寸
+    if not 前端目录.is_dir():
+        print(f"起不来：前端目录不存在 {前端目录}", file=sys.stderr)
+        return 1
+    try:
+        from playwright.sync_api import sync_playwright
+    except ImportError as 错:
+        print(f"起不来：没有 playwright 模块（{错}）", file=sys.stderr)
+        print("  装法：pip install playwright 然后 playwright install chromium", file=sys.stderr)
+        return 1
+
+    # 本地静态服务：ES 模块要 http；端口取 0 = 让内核给一个空闲口（不写死端口，免得撞）。
+    # 静音访问日志：静态服务是本脚本的内部件，它的 404 噪声（页面会拉 `/接口`）不该混进读数。
+    # 用**赋值**而不是子类 —— 本文件是 py-script，判据「只许一个顶层 def/class」多一个就欠债。
+    http.server.SimpleHTTPRequestHandler.log_message = lambda *a, **k: None
+    处理 = functools.partial(http.server.SimpleHTTPRequestHandler, directory=str(前端目录))
+    try:
+        服务 = socketserver.TCPServer(("127.0.0.1", 0), 处理)
+    except OSError as 错:
+        print(f"起不来：静态服务开不了（{错}）", file=sys.stderr)
+        return 1
+    端口 = 服务.server_address[1]
+    服务.allow_reuse_address = True
+    threading.Thread(target=服务.serve_forever, daemon=True).start()
+    try:
+        with sync_playwright() as 剧:
+            try:
+                浏览器 = 剧.chromium.launch()
+            except Exception as 错:  # playwright 的错误类型随版本变，按「起不来」一类处理
+                print(f"起不来：chromium 启动失败（{错}）", file=sys.stderr)
+                print("  装法：playwright install chromium", file=sys.stderr)
+                return 1
+            try:
+                页 = 浏览器.new_page(viewport={"width": 宽, "height": 高})
+                # `load` 而不是 `networkidle`：本页会周期性拉 `/接口`，networkidle 可能永远不达。
+                页.goto(f"http://127.0.0.1:{端口}/", wait_until="load", timeout=15000)
+                页.wait_for_timeout(800)  # 让首帧布局与字体落定
+                页.screenshot(path=str(出图))
+            finally:
+                浏览器.close()
+    finally:
+        服务.shutdown()
+        服务.server_close()
+
+    if not 出图.is_file():
+        print(f"渲染失败：没写出来 {出图}", file=sys.stderr)
+        return 1
+    print(f"出图 {出图} · {宽}x{高} · {出图.stat().st_size} 字节 · 静态服务端口 {端口}")
+    print(f"对拍：python3 开发工具/取证/配色对拍.py {参考图.relative_to(仓根)} {出图}")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(主(sys.argv[1:]))
