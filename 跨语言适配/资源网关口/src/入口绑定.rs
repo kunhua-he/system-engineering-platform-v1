@@ -64,7 +64,7 @@ pub struct 部署绑定 {
 
 impl 部署绑定 {
     /// 空绑定：一条资源都没绑 ⇒ 任何调用都拿「入口未绑定」（若声明里有它）。
-    pub fn 空() -> Self {
+    pub fn 空实例() -> Self {
         Self { 项表: Vec::new() }
     }
 
