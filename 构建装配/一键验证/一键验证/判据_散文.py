@@ -74,12 +74,12 @@ def 检查23_散文不落被忽略目录(上层读数: dict) -> list:
     **失败** = 逐条报出那份散文；**未判** = 读不出被忽略面（非 git 仓 / git 不可用）。
     """
     输出缓冲 = []
-    条目, 错 = 忽略条目(上层读数["仓根"])
-    if 错:
+    条目, 错误 = 忽略条目(上层读数["仓根"])
+    if 错误:
         判不了(
             检查名[22],
             "git ls-files --others --ignored --exclude-standard",
-            f"判不了：{错}",
+            f"判不了：{错误}",
             "被忽略目录里的散文只有 git 看得见（`.gitignore` 的语义不许自身重写一份——"
             "那是第二个事实源）⇒ 读不出就判不了。读数命令是定死的（见文件头）⇒ "
             "只能由环境（git 可用）或判据作者确认",
@@ -96,8 +96,8 @@ def 检查23_散文不落被忽略目录(上层读数: dict) -> list:
         return 输出缓冲
 
     命中 = [
-        键 for 键 in 条目
-        if 键.endswith(".md") and not 键.startswith(被忽略散文排除前缀)
+        键名 for 键名 in 条目
+        if 键名.endswith(".md") and not 键名.startswith(被忽略散文排除前缀)
     ]
     for 键名 in sorted(命中):
         输出缓冲.append(

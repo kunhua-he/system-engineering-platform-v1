@@ -38,9 +38,9 @@ def _展开花括号(一条: str) -> list:
     """把 `a/{b,c}/d` 展开成 `[a/b/d, a/c/d]`（扫描面里就一层花括号）。"""
     一条 = str(一条)
     if "{" in 一条 and "}" in 一条:
-        前, 后 = 一条.split("{", 1)
-        中, 尾 = 后.split("}", 1)
-        return [前 + 段.strip() + 尾 for 段 in 中.split(",")]
+        前缀, 剩余部分 = 一条.split("{", 1)
+        括号内容, 尾部 = 剩余部分.split("}", 1)
+        return [前缀 + 号段.strip() + 尾部 for 号段 in 括号内容.split(",")]
     return [一条]
 
 

@@ -70,7 +70,7 @@ def 检查16_底座不认识扩展(上层读数: dict) -> list:
         if not 命中:
             continue
         # 行号取第一处命中的行（生产区文本与原文等长 ⇒ 偏移与行号仍对齐）
-        位置 = min(文本.find(名) for 名 in 命中)
+        位置 = min(文本.find(名称) for 名称 in 命中)
         行号 = 文本.count("\n", 0, 位置) + 1
         输出缓冲.append(
             违规(

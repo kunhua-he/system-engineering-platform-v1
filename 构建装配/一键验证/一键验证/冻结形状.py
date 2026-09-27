@@ -57,8 +57,8 @@ def 抽符号声明文本(文本: str, 符号名: str) -> "str | None":
     """
     净文本 = 去注释(文本)
     for 匹配结果 in _声明头.finditer(净文本):
-        种类, 名 = 匹配结果.group(1), 匹配结果.group(2)
-        if 名 != 符号名:
+        种类, 名称 = 匹配结果.group(1), 匹配结果.group(2)
+        if 名称 != 符号名:
             continue
         区间起点 = 匹配结果.start()
         体起 = 净文本.find("{", 匹配结果.end())

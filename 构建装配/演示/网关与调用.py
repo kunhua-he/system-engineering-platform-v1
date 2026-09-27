@@ -250,7 +250,7 @@ def 跑主链(壳起表=None) -> int:
         死层 = "调用层"
         程序文本 = 程序文本源.read_text(encoding="utf-8")
         打印("④ 经 HTTP 真调 {}（样本：测试验证/案例/真程序文本/输入.程序文本，{} 字节）".format(
-            "/".join(str(号) for 号 in 被调号表), 程序文本源.stat().st_size))
+            "/".join(str(号值) for 号值 in 被调号表), 程序文本源.stat().st_size))
         调用读数 = {}
         for 号值 in 被调号表:
             结果 = 真调(端口, 号值, 程序文本)
@@ -326,7 +326,7 @@ def 跑主链(壳起表=None) -> int:
     回执["命令墙钟来源"] = "完整壳（入口导入前起表）" if 完整壳 else "下界（本函数起表，壳未给起表点）"
     回执.setdefault("判据", {})["五秒内"] = 墙钟毫秒 <= 阈值毫秒
     是否通过 = isinstance(回执.get("判据"), dict) and 回执["判据"].get("到过判定", True) and all(
-        值 for 键, 值 in 回执["判据"].items() if 键 != "到过判定"
+        待处理值 for 键名, 待处理值 in 回执["判据"].items() if 键名 != "到过判定"
     ) and 回执.get("层", {}).get("清理", {}).get("暂存已删") is True
     回执["结论"] = "通过" if 是否通过 and "失败" not in 回执 else "不通过"
     写回执(回执)
