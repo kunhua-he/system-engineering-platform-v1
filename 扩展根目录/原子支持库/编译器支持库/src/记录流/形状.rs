@@ -10,7 +10,7 @@ pub const 段体魔数: u32 = 0x030B_EF3F;
 pub const 引用分隔符: u8 = 0x0D;
 
 /// 支持库引用串的字段名，**顺序即盘面顺序**。
-pub const 引用字段名: [&str; 5] = ["库文件名", "GUID", "版本甲", "版本乙", "中文名"];
+pub const 引用字段名: [&str; 5] = ["库文件名", "GUID", "版本首", "版本次", "中文名"];
 
 /// 段数据头内各字段的相对偏移。
 pub mod 头偏移 {
@@ -26,7 +26,7 @@ pub mod 头偏移 {
     pub const 补零: usize = 0x10;
     /// 补零区长度。
     pub const 补零长度: usize = 40;
-    /// u32 段体甲。
+    /// u32 段体首字段。
     pub const 体首字段: usize = 0x38;
     /// u32 段体魔数 `0x030BEF3F`。
     pub const 体魔数: usize = 0x3C;
@@ -50,7 +50,7 @@ pub struct 段数据头 {
 /// 段体头（段体前 8 字节）。
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct 段体头 {
-    /// u32 段体甲（段数据偏移 0x38）。实测高 16 位 ∈ {1,2,3,7,10}，低 16 位可变。
+    /// u32 段体首字段（段数据偏移 0x38）。实测高 16 位 ∈ {1,2,3,7,10}，低 16 位可变。
     pub 首字段: u32,
 }
 
@@ -108,11 +108,11 @@ impl 支持库引用 {
     pub fn GUID(&self) -> Option<&[u8]> {
         self.五段()?.get(1).map(Vec::as_slice)
     }
-    /// 5 段时取 `版本甲`。
+    /// 5 段时取 `版本首`。
     pub fn 首版本(&self) -> Option<&[u8]> {
         self.五段()?.get(2).map(Vec::as_slice)
     }
-    /// 5 段时取 `版本乙`。
+    /// 5 段时取 `版本次`。
     pub fn 次版本(&self) -> Option<&[u8]> {
         self.五段()?.get(3).map(Vec::as_slice)
     }
@@ -131,11 +131,11 @@ impl 支持库引用 {
 /// 三个数组的元素数**必须相等**，且等于 `支持库数`；四处在盘面上是独立编码，互为校验。
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct 支持库表 {
-    /// 数组甲：N × u32，盘面字节长度前缀 = `4N`。
+    /// 首数组：N × u32，盘面字节长度前缀 = `4N`。
     pub 首数组: Vec<u32>,
-    /// 数组乙：N × u16，盘面字节长度前缀 = `2N`。
+    /// 次数组：N × u16，盘面字节长度前缀 = `2N`。
     pub 次数组: Vec<u16>,
-    /// 数组丙：N × u16，盘面字节长度前缀 = `2N`。
+    /// 末数组：N × u16，盘面字节长度前缀 = `2N`。
     pub 末数组: Vec<u16>,
     /// 支持库引用记录，条数 = N。
     pub 引用表: Vec<支持库引用>,
