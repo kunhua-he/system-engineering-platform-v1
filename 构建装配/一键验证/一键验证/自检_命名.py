@@ -26,8 +26,8 @@ def _计(后缀: str, 文本: str) -> tuple:
     return 代称处数, 字母数
 
 
-def _条(名: str, 好: bool, 说明: str) -> tuple:
-    return (名, 好, 说明)
+def _条(名称: str, 合格样本: bool, 说明: str) -> tuple:
+    return (名称, 合格样本, 说明)
 
 
 def 自检_命名扫描() -> list:

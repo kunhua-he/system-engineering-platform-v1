@@ -8,16 +8,16 @@ from .路径形状 import 生成器相对路径, 仓根
 from .生成流程 import 生成, 落盘件表
 
 
-def 找第一处不一致(新, 旧, 起点=0):
+def 找第一处不一致(新内容, 旧, 起点=0):
     """返回 (偏移, 新行, 旧行, 行号)；从 起点 之后完全一致则返回 None。"""
-    公共 = min(len(新), len(旧))
+    公共 = min(len(新内容), len(旧))
     偏移 = None
     for 序 in range(起点, 公共):
-        if 新[序] != 旧[序]:
+        if 新内容[序] != 旧[序]:
             偏移 = 序
             break
     if 偏移 is None:
-        if len(新) == len(旧):
+        if len(新内容) == len(旧):
             return None
         偏移 = 公共
 
@@ -28,23 +28,23 @@ def 找第一处不一致(新, 旧, 起点=0):
             尾 = len(字节流)
         return 字节流[头:尾].decode("utf-8", "replace"), 字节流[:位置].count(b"\n") + 1
 
-    新位置 = min(偏移, max(len(新) - 1, 0))
+    新位置 = min(偏移, max(len(新内容) - 1, 0))
     旧位置 = min(偏移, max(len(旧) - 1, 0))
-    新行, 行号 = 取行(新, 新位置)
+    新行, 行号 = 取行(新内容, 新位置)
     旧行, _ = 取行(旧, 旧位置)
     return 偏移, 新行, 旧行, 行号
 
 
-def 源指纹块范围(新):
+def 源指纹块范围(新内容):
     """产物里 源指纹 那一段的 [起, 止) 字节区间；找不到返回 None。
 
     源指纹必然先于正文变化（改了源，指纹就先变），所以只报「第一处」等于只报指纹行、
     说不出到底改了什么。故额外报「越过源指纹块后的第一处」。
     """
-    起 = 新.find("// 源指纹：".encode("utf-8"))
+    起 = 新内容.find("// 源指纹：".encode("utf-8"))
     if 起 < 0:
         return None
-    止 = 新.find("// 生成器：".encode("utf-8"), 起)
+    止 = 新内容.find("// 生成器：".encode("utf-8"), 起)
     if 止 < 0:
         return None
     return 起, 止
@@ -56,13 +56,13 @@ def 报提醒(提醒):
         print("提醒（不卡生成）：%s" % 一条, file=sys.stderr)
 
 
-def 陈旧件(根, 应有):
+def 陈旧件(根目录, 应有):
     """盘上在、生成物**不再出**的生成物子件（陈旧件 = 也是不新鲜，须报，不许静默留）。
 
     认法：顶层 `src/*数据.rs`（生成物命名的固定后缀；路由件与全部子件都以「数据.rs」结尾）
     里不在 `应有` 的。`lib.rs` / `接缝.rs` / `资源声明.rs` 不以「数据.rs」结尾 ⇒ 不误伤。
     """
-    目录 = os.path.join(仓根, os.path.dirname(根.落盘件))
+    目录 = os.path.join(仓根, os.path.dirname(根目录.落盘件))
     if not os.path.isdir(目录):
         return []
     应有集 = set(应有)
@@ -70,20 +70,20 @@ def 陈旧件(根, 应有):
     for 名 in sorted(os.listdir(目录)):
         if not 名.endswith("数据.rs"):
             continue
-        相对 = os.path.join(os.path.dirname(根.落盘件), 名).replace(os.sep, "/")
+        相对 = os.path.join(os.path.dirname(根目录.落盘件), 名).replace(os.sep, "/")
         if 相对 not in 应有集:
             出.append(相对)
     return 出
 
 
-def 检查(根):
-    新件, 计数, 提醒 = 生成(根)
+def 检查(根目录):
+    新件, 计数, 提醒 = 生成(根目录)
     报提醒(提醒)
-    应有 = 落盘件表(根)
+    应有 = 落盘件表(根目录)
     缺 = [相对 for 相对 in 应有 if not os.path.isfile(os.path.join(仓根, 相对))]
     if 缺:
         print("生成物不存在：%s" % " · ".join(缺))
-        print("跑一次生成：python %s --声明根 %s" % (生成器相对路径, 根.根))
+        print("跑一次生成：python %s --声明根 %s" % (生成器相对路径, 根目录.根))
         return 1
     不一致 = []
     for 相对 in 应有:
@@ -92,12 +92,12 @@ def 检查(根):
             旧字节 = 句柄.read()
         if 新字节 != 旧字节:
             不一致.append((相对, 新字节, 旧字节))
-    孤儿 = 陈旧件(根, 应有)
+    孤儿 = 陈旧件(根目录, 应有)
     if not 不一致 and not 孤儿:
         总字节 = sum(len(新件[相对]) for 相对 in 应有)
         print(
             "生成物新鲜：%d 件（路由件 %s · 共 %d 字节）"
-            % (len(应有), 根.落盘件, 总字节)
+            % (len(应有), 根目录.落盘件, 总字节)
         )
         return 0
     print("生成物不新鲜：%d 件不一致 · %d 件陈旧" % (len(不一致), len(孤儿)))
@@ -121,5 +121,5 @@ def 检查(根):
                 print("    （差异只在源指纹块里：源的内容变了但正文没变——例如改了 JSON 的键序或空白。）")
     for 相对 in 孤儿:
         print("  ── 陈旧件：%s（生成物不再出它 —— 拆分/改名后的残留，应删）" % 相对)
-    print("  处置：python %s --声明根 %s" % (生成器相对路径, 根.根))
+    print("  处置：python %s --声明根 %s" % (生成器相对路径, 根目录.根))
     return 1

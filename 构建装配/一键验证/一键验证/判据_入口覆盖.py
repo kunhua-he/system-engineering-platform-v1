@@ -56,9 +56,9 @@ from .常量 import 检查名
 )
 
 
-def _排掉(相对根: str, 名: str) -> bool:
-    路 = f"{相对根}/{名}" if 相对根 not in ("", ".") else 名
-    return 路 in 走树排除路径 or 名 in (".git", "__pycache__", "node_modules", "target")
+def _排掉(相对根: str, 名称: str) -> bool:
+    路 = f"{相对根}/{名称}" if 相对根 not in ("", ".") else 名称
+    return 路 in 走树排除路径 or 名称 in (".git", "__pycache__", "node_modules", "target")
 
 
 # 走树读数在一次运行里不变（同一条判据的对象数与判定各取一次）⇒ 按仓根缓存。
@@ -114,19 +114,19 @@ def 读白名单(仓根: Path) -> tuple:
     return 表, None
 
 
-def 样本_入口面(上: dict) -> int:
+def 样本_入口面(上层读数: dict) -> int:
     """对象数：扫到的入口数（0 ⇒ 未判）。"""
-    return len(扫入口(上["仓根"]))
+    return len(扫入口(上层读数["仓根"]))
 
 
-def 检查24_入口覆盖面(上: dict) -> list:
+def 检查24_入口覆盖面(上层读数: dict) -> list:
     """每个能跑完的入口要么带壳、要么在边界白名单里（§四/§六）。
 
     三元读数：**通过** = 入口面非空且全部带壳/在白名单里；**失败** = 逐条报出漏网入口
     （含白名单里的陈旧登记）；**未判** = 白名单读不到、或入口面为空。
     """
     出 = []
-    仓根 = 上["仓根"]
+    仓根 = 上层读数["仓根"]
     白名单, 错 = 读白名单(仓根)
     if 错:
         return [

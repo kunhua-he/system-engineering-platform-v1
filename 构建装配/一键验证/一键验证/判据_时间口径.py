@@ -13,10 +13,10 @@ from .常量 import 单位词表, 时间口径面, 检查名
 _标识符 = re.compile(r"[A-Za-z_\u4e00-\u9fff][0-9A-Za-z_\u4e00-\u9fff]*")
 
 
-def _去注释(行: str) -> str:
+def _去注释(源码行: str) -> str:
     """去掉行注释（`//` 之后）。本判据只看**代码里的标识符**，不看注释里的散文。"""
-    注释起 = 行.find("//")
-    return 行[:注释起] if 注释起 >= 0 else 行
+    注释起 = 源码行.find("//")
+    return 源码行[:注释起] if 注释起 >= 0 else 源码行
 
 
 # 「量」的声明形：常量 / 静态量（`const 名: 类型`）与结构体字段（`pub 名: 类型`）。
@@ -57,7 +57,7 @@ def _抽标识符(文本: str) -> set:
     return 出
 
 
-def 检查21_时间口径(上: dict) -> list:
+def 检查21_时间口径(上层读数: dict) -> list:
     """时间口径：**时间主人只用单调时钟**（`Instant`）· **单位进名字**（超时=毫秒 · 留痕=微秒）。
 
     依据 `项目文档/决策记录/2026-09-27_补主人与核心预算.md` §一 第 3 条：时间口径的唯一主人是
@@ -74,7 +74,7 @@ def 检查21_时间口径(上: dict) -> list:
     出 = []
     件表 = {
         键: 项["文本"]
-        for 键, 项 in 上["文件"].items()
+        for 键, 项 in 上层读数["文件"].items()
         if 键.endswith(".rs")
         and any(键.startswith(面 + "/") for 面 in 时间口径面)
         and 项.get("文本") is not None

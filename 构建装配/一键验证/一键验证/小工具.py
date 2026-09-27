@@ -19,9 +19,9 @@ def 是临时路径(相对键: str) -> bool:
 # ════════════════════════════════════════════════════════════════════════════
 
 
-def 是整数(值) -> bool:
+def 是整数(待处理值) -> bool:
     """真整数（bool 不算——它是 int 的子类，会把 True 当 1 蒙过去）。"""
-    return isinstance(值, int) and not isinstance(值, bool)
+    return isinstance(待处理值, int) and not isinstance(待处理值, bool)
 
 
 def 违规(检查: str, 位置: str, 缺什么: str, 不能自愈: str) -> dict:
@@ -69,9 +69,9 @@ def 相对(仓根: Path, 路径: Path) -> str:
         return 路径.as_posix()
 
 
-def 段归属标签(段: dict) -> str:
+def 段归属标签(号段: dict) -> str:
     """号段表 `归属` 里 "：" 前那一段（方向标签 / 层级标签）。"""
-    文本 = str(段.get("归属", ""))
+    文本 = str(号段.get("归属", ""))
     for 分隔 in ("：", ":"):
         if 分隔 in 文本:
             return 文本.split(分隔, 1)[0].strip()

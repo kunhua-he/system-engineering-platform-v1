@@ -29,9 +29,9 @@ def 载入构建制品():
     return 模
 
 
-def 符号导出读数(库: Path) -> dict:
+def 符号导出读数(动态库: Path) -> dict:
     """`nm -gU` 取全局导出，验接缝符号 `GetPlatformInfo` 在（那次实证的同一验法）。"""
-    成 = subprocess.run(["/usr/bin/nm", "-gU", str(库)], capture_output=True, text=True)
+    成 = subprocess.run(["/usr/bin/nm", "-gU", str(动态库)], capture_output=True, text=True)
     if 成.returncode != 0:
         return {"命令成了": False, "接缝符号在": False, "说明": 成.stderr.strip()[:200]}
     导出 = [行.split()[-1] for 行 in 成.stdout.splitlines() if 行.strip()]
@@ -61,7 +61,7 @@ def 清扫残部() -> list:
     return 清了的
 
 
-def 搭暂存(库: Path) -> Path:
+def 搭暂存(动态库: Path) -> Path:
     """搭这次的暂存目录：网关 + 扩展树 + 指向扩展树的扩展根声明（每次跑全新一份）。"""
     暂存 = 暂存根 / "演示-{}-pid{}".format(time.strftime("%Y%m%d-%H%M%S"), os.getpid())
     扩展树 = 暂存 / "扩展"
@@ -69,7 +69,7 @@ def 搭暂存(库: Path) -> Path:
     (扩展树 / "组合模块库").mkdir()
     (扩展树 / "技能封装库").mkdir()
     # 扩展目录内**恰好一个**可装载库文件（扫描判据①：按后缀找，不按名字找）。
-    shutil.copy2(库, 扩展树 / "原子支持库" / "编译器支持库" / "编译器支持库.dylib")
+    shutil.copy2(动态库, 扩展树 / "原子支持库" / "编译器支持库" / "编译器支持库.dylib")
     shutil.copy2(网关产物, 暂存 / "网关")
     (暂存 / "网关").chmod(0o755)
 

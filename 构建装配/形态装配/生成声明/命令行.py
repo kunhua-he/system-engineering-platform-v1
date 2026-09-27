@@ -37,21 +37,21 @@ def 帮助文本():
     ]
 
 
-def 出接缝(根, 检查模式):
+def 出接缝(根目录, 检查模式):
     """`--接缝`：只渲染接缝文件 `<根>/src/接缝.rs`（不读号段图/常量表等平台级源）。"""
-    导出目标, 源 = 读导出目标(根)
+    导出目标, 源 = 读导出目标(根目录)
     if 导出目标 is None:
         print("本声明不导出接缝（%s.导出目标 = null）⇒ 不出接缝文件" % 源)
         return 0
-    相对 = 接缝路径(根)
+    相对 = 接缝路径(根目录)
     落盘 = os.path.join(仓根, 相对)
     if not os.path.isdir(os.path.dirname(落盘)):
         raise 生成失败(
             "接缝落点目录不存在：%s —— 接缝要落进实现 crate 的 src/（%s 下没有 src/）。"
             "没有 src/ 的声明根（如技能：本体是 md，无实现）出不了接缝 ⇒ fail-closed"
-            % (os.path.dirname(相对), 根.根)
+            % (os.path.dirname(相对), 根目录.根)
         )
-    新字节 = 渲染接缝(根, 导出目标).encode("utf-8")
+    新字节 = 渲染接缝(根目录, 导出目标).encode("utf-8")
     if 检查模式:
         if not os.path.isfile(落盘):
             print("接缝文件不存在：%s（跑一次 --接缝 生成）" % 相对)

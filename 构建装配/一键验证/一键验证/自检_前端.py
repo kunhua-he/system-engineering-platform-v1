@@ -37,8 +37,8 @@ def 自检_前端语义判据() -> list:
     出 = []
     注入件 = "前端呈现/网页应用/注入样例.js"
 
-    def 断言(名, 好, 说明):
-        出.append((名, 好, 说明))
+    def 断言(名称, 合格样本, 说明):
+        出.append((名称, 合格样本, 说明))
 
     # ── 第一层：纯文本（快，直接钉模式本身；样本取自现场实测的形状）──
     真解析 = 'export function 取值(文) { return JSON.parse(文); }\n'
@@ -51,8 +51,8 @@ def 自检_前端语义判据() -> list:
     搬运 = 'export function 拼(号, 文) { return "{" + 号 + ":" + 文 + "}"; }\n'
     词袋 = re.compile(r"JSON\.parse|JSON\.stringify|校验|解析|生成|validate|parse\(")
 
-    def 命中(文, 模式=None):
-        return [匹配.group(0) for 匹配 in (模式 or 常量.前端逻辑模式).finditer(生产区文本(文))]
+    def 命中(文本, 模式=None):
+        return [匹配.group(0) for 匹配 in (模式 or 常量.前端逻辑模式).finditer(生产区文本(文本))]
 
     断言(
         "反向样本：真 `JSON.parse` ⇒ 新模式报（解析 = 对内容作出判断）",

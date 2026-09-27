@@ -60,11 +60,11 @@ _Vue脚本块 = re.compile(r"<script[^>]*>(.*?)</script>", re.S | re.I)
 # 两边必然漂）—— 收口时收成一处。
 
 
-def _抹(文本: str, 出: list, 起: int, 止: int) -> None:
+def _抹(文本: str, 输出缓冲: list, 区间起点: int, 区间终点: int) -> None:
     """把 `[起, 止)` 抹成等长空格，**换行原样保留**（位置口径与 `剥字面量` 一致）。"""
-    for 位 in range(起, min(止, len(文本))):
+    for 位 in range(区间起点, min(区间终点, len(文本))):
         if 文本[位] != "\n":
-            出[位] = " "
+            输出缓冲[位] = " "
 
 
 def 剥Python(文本: str) -> str:
@@ -227,27 +227,27 @@ def 剥后缀(后缀: str, 文本: str) -> str:
     return 剥JS(文本)
 
 
-def _是自身成员访问(净: str, 起: int) -> bool:
-    """`净[起:]` 这个标识符是不是 `self.` 后面的那一段（Rust/Python 同形，`&self.名` 也算）。
+def _是自身成员访问(净文本: str, 区间起点: int) -> bool:
+    """`净文本[区间起点:]` 这个标识符是不是 `self.` 后面的那一段（Rust/Python 同形，`&self.名` 也算）。
 
     **为什么要单列这一条**：`抽标识符` 把紧跟 `.` 的名字一律当「别人家的成员」排除 ——
     对 `模式.S` 是对的（`S` 不是作者起的名字），但对 `self.d` **是错的**：那是**本类型的成员定义**，
     正是命名规范要管的东西。实测漏了 `开发工具/取证/*/形状.py` 的 `self.d` / `self.e`
     （单字母成员名，判据 ㉒ 看不见 ⇒ 假阴性）。
     """
-    if 起 < 5 or 净[起 - 5:起] != "self.":
+    if 区间起点 < 5 or 净文本[区间起点 - 5:区间起点] != "self.":
         return False
-    前一位 = 净[起 - 6] if 起 >= 6 else ""
+    前一位 = 净文本[区间起点 - 6] if 区间起点 >= 6 else ""
     return not (前一位.isalnum() or 前一位 == "_")
 
 
-def 抽标识符(净: str) -> list:
+def 抽标识符(净文本: str) -> list:
     """净文本里的标识符表（**排除紧跟 `.` 的成员访问名**，但 `self.名` 除外 —— 见
     `_是自身成员访问`）。顺序即出现顺序。"""
     出 = []
-    for 命 in _标识符.finditer(净):
+    for 命 in _标识符.finditer(净文本):
         起 = 命.start()
-        if 起 > 0 and 净[起 - 1] == "." and not _是自身成员访问(净, 起):
+        if 起 > 0 and 净文本[起 - 1] == "." and not _是自身成员访问(净文本, 起):
             continue
         出.append(命.group(0))
     return 出

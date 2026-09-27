@@ -138,13 +138,13 @@ def 建包到层映射(文件: dict) -> dict:
     return 表
 
 
-def 路径到层(键: str) -> str:
-    头 = 键.split("/", 1)[0]
+def 路径到层(键名: str) -> str:
+    头 = 键名.split("/", 1)[0]
     return 顶层目录到层.get(头, "")
 
 
-def 解析(文件: dict, 键: str):
-    项 = 文件.get(键)
+def 解析(文件: dict, 键名: str):
+    项 = 文件.get(键名)
     return None if 项 is None else 项["数据"]
 
 

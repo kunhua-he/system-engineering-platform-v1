@@ -24,25 +24,25 @@ from .常量 import 检查名
 
 
 # ── 读面辅助（落点是**面**不是某个写死的文件，见 #230）──
-def _件(上, 后缀, 前缀=None):
+def _件(上层读数, 后缀, 前缀=None):
     return [
         (键, 项["文本"] or "")
-        for 键, 项 in sorted(上["文件"].items())
+        for 键, 项 in sorted(上层读数["文件"].items())
         if 键.endswith(后缀) and 项["文本"] is not None and (前缀 is None or 键.startswith(前缀))
     ]
 
 
-def _拼(上, 后缀, 前缀=None):
-    return "".join(文 for _键, 文 in _件(上, 后缀, 前缀))
+def _拼(上层读数, 后缀, 前缀=None):
+    return "".join(文 for _键, 文 in _件(上层读数, 后缀, 前缀))
 
 
-def _生成物面(上):
-    return _拼(上, "数据.rs", "契约声明/src/")
+def _生成物面(上层读数):
+    return _拼(上层读数, "数据.rs", "契约声明/src/")
 
 
-def _读JSON件(仓根, 名):
+def _读JSON件(仓根, 名称):
     出 = []
-    for 路径 in sorted(仓根.rglob(名)):
+    for 路径 in sorted(仓根.rglob(名称)):
         try:
             出.append((路径, json.loads(路径.read_text(encoding="utf-8"))))
         except (OSError, ValueError):
@@ -50,9 +50,9 @@ def _读JSON件(仓根, 名):
     return 出
 
 
-def _读文件(仓根, 名):
+def _读文件(仓根, 名称):
     出 = []
-    for 路径 in sorted(仓根.rglob(名)):
+    for 路径 in sorted(仓根.rglob(名称)):
         try:
             出.append((路径, 路径.read_text(encoding="utf-8")))
         except OSError:
@@ -60,17 +60,17 @@ def _读文件(仓根, 名):
     return 出
 
 
-def _拼文(仓根, 名):
-    return "".join(文 for _p, 文 in _读文件(仓根, 名))
+def _拼文(仓根, 名称):
+    return "".join(文 for _p, 文 in _读文件(仓根, 名称))
 
 
-def 检查27_准入广播段(上: dict) -> list:
+def 检查27_准入广播段(上层读数: dict) -> list:
     """㉗ 准入④：扩展能申报生命周期通知号段（生命周期段按广播段判）。"""
     出 = []
     名 = 检查名[26]
-    生成物面 = _生成物面(上)
-    判定rs = _拼(上, "判定.rs")
-    载入判定 = _拼文(上["仓根"], "载入判定.json")
+    生成物面 = _生成物面(上层读数)
+    判定rs = _拼(上层读数, "判定.rs")
+    载入判定 = _拼文(上层读数["仓根"], "载入判定.json")
     缺 = []
     范围源 = re.search(r"生命周期起:\s*u32\s*=\s*(\d+).*?生命周期止:\s*u32\s*=\s*(\d+)", 生成物面, re.S)
     if not 范围源:
@@ -94,12 +94,12 @@ def 检查27_准入广播段(上: dict) -> list:
     return 出
 
 
-def 检查28_准入通知口(上: dict) -> list:
+def 检查28_准入通知口(上层读数: dict) -> list:
     """㉘ 准入⑤：适配器有通知口，申报了就送得到。"""
     出 = []
     名 = 检查名[27]
-    通知口 = _拼(上, "通知口.rs")
-    适配器 = _拼(上, ".rs", "跨语言适配/适配器实现/src/")
+    通知口 = _拼(上层读数, "通知口.rs")
+    适配器 = _拼(上层读数, ".rs", "跨语言适配/适配器实现/src/")
     缺 = []
     for 记号 in ("pub fn 注册通知端点", "pub fn 请求卸载", "pub fn 延迟释放协商", "pub fn 请求卸载按标识"):
         if 记号 not in 通知口:
@@ -113,13 +113,13 @@ def 检查28_准入通知口(上: dict) -> list:
     return 出
 
 
-def 检查29_准入接缝冻结(上: dict) -> list:
+def 检查29_准入接缝冻结(上层读数: dict) -> list:
     """㉙ 准入⑦：接缝符号名与返回结构裁决定死（明示偏离并写进文档）。"""
     出 = []
     名 = 检查名[28]
-    文 = _拼(上, "边界协议.md")
-    启动网关 = _拼(上, ".rs", "对外接口面/调用接口面/examples/启动网关")
-    声明件 = _读JSON件(上["仓根"], "扩展根声明.json")
+    文 = _拼(上层读数, "边界协议.md")
+    启动网关 = _拼(上层读数, ".rs", "对外接口面/调用接口面/examples/启动网关")
+    声明件 = _读JSON件(上层读数["仓根"], "扩展根声明.json")
     缺 = []
     if "GetPlatformInfo" not in 文:
         缺.append("边界协议未写我方符号名 GetPlatformInfo")
@@ -143,12 +143,12 @@ def 检查29_准入接缝冻结(上: dict) -> list:
     return 出
 
 
-def 检查30_准入无死键(上: dict) -> list:
+def 检查30_准入无死键(上层读数: dict) -> list:
     """㉚ 准入⑧：扩展 包声明.json 无死键（提供宿主版本 / 提供内核版本）。"""
     出 = []
     名 = 检查名[29]
     坏 = []
-    for 路径, 声 in _读JSON件(上["仓根"], "包声明.json"):
+    for 路径, 声 in _读JSON件(上层读数["仓根"], "包声明.json"):
         if not isinstance(声, dict):
             坏.append("%s 不是合法 JSON" % 路径.name)
             continue
@@ -162,27 +162,27 @@ def 检查30_准入无死键(上: dict) -> list:
     return 出
 
 
-def _段含键(文, 段名, 键):
+def _段含键(文本, 段名, 键名):
     在段 = False
-    for 行 in 文.splitlines():
+    for 行 in 文本.splitlines():
         净 = 行.strip()
         if 净.startswith("[") and 净.endswith("]"):
             在段 = 净 == "[%s]" % 段名
             continue
-        if 在段 and 净.split("=")[0].strip() == 键:
+        if 在段 and 净.split("=")[0].strip() == 键名:
             return True
     return False
 
 
-def 检查31_准入制品类型(上: dict) -> list:
+def 检查31_准入制品类型(上层读数: dict) -> list:
     """㉛ 准入⑨：扩展 crate-type 只有一条路（扩展仓不声明，装配侧现场编）。"""
     出 = []
     名 = 检查名[30]
-    扩展Cargo = _件(上, "Cargo.toml", "扩展根目录" + "/")
+    扩展Cargo = _件(上层读数, "Cargo.toml", "扩展根目录" + "/")
     # 落点是**包**不是某个写死的文件（#230）：装配侧的 `--crate-type cdylib` 可能落在
     # `构建制品.py` 路由件里，也可能落在 `构建制品/扩展.py` 这样的子件里 ⇒ 收整包。
-    构建制品 = _拼(上, ".py", "构建装配/上线切换/构建制品")
-    必备件 = _读JSON件(上["仓根"], "必备件.json")
+    构建制品 = _拼(上层读数, ".py", "构建装配/上线切换/构建制品")
+    必备件 = _读JSON件(上层读数["仓根"], "必备件.json")
     规则 = ""
     if 必备件 and isinstance(必备件[0][1], dict):
         规则 = ((必备件[0][1].get("扩展仓的 crate-type（只有一条路）") or {}).get("判据")) or ""
@@ -199,12 +199,12 @@ def 检查31_准入制品类型(上: dict) -> list:
     return 出
 
 
-def 检查32_准入命令类别(上: dict) -> list:
+def 检查32_准入命令类别(上层读数: dict) -> list:
     """㉜ 准入⑩：命令信息.类别 有「类别号 → 类别名」表。"""
     出 = []
     名 = 检查名[31]
     前缀 = "契约声明/命令类别/"
-    类别件 = [(键, 项["数据"]) for 键, 项 in sorted(上["文件"].items())
+    类别件 = [(键, 项["数据"]) for 键, 项 in sorted(上层读数["文件"].items())
              if 键.startswith(前缀) and 键.endswith(".json")]
     坏 = []
     for 键, 条 in 类别件:
@@ -228,11 +228,11 @@ def 检查32_准入命令类别(上: dict) -> list:
     return 出
 
 
-def 检查33_准入显式顺序(上: dict) -> list:
+def 检查33_准入显式顺序(上层读数: dict) -> list:
     """㉝ 准入⑪：号段冲突判定不靠检查顺序的巧合（显式优先级口径）。"""
     出 = []
     名 = 检查名[32]
-    文 = _拼文(上["仓根"], "载入判定.json")
+    文 = _拼文(上层读数["仓根"], "载入判定.json")
     显式 = ("先于" in 文 or "优先级" in 文 or "优先于" in 文)
     点名 = ("号段冲突" in 文) and ("自洽" in 文)
     缺 = []
@@ -247,11 +247,11 @@ def 检查33_准入显式顺序(上: dict) -> list:
     return 出
 
 
-def 检查34_准入报因(上: dict) -> list:
+def 检查34_准入报因(上层读数: dict) -> list:
     """㉞ 准入⑬：装载失败报因（剔除并报原因，不静默）。"""
     出 = []
     名 = 检查名[33]
-    文 = _拼(上, ".rs", "对外接口面/调用接口面/examples/启动网关")
+    文 = _拼(上层读数, ".rs", "对外接口面/调用接口面/examples/启动网关")
     缺 = []
     if "fn 取扩展声明" not in 文 or "Result<&'static 平台信息, String>" not in 文:
         缺.append("启动网关无 取扩展声明 且失败带 String 原因")
@@ -268,7 +268,7 @@ def 检查34_准入报因(上: dict) -> list:
     return 出
 
 
-def 检查35_准入指纹可跑(上: dict) -> list:
+def 检查35_准入指纹可跑(上层读数: dict) -> list:
     """㉟ 准入⑭：扩展 指纹.json 有一条可跑的（有生成命令 + 脚本存在）重跑命令。
 
     **不在这里起子进程**：`--自测` 要跑几十遍 `验证`，每遍 spawn 一个解释器会把整条自测
@@ -277,7 +277,7 @@ def 检查35_准入指纹可跑(上: dict) -> list:
     """
     出 = []
     名 = 检查名[34]
-    指纹件 = _读JSON件(上["仓根"], "指纹.json")
+    指纹件 = _读JSON件(上层读数["仓根"], "指纹.json")
     缺 = []
     if not 指纹件:
         缺.append("扩展目录下无 指纹.json")
@@ -287,7 +287,7 @@ def 检查35_准入指纹可跑(上: dict) -> list:
             命 = 指纹件[0][1].get("生成命令", "") or ""
         分 = 命.split()
         脚本 = [片 for 片 in 分 if 片.endswith(".py")]
-        目标 = 上["仓根"] / 脚本[0] if 脚本 else None
+        目标 = 上层读数["仓根"] / 脚本[0] if 脚本 else None
         if not 命:
             缺.append("指纹.json 无「生成命令」")
         elif not 脚本 or not 目标.exists():
@@ -299,13 +299,13 @@ def 检查35_准入指纹可跑(上: dict) -> list:
     return 出
 
 
-def 检查36_准入并发(上: dict) -> list:
+def 检查36_准入并发(上层读数: dict) -> list:
     """㊱ 准入⑯：适配器 Send/Sync ⇒ 网关能并发取连接。"""
     出 = []
     名 = 检查名[35]
-    线程安全 = _拼(上, "线程安全.rs")
-    网关 = _拼(上, "网关.rs")
-    启动网关 = _拼(上, ".rs", "对外接口面/调用接口面/examples/启动网关")
+    线程安全 = _拼(上层读数, "线程安全.rs")
+    网关 = _拼(上层读数, "网关.rs")
+    启动网关 = _拼(上层读数, ".rs", "对外接口面/调用接口面/examples/启动网关")
     缺 = []
     if "unsafe impl Send for 适配器" not in 线程安全:
         缺.append("线程安全.rs 无 unsafe impl Send for 适配器")
@@ -323,57 +323,57 @@ def 检查36_准入并发(上: dict) -> list:
 
 
 # ── 对象数（元数据用）：空集 ⇒ 验证面报「未判」，不许当通过 ──
-def 对象数_27(上):
-    return ((1 if _生成物面(上) else 0)
-            + (1 if _拼(上, "判定.rs") else 0)
-            + (1 if _拼文(上["仓根"], "载入判定.json") else 0))
+def 对象数_27(上层读数):
+    return ((1 if _生成物面(上层读数) else 0)
+            + (1 if _拼(上层读数, "判定.rs") else 0)
+            + (1 if _拼文(上层读数["仓根"], "载入判定.json") else 0))
 
 
-def 对象数_28(上):
-    return ((1 if _拼(上, "通知口.rs") else 0)
-            + (1 if _拼(上, ".rs", "跨语言适配/适配器实现/src/") else 0))
+def 对象数_28(上层读数):
+    return ((1 if _拼(上层读数, "通知口.rs") else 0)
+            + (1 if _拼(上层读数, ".rs", "跨语言适配/适配器实现/src/") else 0))
 
 
-def 对象数_29(上):
-    return ((1 if _拼(上, "边界协议.md") else 0)
-            + (1 if _读JSON件(上["仓根"], "扩展根声明.json") else 0)
-            + (1 if _拼(上, ".rs", "对外接口面/调用接口面/examples/启动网关") else 0))
+def 对象数_29(上层读数):
+    return ((1 if _拼(上层读数, "边界协议.md") else 0)
+            + (1 if _读JSON件(上层读数["仓根"], "扩展根声明.json") else 0)
+            + (1 if _拼(上层读数, ".rs", "对外接口面/调用接口面/examples/启动网关") else 0))
 
 
-def 对象数_30(上):
-    return len(_读JSON件(上["仓根"], "包声明.json"))
+def 对象数_30(上层读数):
+    return len(_读JSON件(上层读数["仓根"], "包声明.json"))
 
 
-def 对象数_31(上):
-    必备件 = _读JSON件(上["仓根"], "必备件.json")
+def 对象数_31(上层读数):
+    必备件 = _读JSON件(上层读数["仓根"], "必备件.json")
     规则 = ""
     if 必备件 and isinstance(必备件[0][1], dict):
         规则 = ((必备件[0][1].get("扩展仓的 crate-type（只有一条路）") or {}).get("判据")) or ""
     if "crate-type" not in 规则:
         return 0  # 规则无单一事实源 ⇒ 未判，不许当通过
-    return len(_件(上, "Cargo.toml", "扩展根目录" + "/"))
+    return len(_件(上层读数, "Cargo.toml", "扩展根目录" + "/"))
 
 
-def 对象数_32(上):
+def 对象数_32(上层读数):
     return sum(
-        1 for 键 in 上["文件"]
+        1 for 键 in 上层读数["文件"]
         if 键.startswith("契约声明/命令类别/") and 键.endswith(".json")
     )
 
 
-def 对象数_33(上):
-    return 1 if _拼文(上["仓根"], "载入判定.json") else 0
+def 对象数_33(上层读数):
+    return 1 if _拼文(上层读数["仓根"], "载入判定.json") else 0
 
 
-def 对象数_34(上):
-    return 1 if _拼(上, ".rs", "对外接口面/调用接口面/examples/启动网关") else 0
+def 对象数_34(上层读数):
+    return 1 if _拼(上层读数, ".rs", "对外接口面/调用接口面/examples/启动网关") else 0
 
 
-def 对象数_35(上):
-    return len(_读JSON件(上["仓根"], "指纹.json"))
+def 对象数_35(上层读数):
+    return len(_读JSON件(上层读数["仓根"], "指纹.json"))
 
 
-def 对象数_36(上):
-    return ((1 if _拼(上, "线程安全.rs") else 0)
-            + (1 if _拼(上, "网关.rs") else 0)
-            + (1 if _拼(上, ".rs", "对外接口面/调用接口面/examples/启动网关") else 0))
+def 对象数_36(上层读数):
+    return ((1 if _拼(上层读数, "线程安全.rs") else 0)
+            + (1 if _拼(上层读数, "网关.rs") else 0)
+            + (1 if _拼(上层读数, ".rs", "对外接口面/调用接口面/examples/启动网关") else 0))

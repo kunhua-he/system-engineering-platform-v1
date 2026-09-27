@@ -94,20 +94,20 @@ def 命令停() -> int:
     return 0
 
 
-def 命令回退(标识: str, 步: int = 1) -> int:
+def 命令回退(标识: str, 步序: int = 1) -> int:
     """回退：给标识就指到那一份；不给就取回退账（步=1 是账首「上一份」，步=N 是账里第 N 条）。"""
-    来源 = "显式指定" if 标识 else ("上一份" if 步 == 1 else "回退账第 {} 条".format(步))
+    来源 = "显式指定" if 标识 else ("上一份" if 步序 == 1 else "回退账第 {} 条".format(步序))
     if not 标识:
         账 = 读账()
-        if 步 < 1:
-            raise SystemExit("步数必须是正整数：{}".format(步))
-        if 步 > len(账):
+        if 步序 < 1:
+            raise SystemExit("步数必须是正整数：{}".format(步序))
+        if 步序 > len(账):
             raise SystemExit("回退账只有 {} 条（上限 {}），给不出第 {} 条。账：{}\n可回退的制品：{}".format(
-                len(账), 回退账上限, 步,
+                len(账), 回退账上限, 步序,
                 " · ".join(条.get("制品标识", "") for 条 in 账) or "（空账）",
                 " · ".join(列制品()) or "（一份都没有）",
             ))
-        标识 = 账[步 - 1].get("制品标识") or ""
+        标识 = 账[步序 - 1].get("制品标识") or ""
     读清单(标识)  # 不在制品落点里即拒（回退到任意一份**已产出**的制品都行，不必先装载）
     打印("回退 → {}（来源：{}）".format(标识, 来源))
     return 落到流量端口(标识, "回退")
@@ -127,12 +127,12 @@ def 命令现状() -> int:
     return 0
 
 
-def 取选项(参: list, 名: str) -> tuple:
+def 取选项(参数: list, 名称: str) -> tuple:
     """从参数里摘出 `[--]名=值`（两种写法都认），返回 (值, 其余位置参数)。"""
     值 = ""
     位置 = []
-    for 一 in 参:
-        for 前缀 in ("--{}=".format(名), "{}=".format(名)):
+    for 一 in 参数:
+        for 前缀 in ("--{}=".format(名称), "{}=".format(名称)):
             if 一.startswith(前缀):
                 值 = 一[len(前缀):]
                 break
@@ -141,11 +141,11 @@ def 取选项(参: list, 名: str) -> tuple:
     return 值, 位置
 
 
-def 入口函数(参: list, 用法文: str) -> int:
+def 入口函数(参数: list, 用法文: str) -> int:
     就绪()
-    if not 参:
+    if not 参数:
         raise SystemExit(用法文)
-    命, 余 = 参[0], 参[1:]
+    命, 余 = 参数[0], 参数[1:]
     if 命 == "装载" and len(余) == 1:
         return 命令装载(余[0])
     if 命 == "切换":
