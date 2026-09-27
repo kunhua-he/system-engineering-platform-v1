@@ -8,8 +8,8 @@ from pathlib import Path
 
 
 def _改(临根: Path, 相对: str, 新文: str) -> str:
-    路 = 临根 / 相对
-    路.write_text(新文, encoding="utf-8")
+    路径 = 临根 / 相对
+    路径.write_text(新文, encoding="utf-8")
     return 相对
 
 

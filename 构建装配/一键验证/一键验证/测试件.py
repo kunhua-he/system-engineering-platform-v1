@@ -27,47 +27,47 @@ def 建测试文件集(文件: dict) -> set:
       · `#[path]` 写在 `#[cfg(test)]` 之前也合法；cfg 条件里可以嵌括号
         （`#[cfg(any(test, feature = "x"))]`）——两种形状都要认。
     """
-    出 = set()
+    输出缓冲 = set()
     # 一遍预扫：把每份 .rs 的挂载声明解析成「相对父文件目录的目标路径」。
     # 注意 `#[path = "…"]` 的值写在字符串里 ⇒ 去字面量会把它抹成空白，必须回**原文**取引号内内容。
     挂载 = []
     for 父键, 项 in 文件.items():
         if not 父键.endswith(".rs") or 项["文本"] is None:
             continue
-        净 = 去字面量(项["文本"])
-        原 = 项["文本"]
+        净文本 = 去字面量(项["文本"])
+        原文 = 项["文本"]
         父目录 = 父键.rsplit("/", 1)[0] if "/" in 父键 else ""
-        for 命 in _夹具挂载形.finditer(净):
-            属 = _条件编译属性(净, 命.start())
-            if 属 is None:
+        for 命中 in _夹具挂载形.finditer(净文本):
+            属性 = _条件编译属性(净文本, 命中.start())
+            if 属性 is None:
                 continue
-            属性文本, 属止 = 属
+            属性文本, 属止 = 属性
             if not re.search(r"\btest\b", 属性文本):
                 continue
             # 项头：从 cfg 属性之后扫到第一个 `{` 或 `;`
-            终 = 属止
-            while 终 < len(净) and 净[终] not in "{;":
-                终 += 1
-            if 终 >= len(净) or 净[终] != ";":
+            区间终点 = 属止
+            while 区间终点 < len(净文本) and 净文本[区间终点] not in "{;":
+                区间终点 += 1
+            if 区间终点 >= len(净文本) or 净文本[区间终点] != ";":
                 continue  # 内联 `mod 名 { … }`：同一个文件里的测试块，不是外部夹具文件
-            名配 = re.search(r"\bmod\s+([^\s;{]+)", 净[属止:终])
+            名配 = re.search(r"\bmod\s+([^\s;{]+)", 净文本[属止:区间终点])
             if not 名配:
                 continue
-            路 = None
+            路径 = None
             # `#[path = "…"]` 可以写在 cfg 之前，也可以写在 cfg 之后（属性顺序不影响语义）
-            窗起 = _属性窗口起(净, 命.start())
-            for 路命 in re.finditer(r"#\[\s*path\b", 净[窗起:终]):
-                引 = 原.find('"', 窗起 + 路命.end(), 终)
-                if 引 >= 0:
-                    终引 = 原.find('"', 引 + 1)
-                    if 终引 > 引:
-                        路 = 原[引 + 1 : 终引]
+            窗起 = _属性窗口起(净文本, 命中.start())
+            for 路命 in re.finditer(r"#\[\s*path\b", 净文本[窗起:区间终点]):
+                引号 = 原文.find('"', 窗起 + 路命.end(), 区间终点)
+                if 引号 >= 0:
+                    终引 = 原文.find('"', 引号 + 1)
+                    if 终引 > 引号:
+                        路径 = 原文[引号 + 1 : 终引]
                         break
-            if 路 is None:
-                路 = 名配.group(1) + ".rs"
-            挂载.append((父目录, 路))
-    for 父目录, 路 in 挂载:
-        候选 = f"{父目录}/{路}" if 父目录 else 路
+            if 路径 is None:
+                路径 = 名配.group(1) + ".rs"
+            挂载.append((父目录, 路径))
+    for 父目录, 路径 in 挂载:
+        候选 = f"{父目录}/{路径}" if 父目录 else 路径
         候选 = os.path.normpath(候选).replace("\\", "/")
         目标 = None
         if 候选 in 文件:
@@ -78,8 +78,8 @@ def 建测试文件集(文件: dict) -> set:
             continue
         if 目标.rsplit("/", 1)[-1][:-3] in ("lib", "mod", "main"):
             continue  # 包根不是夹具（`mod lib;` 不是 Rust 能编的形状）
-        出.add(目标)
-    return 出
+        输出缓冲.add(目标)
+    return 输出缓冲
 
 
 def 生产区文本(文本: str, 保串: bool = False) -> str:
@@ -95,17 +95,17 @@ def 生产区文本(文本: str, 保串: bool = False) -> str:
       （不是它的哈希）⇒ 没有碰撞风险，不会因为「哈希撞了」而假绿；同文本必然同输出。
       跨夹具：文本相同则结果本就该相同 ⇒ 复用是**逐字正确**的，不是近似。
     """
-    键 = (保串, 文本)
-    记住 = _生产区缓存.get(键)
+    键名 = (保串, 文本)
+    记住 = _生产区缓存.get(键名)
     if 记住 is not None:
         return 记住
-    净 = 去字面量(文本) if not 保串 else 去注释保串(文本)
-    出区 = list(净)
-    for 起, 止 in 条件编译测试区(文本):
-        for 游标 in range(起, min(止 + 1, len(出区))):
+    净文本 = 去字面量(文本) if not 保串 else 去注释保串(文本)
+    出区 = list(净文本)
+    for 区间起点, 区间终点 in 条件编译测试区(文本):
+        for 游标 in range(区间起点, min(区间终点 + 1, len(出区))):
             出区[游标] = " "
     结果 = "".join(出区)
-    _生产区缓存[键] = 结果
+    _生产区缓存[键名] = 结果
     return 结果
 
 
@@ -125,10 +125,10 @@ def 去注释保串(文本: str) -> str:
 
 
 def 并行生产区(件表: list, 测试文件集=frozenset(), 保串: bool = False) -> dict:
-    件表 = [(键, 文本) for 键, 文本 in 件表 if 文本 is not None]
-    with ThreadPoolExecutor(max_workers=并发度) as 池:
+    件表 = [(键名, 文本) for 键名, 文本 in 件表 if 文本 is not None]
+    with ThreadPoolExecutor(max_workers=并发度) as 线程池:
         return dict(
-            池.map(
+            线程池.map(
                 lambda 项: (
                     项[0],
                     "" if 项[0] in 测试文件集 else 生产区文本(项[1], 保串),
@@ -140,15 +140,15 @@ def 并行生产区(件表: list, 测试文件集=frozenset(), 保串: bool = Fa
 
 def 收集导出(代码件: dict) -> dict:
     """导出符号名 → 出现处。`export_name` 取属性里的名字；`no_mangle` 取紧跟的 fn 名。"""
-    出 = {}
-    for 键, 文本 in 代码件.items():
-        for 命 in 导出名模式.finditer(文本):
-            行号 = 文本[: 命.start()].count("\n") + 1
-            出.setdefault(命.group(1), []).append(f"{键}:{行号}")
-        for 命 in re.finditer(r"#\[no_mangle\]", 文本):
-            尾 = 文本[命.end() : 命.end() + 400]
-            名配 = re.search(r"\bfn[ \t]+([A-Za-z_]\w*)", 尾)
-            名 = 名配.group(1) if 名配 else "（未标名）"
-            行号 = 文本[: 命.start()].count("\n") + 1
-            出.setdefault(名, []).append(f"{键}:{行号}")
-    return 出
+    输出缓冲 = {}
+    for 键名, 文本 in 代码件.items():
+        for 命中 in 导出名模式.finditer(文本):
+            行号 = 文本[: 命中.start()].count("\n") + 1
+            输出缓冲.setdefault(命中.group(1), []).append(f"{键名}:{行号}")
+        for 命中 in re.finditer(r"#\[no_mangle\]", 文本):
+            尾部 = 文本[命中.end() : 命中.end() + 400]
+            名配 = re.search(r"\bfn[ \t]+([A-Za-z_]\w*)", 尾部)
+            名称 = 名配.group(1) if 名配 else "（未标名）"
+            行号 = 文本[: 命中.start()].count("\n") + 1
+            输出缓冲.setdefault(名称, []).append(f"{键名}:{行号}")
+    return 输出缓冲

@@ -22,9 +22,9 @@ def 注入_存量还在长(临根: Path) -> str:
     """
     路径 = 临根 / "构建装配" / "一键验证" / "行数基线.json"
     数据 = json.loads(路径.read_text(encoding="utf-8"))
-    for 条 in 数据["债务"]["入口有实现"]:
-        if 条["路径"] == "运行内核/资源网关口/src/lib.rs":
-            条["处数"] = 2
+    for 一条 in 数据["债务"]["入口有实现"]:
+        if 一条["路径"] == "运行内核/资源网关口/src/lib.rs":
+            一条["处数"] = 2
     路径.write_text(json.dumps(数据, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     return "构建装配/一键验证/行数基线.json"
 
@@ -51,8 +51,8 @@ def 注入_基线缩水登记(临根: Path) -> str:
     """
     路径 = 临根 / "构建装配" / "一键验证" / "行数基线.json"
     数据 = json.loads(路径.read_text(encoding="utf-8"))
-    for 条 in 数据["债务"]["入口有实现"]:
-        if 条["路径"] == "运行内核/资源网关口/src/lib.rs":
-            条["处数"] = 999   # 远高于实测 ⇒ 实测 < 登记
+    for 一条 in 数据["债务"]["入口有实现"]:
+        if 一条["路径"] == "运行内核/资源网关口/src/lib.rs":
+            一条["处数"] = 999   # 远高于实测 ⇒ 实测 < 登记
     路径.write_text(json.dumps(数据, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     return "运行内核/资源网关口/src/lib.rs"
