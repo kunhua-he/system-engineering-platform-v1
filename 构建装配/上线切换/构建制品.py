@@ -18,6 +18,10 @@
 
 本文件是**路由**：解析命令行 → 调包里的公开面 → 打印。实现按关注点拆进同名字文件夹
 `构建制品/`（一个关注点一个文件）。
+
+**公开面逐字不变**（`开发规范.md` §六）：拆分前本文件是单件，`扩展产物` 等函数是它的模块级名字，
+有别的件**进程内 import 本文件**再取（`构建装配/演示/装配.py::载入构建制品` 取 `扩展产物`）
+⇒ 这里必须把包里的公开面**全导一遍**（`from 构建制品 import *`），只导 `main` 会把那条路静默断掉。
 """
 
 import sys
@@ -25,7 +29,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from 构建制品.主流程 import main  # noqa: E402
+from 构建制品 import *  # noqa: E402,F401,F403 —— 再导出公开面（`构建制品/__init__.py::__all__`）
+from 构建制品 import main  # noqa: E402
 
 if __name__ == "__main__":
     sys.exit(main())
