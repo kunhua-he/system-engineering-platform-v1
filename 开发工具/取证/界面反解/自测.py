@@ -24,7 +24,7 @@ def 自测(样本="/tmp/易语言源码/e.exe"):
             样本字节 = bytearray(数据)
             样本字节[处:处 + len(值)] = 值
             return bytes(样本字节)
-        PE头偏移 = pe.e
+        PE头偏移 = pe.PE头偏移
         例.append(("可选头长度改 0", 改(好, PE头偏移 + 20, b"\0\0")))
         例.append(("节数改 0xFFFF", 改(好, PE头偏移 + 6, b"\xff\xff")))
         例.append(("资源目录 RVA 指到文件外", 改(好, PE头偏移 + 24 + 96 + 16, (0x700000).to_bytes(4, "little"))))

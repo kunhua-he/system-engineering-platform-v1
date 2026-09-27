@@ -18,7 +18,7 @@ def 出报告(读数):
     print("① 导出 %s：序号 %d · RVA 0x%x · 前 8 字节 %s ｜ 返回值形式：%s"
           % (导出名.decode(), 读数["序号"], 读数["导出rva"], 读数["机器码"].hex(" "), 读数["形式"]))
     print("   静态结构 RVA 0x%x（文件偏移 0x%x）；原始字节：" % (读数["结构rva"], 基))
-    print("     " + pe.d[基:基 + 库信息大小].hex(" "))
+    print("     " + pe.原始字节[基:基 + 库信息大小].hex(" "))
     print("② LIB_INFO 逐字段（偏移 · 宽 · 名 · 值 · 可读）：")
     for 偏移, 宽, 名, 类, 值, 读 in 读数["字段"]:
         print("   +0x%02x %2d  %-24s 0x%08x  %s" % (偏移, 宽, 名, 值 & 0xFFFFFFFF, 读))
@@ -31,7 +31,7 @@ def 出报告(读数):
     if 字典["m_nCategoryCount"]:
         文偏移, 类 = pe.转偏移(pe.取址(字典["m_szzCategory"])), []
         for _ in range(字典["m_nCategoryCount"]):
-            尾 = pe.d.find(b"\0", 文偏移); 类.append(pe.d[文偏移:尾].decode("gbk", "replace")); 文偏移 = 尾 + 1
+            尾 = pe.原始字节.find(b"\0", 文偏移); 类.append(pe.原始字节[文偏移:尾].decode("gbk", "replace")); 文偏移 = 尾 + 1
         print("   类别表（m_nCategoryCount=%d）：%s" % (字典["m_nCategoryCount"], 类))
     print("④ 命令表：表项 %d 字节 · 声明数 m_nCmdCount=%d · 物理槽数(观察，非解码依据)=%s"
           % (命令项大小, 字典["m_nCmdCount"], 读数["物理槽"][0]))
@@ -57,7 +57,7 @@ def 出报告(读数):
         下标 = []
         if 组读数["m_pnCmdsIndex"][0] and 组读数["m_nCmdCount"][0]:
             try:
-                下标 = list(struct.unpack_from("<%di" % 组读数["m_nCmdCount"][0], pe.d,
+                下标 = list(struct.unpack_from("<%di" % 组读数["m_nCmdCount"][0], pe.原始字节,
                             pe.转偏移(pe.取址(组读数["m_pnCmdsIndex"][0]))))
             except 解析错误:
                 下标 = ["<指向不合法>"]

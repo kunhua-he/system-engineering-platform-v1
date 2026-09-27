@@ -24,6 +24,13 @@ from .落点 import (  # noqa: F401
     缓存类,
     缓存子目录,
 )
-from .SCIP前端 import 拆符号, 找工具, 缺什么, 转统一, 读索引, 腿表  # noqa: F401
+from .SCIP前端 import (  # noqa: F401
+    三条腿表,
+    找工具,
+    缺哪些工具,
+    拆符号串,
+    转统一形状,
+    读回索引,
+)
 from .查询 import 查, 引用, 出现位置, 查行, 引用行, 状态行  # noqa: F401
-from .建索引 import 建, 报缺工具, 收件, 代码后缀, js目录  # noqa: F401
+from .建索引 import 建, 报缺工具, 收件, 代码后缀表, js目录  # noqa: F401

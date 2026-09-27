@@ -21,51 +21,51 @@ from 运行数据根 import 解析当前, 子目录路径  # noqa: E402
 原始名 = {"rs": "rs.scip", "py": "py.scip", "js": "js.scip"}
 
 
-def _目录() -> Path:
+def _缓存目录() -> Path:
     return 子目录路径(解析当前(), 缓存类) / 缓存子目录
 
 
 def 原始路径(语言键: str) -> Path:
     """某条腿索引器的原始 `.scip` 落点。"""
-    return _目录() / 原始名[语言键]
+    return _缓存目录() / 原始名[语言键]
 
 
 def 定义路径() -> Path:
-    return _目录() / 定义名
+    return _缓存目录() / 定义名
 
 
 def 出现路径() -> Path:
-    return _目录() / 出现名
+    return _缓存目录() / 出现名
 
 
 def 确保目录() -> Path:
-    出 = _目录()
-    出.mkdir(parents=True, exist_ok=True)
-    return 出
+    缓存目录 = _缓存目录()
+    缓存目录.mkdir(parents=True, exist_ok=True)
+    return 缓存目录
 
 
-def _一份状态(路: Path) -> dict:
-    if not 路.is_file():
-        return {"有": False, "路径": str(路)}
-    元 = 路.stat()
-    return {"有": True, "路径": str(路), "字节": 元.st_size, "改于": 元.st_mtime}
+def _一份状态(落点路径: Path) -> dict:
+    if not 落点路径.is_file():
+        return {"有": False, "路径": str(落点路径)}
+    文件元数据 = 落点路径.stat()
+    return {"有": True, "路径": str(落点路径),
+            "字节": 文件元数据.st_size, "改于": 文件元数据.st_mtime}
 
 
 def 原始状态() -> dict:
     """三条腿的原始 `.scip` 在不在、多大（**哪条腿跑了**就靠它如实报）。"""
-    return {键: _一份状态(原始路径(键)) for 键 in 原始名}
+    return {语言键: _一份状态(原始路径(语言键)) for 语言键 in 原始名}
 
 
 def 索引状态() -> dict:
     """统一索引（`定义.jsonl` + `出现.jsonl`）在不在、多大、多新。**只读文件元数据，不解析。**"""
-    定, 现 = _一份状态(定义路径()), _一份状态(出现路径())
-    出 = {
-        "有": 定["有"] and 现["有"],
-        "路径": str(_目录()),
-        "定义": 定,
-        "出现": 现,
+    定义状态, 出现状态 = _一份状态(定义路径()), _一份状态(出现路径())
+    return {
+        "有": 定义状态["有"] and 出现状态["有"],
+        "路径": str(_缓存目录()),
+        "定义": 定义状态,
+        "出现": 出现状态,
         "原始": 原始状态(),
-        "字节": (定.get("字节") or 0) + (现.get("字节") or 0),
-        "改于": max(定.get("改于") or 0, 现.get("改于") or 0),
+        "字节": (定义状态.get("字节") or 0) + (出现状态.get("字节") or 0),
+        "改于": max(定义状态.get("改于") or 0, 出现状态.get("改于") or 0),
     }
-    return 出

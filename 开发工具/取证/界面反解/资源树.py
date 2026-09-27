@@ -16,12 +16,12 @@ def 走资源树(pe):
 
     def 串(base, off):
         串起 = base + off
-        if 串起 + 2 > len(pe.d):
+        if 串起 + 2 > len(pe.原始字节):
             raise 解析错误("资源名字符串越界 @0x%x" % 串起)
         名长 = pe.读u16(串起)
-        if 串起 + 2 + 2 * 名长 > len(pe.d):
+        if 串起 + 2 + 2 * 名长 > len(pe.原始字节):
             raise 解析错误("资源名字符串长度 %d 越界 @0x%x" % (名长, 串起))
-        return pe.d[串起 + 2:串起 + 2 + 2 * 名长].decode("utf-16le", "replace")
+        return pe.原始字节[串起 + 2:串起 + 2 + 2 * 名长].decode("utf-16le", "replace")
 
     def 走(偏移, 路径, 层):
         if 层 > 3:
@@ -50,9 +50,9 @@ def 走资源树(pe):
             else:
                 if not (起 <= 子 and 子 + 16 <= 止):
                     raise 解析错误("资源数据项 0x%x 不在 .rsrc 内" % 子)
-                rva, 大小, 代码页, _ = struct.unpack_from("<IIII", pe.d, 子)
+                rva, 大小, 代码页, _ = struct.unpack_from("<IIII", pe.原始字节, 子)
                 数据偏移 = pe.转偏移(rva)
-                if 数据偏移 + 大小 > len(pe.d):
+                if 数据偏移 + 大小 > len(pe.原始字节):
                     raise 解析错误("资源(type=%s id=%s) 数据越界：0x%x+%d" % (路径[0], 键, 数据偏移, 大小))
                 全 = 路径 + [键]
                 叶子.append({"路径": 全, "类型": 全[0], "id": 全[1], "语言": 全[-1],
