@@ -58,9 +58,9 @@ def 入口函数(参数: list) -> int:
             范围 = [范围项 for 范围项 in 参数[参数位 + 1].split(",") if 范围项]
     if "--自测" in 参数:
         return 自测()
-    起 = time.perf_counter()
+    区间起点 = time.perf_counter()
     结果 = 扫实现(仓根, 范围)
-    毫秒 = int((time.perf_counter() - 起) * 1000)
+    毫秒 = int((time.perf_counter() - 区间起点) * 1000)
     打印(结果, 耗时毫秒=毫秒)
     if "--读数" in 参数:
         print("")
