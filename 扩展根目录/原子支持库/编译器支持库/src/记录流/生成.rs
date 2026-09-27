@@ -31,7 +31,7 @@ pub fn 生成段数据(流: &记录流) -> Result<Vec<u8>, 生成错误> {
     出.extend_from_slice(&(体长 as u32).to_le_bytes());
     出.extend_from_slice(&流.头.补零);
 
-    出.extend_from_slice(&流.体头.首数组长.to_le_bytes());
+    出.extend_from_slice(&流.体头.首字段.to_le_bytes());
     出.extend_from_slice(&段体魔数.to_le_bytes());
 
     出.extend_from_slice(&((4 * 首数组长) as u32).to_le_bytes());
