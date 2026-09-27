@@ -36,21 +36,21 @@ import sys
 
 def _回(输出, 码, 结果=None, 错误=None):
     """写一条响应。`错误` 非空 ⇒ JSON-RPC 错误对象（协议级失败，不是工具失败）。"""
-    信 = {"jsonrpc": "2.0", "id": 码}
+    响应报文 = {"jsonrpc": "2.0", "id": 码}
     if 错误 is not None:
-        信["error"] = 错误
+        响应报文["error"] = 错误
     else:
-        信["result"] = 结果
-    输出.write(json.dumps(信, ensure_ascii=False) + "\n")
+        响应报文["result"] = 结果
+    输出.write(json.dumps(响应报文, ensure_ascii=False) + "\n")
     输出.flush()
 
 
 def 派发(方法, 参数, 仓根, 工具表):
     """把一个请求派到 MCP 的四个方法上 ⇒ `(结果, 错误)`。"""
     if 方法 == "initialize":
-        求 = 参数.get("protocolVersion")
+        请求版本 = 参数.get("protocolVersion")
         return {
-            "protocolVersion": 求 or 协议版本,
+            "protocolVersion": 请求版本 or 协议版本,
             "capabilities": {"tools": {}},
             "serverInfo": {"name": 服务名, "title": 服务显示名, "version": 服务版本},
             "instructions": 服务提示词,
@@ -64,10 +64,10 @@ def 派发(方法, 参数, 仓根, 工具表):
             for 名, (_实现, 标题, 说明, 模式) in 工具表.items()
         ]}, None
     if 方法 == "tools/call":
-        名 = 参数.get("name")
-        if 名 not in 工具表:
-            return None, {"code": -32602, "message": "没有这个工具：%r" % (名,)}
-        实现 = 工具表[名][0]
+        名称 = 参数.get("name")
+        if 名称 not in 工具表:
+            return None, {"code": -32602, "message": "没有这个工具：%r" % (名称,)}
+        实现 = 工具表[名称][0]
         码, 出 = 实现(参数.get("arguments") or {}, 仓根)
         return {"content": [{"type": "text", "text": 出}], "isError": 码 != 0}, None
     return None, {"code": -32601, "message": "方法不存在：%r" % (方法,)}
@@ -77,16 +77,16 @@ def 服务(仓根, 工具表, 输入=None, 输出=None):
     """跑 stdio 主循环（**永不返回** —— 它是「结构边界：永不返回」，见 入口白名单.json）。"""
     输入 = 输入 or sys.stdin
     输出 = 输出 or sys.stdout
-    for 行 in 输入:
-        if not 行.strip():
+    for 源码行 in 输入:
+        if not 源码行.strip():
             continue
         try:
-            请求 = json.loads(行)
+            请求 = json.loads(源码行)
         except ValueError:
             continue                       # 解不了的帧直接丢（不编一个假响应）
-        码 = 请求.get("id")
-        if 码 is None:
+        错误码 = 请求.get("id")
+        if 错误码 is None:
             continue                       # 通知：不回应
         结果, 错 = 派发(请求.get("method"), 请求.get("params") or {}, 仓根, 工具表)
-        _回(输出, 码, 结果, 错)
+        _回(输出, 错误码, 结果, 错)
     return 0

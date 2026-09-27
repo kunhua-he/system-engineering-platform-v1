@@ -71,12 +71,12 @@ def 账本路径() -> Path:
 
 def 连账本() -> sqlite3.Connection:
     """开账本（第一次用就建表）。"""
-    连 = sqlite3.connect(str(账本路径()))
-    连.row_factory = sqlite3.Row
+    连接 = sqlite3.connect(str(账本路径()))
+    连接.row_factory = sqlite3.Row
     for 一条 in 建表语句:
-        连.execute(一条)
-    连.commit()
-    return 连
+        连接.execute(一条)
+    连接.commit()
+    return 连接
 
 
 # ── 开工 ────────────────────────────────────────────────────────────────────────────────
@@ -87,9 +87,9 @@ def 新开工号(连接: sqlite3.Connection) -> str:
     复用号会让旧记录与支线撞名 ⇒ 那是最难查的一类错，所以取「已出现过的最大号 + 1」，
     不取「当前行数 + 1」。
     """
-    行 = 连接.execute("select 开工号 from 开工 order by 开工号 desc limit 1").fetchone()
-    号 = int(行["开工号"][3:]) + 1 if 行 else 100001
-    return "v1-%06d" % 号
+    源码行 = 连接.execute("select 开工号 from 开工 order by 开工号 desc limit 1").fetchone()
+    号值 = int(源码行["开工号"][3:]) + 1 if 源码行 else 100001
+    return "v1-%06d" % 号值
 
 
 def 登记开工(连接, 开工号: str, 工作内容: str, 分支名: str, 工作树: str) -> None:
@@ -101,8 +101,8 @@ def 登记开工(连接, 开工号: str, 工作内容: str, 分支名: str, 工�
 
 def 读开工(连接, 开工号: str):
     """一条开工 ⇒ dict（没有就是 `None`）。"""
-    行 = 连接.execute("select * from 开工 where 开工号 = ?", (开工号,)).fetchone()
-    return dict(行) if 行 else None
+    源码行 = 连接.execute("select * from 开工 where 开工号 = ?", (开工号,)).fetchone()
+    return dict(源码行) if 源码行 else None
 
 
 def 列开工(连接, 上限: int = 20) -> list:
@@ -112,13 +112,13 @@ def 列开工(连接, 上限: int = 20) -> list:
 
 def 搜开工(连接, 关键词: str, 上限: int = 20) -> list:
     """按关键词搜历史：面 = 工作内容 + 认领路径 + 改动路径（**不含 diff**，见文件头）。"""
-    模 = "%" + 关键词 + "%"
+    匹配模式 = "%" + 关键词 + "%"
     return [dict(行) for 行 in 连接.execute(
         "select distinct 开工.* from 开工 "
         "left join 认领 on 认领.开工号 = 开工.开工号 "
         "left join 改动 on 改动.开工号 = 开工.开工号 "
         "where 开工.工作内容 like ? or 认领.路径 like ? or 改动.路径 like ? "
-        "order by 开工.开工号 desc limit ?", (模, 模, 模, 上限))]
+        "order by 开工.开工号 desc limit ?", (匹配模式, 匹配模式, 匹配模式, 上限))]
 
 
 def 置状态(连接, 开工号: str, 状态: str) -> None:
@@ -182,7 +182,7 @@ def 查重复登记(连接, 开工号: str, 工作内容: str, 路径表) -> lis
     两个面：① 工作内容逐字相同；② 认领路径**高度重叠**（重合 ≥ 2 件且占本次认领的一半以上）。
     路径那一面**复用** `查跨开工冲突`（同一份实现）—— 不写平行的第二套判断。
     """
-    出 = [(别的号, "工作内容逐字相同（它还没释放）")
+    输出缓冲 = [(别的号, "工作内容逐字相同（它还没释放）")
          for 别的号, _ in 查同内容未释放(连接, 工作内容, 开工号)]
     重合表: dict = {}
     for 路径, 号表 in 查跨开工冲突(连接, 开工号, 路径表).items():
@@ -190,8 +190,8 @@ def 查重复登记(连接, 开工号: str, 工作内容: str, 路径表) -> lis
             重合表.setdefault(别的号, []).append(路径)
     for 别的号, 件表 in sorted(重合表.items()):
         if len(件表) >= 2 and len(件表) * 2 >= len(路径表):
-            出.append((别的号, "认领路径高度重叠（重合 %d / 本次 %d 件）" % (len(件表), len(路径表))))
-    return 出
+            输出缓冲.append((别的号, "认领路径高度重叠（重合 %d / 本次 %d 件）" % (len(件表), len(路径表))))
+    return 输出缓冲
 
 
 def 前置提示行() -> str:
@@ -200,13 +200,13 @@ def 前置提示行() -> str:
     落点走 `运行数据根` 包取（`子目录路径`）—— **不许自身拼路径**（判据 ㉕）。
     """
     try:
-        路 = 子目录路径(解析当前(), "临时件") / 前置文件名
+        路径 = 子目录路径(解析当前(), "临时件") / 前置文件名
     except 无位置:
         return ""
-    if not 路.is_file():
+    if not 路径.is_file():
         return ""
     return ("开工前先读收口方的《派腿前置》：%s\n"
-            "  （工具优先级 MCP 优先 · 硬纪律 · 提速红线 · 权威源地图 —— 腿不知道它存在 = 等于没写）" % 路)
+            "  （工具优先级 MCP 优先 · 硬纪律 · 提速红线 · 权威源地图 —— 腿不知道它存在 = 等于没写）" % 路径)
 
 
 def 写回指纹(连接, 开工号: str, 路径: str, 指纹: str) -> None:

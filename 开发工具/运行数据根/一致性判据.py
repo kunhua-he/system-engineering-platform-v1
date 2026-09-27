@@ -30,11 +30,11 @@ def 抽真源口径(解析文: str, 子目录文: str) -> dict:
     Linux = re.search(r'\.join\("(\.local)"\)\.join\("(share)"\)', 解析文)
     XDG = re.search(r'env::var\("(XDG_DATA_HOME)"\)', 解析文)
     APPDATA = re.search(r'env::var\("(APPDATA)"\)', 解析文)
-    子 = re.findall(r'Self::[^\s=]+ => "([^"]+)"', 子目录文)
+    子目录名表 = re.findall(r'Self::[^\s=]+ => "([^"]+)"', 子目录文)
     return {
         "默认目录名": 默认目录名.group(1) if 默认目录名 else None,
         "覆盖变量名": 覆盖变量名.group(1) if 覆盖变量名 else None,
-        "四类子目录名": tuple(子) if 子 else None,
+        "四类子目录名": tuple(子目录名表) if 子目录名表 else None,
         "苹果基片段": (macOS.group(1), macOS.group(2)) if macOS else None,
         "利努克斯退回片段": (Linux.group(1), Linux.group(2)) if Linux else None,
         "XDG变量名": XDG.group(1) if XDG else None,
@@ -67,30 +67,30 @@ def 抽镜像口径(文本: str) -> dict:
 
 def 比对(解析路: Path, 子目录路: Path, python路: Path) -> list:
     """逐项比对 ⇒ 不一致项清单（空 = 一致）。"""
-    真 = 抽真源口径(解析路.read_text(encoding="utf-8"), 子目录路.read_text(encoding="utf-8"))
-    镜 = 抽镜像口径(python路.read_text(encoding="utf-8"))
-    出 = []
-    for 项 in 七项:
-        if 真[项] is None:
-            出.append("%s：Rust 源里抽不到（Rust 那边改了？）" % 项)
-        elif 镜[项] is None:
-            出.append("%s：Python 源里抽不到" % 项)
-        elif tuple(真[项] if isinstance(真[项], tuple) else (真[项],)) != tuple(
-            镜[项] if isinstance(镜[项], tuple) else (镜[项],)
+    真源口径 = 抽真源口径(解析路.read_text(encoding="utf-8"), 子目录路.read_text(encoding="utf-8"))
+    镜像口径 = 抽镜像口径(python路.read_text(encoding="utf-8"))
+    输出缓冲 = []
+    for 一项 in 七项:
+        if 真源口径[一项] is None:
+            输出缓冲.append("%s：Rust 源里抽不到（Rust 那边改了？）" % 一项)
+        elif 镜像口径[一项] is None:
+            输出缓冲.append("%s：Python 源里抽不到" % 一项)
+        elif tuple(真源口径[一项] if isinstance(真源口径[一项], tuple) else (真源口径[一项],)) != tuple(
+            镜像口径[一项] if isinstance(镜像口径[一项], tuple) else (镜像口径[一项],)
         ):
-            出.append("%s：Rust=%r ≠ Python=%r" % (项, 真[项], 镜[项]))
-    return 出
+            输出缓冲.append("%s：Rust=%r ≠ Python=%r" % (一项, 真源口径[一项], 镜像口径[一项]))
+    return 输出缓冲
 
 
 def 改坏(文本: str, 一项: str, 假值) -> str:
     """把 Python 源文本里某一项改成假值（反向样本用）。"""
-    元 = ("四类子目录名", "苹果基片段", "利努克斯退回片段")
+    元组项 = ("四类子目录名", "苹果基片段", "利努克斯退回片段")
     变量 = "子目录名" if 一项 == "四类子目录名" else 一项
-    if 一项 in 元:
-        值 = "(%s)" % ", ".join('"%s"' % 段 for 段 in 假值)
+    if 一项 in 元组项:
+        待处理值 = "(%s)" % ", ".join('"%s"' % 段 for 段 in 假值)
     else:
-        值 = '"%s"' % 假值
-    return re.sub(r"^%s\s*=\s*.*$" % re.escape(变量), "%s = %s" % (变量, 值), 文本, count=1, flags=re.M)
+        待处理值 = '"%s"' % 假值
+    return re.sub(r"^%s\s*=\s*.*$" % re.escape(变量), "%s = %s" % (变量, 待处理值), 文本, count=1, flags=re.M)
 
 
 假值表 = {
@@ -107,14 +107,14 @@ def 改坏(文本: str, 一项: str, 假值) -> str:
 def 反向样本(临时根: Path) -> int:
     """逐项改坏一份副本 ⇒ 每一项都必须被判红；有一项漏 ⇒ 退出码 1。"""
     原文 = 镜像源.read_text(encoding="utf-8")
-    漏 = []
+    漏判项表 = []
     for 项, 值 in 假值表.items():
-        路 = 临时根 / "坏.py"
-        路.write_text(改坏(原文, 项, 值), encoding="utf-8")
-        if not 比对(真源解析路径, 真源子目录路径, 路):
-            漏.append(项)
-    if 漏:
-        print("反向样本失败：改坏这些项却没判红 ⇒ %s" % " · ".join(漏))
+        路径 = 临时根 / "坏.py"
+        路径.write_text(改坏(原文, 项, 值), encoding="utf-8")
+        if not 比对(真源解析路径, 真源子目录路径, 路径):
+            漏判项表.append(项)
+    if 漏判项表:
+        print("反向样本失败：改坏这些项却没判红 ⇒ %s" % " · ".join(漏判项表))
         return 1
     print("反向样本通过：%d 项逐项改坏 ⇒ 判据每次都判红" % len(假值表))
     return 0
@@ -122,11 +122,11 @@ def 反向样本(临时根: Path) -> int:
 
 def 跑一遍(解析路: Path, 子目录路: Path, python路: Path) -> int:
     """正向检查：逐项比对 ⇒ 一致退 0，不一致逐条报出退 1。"""
-    出 = 比对(解析路, 子目录路, python路)
-    if 出:
-        print("一致性判据失败（%d 项不一致）：" % len(出))
-        for 条 in 出:
-            print("  ✗ " + 条)
+    输出缓冲 = 比对(解析路, 子目录路, python路)
+    if 输出缓冲:
+        print("一致性判据失败（%d 项不一致）：" % len(输出缓冲))
+        for 一条 in 输出缓冲:
+            print("  ✗ " + 一条)
         return 1
     print("一致性判据通过：Python 镜像与 Rust 那份逐项一致（%s）" % python路)
     return 0

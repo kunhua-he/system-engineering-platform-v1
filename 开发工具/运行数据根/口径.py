@@ -71,13 +71,13 @@ def 解析(覆盖, 家目录, xdg数据目录, 应用数据目录, 平台: str) 
     """**唯一解析口**：`覆盖 > 平台默认`。外部事实全部注入（不从全局读），故每条分支都判得了。"""
     if 覆盖:
         return Path(覆盖)
-    基 = 默认基(家目录, xdg数据目录, 应用数据目录, 平台)
-    if 基 is None:
+    平台基 = 默认基(家目录, xdg数据目录, 应用数据目录, 平台)
+    if 平台基 is None:
         raise 无位置(
             "运行数据根解析不出：既没有 %s，也推不出平台默认位置"
             "（家目录 / XDG_DATA_HOME / APPDATA 全缺）" % 覆盖变量名
         )
-    return 基 / 默认目录名
+    return 平台基 / 默认目录名
 
 
 def 解析当前() -> Path:
@@ -100,6 +100,6 @@ def 子目录路径(根目录: Path, 类别: str) -> Path:
 
 def 确保子目录(根目录: Path, 类别: str) -> Path:
     """建出某一类子目录并交出路径（父目录一并建）。"""
-    路 = 子目录路径(根目录, 类别)
-    路.mkdir(parents=True, exist_ok=True)
-    return 路
+    路径 = 子目录路径(根目录, 类别)
+    路径.mkdir(parents=True, exist_ok=True)
+    return 路径
