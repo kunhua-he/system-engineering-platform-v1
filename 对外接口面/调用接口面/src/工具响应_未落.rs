@@ -235,9 +235,9 @@ fn 读菜单表(工具根: &Path) -> Result<Vec<(String, String)>, String> {
 }
 
 /// 取 `标记` 之后第一对引号里的内容。
-fn 取引号值(行: &str, 标记: &str) -> Option<String> {
-    let 起 = 行.find(标记)? + 标记.len();
-    let 余 = 行.get(起..)?;
+fn 取引号值(源码行: &str, 标记: &str) -> Option<String> {
+    let 起 = 源码行.find(标记)? + 标记.len();
+    let 余 = 源码行.get(起..)?;
     let 止 = 余.find('"')?;
     Some(余[..止].to_owned())
 }

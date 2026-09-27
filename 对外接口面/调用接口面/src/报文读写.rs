@@ -26,7 +26,7 @@ pub struct 报文 {
 }
 
 /// 读一条请求。错误是**一句可读说明**（⇒ 400）。
-pub(crate) fn 读报文(流: &mut TcpStream) -> Result<报文, String> {
+pub(crate) fn 读报文(输出流: &mut TcpStream) -> Result<报文, String> {
     let mut 缓冲: Vec<u8> = Vec::with_capacity(1024);
     let mut 临时 = [0u8; 4096];
     let 头尾 = loop {
@@ -36,7 +36,7 @@ pub(crate) fn 读报文(流: &mut TcpStream) -> Result<报文, String> {
         if 缓冲.len() > 头区上限 {
             return Err(format!("请求头超过 {头区上限} 字节"));
         }
-        let 读到 = 流.read(&mut 临时).map_err(|错| format!("读请求失败：{错}"))?;
+        let 读到 = 输出流.read(&mut 临时).map_err(|错| format!("读请求失败：{错}"))?;
         if 读到 == 0 {
             return Err("连接在请求写完之前就断了".to_owned());
         }
@@ -83,7 +83,7 @@ pub(crate) fn 读报文(流: &mut TcpStream) -> Result<报文, String> {
     体字节.truncate(内容长度);
     while 体字节.len() < 内容长度 {
         let 还差 = (内容长度 - 体字节.len()).min(临时.len());
-        let 读到 = 流
+        let 读到 = 输出流
             .read(&mut 临时[..还差])
             .map_err(|错| format!("读请求体失败：{错}"))?;
         if 读到 == 0 {
@@ -107,7 +107,7 @@ fn 找头尾(缓冲: &[u8]) -> Option<usize> {
 /// 内容类型**随应答走**（`应答.内容类型`）：§三 的四个端点是 JSON，§五 的静态托管是
 /// `text/html` / `text/css` / `text/javascript` —— 在这里假定 JSON 就会让前端整页挂掉
 /// （浏览器按 JSON 解 HTML 只得到一个下载或一段乱码）。
-pub(crate) fn 写响应(流: &mut TcpStream, 应答: &应答) -> std::io::Result<()> {
+pub(crate) fn 写响应(输出流: &mut TcpStream, 应答: &应答) -> std::io::Result<()> {
     let 头 = format!(
         "HTTP/1.1 {} {}\r\nContent-Type: {}\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
         应答.状态,
@@ -115,9 +115,9 @@ pub(crate) fn 写响应(流: &mut TcpStream, 应答: &应答) -> std::io::Result
         应答.内容类型,
         应答.体.len()
     );
-    流.write_all(头.as_bytes())?;
-    流.write_all(&应答.体)?;
-    流.flush()
+    输出流.write_all(头.as_bytes())?;
+    输出流.write_all(&应答.体)?;
+    输出流.flush()
 }
 
 fn 原因短语(状态: u16) -> &'static str {

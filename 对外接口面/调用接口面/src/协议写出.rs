@@ -15,61 +15,61 @@ use crate::协议值::协议值;
 use v1_adapter::小写出::{写文本, 缩进};
 
 /// 序列化为缩进版 JSON 文本（**不含**结尾换行）。
-pub fn 写协议值(值: &协议值) -> String {
+pub fn 写协议值(待处理值: &协议值) -> String {
     let mut 出 = String::new();
-    写值(&mut 出, 值, 0);
+    写值(&mut 出, 待处理值, 0);
     出
 }
 
-fn 写值(出: &mut String, 值: &协议值, 层: usize) {
-    match 值 {
-        协议值::空值 => 出.push_str("null"),
-        协议值::逻辑真 => 出.push_str("true"),
-        协议值::逻辑假 => 出.push_str("false"),
-        协议值::整数(数) => 出.push_str(&数.to_string()),
-        协议值::无符号(数) => 出.push_str(&数.to_string()),
+fn 写值(输出缓冲: &mut String, 待处理值: &协议值, 层级: usize) {
+    match 待处理值 {
+        协议值::空值 => 输出缓冲.push_str("null"),
+        协议值::逻辑真 => 输出缓冲.push_str("true"),
+        协议值::逻辑假 => 输出缓冲.push_str("false"),
+        协议值::整数(数) => 输出缓冲.push_str(&数.to_string()),
+        协议值::无符号(数) => 输出缓冲.push_str(&数.to_string()),
         协议值::小数(数) => {
             if 数.is_finite() {
-                出.push_str(&数.to_string());
+                输出缓冲.push_str(&数.to_string());
             } else {
                 // 非有限值不是合法 JSON（见文件头）。
-                出.push_str("null");
+                输出缓冲.push_str("null");
             }
         }
-        协议值::文本(文) => 写文本(出, 文),
+        协议值::文本(文) => 写文本(输出缓冲, 文),
         协议值::数组(项) => {
             if 项.is_empty() {
-                出.push_str("[]");
+                输出缓冲.push_str("[]");
                 return;
             }
-            出.push('[');
+            输出缓冲.push('[');
             for (序, 一) in 项.iter().enumerate() {
                 if 序 > 0 {
-                    出.push(',');
+                    输出缓冲.push(',');
                 }
-                缩进(出, 层 + 1);
-                写值(出, 一, 层 + 1);
+                缩进(输出缓冲, 层级 + 1);
+                写值(输出缓冲, 一, 层级 + 1);
             }
-            缩进(出, 层);
-            出.push(']');
+            缩进(输出缓冲, 层级);
+            输出缓冲.push(']');
         }
         协议值::对象(成员) => {
             if 成员.is_empty() {
-                出.push_str("{}");
+                输出缓冲.push_str("{}");
                 return;
             }
-            出.push('{');
+            输出缓冲.push('{');
             for (序, (键, 一)) in 成员.iter().enumerate() {
                 if 序 > 0 {
-                    出.push(',');
+                    输出缓冲.push(',');
                 }
-                缩进(出, 层 + 1);
-                写文本(出, 键);
-                出.push_str(": ");
-                写值(出, 一, 层 + 1);
+                缩进(输出缓冲, 层级 + 1);
+                写文本(输出缓冲, 键);
+                输出缓冲.push_str(": ");
+                写值(输出缓冲, 一, 层级 + 1);
             }
-            缩进(出, 层);
-            出.push('}');
+            缩进(输出缓冲, 层级);
+            输出缓冲.push('}');
         }
     }
 }

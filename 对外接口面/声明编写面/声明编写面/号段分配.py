@@ -40,8 +40,8 @@ def 读JSON件(路径):
         return None
 
 
-def _是整数(值) -> bool:
-    return isinstance(值, int) and not isinstance(值, bool)
+def _是整数(待处理值) -> bool:
+    return isinstance(待处理值, int) and not isinstance(待处理值, bool)
 
 
 def 声明文件(声明根):

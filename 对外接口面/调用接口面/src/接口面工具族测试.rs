@@ -51,8 +51,8 @@ fn 独占跑者() -> MutexGuard<'static, ()> {
 struct 临时根(PathBuf);
 
 impl 临时根 {
-    fn 新建(名: &str) -> Self {
-        let 基 = std::env::temp_dir().join(format!("v1-接口面工具族-{}-{名}", std::process::id()));
+    fn 新建(名称: &str) -> Self {
+        let 基 = std::env::temp_dir().join(format!("v1-接口面工具族-{}-{名称}", std::process::id()));
         let _ = std::fs::remove_dir_all(&基);
         std::fs::create_dir_all(&基).expect("建临时工具根");
         Self(基)
@@ -91,7 +91,7 @@ fn 成功数据(应答: &收到) -> 协议值 {
 /// 一条**该失败**的应答 → 断言「六项齐 + **码就是码** + 段位 9 + 200」。
 ///
 /// **判据是码本身**：只断言「失败」对「把所有请求都判失败」毫无分辨力。
-fn 断言失败码(应答: &收到, 码: u64) {
+fn 断言失败码(应答: &收到, 错误码: u64) {
     assert_eq!(
         应答.状态, 200,
         "业务失败一律 200 + 成功: false，不许抛 5xx：\n{}",
@@ -104,7 +104,7 @@ fn 断言失败码(应答: &收到, 码: u64) {
     }
     assert_eq!(
         无符号(&错误, "码"),
-        码,
+        错误码,
         "回的是**真错误码**（不许自造、不许把失败写成成功）：\n{}",
         应答.体
     );

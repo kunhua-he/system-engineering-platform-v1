@@ -26,9 +26,9 @@ pub struct 转码错误 {
 const 字母表: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
 /// 字节集 → base64 字符串（带 `=` 补齐，长度恒为 4 的倍数）。
-pub fn base64编码(源: &[u8]) -> String {
-    let mut 出 = String::with_capacity(源.len().div_ceil(3) * 4);
-    for 块 in 源.chunks(3) {
+pub fn base64编码(来源: &[u8]) -> String {
+    let mut 出 = String::with_capacity(来源.len().div_ceil(3) * 4);
+    for 块 in 来源.chunks(3) {
         let 首字节值 = u32::from(块[0]);
         let 次字节值 = u32::from(块.get(1).copied().unwrap_or(0));
         let 末字节值 = u32::from(块.get(2).copied().unwrap_or(0));
@@ -50,11 +50,11 @@ pub fn base64编码(源: &[u8]) -> String {
 }
 
 /// 一位 base64 字符 → 6 位值。`=` 与表外字符都算不合法。
-fn 取值(字: u8, 位: usize) -> Result<u32, 转码错误> {
-    match 字母表.iter().position(|一| *一 == 字) {
+fn 取值(字符表: u8, 位置: usize) -> Result<u32, 转码错误> {
+    match 字母表.iter().position(|一| *一 == 字符表) {
         Some(序) => Ok(序 as u32),
         None => Err(转码错误 {
-            位置: 位,
+            位置: 位置,
             说明: "base64 里有表外字符",
         }),
     }
@@ -134,8 +134,8 @@ pub fn base64解码(文本: &str) -> Result<Vec<u8>, 转码错误> {
 ///
 /// **`+` 不当作空格**：`+` 是查询串（`application/x-www-form-urlencoded`）的约定，
 /// 路径里它就是字面量。混进来就是给同一段路径造两种含义。
-pub fn 百分号解码(源: &str) -> Result<String, 转码错误> {
-    let 字节 = 源.as_bytes();
+pub fn 百分号解码(来源: &str) -> Result<String, 转码错误> {
+    let 字节 = 来源.as_bytes();
     let mut 出 = Vec::with_capacity(字节.len());
     let mut 位 = 0;
     while 位 < 字节.len() {
@@ -165,8 +165,8 @@ pub fn 百分号解码(源: &str) -> Result<String, 转码错误> {
     })
 }
 
-fn 十六进制(字: u8) -> Option<u8> {
-    (字 as char).to_digit(16).map(|数| 数 as u8)
+fn 十六进制(字符表: u8) -> Option<u8> {
+    (字符表 as char).to_digit(16).map(|数| 数 as u8)
 }
 
 #[cfg(test)]

@@ -22,7 +22,7 @@ pub(crate) fn 子目录(目录: &Path) -> Vec<PathBuf> {
 }
 
 /// 是不是可装载库文件（按后缀找，不按名字找）。
-pub(crate) fn 是可装载库(路: &Path) -> bool {
-    let 名 = 路.file_name().and_then(|名| 名.to_str());
-    路.is_file() && 名.is_some_and(|名| 库后缀.iter().any(|尾| 名.ends_with(尾)))
+pub(crate) fn 是可装载库(路径: &Path) -> bool {
+    let 名 = 路径.file_name().and_then(|名| 名.to_str());
+    路径.is_file() && 名.is_some_and(|名| 库后缀.iter().any(|尾| 名.ends_with(尾)))
 }
