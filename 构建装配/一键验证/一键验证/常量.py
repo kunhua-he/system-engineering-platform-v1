@@ -230,7 +230,11 @@ from pathlib import Path
     r"JSON\s*\.\s*parse\b"  # 解析 JSON 文本（裁决点名的那一个）
     r"|\bDOMParser\b|\bparseFromString\b"  # 解析 HTML / XML 文本
     r"|\beval\s*\(|\bnew\s+Function\s*\("  # 动态求值：对内容作出判断的另一面
-    r"|\bnew\s+RegExp\s*\(|\.[ \t]*(?:test|exec)\s*\("  # 正则判断
+    r"|\bnew\s+RegExp\s*\(|\.[ \t]*(?:test|exec)\s*\("  # 正则判断（调用形）
+    # 正则字面量在**值位置**（赋给标识符 / 作实参 / `return`）—— 它承载的是业务判断，
+    # 与「前端零逻辑」直接冲突（裁决 `决策记录/2026-09-27_判据口径十一条.md` §三）。
+    # 只认这四种**不可能**是除法的前缀：`=` / `return` / `,` / `(` 之后紧接 `/`。
+    r"|(?:=[ \t]*|return[ \t]+|,[ \t]*|\([ \t]*)/[^/*\s=][^\n]*?/[gimsuy]*"
     r"|[\w$]*(?:解析|校验|验证|生成|判断|检查|转换"  # 判断动词的**调用形**
     r"|parse|validate|generat|convert|regex|正则)[\w$]*\s*\("
 )

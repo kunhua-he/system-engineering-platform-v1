@@ -76,6 +76,31 @@ def 自检_前端语义判据() -> list:
         f"命中 {命中(搬运)}（要求空）——纯搬运/编码允许",
     )
     断言(
+        "反向样本：正则**字面量在值位置**（赋给标识符 / 作实参 / `return`）⇒ 报",
+        all(
+            命中(x)
+            for x in (
+                "const 形 = /^[0-9]+$/;\n",
+                "export function 判(s) { return /^[0-9]+$/.test(s); }\n",
+                "export function 判(s, 另) { return 查(s, /^[0-9]+$/); }\n",
+            )
+        ),
+        "三种值位置各报一处（要求都非空）",
+    )
+    断言(
+        "正向样本：**除法**与含 `//` 的字符串/注释 ⇒ 不报（值位置的口径不许误伤它们）",
+        not any(
+            命中(x)
+            for x in (
+                "export function 比(a, b) { return a / b; }\n",
+                "export function 比(a, b) { const 商 = a / b; return 商; }\n",
+                "// 注释里写 /^[0-9]+$/ 不算逻辑\n",
+                'const 网址 = "https://example.com/a/b";\n',
+            )
+        ),
+        "除法与注释/字符串不许被当成正则字面量",
+    )
+    断言(
         "反向样本：`DOMParser` / `eval(` / 正则 `.test(` 这类真判断 ⇒ 报",
         all(
             命中(x)
