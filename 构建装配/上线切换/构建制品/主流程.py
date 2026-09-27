@@ -5,7 +5,7 @@ import json
 import shutil
 from pathlib import Path
 
-from .命令 import 跑, 提交哈希, 工具链版本
+from .命令 import 跑命令, 提交哈希, 工具链版本
 from .常量 import 仓根, 制品落点, 扩展根声明, 底座目录, 底座根文件, 构建缓存, 源后缀, 预构建戳
 from .扩展 import 扫扩展, 找扩展产物, 建扩展产物
 from .指纹 import 预构建指纹, 源指纹
@@ -21,7 +21,7 @@ def 预构建(纳入的扩展: list) -> int:
     但豁免要成立，那条冷构建必须**能被单独指名跑**，于是有了本步。
     本步的墙钟由入口按「环境步」如实报、**不判顶**（见 `构建装配/门禁/壳.py::报告环境步`）。
     """
-    跑(["cargo", "build", "--locked", "--offline", "--release", "-p", "v1-gateway", "--example", "启动网关"], cwd=仓根)
+    跑命令(["cargo", "build", "--locked", "--offline", "--release", "-p", "v1-gateway", "--example", "启动网关"], cwd=仓根)
     for 扩展 in 纳入的扩展:
         建扩展产物(扩展)
     预构建戳.parent.mkdir(parents=True, exist_ok=True)
@@ -60,7 +60,7 @@ def 检查预构建(纳入的扩展: list) -> str:
     return ""
 
 
-def main() -> int:
+def 入口函数() -> int:
     解 = argparse.ArgumentParser(description="构建制品（可装载的整包）")
     解.add_argument("--变体", default=None, help="装配变体名（进构建指纹）")
     解.add_argument("--不含扩展", action="store_true", help="只装底座（形态裁剪：同一套源出另一种整包）")

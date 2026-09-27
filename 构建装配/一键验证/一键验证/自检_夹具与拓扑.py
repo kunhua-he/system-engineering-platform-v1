@@ -53,7 +53,7 @@ def 自检_整份夹具跳过() -> list:
     # 对照：挂 vs 不挂 —— 只差父文件里那一行挂载声明
     import tempfile
 
-    def 跑(挂: bool) -> dict:
+    def 跑自检(挂: bool) -> dict:
         with tempfile.TemporaryDirectory(prefix="一键验证夹具对照-") as 临时:
             临根 = Path(临时) / "仓"
             造干净仓(临根)
@@ -65,7 +65,7 @@ def 自检_整份夹具跳过() -> list:
                 路径.write_text(内容, encoding="utf-8")
             return 验证(临根)
 
-    挂了, 没挂 = 跑(True), 跑(False)
+    挂了, 没挂 = 跑自检(True), 跑自检(False)
     失败数 = lambda 结果: len([明细条 for 明细条 in 结果["失败"] if isinstance(明细条, str)])  # noqa: E731
     出.append(
         (

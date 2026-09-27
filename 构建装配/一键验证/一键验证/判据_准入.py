@@ -40,7 +40,7 @@ def _生成物面(上):
     return _拼(上, "数据.rs", "契约声明/src/")
 
 
-def _读json件(仓根, 名):
+def _读JSON件(仓根, 名):
     出 = []
     for 路径 in sorted(仓根.rglob(名)):
         try:
@@ -119,7 +119,7 @@ def 检查29_准入接缝冻结(上: dict) -> list:
     名 = 检查名[28]
     文 = _拼(上, "边界协议.md")
     启动网关 = _拼(上, ".rs", "对外接口面/调用接口面/examples/启动网关")
-    声明件 = _读json件(上["仓根"], "扩展根声明.json")
+    声明件 = _读JSON件(上["仓根"], "扩展根声明.json")
     缺 = []
     if "GetPlatformInfo" not in 文:
         缺.append("边界协议未写我方符号名 GetPlatformInfo")
@@ -148,7 +148,7 @@ def 检查30_准入无死键(上: dict) -> list:
     出 = []
     名 = 检查名[29]
     坏 = []
-    for 路径, 声 in _读json件(上["仓根"], "包声明.json"):
+    for 路径, 声 in _读JSON件(上["仓根"], "包声明.json"):
         if not isinstance(声, dict):
             坏.append("%s 不是合法 JSON" % 路径.name)
             continue
@@ -182,7 +182,7 @@ def 检查31_准入制品类型(上: dict) -> list:
     # 落点是**包**不是某个写死的文件（#230）：装配侧的 `--crate-type cdylib` 可能落在
     # `构建制品.py` 路由件里，也可能落在 `构建制品/扩展.py` 这样的子件里 ⇒ 收整包。
     构建制品 = _拼(上, ".py", "构建装配/上线切换/构建制品")
-    必备件 = _读json件(上["仓根"], "必备件.json")
+    必备件 = _读JSON件(上["仓根"], "必备件.json")
     规则 = ""
     if 必备件 and isinstance(必备件[0][1], dict):
         规则 = ((必备件[0][1].get("扩展仓的 crate-type（只有一条路）") or {}).get("判据")) or ""
@@ -277,7 +277,7 @@ def 检查35_准入指纹可跑(上: dict) -> list:
     """
     出 = []
     名 = 检查名[34]
-    指纹件 = _读json件(上["仓根"], "指纹.json")
+    指纹件 = _读JSON件(上["仓根"], "指纹.json")
     缺 = []
     if not 指纹件:
         缺.append("扩展目录下无 指纹.json")
@@ -336,16 +336,16 @@ def 对象数_28(上):
 
 def 对象数_29(上):
     return ((1 if _拼(上, "边界协议.md") else 0)
-            + (1 if _读json件(上["仓根"], "扩展根声明.json") else 0)
+            + (1 if _读JSON件(上["仓根"], "扩展根声明.json") else 0)
             + (1 if _拼(上, ".rs", "对外接口面/调用接口面/examples/启动网关") else 0))
 
 
 def 对象数_30(上):
-    return len(_读json件(上["仓根"], "包声明.json"))
+    return len(_读JSON件(上["仓根"], "包声明.json"))
 
 
 def 对象数_31(上):
-    必备件 = _读json件(上["仓根"], "必备件.json")
+    必备件 = _读JSON件(上["仓根"], "必备件.json")
     规则 = ""
     if 必备件 and isinstance(必备件[0][1], dict):
         规则 = ((必备件[0][1].get("扩展仓的 crate-type（只有一条路）") or {}).get("判据")) or ""
@@ -370,7 +370,7 @@ def 对象数_34(上):
 
 
 def 对象数_35(上):
-    return len(_读json件(上["仓根"], "指纹.json"))
+    return len(_读JSON件(上["仓根"], "指纹.json"))
 
 
 def 对象数_36(上):

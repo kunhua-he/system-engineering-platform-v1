@@ -17,7 +17,7 @@ def 读字节(相对路径):
         return 句柄.read()
 
 
-def 读json(相对路径):
+def 读JSON件(相对路径):
     try:
         文本 = 读字节(相对路径).decode("utf-8")
     except UnicodeDecodeError as 错:
@@ -33,7 +33,7 @@ def 源指纹(相对路径):
     return hashlib.sha256(读字节(相对路径)).hexdigest()[:16]
 
 
-def 列目录json(相对目录):
+def 列目录JSON件(相对目录):
     """目录下全部 .json，按文件名升序。返回 [(文件名, 相对路径)]。"""
     绝对目录 = os.path.join(仓根, 相对目录)
     if not os.path.isdir(绝对目录):

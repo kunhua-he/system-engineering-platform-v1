@@ -191,7 +191,7 @@ def 自检_前端语义判据() -> list:
     )
 
     # ── 第二层：端到端（注入到干净合成仓 ⇒ 跑真判据；含关/开对照）──
-    def 跑(注入文, 关判据=False):
+    def 跑自检(注入文, 关判据=False):
         with tempfile.TemporaryDirectory(prefix="一键验证前端语义-") as 临时:
             临根 = Path(临时) / "仓"
             造干净仓(临根)
@@ -220,11 +220,11 @@ def 自检_前端语义判据() -> list:
             注入件 in 条["位置"] or 注入件 in 条["缺什么"] for 条 in 判据6条(结果)
         )
 
-    开 = 跑(真解析)
-    关 = 跑(真解析, 关判据=True)
-    序列化果 = 跑(序列化)
-    注释果 = 跑(辩解注释)
-    基线 = 跑(None)
+    开 = 跑自检(真解析)
+    关 = 跑自检(真解析, 关判据=True)
+    序列化果 = 跑自检(序列化)
+    注释果 = 跑自检(辩解注释)
+    基线 = 跑自检(None)
 
     断言(
         "反向样本（端到端）：干净仓 + 一处真 `JSON.parse` ⇒ ⑪ 判据 6 报红且指到注入件",
@@ -273,7 +273,7 @@ def 自检_前端内联脚本() -> list:
         '<script type="module" src="应用.js"></script></body></html>\n'
     )
 
-    def 跑(html文, 关判据=False):
+    def 跑自检(html文, 关判据=False):
         with tempfile.TemporaryDirectory(prefix="一键验证前端内联-") as 临时:
             临根 = Path(临时) / "仓"
             造干净仓(临根)
@@ -294,9 +294,9 @@ def 自检_前端内联脚本() -> list:
             if isinstance(条, dict) and 条["检查"] == 检查名[10] and "前端呈现" in 条["位置"]
         ]
 
-    开 = 跑(反向文)
-    关 = 跑(反向文, 关判据=True)
-    正 = 跑(正向文)
+    开 = 跑自检(反向文)
+    关 = 跑自检(反向文, 关判据=True)
+    正 = 跑自检(正向文)
     出.append(
         (
             "反向样本：`.html` 内联 `<script>` 里的真 `JSON.parse` ⇒ ⑪-6 报",

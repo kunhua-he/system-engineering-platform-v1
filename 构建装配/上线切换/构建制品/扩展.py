@@ -8,7 +8,7 @@
 import os
 from pathlib import Path
 
-from .命令 import 跑
+from .命令 import 跑命令
 from .常量 import 仓根, 构建缓存, 底座依赖名
 
 
@@ -82,11 +82,11 @@ def 建扩展产物(扩展: dict) -> None:
     清单 = 扩展["落点"] / "Cargo.toml"
     缓存 = 构建缓存 / "扩展"
     环境 = dict(os.environ, CARGO_TARGET_DIR=str(缓存))
-    跑(["cargo", "build", "--locked", "--offline", "--release", "--manifest-path", str(清单)], cwd=仓根, env=环境)
+    跑命令(["cargo", "build", "--locked", "--offline", "--release", "--manifest-path", str(清单)], cwd=仓根, env=环境)
     rlibs = sorted((缓存 / "release" / "deps").glob("lib{}*.rlib".format(底座依赖名)))
     if not rlibs:
         raise SystemExit("找不到底座依赖的 rlib：{}".format(缓存 / "release" / "deps"))
-    跑(
+    跑命令(
         ["cargo", "rustc", "--locked", "--offline", "--release", "--manifest-path", str(清单), "--",
          "--crate-type", "cdylib", "--extern", "{}={}".format(底座依赖名, rlibs[0])],
         cwd=仓根,

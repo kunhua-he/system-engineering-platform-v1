@@ -22,7 +22,7 @@ import os
 import sys
 import time
 
-起 = time.monotonic()  # 壳起表点：必须在 import 业务包**之前**（见 构建装配/门禁/壳.py）
+起始时刻 = time.monotonic()  # 壳起表点：必须在 import 业务包**之前**（见 构建装配/门禁/壳.py）
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))  # 仓根
 from 构建装配.门禁 import 自门禁  # noqa: E402
@@ -32,5 +32,5 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from 生成声明 import 主资源声明  # noqa: E402
 
 if __name__ == "__main__":
-    sys.exit(自门禁(起, 主资源声明(sys.argv[1:]), 尾巴余量毫秒=200,
+    sys.exit(自门禁(起始时刻, 主资源声明(sys.argv[1:]), 尾巴余量毫秒=200,
                    修法="本件只读 <根>/资源声明/*.json 再渲染；重活（源多了）就分片或缓存"))

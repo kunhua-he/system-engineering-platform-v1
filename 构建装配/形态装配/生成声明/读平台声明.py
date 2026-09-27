@@ -8,7 +8,7 @@
 import os
 
 from .路径形状 import 仓根, 生成失败
-from .小工具 import 读json, 取整, 取串, 取表, 版本三元组, 版本要求
+from .小工具 import 读JSON件, 取整, 取串, 取表, 版本三元组, 版本要求
 from .渲染接缝 import 校验导出目标
 
 
@@ -51,7 +51,7 @@ def 选声明文件(根):
 
 def 读平台声明(根):
     源 = 根.声明文件
-    文档 = 读json(源)
+    文档 = 读JSON件(源)
     if not isinstance(文档, dict):
         raise 生成失败("%s 顶层不是对象" % 源)
 
@@ -144,7 +144,7 @@ def 读号段图(根):
             "（占用 ⊆ 布局），也是 `号段类宽度`/`号段类个数` 与通知号三个方向号段的推导源，"
             "缺了就没法判 —— fail-closed" % 根.号段图
         )
-    文档 = 读json(根.号段图)
+    文档 = 读JSON件(根.号段图)
     if not isinstance(文档, dict):
         raise 生成失败("%s 顶层不是对象" % 根.号段图)
     出 = {}
