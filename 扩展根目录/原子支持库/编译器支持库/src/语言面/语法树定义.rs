@@ -193,7 +193,7 @@ impl 语法树 {
                     return Err(根被当作子节点 { 节点: 子, 父 });
                 }
                 if let Some(已有) = 父表[子 as usize] {
-                    return Err(同一节点有两个父 { 节点: 子, 甲父: 已有, 乙父: 父 });
+                    return Err(同一节点有两个父 { 节点: 子, 首父: 已有, 次父: 父 });
                 }
                 父表[子 as usize] = Some(父);
             }

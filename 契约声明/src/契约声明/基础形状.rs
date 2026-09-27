@@ -35,16 +35,16 @@ impl 版本三元组 {
 /// 一张静态表：项数 + 项表指针。空表用 `表段::空()`。
 #[repr(C)]
 #[derive(Clone, Copy)]
-pub struct 表段<T> {
+pub struct 表段<元素> {
     pub 项数: u32,
-    pub 项表: *const T,
+    pub 项表: *const 元素,
 }
 
-impl<T> 表段<T> {
+impl<元素> 表段<元素> {
     pub const fn 空() -> Self {
         Self { 项数: 0, 项表: core::ptr::null() }
     }
-    pub const fn 新(项表: *const T, 项数: u32) -> Self {
+    pub const fn 新(项表: *const 元素, 项数: u32) -> Self {
         Self { 项数, 项表 }
     }
     pub fn 是否空(&self) -> bool {
