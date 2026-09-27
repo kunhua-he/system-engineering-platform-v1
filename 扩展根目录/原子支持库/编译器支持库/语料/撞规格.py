@@ -36,11 +36,11 @@ from 撞规格.读样本 import 读样本
 
 def main():
     rows = 读样本(DST)
-    R = 统计.analyse(rows)
+    读数 = 统计.analyse(rows)
     tier_bytes = 统计.分层字节(rows)
-    报表.打印(R, rows, tier_bytes)
+    报表.打印(读数, rows, tier_bytes)
     if "--json" in sys.argv:
-        报表.导出(R, tier_bytes)
+        报表.导出(读数, tier_bytes)
 
 
 if __name__ == "__main__":

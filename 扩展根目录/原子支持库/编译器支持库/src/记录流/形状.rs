@@ -27,7 +27,7 @@ pub mod 头偏移 {
     /// 补零区长度。
     pub const 补零长度: usize = 40;
     /// u32 段体甲。
-    pub const 体甲: usize = 0x38;
+    pub const 体首字段: usize = 0x38;
     /// u32 段体魔数 `0x030BEF3F`。
     pub const 体魔数: usize = 0x3C;
 }
@@ -51,7 +51,7 @@ pub struct 段数据头 {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct 段体头 {
     /// u32 段体甲（段数据偏移 0x38）。实测高 16 位 ∈ {1,2,3,7,10}，低 16 位可变。
-    pub 甲: u32,
+    pub 首字段: u32,
 }
 
 /// 一条支持库引用记录。盘面是「u32 串长 + 串长字节」，本结构把它切成字段表。
@@ -109,11 +109,11 @@ impl 支持库引用 {
         self.五段()?.get(1).map(Vec::as_slice)
     }
     /// 5 段时取 `版本甲`。
-    pub fn 版本甲(&self) -> Option<&[u8]> {
+    pub fn 首版本(&self) -> Option<&[u8]> {
         self.五段()?.get(2).map(Vec::as_slice)
     }
     /// 5 段时取 `版本乙`。
-    pub fn 版本乙(&self) -> Option<&[u8]> {
+    pub fn 次版本(&self) -> Option<&[u8]> {
         self.五段()?.get(3).map(Vec::as_slice)
     }
     /// 5 段时取 `中文名`。6 段（`.npk` 类库）时返回 `None`，不做猜测。
@@ -132,11 +132,11 @@ impl 支持库引用 {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct 支持库表 {
     /// 数组甲：N × u32，盘面字节长度前缀 = `4N`。
-    pub 数组甲: Vec<u32>,
+    pub 首数组: Vec<u32>,
     /// 数组乙：N × u16，盘面字节长度前缀 = `2N`。
-    pub 数组乙: Vec<u16>,
+    pub 次数组: Vec<u16>,
     /// 数组丙：N × u16，盘面字节长度前缀 = `2N`。
-    pub 数组丙: Vec<u16>,
+    pub 末数组: Vec<u16>,
     /// 支持库引用记录，条数 = N。
     pub 引用表: Vec<支持库引用>,
 }
@@ -185,7 +185,7 @@ impl 记录流 {
 
 /// 体长实算：段数据头之后应有的字节数。**只由内容决定**，与 `头.体长` 字段无关。
 pub fn 体长实算(流: &记录流) -> u64 {
-    let n = 流.支持库.数组甲.len() as u64;
+    let 元素数 = 流.支持库.首数组.len() as u64;
     let 引用: u64 = 流.支持库.引用表.iter().map(|引用| 4 + 引用.串长() as u64).sum();
-    8 + (4 + 4 * n) + (4 + 2 * n) + (4 + 2 * n) + 2 + 引用 + 流.其余载荷.len() as u64
+    8 + (4 + 4 * 元素数) + (4 + 2 * 元素数) + (4 + 2 * 元素数) + 2 + 引用 + 流.其余载荷.len() as u64
 }

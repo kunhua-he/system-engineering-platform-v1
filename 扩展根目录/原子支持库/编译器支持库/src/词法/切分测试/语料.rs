@@ -76,15 +76,15 @@ fn 语料_53份_兜底归类字节读数() {
         let 原文 = 读语料(路);
         总字节 += 原文.len();
         let 流 = 切记号(&原文).expect("切分");
-        for t in &流.记号表 {
-            *记号种数.entry(t.种类.号()).or_default() += 1;
+        for 记号 in &流.记号表 {
+            *记号种数.entry(记号.种类.号()).or_default() += 1;
         }
-        for (位, c) in 原文.char_indices() {
+        for (位, 字符) in 原文.char_indices() {
             总字符 += 1;
-            if !是否兜底(c) {
+            if !是否兜底(字符) {
                 continue;
             }
-            兜底字节 += c.len_utf8();
+            兜底字节 += 字符.len_utf8();
             let 行号 = 原文[..位].matches('\n').count() + 1;
             let 本行 = 原文[位..]
                 .lines()
@@ -96,7 +96,7 @@ fn 语料_53份_兜底归类字节读数() {
             let 落处 = 流
                 .记号表
                 .iter()
-                .find(|t| t.起 <= 位 && 位 < t.止)
+                .find(|记号| 记号.起 <= 位 && 位 < 记号.止)
                 .expect("有归属");
             let 档 = match 落处.种类 {
                 记号种类::注释 => 0,
@@ -107,9 +107,9 @@ fn 语料_53份_兜底归类字节读数() {
             };
             桶[档] += 1;
             if 档 == 3 {
-                标识符字节 += c.len_utf8();
+                标识符字节 += 字符.len_utf8();
             }
-            let 项 = 兜底.entry(c).or_insert_with(|| {
+            let 项 = 兜底.entry(字符).or_insert_with(|| {
                 (
                     [0; 4],
                     format!("{}:{行号}", 路.file_name().unwrap().to_string_lossy()),
@@ -144,10 +144,10 @@ fn 语料_53份_兜底归类字节读数() {
         100.0 * 桶[3] as f64 / 总字符 as f64
     );
     println!("【兜底字符逐条】字符 · U+码 · 注释/字面量/数值/标识符 四桶 · 首见位置 · 首见行");
-    for (c, (档s, 位置, 行)) in &兜底 {
+    for (字符, (档s, 位置, 行)) in &兜底 {
         println!(
             "    {c:?} U+{:04X}  {}/{}/{}/{}  {位置:<46} | {}",
-            *c as u32,
+            *字符 as u32,
             档s[0],
             档s[1],
             档s[2],

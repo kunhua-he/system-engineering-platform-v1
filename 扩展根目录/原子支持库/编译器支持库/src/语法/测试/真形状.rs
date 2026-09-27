@@ -69,11 +69,11 @@ fn 真形状1_子程序声明() {
     let 空: Vec<&crate::语言面::节点> = 树
         .节点表
         .iter()
-        .filter(|n| n.种类 == 节点种类::空实参)
+        .filter(|节点| 节点.种类 == 节点种类::空实参)
         .collect();
     assert_eq!(空.len(), 2);
-    for n in 空 {
-        assert_eq!(n.起(), n.止(), "空实参必须零宽");
+    for 节点 in 空 {
+        assert_eq!(节点.起(), 节点.止(), "空实参必须零宽");
     }
     // 单行节点认领自己的行尾：`调用语句 [78,127)` 的末子是那枚 `换行 [125,127)`
     assert_eq!(树.节点表[13].种类, 节点种类::调用语句);
@@ -197,9 +197,9 @@ fn 种类覆盖_33种节点种类全部建到() {
     let mut 见: Vec<节点种类> = Vec::new();
     for 流 in 全部夹具() {
         let 树 = 建过(&流);
-        for n in &树.节点表 {
-            if !见.contains(&n.种类) {
-                见.push(n.种类);
+        for 节点 in &树.节点表 {
+            if !见.contains(&节点.种类) {
+                见.push(节点.种类);
             }
         }
     }
@@ -207,8 +207,8 @@ fn 种类覆盖_33种节点种类全部建到() {
     assert_eq!(全部.len(), 33, "节点种类共 33 种");
     let 未建: Vec<&str> = 全部
         .iter()
-        .filter(|k| !见.contains(k))
-        .map(|k| 种类名(*k))
+        .filter(|种类| !见.contains(种类))
+        .map(|种类| 种类名(*种类))
         .collect();
     assert!(未建.is_empty(), "这些种类没建到：{:?}", 未建);
     println!("33 种节点种类全部建到（五份夹具的并集）");

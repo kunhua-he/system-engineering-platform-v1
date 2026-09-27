@@ -85,12 +85,12 @@ fn 切分_反向_记号边界全落在字符边界上() {
     ];
     for 原文 in 例 {
         let 流 = 切记号(原文).expect("切分");
-        for (序, t) in 流.记号表.iter().enumerate() {
+        for (序, 记号) in 流.记号表.iter().enumerate() {
             assert!(
-                原文.is_char_boundary(t.起 as usize) && 原文.is_char_boundary(t.止 as usize),
+                原文.is_char_boundary(记号.起 as usize) && 原文.is_char_boundary(记号.止 as usize),
                 "{原文:?} 第 {序} 枚记号的区间切开了字符：{}..{}",
-                t.起,
-                t.止
+                记号.起,
+                记号.止
             );
         }
         assert_eq!(流.还原(), 原文.as_bytes());

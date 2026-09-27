@@ -4,9 +4,9 @@ from .常量 import CTRL, DECL_RE, MAXLINE, VER
 
 
 # ── 行工具 ────────────────────────────────────────────────────────────────
-def gbk_ok(x):
+def gbk_ok(原文):
     try:
-        x.decode("gbk")
+        原文.decode("gbk")
         return True
     except UnicodeDecodeError:
         return False
@@ -15,15 +15,15 @@ def gbk_ok(x):
 def check_value(val):
     probs = []
     nb = blk = 0
-    for i, ln in enumerate(val.split(b"\n")):
+    for 序号, ln in enumerate(val.split(b"\n")):
         if ln.endswith(b"\r"):
             ln = ln[:-1]
         if len(ln) > MAXLINE:
-            probs.append(f"行{i} 超长 {len(ln)}")
-        elif any(c in ln for c in CTRL):
-            probs.append(f"行{i} 含控制字符")
+            probs.append(f"行{序号} 超长 {len(ln)}")
+        elif any(字符 in ln for 字符 in CTRL):
+            probs.append(f"行{序号} 含控制字符")
         elif not gbk_ok(ln):
-            probs.append(f"行{i} 非 GBK")
+            probs.append(f"行{序号} 非 GBK")
         elif ln.strip():
             nb += 1
         else:
@@ -32,17 +32,17 @@ def check_value(val):
 
 
 def decl_lines(val):
-    n, cnt = 0, {}
+    声明数, cnt = 0, {}
     for ln in val.split(b"\n"):
         if ln.endswith(b"\r"):
             ln = ln[:-1]
         if not gbk_ok(ln):
             continue
-        m = DECL_RE.match(ln.decode("gbk"))
-        if m:
-            n += 1
-            cnt[m.group(1)] = cnt.get(m.group(1), 0) + 1
-    return n, cnt
+        匹配 = DECL_RE.match(ln.decode("gbk"))
+        if 匹配:
+            声明数 += 1
+            cnt[匹配.group(1)] = cnt.get(匹配.group(1), 0) + 1
+    return 声明数, cnt
 
 
 def classify(raw):
@@ -50,10 +50,10 @@ def classify(raw):
         return "OTHER"
     if not raw.strip():
         return "BLANK"
-    if any(c in raw for c in CTRL) or not gbk_ok(raw):
+    if any(字符 in raw for 字符 in CTRL) or not gbk_ok(raw):
         return "OTHER"
-    s = raw.decode("gbk")
-    st = s.lstrip(" ")
+    行文 = raw.decode("gbk")
+    st = 行文.lstrip(" ")
     if st.startswith("'"):
         return "SOURCE"
     if st.startswith("."):
@@ -63,30 +63,30 @@ def classify(raw):
     return "OTHER"
 
 
-def line_at(b, pos):
-    ls = b.rfind(b"\n", 0, pos) + 1
-    le = b.find(b"\n", pos)
-    nxt = len(b) if le < 0 else le + 1
-    e = le if le >= 0 else len(b)
-    if e > ls and b[e - 1:e] == b"\r":
-        e -= 1
-    return ls, e, nxt
+def line_at(字节流, pos):
+    ls = 字节流.rfind(b"\n", 0, pos) + 1
+    le = 字节流.find(b"\n", pos)
+    nxt = len(字节流) if le < 0 else le + 1
+    行尾 = le if le >= 0 else len(字节流)
+    if 行尾 > ls and 字节流[行尾 - 1:行尾] == b"\r":
+        行尾 -= 1
+    return ls, 行尾, nxt
 
 
-def expand(b, a):
+def expand(字节流, 锚点):
     """按行形状从锚点向前扩张（弱证据用）。"""
-    ls, le, nxt = line_at(b, a)
-    start = ls if b[ls:ls + len(VER)] == VER else a
+    ls, le, nxt = line_at(字节流, 锚点)
+    start = ls if 字节流[ls:ls + len(VER)] == VER else 锚点
     end = nxt
-    while end < len(b):
-        _, le2, nxt2 = line_at(b, end)
-        if classify(b[end:le2]) == "OTHER":
+    while end < len(字节流):
+        _, le2, nxt2 = line_at(字节流, end)
+        if classify(字节流[end:le2]) == "OTHER":
             break
         end = nxt2
     if start == ls:
         while start >= 2:
-            pls, ple, _ = line_at(b, start - 2)
-            if pls >= start or classify(b[pls:ple]) == "OTHER":
+            pls, ple, _ = line_at(字节流, start - 2)
+            if pls >= start or classify(字节流[pls:ple]) == "OTHER":
                 break
             start = pls
     return start, end

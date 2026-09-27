@@ -23,7 +23,7 @@ DECL_RE = re.compile(r"^\.(" + "|".join(DECL) + r")(?![0-9A-Za-z_\u4e00-\u9fff])
 HDR = b"\x19\x73\x11\x15"
 HDR_END = b"\x19\x73\x00"
 CONST_RE = re.compile(rb"\x04\x00([\x20-\x7e\x81-\xfe]{1,60}?)\x00\x00", re.S)
-CTRL = bytes(c for c in range(0x20) if c != 9) + b"\x7f"
+CTRL = bytes(码值 for 码值 in range(0x20) if 码值 != 9) + b"\x7f"
 
 # 已知内嵌源码文本、但不是容器的文件（弱证据扫描白名单；按扩展名不可能穷举，故显式列）
 WEAK_FILES = [

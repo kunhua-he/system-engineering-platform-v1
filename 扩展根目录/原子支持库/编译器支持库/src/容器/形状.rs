@@ -14,8 +14,8 @@ pub const 魔数: [u8; 8] = *b"CNWTEPRG";
 pub const 段头长度: usize = 44;
 
 /// 段头里的两个固定标记。
-pub const 段头标记甲: u16 = 0x7319;
-pub const 段头标记乙: u16 = 0x1511;
+pub const 段头标记首: u16 = 0x7319;
+pub const 段头标记次: u16 = 0x1511;
 
 /// 段类型号。**只增不复用**：删掉的类型号作废不回收。
 ///
@@ -72,9 +72,9 @@ impl 段类型 {
 /// 段头内各字段的**相对偏移**。逐字段对齐原文，实测复核（见模块注释表格）。
 pub mod 段头偏移 {
     /// u16 段头魔术 `0x7319`（字节序 `19 73`）。
-    pub const 魔术甲: usize = 0x00;
+    pub const 魔术首: usize = 0x00;
     /// u16 段头标记 `0x1511`（字节序 `11 15`）。
-    pub const 魔术乙: usize = 0x02;
+    pub const 魔术次: usize = 0x02;
     /// u32 段校验值。算法未证实（非 CRC32 七变体 / 非 Adler32 / 非字节和），原样搬运。
     pub const 校验和: usize = 0x04;
     /// u16 `0x7319` + u8 `0x00` + u8 段类型号。
@@ -90,9 +90,9 @@ pub mod 段头偏移 {
 }
 
 /// 段头魔术甲的字节序（`0x7319` 小端）。拆分后反解件 / 生成件要用，故放宽到 `pub(super)`。
-pub(super) const 魔术甲字节: [u8; 2] = 段头标记甲.to_le_bytes();
+pub(super) const 魔术首字节: [u8; 2] = 段头标记首.to_le_bytes();
 /// 段头标记乙的字节序（`0x1511` 小端）。同上，放宽到 `pub(super)`。
-pub(super) const 魔术乙字节: [u8; 2] = 段头标记乙.to_le_bytes();
+pub(super) const 魔术次字节: [u8; 2] = 段头标记次.to_le_bytes();
 
 /// 段头（44 字节，逐字段对齐原文）。
 #[derive(Debug, Clone, PartialEq, Eq)]
