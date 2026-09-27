@@ -8,9 +8,9 @@ from pathlib import Path
 
 
 def 找仓根() -> str:
-    for 起 in [Path.cwd(), Path(__file__).resolve().parent, *Path(__file__).resolve().parents]:
-        if (起 / 契约目录名).is_dir() and (起 / "扩展装载").is_dir():
-            return str(起)
+    for 区间起点 in [Path.cwd(), Path(__file__).resolve().parent, *Path(__file__).resolve().parents]:
+        if (区间起点 / 契约目录名).is_dir() and (区间起点 / "扩展装载").is_dir():
+            return str(区间起点)
     return str(Path.cwd())
 
 
@@ -64,10 +64,10 @@ def 读目录全部源文件(目录: Path) -> str:
 
 def _码文(根目录: Path, 号值: str) -> str:
     """一条错误码的 `名称` + `说明`（锚点两条都要能命中），读不到给空串。"""
-    条 = 读JSON件(根目录 / f"契约声明/错误码表/{号值}.json") or {}
-    if not isinstance(条, dict):
+    一条 = 读JSON件(根目录 / f"契约声明/错误码表/{号值}.json") or {}
+    if not isinstance(一条, dict):
         return ""
-    return f"{条.get('名称', '')} {条.get('说明', '')}"
+    return f"{一条.get('名称', '')} {一条.get('说明', '')}"
 
 
 def 读件与包(根目录: Path, 相对: str) -> str:
@@ -76,8 +76,8 @@ def 读件与包(根目录: Path, 相对: str) -> str:
     #230 记的病：判据把落点写成**单个文件路径** ⇒ 那个件一拆成路由（`mod` + 子件），
     判据就读不到搬进子件的记号，静默丢覆盖面（闸还照绿）。故一律读「件 + 它的包」。
     """
-    件 = 根目录 / 相对
-    return 读文本(件) + 读目录全部源文件(件.with_suffix(""))
+    节点件 = 根目录 / 相对
+    return 读文本(节点件) + 读目录全部源文件(节点件.with_suffix(""))
 
 
 class 世界:
@@ -151,8 +151,8 @@ class 世界:
         return self.扩展目录() / "指纹.json"
 
     def 指纹脚本(self) -> Path:
-        命 = (读JSON件(self.指纹件()) or {}).get("生成命令", "")
+        生成命令 = (读JSON件(self.指纹件()) or {}).get("生成命令", "")
         # 生成命令形如 "python3 扩展根目录/…/重跑指纹.py"（仓库根相对）
-        分 = 命.split()
-        参 = [参项 for 参项 in 分 if 参项.endswith(".py")]
-        return self.仓根 / 参[0] if 参 else self.仓根 / "__缺__"
+        命令分词 = 生成命令.split()
+        参数 = [参项 for 参项 in 命令分词 if 参项.endswith(".py")]
+        return self.仓根 / 参数[0] if 参数 else self.仓根 / "__缺__"

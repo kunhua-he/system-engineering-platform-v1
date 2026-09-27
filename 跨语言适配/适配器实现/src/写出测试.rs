@@ -41,14 +41,14 @@ fn 小写出_形状与确定性() {
     assert_eq!(写协议值(&JSON值::数组(Vec::new())), "[]");
     assert_eq!(写协议值(&JSON值::对象(Vec::new())), "{}");
 
-    let 造 = || {
+    let 造对象 = || {
         JSON值::对象(vec![
             ("首项".to_owned(), JSON值::整数(1)),
             ("次项".to_owned(), JSON值::数组(vec![JSON值::逻辑真])),
         ])
     };
-    assert_eq!(写协议值(&造()), 写协议值(&造()), "同一份数据两次序列化逐字节相同");
-    assert_eq!(写协议值(&造()), "{\n  \"首项\": 1,\n  \"次项\": [\n    true\n  ]\n}");
+    assert_eq!(写协议值(&造对象()), 写协议值(&造对象()), "同一份数据两次序列化逐字节相同");
+    assert_eq!(写协议值(&造对象()), "{\n  \"首项\": 1,\n  \"次项\": [\n    true\n  ]\n}");
 }
 
 /// 判据：`平台_取接口描述` 交出的 JSON **括号与引号成对**（结构上不是半个形状）。
@@ -66,27 +66,27 @@ fn 接口描述_括号与引号成对() {
 
 /// 判据：`{}` `[]` 成对 · 字符串闭合（**只做平衡检查，不是解析器** —— 文件头写明不解析）。
 fn 括号引号成对(文本: &str) -> bool {
-    let mut 栈: Vec<char> = Vec::new();
+    let mut 括号栈: Vec<char> = Vec::new();
     let mut 在串 = false;
     let mut 转义 = false;
-    for 字 in 文本.chars() {
+    for 字符表 in 文本.chars() {
         if 在串 {
             if 转义 {
                 转义 = false;
-            } else if 字 == '\\' {
+            } else if 字符表 == '\\' {
                 转义 = true;
-            } else if 字 == '"' {
+            } else if 字符表 == '"' {
                 在串 = false;
             }
             continue;
         }
-        match 字 {
+        match 字符表 {
             '"' => 在串 = true,
-            '{' | '[' => 栈.push(字),
-            '}' if 栈.pop() != Some('{') => return false,
-            ']' if 栈.pop() != Some('[') => return false,
+            '{' | '[' => 括号栈.push(字符表),
+            '}' if 括号栈.pop() != Some('{') => return false,
+            ']' if 括号栈.pop() != Some('[') => return false,
             _ => {}
         }
     }
-    栈.is_empty() && !在串
+    括号栈.is_empty() && !在串
 }

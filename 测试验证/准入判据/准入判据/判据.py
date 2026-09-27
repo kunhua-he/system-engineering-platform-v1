@@ -18,13 +18,13 @@ def 判有意不判(测试世界: 世界, 编号: str):
     那句话被改，读数里什么都不会变（判据的可信性 §二：「判不了」必须能取证）。
     故这里把依据锚点也做成**机器可判**：`依据件` 里逐字找 `锚点`，少一条即红。
     """
-    条 = 有意不判[编号]
-    缺 = [f"依据件缺「{锚}」" for 面, 锚 in 条["锚点"] if 锚 not in 测试世界.面文本(面)]
-    对象数 = len(条["锚点"])
-    if 缺:
-        return "失败", "有意不判的依据不成立：" + "；".join(缺), 对象数
-    return "有意不判", f"按设计不判（{条['理由']}）依据锚点在：" + " · ".join(
-        面 for 面, _ in 条["锚点"]), 对象数
+    一条 = 有意不判[编号]
+    缺失表 = [f"依据件缺「{锚}」" for 面, 锚 in 一条["锚点"] if 锚 not in 测试世界.面文本(面)]
+    对象数 = len(一条["锚点"])
+    if 缺失表:
+        return "失败", "有意不判的依据不成立：" + "；".join(缺失表), 对象数
+    return "有意不判", f"按设计不判（{一条['理由']}）依据锚点在：" + " · ".join(
+        面 for 面, _ in 一条["锚点"]), 对象数
 
 
 def 代跑读数行(文档: str, 编号: str):
@@ -35,13 +35,13 @@ def 代跑读数行(文档: str, 编号: str):
     §五 那张表里。于是这两条从「空等 cargo」变成**机器可判**：读那一行、核它的读数记号。
     它不是本脚本产出的读数，但是**可复算**的（行里写着重跑命令），一被删/改就当场红。
     """
-    for 行 in 文档.splitlines():
-        净 = 行.strip()
-        if not 净.startswith("|") or 净.count("|") < 3:
+    for 源码行 in 文档.splitlines():
+        净文本 = 源码行.strip()
+        if not 净文本.startswith("|") or 净文本.count("|") < 3:
             continue
-        首格 = 净.strip("|").split("|")[0].strip()
+        首格 = 净文本.strip("|").split("|")[0].strip()
         if 首格.startswith(f"`{编号}`"):
-            return 行
+            return 源码行
     return None
 
 
@@ -52,26 +52,26 @@ def 判_2(测试世界: 世界):
     （平台无此计数）⇒ 判据把那条裁决当**锚点**核（锚点一丢即红）—— 不许让「不立项」
     变成没人看得见的缺口（那才是假绿）。
     """
-    缺 = []
+    缺失表 = []
     常量 = 测试世界.面文本("常量表")
-    for 名 in ["配额上限", "配额窗口毫秒"]:
-        if 名 not in 常量:
-            缺.append(f"契约声明/常量表.json 缺 {名}（配额无上限口径）")
+    for 名称 in ["配额上限", "配额窗口毫秒"]:
+        if 名称 not in 常量:
+            缺失表.append(f"契约声明/常量表.json 缺 {名称}（配额无上限口径）")
     配额 = 测试世界.面文本("配额记账")
     for 记号 in ["pub fn 累计耗时毫秒", "pub fn 耗时记录键存在", "fn 准调"]:
         if 记号 not in 配额:
-            缺.append(f"配额记账.rs 缺 {记号}")
+            缺失表.append(f"配额记账.rs 缺 {记号}")
     if "pub fn 取留痕" not in 测试世界.面文本("留痕口"):
-        缺.append("留痕口.rs 缺 pub fn 取留痕（跨调用留痕读数口不在）")
+        缺失表.append("留痕口.rs 缺 pub fn 取留痕（跨调用留痕读数口不在）")
     if "资源错误::配额用尽" not in 测试世界.面文本("关口主体"):
-        缺.append("关口主体.rs 未报 资源错误::配额用尽（超配无码）")
+        缺失表.append("关口主体.rs 未报 资源错误::配额用尽（超配无码）")
     if "配额用尽" not in 测试世界.面文本("错误码5"):
-        缺.append("契约声明/错误码表/0005.json 缺 配额用尽")
+        缺失表.append("契约声明/错误码表/0005.json 缺 配额用尽")
     if "内存 / CPU 两半" not in 测试世界.面文本("裁决长活"):
-        缺.append("裁决未写明「内存 / CPU 两半」（不立项的裁决锚点丢了）")
+        缺失表.append("裁决未写明「内存 / CPU 两半」（不立项的裁决锚点丢了）")
     对象数 = 6  # 常量表 · 配额记账 · 留痕口 · 关口主体 · 错误码5 · 裁决锚点
-    if 缺:
-        return "失败", "；".join(缺), 对象数
+    if 缺失表:
+        return "失败", "；".join(缺失表), 对象数
     return "通过", ("时长半读数口齐（累计耗时毫秒 · 耗时记录键存在 · 取留痕 · 准调 · 码5）"
                  "· 内存/CPU 半按裁决不立项（锚点在）"), 对象数
 
@@ -83,44 +83,44 @@ def 判_3(测试世界: 世界):
     （进程内无法抢占执行方 —— 强杀是进程池模式的事）。「会越界的样本」在（`慢命令` 睡过预算）。
     故本判据判的正是裁决定下的那件事：**两处执行者都在且都报码 4**，样本在。
     """
-    缺 = []
+    缺失表 = []
     裁决 = 测试世界.面文本("裁决长活")
     for 记号 in ["超时的执行者 = 调用调度 / 资源网关口", "事后判越界", "不强杀"]:
         if 记号 not in 裁决:
-            缺.append(f"裁决未写「{记号}」（执行者未裁死）")
+            缺失表.append(f"裁决未写「{记号}」（执行者未裁死）")
     调度 = 测试世界.面文本("调度核心")
     if "耗时毫秒 > 超时预算毫秒" not in 调度 or "调度错误::超时" not in 调度:
-        缺.append("调度核心.rs 未判越界并报 调度错误::超时")
+        缺失表.append("调度核心.rs 未判越界并报 调度错误::超时")
     关口 = 测试世界.面文本("关口主体")
     if "实测毫秒 > 操作.超时毫秒" not in 关口 or "资源错误::超时" not in 关口:
-        缺.append("关口主体.rs 未判越界并报 资源错误::超时")
+        缺失表.append("关口主体.rs 未判越界并报 资源错误::超时")
     if "慢命令" not in 测试世界.面文本("调度测试"):
-        缺.append("调度测试.rs 缺 慢命令 样本（会越界的调用样本不在）")
+        缺失表.append("调度测试.rs 缺 慢命令 样本（会越界的调用样本不在）")
     if "超时" not in 测试世界.面文本("错误码4"):
-        缺.append("契约声明/错误码表/0004.json 不是 超时 码")
+        缺失表.append("契约声明/错误码表/0004.json 不是 超时 码")
     对象数 = 5  # 裁决锚点 · 调度核心 · 关口主体 · 调度测试 · 错误码4
-    if 缺:
-        return "失败", "；".join(缺), 对象数
+    if 缺失表:
+        return "失败", "；".join(缺失表), 对象数
     return "通过", ("超时的执行者 = 调度/关口（裁决锚点在）· 两处都 事后判越界报码 4 · 会越界的样本（慢命令）在 "
                  "· 不强杀（进程内不可抢占，强杀属进程池模式）"), 对象数
 
 
 def 判_4(测试世界: 世界):
     """④ 扩展能申报生命周期通知号段（生命周期段按广播段判）。"""
-    缺 = []
+    缺失表 = []
     范围源 = re.search(r"生命周期起:\s*u32\s*=\s*(\d+).*?生命周期止:\s*u32\s*=\s*(\d+)",
                      测试世界.生成物面, re.S)
     if not 范围源:
-        缺.append("契约生成物无 生命周期起/止（唯一来源）")
+        缺失表.append("契约生成物无 生命周期起/止（唯一来源）")
     else:
         起, 止 = int(范围源.group(1)), int(范围源.group(2))
         if (起, 止) != (2000, 2999):
-            缺.append(f"生命周期段不是 2000–2999（实际 {起}–{止}）")
+            缺失表.append(f"生命周期段不是 2000–2999（实际 {起}–{止}）")
     # 判定.rs 必须用契约常量，不许把 2000/2999 抄成本地常量
     if "fn 生命周期广播段" not in 测试世界.判定rs:
-        缺.append("判定.rs 无 fn 生命周期广播段")
+        缺失表.append("判定.rs 无 fn 生命周期广播段")
     if "通知号段::生命周期起" not in 测试世界.判定rs or "通知号段::生命周期止" not in 测试世界.判定rs:
-        缺.append("判定.rs 未引契约常量（生命周期起/止）")
+        缺失表.append("判定.rs 未引契约常量（生命周期起/止）")
     # 广播段跳过那一处：`段` 是号段切片给的包装型，字段要 `.取号值()` 才是 `u32`
     # （2026-09-27 实测：判定.rs 写成 `生命周期广播段(段.起.取号值(), 段.止.取号值())`）。
     # 判据的**意图**是「通知号段循环对广播段 continue」，不是某个字面写法 ⇒ 用正则吃两种形，
@@ -129,29 +129,29 @@ def 判_4(测试世界: 世界):
         r"if\s+生命周期广播段\(\s*段\.起(?:\.取号值\(\))?\s*,\s*段\.止(?:\.取号值\(\))?\s*\)",
         测试世界.判定rs,
     ):
-        缺.append("判定.rs 通知号段循环未对广播段 continue（扩展仍会被底座预置占用拦下）")
+        缺失表.append("判定.rs 通知号段循环未对广播段 continue（扩展仍会被底座预置占用拦下）")
     elif "continue;" not in 测试世界.判定rs:
-        缺.append("判定.rs 通知号段循环未对广播段 continue（扩展仍会被底座预置占用拦下）")
+        缺失表.append("判定.rs 通知号段循环未对广播段 continue（扩展仍会被底座预置占用拦下）")
     if "广播段" not in 测试世界.载入判定文:
-        缺.append("载入判定.json 未写明「生命周期段按广播段判」")
+        缺失表.append("载入判定.json 未写明「生命周期段按广播段判」")
     对象数 = 3  # 生成物面 · 判定.rs · 载入判定.json
-    if 缺:
-        return "失败", "；".join(缺), 对象数
+    if 缺失表:
+        return "失败", "；".join(缺失表), 对象数
     return "通过", "广播段口径三处齐（契约常量 · 判定实现 · 载入判定文本）", 对象数
 
 
 def 判_5(测试世界: 世界):
     """⑤ 适配器有通知口，申报了就送得到。"""
-    缺 = []
+    缺失表 = []
     for 记号 in ["pub fn 注册通知端点", "pub fn 请求卸载", "pub fn 延迟释放协商",
                "pub fn 请求卸载按标识"]:
         if 记号 not in 测试世界.通知口:
-            缺.append(f"通知口.rs 缺 {记号}")
+            缺失表.append(f"通知口.rs 缺 {记号}")
     if "通知.通道.注册(声明.标识串, 函数)" not in 测试世界.适配器lib:
-        缺.append("适配器装载声明根未把申报的 通知函数 登记成端点（申报了送不到）")
+        缺失表.append("适配器装载声明根未把申报的 通知函数 登记成端点（申报了送不到）")
     对象数 = 2  # 通知口.rs · 适配器 lib.rs
-    if 缺:
-        return "失败", "；".join(缺), 对象数
+    if 缺失表:
+        return "失败", "；".join(缺失表), 对象数
     return "通过", "通知口四入口齐 + 装载时登记申报的 通知函数", 对象数
 
 
@@ -162,50 +162,50 @@ def 判_6(测试世界: 世界):
     读**协调方代跑并回读数**的那一行（`外部支持库准入判据.md` §五 的 ⑥ 行）。
     机制件自身另判：2015 号段在 · 真跑测试在（2001→2015→2003）。
     """
-    缺 = []
-    号 = 测试世界.通知号段2015 or {}
-    if not isinstance(号, dict) or 号.get("通知号") != 2015:
-        缺.append("契约声明/通知号段/2015.json 缺 通知号 2015（延迟释放协商没登记）")
-    elif 号.get("名称") != "延迟释放应答":
-        缺.append(f"2015.json 名称 = {号.get('名称')!r}（应 = 延迟释放应答）")
+    缺失表 = []
+    号值 = 测试世界.通知号段2015 or {}
+    if not isinstance(号值, dict) or 号值.get("通知号") != 2015:
+        缺失表.append("契约声明/通知号段/2015.json 缺 通知号 2015（延迟释放协商没登记）")
+    elif 号值.get("名称") != "延迟释放应答":
+        缺失表.append(f"2015.json 名称 = {号值.get('名称')!r}（应 = 延迟释放应答）")
     for 记号 in ["fn 生命周期_申报号段到优雅卸载真跑通", "2001", "2003", "2015",
                "请求卸载", "延迟释放协商"]:
         if 记号 not in 测试世界.生命周期测试:
-            缺.append(f"生命周期协商测试.rs 缺 {记号}")
-    行 = 代跑读数行(测试世界.决策记录准入, "⑥")
-    if 行 is None:
-        缺.append("外部支持库准入判据.md §五 无 ⑥ 代跑读数行（代跑读数没登记）")
+            缺失表.append(f"生命周期协商测试.rs 缺 {记号}")
+    源码行 = 代跑读数行(测试世界.决策记录准入, "⑥")
+    if 源码行 is None:
+        缺失表.append("外部支持库准入判据.md §五 无 ⑥ 代跑读数行（代跑读数没登记）")
     else:
         for 记号 in ["2 passed / 0 failed", "退出码 0"]:
-            if 记号 not in 行:
-                缺.append(f"⑥ 代跑读数行缺 {记号}")
+            if 记号 not in 源码行:
+                缺失表.append(f"⑥ 代跑读数行缺 {记号}")
     对象数 = 3  # 2015.json · 生命周期协商测试.rs · §五 代跑读数行
-    if 缺:
-        return "失败", "；".join(缺), 对象数
+    if 缺失表:
+        return "失败", "；".join(缺失表), 对象数
     return "通过", "机制件齐（2015 号段 · 真跑测试 2001→2015→2003）· 代跑读数行在（2 passed / 0 failed · 退出码 0）", 对象数
 
 
 def 判_7(测试世界: 世界):
     """⑦ 接缝符号名与返回结构裁决定死（明示偏离并写进文档）。"""
-    缺 = []
-    文 = 测试世界.边界协议
-    if "GetPlatformInfo" not in 文:
-        缺.append("边界协议未写我方符号名 GetPlatformInfo")
-    if "GetNewInf" not in 文:
-        缺.append("边界协议未点名参照实现 GetNewInf（无从判「1:1 还是偏离」）")
-    if "不复刻" not in 文 and "偏离" not in 文:
-        缺.append("边界协议未明示「偏离/不复刻」")
-    if "冻结" not in 文:
-        缺.append("边界协议未写「冻结」")
+    缺失表 = []
+    文本 = 测试世界.边界协议
+    if "GetPlatformInfo" not in 文本:
+        缺失表.append("边界协议未写我方符号名 GetPlatformInfo")
+    if "GetNewInf" not in 文本:
+        缺失表.append("边界协议未点名参照实现 GetNewInf（无从判「1:1 还是偏离」）")
+    if "不复刻" not in 文本 and "偏离" not in 文本:
+        缺失表.append("边界协议未明示「偏离/不复刻」")
+    if "冻结" not in 文本:
+        缺失表.append("边界协议未写「冻结」")
     # 实现侧必须 dlsym 的正是这个冻结名
     实现名 = (测试世界.扩展根声明.get("扫描") or {}).get("找什么", "")
     if 实现名 != "GetPlatformInfo":
-        缺.append(f"扩展根声明.扫描.找什么 = {实现名!r}（应 = GetPlatformInfo）")
+        缺失表.append(f"扩展根声明.扫描.找什么 = {实现名!r}（应 = GetPlatformInfo）")
     if 'c"GetPlatformInfo"' not in 测试世界.启动网关:
-        缺.append("启动网关.rs 未 dlsym GetPlatformInfo")
+        缺失表.append("启动网关.rs 未 dlsym GetPlatformInfo")
     对象数 = 3  # 边界协议.md · 扩展根声明.json · 启动网关.rs
-    if 缺:
-        return "失败", "；".join(缺), 对象数
+    if 缺失表:
+        return "失败", "；".join(缺失表), 对象数
     return "通过", "符号名 GetPlatformInfo 冻结 · 明示不复刻 GetNewInf · 实现侧 dlsym 同名", 对象数
 
 
@@ -217,16 +217,16 @@ def 判_8(测试世界: 世界):
     对象数 = len(测试世界.包声明表)
     if 对象数 == 0:
         return "未判", "扩展根目录下 0 份 包声明.json（空集不算通过）", 0
-    坏 = []
+    坏件表 = []
     for 路, 声 in 测试世界.包声明表:
         if not isinstance(声, dict):
-            坏.append(f"{路.name} 不是合法 JSON")
+            坏件表.append(f"{路.name} 不是合法 JSON")
             continue
-        for 键 in 死键:
-            if 键 in 声:
-                坏.append(f"{路} 含死键 {键}（平台信息无「提供*」字段，无消费者）")
-    if 坏:
-        return "失败", "；".join(坏), 对象数
+        for 键名 in 死键:
+            if 键名 in 声:
+                坏件表.append(f"{路} 含死键 {键名}（平台信息无「提供*」字段，无消费者）")
+    if 坏件表:
+        return "失败", "；".join(坏件表), 对象数
     return "通过", f"{对象数} 份扩展声明均无死键", 对象数
 
 
@@ -238,27 +238,27 @@ def 判_9(测试世界: 世界):
         return "未判", "必备件.json 未定死 crate-type 规则（规则无单一事实源）", 对象数
     if 对象数 == 0:
         return "未判", "扩展根目录下 0 份扩展 Cargo.toml（空集不算通过）", 0
-    坏 = []
+    坏件表 = []
     for 路, 文 in 测试世界.扩展Cargo表:
         if 段含键(文, "lib", "crate-type"):
-            坏.append(f"{路} 的 [lib] 声明了 crate-type（只许装配侧编）")
+            坏件表.append(f"{路} 的 [lib] 声明了 crate-type（只许装配侧编）")
     if "--crate-type" not in 测试世界.构建制品 or "cdylib" not in 测试世界.构建制品:
-        坏.append("构建制品.py 未见装配侧 cargo rustc --crate-type cdylib（唯一那条路不在）")
-    if 坏:
-        return "失败", "；".join(坏), 对象数
+        坏件表.append("构建制品.py 未见装配侧 cargo rustc --crate-type cdylib（唯一那条路不在）")
+    if 坏件表:
+        return "失败", "；".join(坏件表), 对象数
     return "通过", f"{对象数} 份扩展 Cargo.toml 均未声明 crate-type · 装配侧现场编在", 对象数
 
 
 def 段含键(文本: str, 段名: str, 键名: str) -> bool:
     """粗判 TOML：段 [段名] 到下一个 [ 之间是否出现 键名。"""
-    行 = 文本.splitlines()
+    源码行 = 文本.splitlines()
     在段 = False
-    for 行文 in 行:
-        净 = 行文.strip()
-        if 净.startswith("[") and 净.endswith("]"):
-            在段 = 净 == f"[{段名}]"
+    for 行文 in 源码行:
+        净文本 = 行文.strip()
+        if 净文本.startswith("[") and 净文本.endswith("]"):
+            在段 = 净文本 == f"[{段名}]"
             continue
-        if 在段 and 净.split("=")[0].strip() == 键名:
+        if 在段 and 净文本.split("=")[0].strip() == 键名:
             return True
     return False
 
@@ -268,41 +268,41 @@ def 判_10(测试世界: 世界):
     对象数 = len(测试世界.命令类别)
     if 对象数 == 0:
         return "未判", "契约声明/命令类别/ 为空（机制在、值域未裁 —— 空集不算通过）", 0
-    坏 = []
-    for 路 in 测试世界.命令类别:
-        条 = 读JSON件(路)
-        if not isinstance(条, dict):
-            坏.append(f"{路.name} 不是合法 JSON")
+    坏件表 = []
+    for 路径 in 测试世界.命令类别:
+        一条 = 读JSON件(路径)
+        if not isinstance(一条, dict):
+            坏件表.append(f"{路径.name} 不是合法 JSON")
             continue
         try:
-            应号 = int(路.stem)
+            应号 = int(路径.stem)
         except ValueError:
-            坏.append(f"{路.name} 文件名不是类别号")
+            坏件表.append(f"{路径.name} 文件名不是类别号")
             continue
-        if 条.get("类别号") != 应号:
-            坏.append(f"{路.name} 类别号 {条.get('类别号')!r} != 文件名 {应号}")
-        for 键 in ["名称", "说明"]:
-            if not isinstance(条.get(键), str) or not 条[键]:
-                坏.append(f"{路.name} 的 {键} 空/缺")
-    if 坏:
-        return "失败", "；".join(坏), 对象数
+        if 一条.get("类别号") != 应号:
+            坏件表.append(f"{路径.name} 类别号 {一条.get('类别号')!r} != 文件名 {应号}")
+        for 键名 in ["名称", "说明"]:
+            if not isinstance(一条.get(键名), str) or not 一条[键名]:
+                坏件表.append(f"{路径.name} 的 {键名} 空/缺")
+    if 坏件表:
+        return "失败", "；".join(坏件表), 对象数
     return "通过", f"{对象数} 条类别号→名映射齐", 对象数
 
 
 def 判_11(测试世界: 世界):
     """⑪ 号段冲突判定不靠检查顺序的巧合（显式优先级口径）。"""
-    文 = 测试世界.载入判定文
+    文本 = 测试世界.载入判定文
     对象数 = 1
-    显式 = ("先于" in 文 or "优先级" in 文 or "优先于" in 文)
-    点名 = ("号段冲突" in 文) and ("自洽" in 文)
+    显式 = ("先于" in 文本 or "优先级" in 文本 or "优先于" in 文本)
+    点名 = ("号段冲突" in 文本) and ("自洽" in 文本)
     if 显式 and 点名:
         return "通过", "载入判定.json 显式写明「号段冲突先于声明自洽」", 对象数
-    缺 = []
+    缺失表 = []
     if not 显式:
-        缺.append("载入判定.json 无「先于/优先级」字样（只有数组顺序 = 隐式，靠实现巧合）")
+        缺失表.append("载入判定.json 无「先于/优先级」字样（只有数组顺序 = 隐式，靠实现巧合）")
     if not 点名:
-        缺.append("载入判定.json 未同时点名 号段冲突 与 自洽")
-    return "失败", "；".join(缺), 对象数
+        缺失表.append("载入判定.json 未同时点名 号段冲突 与 自洽")
+    return "失败", "；".join(缺失表), 对象数
 
 
 def 判_12(测试世界: 世界):
@@ -311,72 +311,72 @@ def 判_12(测试世界: 世界):
     同上（不许跑 cargo / 起网关）⇒ 活体读数读**代跑并回读数**的那一行；
     静态形状自己判：清单由目录枚举（`组列扩展` 走 `列子目录`），0 处硬编码扩展名。
     """
-    缺 = []
-    行 = 代跑读数行(测试世界.决策记录准入, "⑫")
-    if 行 is None:
-        缺.append("外部支持库准入判据.md §五 无 ⑫ 代跑读数行（代跑读数没登记）")
+    缺失表 = []
+    源码行 = 代跑读数行(测试世界.决策记录准入, "⑫")
+    if 源码行 is None:
+        缺失表.append("外部支持库准入判据.md §五 无 ⑫ 代跑读数行（代跑读数没登记）")
     else:
         for 记号 in ["GET /接口/扩展", "支持库 1", "模块 0", "技能 0"]:
-            if 记号 not in 行:
-                缺.append(f"⑫ 代跑读数行缺 {记号}")
+            if 记号 not in 源码行:
+                缺失表.append(f"⑫ 代跑读数行缺 {记号}")
     if "fn 组列扩展" not in 测试世界.工具响应扩展 or "列子目录" not in 测试世界.工具响应扩展:
-        缺.append("工具响应_扩展.rs 的 列扩展 未走目录枚举（组列扩展 / 列子目录）")
+        缺失表.append("工具响应_扩展.rs 的 列扩展 未走目录枚举（组列扩展 / 列子目录）")
     if "编译器支持库" in 测试世界.工具响应扩展:
-        缺.append("工具响应_扩展.rs 出现硬编码扩展名 编译器支持库（真清单应来自盘面）")
+        缺失表.append("工具响应_扩展.rs 出现硬编码扩展名 编译器支持库（真清单应来自盘面）")
     对象数 = 2  # §五 代跑读数行 · 工具响应_扩展.rs
-    if 缺:
-        return "失败", "；".join(缺), 对象数
+    if 缺失表:
+        return "失败", "；".join(缺失表), 对象数
     return "通过", "代跑读数行在（真清单：支持库 1 · 模块 0 · 技能 0）· 静态形状绿（组列扩展 走 列子目录 · 0 处硬编码）", 对象数
 
 
 def 判_13(测试世界: 世界):
     """⑬ 装载失败报因（剔除并报原因，不静默）。"""
-    缺 = []
-    文 = 测试世界.启动网关
-    if "fn 取扩展声明" not in 文 or "Result<&'static 平台信息, String>" not in 文:
-        缺.append("启动网关.rs 无 取扩展声明 且失败带 String 原因")
-    if "剔除的.push" not in 文:
-        缺.append("启动网关.rs 未把失败落进「剔除」台账")
-    if "剔除 {落点}：{原因}" not in 文:
-        缺.append("启动网关.rs 未把剔除原因打出来")
-    if re.search(r"let\s+_\s*=\s*取扩展声明", 文):
-        缺.append("启动网关.rs 有 `let _ = 取扩展声明`（静默吞因）")
+    缺失表 = []
+    文本 = 测试世界.启动网关
+    if "fn 取扩展声明" not in 文本 or "Result<&'static 平台信息, String>" not in 文本:
+        缺失表.append("启动网关.rs 无 取扩展声明 且失败带 String 原因")
+    if "剔除的.push" not in 文本:
+        缺失表.append("启动网关.rs 未把失败落进「剔除」台账")
+    if "剔除 {落点}：{原因}" not in 文本:
+        缺失表.append("启动网关.rs 未把剔除原因打出来")
+    if re.search(r"let\s+_\s*=\s*取扩展声明", 文本):
+        缺失表.append("启动网关.rs 有 `let _ = 取扩展声明`（静默吞因）")
     对象数 = 1
-    if 缺:
-        return "失败", "；".join(缺), 对象数
+    if 缺失表:
+        return "失败", "；".join(缺失表), 对象数
     return "通过", "取扩展声明失败带因 → 落剔除台账 → 打印；无静默吞因", 对象数
 
 
 def 判_14(测试世界: 世界):
     """⑭ 扩展 指纹.json 有一条**可跑的**重跑命令，且跑得出「一致」。"""
-    命 = (读JSON件(测试世界.指纹件()) or {}).get("生成命令", "")
+    生成命令 = (读JSON件(测试世界.指纹件()) or {}).get("生成命令", "")
     脚本 = 测试世界.指纹脚本()
-    if not 命 or not 脚本.exists():
-        return "未判", f"生成命令不可跑（命令={命!r} · 脚本在={脚本.exists()}）", 1
+    if not 生成命令 or not 脚本.exists():
+        return "未判", f"生成命令不可跑（命令={生成命令!r} · 脚本在={脚本.exists()}）", 1
     try:
-        果 = subprocess.run(
+        结果 = subprocess.run(
             [sys.executable, str(脚本), "--检查"],
             cwd=str(测试世界.仓根), capture_output=True, text=True, timeout=5,
         )
     except (OSError, subprocess.TimeoutExpired) as 错:
         return "未判", f"重跑命令跑不起来：{错}", 1
-    if 果.returncode == 0:
+    if 结果.returncode == 0:
         return "通过", "生成命令可跑 · --检查 退出码 0（指纹与盘面一致）", 1
-    return "失败", f"生成命令可跑，但 --检查 退出码 {果.returncode}（指纹与盘面不符=制品滞后）：{果.stdout.strip() or 果.stderr.strip()}", 1
+    return "失败", f"生成命令可跑，但 --检查 退出码 {结果.returncode}（指纹与盘面不符=制品滞后）：{结果.stdout.strip() or 结果.stderr.strip()}", 1
 
 
 def 判_16(测试世界: 世界):
     """⑯ 适配器 Send/Sync ⇒ 网关能并发 accept。"""
-    缺 = []
+    缺失表 = []
     if "unsafe impl Send for 适配器" not in 测试世界.线程安全:
-        缺.append("线程安全.rs 无 unsafe impl Send for 适配器")
+        缺失表.append("线程安全.rs 无 unsafe impl Send for 适配器")
     if "unsafe impl Sync for 适配器" not in 测试世界.线程安全:
-        缺.append("线程安全.rs 无 unsafe impl Sync for 适配器")
+        缺失表.append("线程安全.rs 无 unsafe impl Sync for 适配器")
     if "pub fn 跑并发" not in 测试世界.网关 or "thread::scope" not in 测试世界.网关:
-        缺.append("网关.rs 无 跑并发 + thread::scope（accept 仍单线程）")
+        缺失表.append("网关.rs 无 跑并发 + thread::scope（accept 仍单线程）")
     if "服务.跑服务()" not in 测试世界.启动网关:
-        缺.append("启动网关.rs 未走 服务.跑服务()（生产入口没接并发）")
+        缺失表.append("启动网关.rs 未走 服务.跑服务()（生产入口没接并发）")
     对象数 = 3
-    if 缺:
-        return "失败", "；".join(缺), 对象数
+    if 缺失表:
+        return "失败", "；".join(缺失表), 对象数
     return "通过", "适配器 Send/Sync 断言在 · 网关 跑并发(thread::scope) · 生产入口走它", 对象数

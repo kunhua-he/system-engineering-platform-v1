@@ -62,22 +62,22 @@ from 准入判据.世界 import 世界, 找仓根  # noqa: E402
 
 
 def 入口函数(参数) -> int:
-    根 = 找仓根()
+    根目录 = 找仓根()
     if "--自测" in 参数:
         return 自测()
     if "--清单" in 参数:
         清单()
         return 0
-    世 = 世界(根)
+    测试世界 = 世界(根目录)
     if "--判" in 参数:
         判位 = 参数.index("--判")
         if 判位 + 1 >= len(参数):
             print("用法：--判 <编号>（如 --判 ⑧）")
             return 1
-        return 单条(世, 参数[判位 + 1])
-    起 = time.perf_counter()
-    结果 = 扫一遍(世)
-    毫秒 = int((time.perf_counter() - 起) * 1000)
+        return 单条(测试世界, 参数[判位 + 1])
+    区间起点 = time.perf_counter()
+    结果 = 扫一遍(测试世界)
+    毫秒 = int((time.perf_counter() - 区间起点) * 1000)
     打印(结果, 毫秒, 读数="--读数" in 参数)
     失败 = sum(1 for _, _, _, 项 in 结果 if 项[0] == "失败")
     未判 = sum(1 for _, _, _, 项 in 结果 if 项[0] == "未判")

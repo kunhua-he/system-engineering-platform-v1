@@ -244,11 +244,11 @@ pub unsafe extern "C" fn 平台_取接口描述(长度: *mut u32) -> *const c_ch
     if 字节.len() > u32::MAX as usize {
         return core::ptr::null();
     }
-    let 长 = 字节.len() as u32;
+    let 字节长度 = 字节.len() as u32;
     // 所有权交给调用方：`Box<[u8]>` 转成裸指针，调用方用 `平台_释放接口描述(指针, 长度)` 还。
     let 指针 = Box::into_raw(字节.into_boxed_slice()).cast::<u8>();
     // SAFETY: 长度 非空（上面已挡）；调用方按本函数的 Safety 契约保证它可写。
-    unsafe { *长度 = 长 };
+    unsafe { *长度 = 字节长度 };
     指针 as *const c_char
 }
 
@@ -294,9 +294,9 @@ pub unsafe extern "C" fn 平台_调用(
         return 协议结果::参数不合法;
     }
     // SAFETY: 返回槽 非空；调用方按本函数的 Safety 契约保证它可写。
-    let 槽 = unsafe { &mut *返回槽 };
+    let 数据槽 = unsafe { &mut *返回槽 };
     if 参数个数 > 0 && 参数表.is_null() {
-        *槽 = 数据槽::空槽();
+        *数据槽 = 数据槽::空槽();
         return 协议结果::参数不合法;
     }
     let 参数: &[数据槽] = if 参数个数 == 0 {
@@ -306,10 +306,10 @@ pub unsafe extern "C" fn 平台_调用(
         unsafe { core::slice::from_raw_parts(参数表, 参数个数 as usize) }
     };
     let Some(边界) = 默认边界() else {
-        *槽 = 错误槽(声明数据::错误码_1.取号值());
+        *数据槽 = 错误槽(声明数据::错误码_1.取号值());
         return 协议结果::成功;
     };
-    边界.调用(号值, 参数, 槽)
+    边界.调用(号值, 参数, 数据槽)
 }
 
 /// 还值：把调用方拿到的值的所有权交回。**幂等**（见文件头「所有权」）。
