@@ -25,7 +25,7 @@ export function 装对话框(取元素) {
   }
 
   const 摆 = (编号) => {
-    const 话 = 对话框.find((候) => 候.编号 === 编号);
+    const 话 = 对话框.find((候选) => 候选.编号 === 编号);
     const 框 = document.createElement("div");
     框.className = "易对话框";
     框.style.width = 话.cx + "px";

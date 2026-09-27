@@ -39,16 +39,16 @@ export function 装调试(取元素) {
   }
 
   function 重排值行() {
-    [...取元素("值行容器").querySelectorAll(".值行")].forEach((行, 位) => {
-      行.querySelector(".序").textContent = String(位 + 1);
+    [...取元素("值行容器").querySelectorAll(".值行")].forEach((源码行, 位置) => {
+      源码行.querySelector(".序").textContent = String(位置 + 1);
     });
   }
 
   function 取调用体文() {
     const 编号 = 取元素("调用编号").value.trim();
-    const 项 = [...取元素("值行容器").querySelectorAll(".值行")].map((行) => {
-      const 标签 = 行.querySelector(".标签").value.trim();
-      const 值 = 行.querySelector(".值").value.trim();
+    const 项 = [...取元素("值行容器").querySelectorAll(".值行")].map((源码行) => {
+      const 标签 = 源码行.querySelector(".标签").value.trim();
+      const 值 = 源码行.querySelector(".值").value.trim();
       return '{"类型标签":' + 标签 + ',"值":' + 值 + "}";
     });
     return '{"编号":' + 编号 + ',"值":[' + 项.join(",") + "]}";

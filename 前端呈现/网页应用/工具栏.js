@@ -41,16 +41,16 @@ export function 装工具栏(取元素, 钩子) {
   const 行 = 取元素("图标行");
   const 状态 = 取元素("工具状态");
 
-  const 报 = (文, 好) => {
-    写状态(状态, 文, 好);
-    钩子.记流水("工具条", 文);
+  const 报 = (文本, 是否好) => {
+    写状态(状态, 文本, 是否好);
+    钩子.记流水("工具条", 文本);
   };
 
   /** 真剪贴板：`navigator.clipboard` 要安全上下文；被挡就把原因原样报出来，不吞。 */
-  async function 进剪贴板(文, 动作) {
+  async function 进剪贴板(文本, 动作) {
     try {
-      await navigator.clipboard.writeText(文);
-      报(动作 + "：" + 文.length + " 字符已进系统剪贴板", true);
+      await navigator.clipboard.writeText(文本);
+      报(动作 + "：" + 文本.length + " 字符已进系统剪贴板", true);
     } catch (错) {
       报(动作 + "：系统剪贴板不给写（" + 错.name + "）—— 页面不是安全上下文，或被权限挡了", false);
     }
@@ -158,7 +158,7 @@ export function 装工具栏(取元素, 钩子) {
     钮.append(画图标(图名));
     钮.addEventListener("click", () => {
       const 果 = 动作[名]();
-      if (果 && typeof 果.catch === "function") 果.catch((错) => 报(名 + "：动作抛了 —— " + 错.message, false));
+      if (果 && typeof 果.catch === "function") 果.catch((错误) => 报(名 + "：动作抛了 —— " + 错误.message, false));
     });
     行.append(钮);
   }

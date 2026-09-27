@@ -21,16 +21,16 @@ const 编译族 = new Set(["0x8053", "0x8090", "0x808f", "0x80d4",
   "0x80d9", "0x80da", "0x80db", "0x80dc", "0x80e1", "0x80e4", "0x80e5", "0x808d"]);
 
 /** 助记字加下划线：`&` 只是标记，资源里真正显示的是「下一个字带下划线」。 */
-function 摆文字(项) {
+function 摆文字(一项) {
   const 盒 = document.createElement("span");
-  if (项.助记位 < 0) {
-    盒.textContent = 项.文字;
+  if (一项.助记位 < 0) {
+    盒.textContent = 一项.文字;
     return 盒;
   }
-  盒.append(项.文字.slice(0, 项.助记位));
+  盒.append(一项.文字.slice(0, 一项.助记位));
   const 下 = document.createElement("u");
-  下.textContent = 项.文字[项.助记位];
-  盒.append(下, 项.文字.slice(项.助记位 + 1));
+  下.textContent = 一项.文字[一项.助记位];
+  盒.append(下, 一项.文字.slice(一项.助记位 + 1));
   return 盒;
 }
 
@@ -41,9 +41,9 @@ export function 装菜单栏(取元素, 编辑, 依赖 = {}) {
   const 切页签 = 依赖.切页签;
   let 开着的 = null;
 
-  const 报 = (文, 色) => {
-    条.textContent = 文;
-    条.className = "格" + (色 === "好" ? " 好" : 色 === "坏" ? " 坏" : "");
+  const 报 = (文本, 颜色) => {
+    条.textContent = 文本;
+    条.className = "格" + (颜色 === "好" ? " 好" : 颜色 === "坏" ? " 坏" : "");
   };
 
   const 合上 = () => {
@@ -57,41 +57,41 @@ export function 装菜单栏(取元素, 编辑, 依赖 = {}) {
    * 非编译族：把命令编号发去 `POST /接口/菜单命令`，把结构化回执摆到「提示」栏。
    * 本页**不预判**这条命令落没落 —— 后端此刻一律回 `9001`，将来落了地本页不用改一行。
    */
-  const 问后端 = async (项, 头) => {
+  const 问后端 = async (一项, 头部) => {
     const 状态 = 取元素("菜单命令状态");
     const 果 = 取元素("菜单命令果");
     if (切页签) 切页签("提示");
     if (!状态 || !果) {
-      报(头 + " · 回执区不在页面上（缺 id：菜单命令状态 / 菜单命令果）", "坏");
+      报(头部 + " · 回执区不在页面上（缺 id：菜单命令状态 / 菜单命令果）", "坏");
       return;
     }
     清空(果);
-    写状态(状态, "问后端 " + 项.编号 + " …");
+    写状态(状态, "问后端 " + 一项.编号 + " …");
     try {
-      const 应答 = await 发菜单命令(项.编号);
+      const 应答 = await 发菜单命令(一项.编号);
       摆应答(果, 应答);
       const 词 = 摘要(应答.体);
-      写状态(状态, "命令 " + 项.编号 + " · HTTP " + 应答.状态 + " · " + 词.词,
+      写状态(状态, "命令 " + 一项.编号 + " · HTTP " + 应答.状态 + " · " + 词.词,
         词.类 === "好" ? true : 词.类 === "坏" ? false : undefined);
-      报(头 + " · 已问后端（POST /接口/菜单命令）：HTTP " + 应答.状态 + " · " + 词.词
+      报(头部 + " · 已问后端（POST /接口/菜单命令）：HTTP " + 应答.状态 + " · " + 词.词
         + " —— 结构化回执见「提示」栏", 词.类 === "好" ? "好" : "坏");
-      记流水("菜单", 头 + " · HTTP " + 应答.状态 + " · " + 词.词);
+      记流水("菜单", 头部 + " · HTTP " + 应答.状态 + " · " + 词.词);
     } catch (错) {
       摆消息(果, "发不出去：" + 错.message);
       写状态(状态, "发不出去", false);
-      报(头 + " · 发不出去：" + 错.message, "坏");
+      报(头部 + " · 发不出去：" + 错.message, "坏");
     }
   };
 
-  const 点叶子 = (项) => {
+  const 点叶子 = (一项) => {
     合上();
-    const 头 = "命令 " + 项.编号 + " · " + 项.文字 + (项.快捷键 ? " " + 项.快捷键 : "");
-    if (编译族.has(项.编号)) {
+    const 头 = "命令 " + 一项.编号 + " · " + 一项.文字 + (一项.快捷键 ? " " + 一项.快捷键 : "");
+    if (编译族.has(一项.编号)) {
       报(头 + " · 已接线：真调 `GET /接口` 实时给的编译链（逐级读数见「提示」栏）", "好");
       跑编译(取元素, 编辑);
       return;
     }
-    问后端(项, 头);
+    问后端(一项, 头);
   };
 
   const 摆层 = (项表, 深度) => {
@@ -128,7 +128,7 @@ export function 装菜单栏(取元素, 编辑, 依赖 = {}) {
           行.setAttribute("aria-disabled", "true");
           行.title = "资源里带 MF_GRAYED 位（实测 181 项里只有这一项）—— 在易语言里也是点不动的";
         } else {
-          行.addEventListener("click", (事) => { 事.stopPropagation(); 点叶子(项); });
+          行.addEventListener("click", (事件) => { 事件.stopPropagation(); 点叶子(项); });
         }
       }
       盒.append(行);
@@ -143,8 +143,8 @@ export function 装菜单栏(取元素, 编辑, 依赖 = {}) {
     钮.append(摆文字(顶层));
     钮.setAttribute("aria-expanded", "false");
     const 盒 = 摆层(顶层.项, 0);
-    钮.addEventListener("click", (事) => {
-      事.stopPropagation();
+    钮.addEventListener("click", (事件) => {
+      事件.stopPropagation();
       if (开着的 && 开着的.钮 === 钮) { 合上(); return; }
       合上();
       盒.hidden = false;
@@ -159,7 +159,7 @@ export function 装菜单栏(取元素, 编辑, 依赖 = {}) {
   }
 
   document.addEventListener("click", 合上);
-  document.addEventListener("keydown", (事) => { if (事.key === "Escape") 合上(); });
+  document.addEventListener("keydown", (事件) => { if (事件.key === "Escape") 合上(); });
 
   报("菜单结构 1:1 取自 e.exe 菜单资源 127（10 个顶层弹出 / 181 项）· 已接线 "
     + 编译族.size + " 项（编译族）· 其余点了问后端（POST /接口/菜单命令）取结构化回执");

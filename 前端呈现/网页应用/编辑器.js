@@ -44,10 +44,10 @@ export const 示例表 = [
 
 /**
  * 读「示例选」当前选中那条的路径（空串 = 内置模板，没有落点）。
- * `选` 是「示例选」这个 `<select>` 节点。
+ * `选中` 是「示例选」这个 `<select>` 节点。
  */
-export function 选中路径(选) {
-  const 位 = Number(选 && 选.value) || 0;
+export function 选中路径(选中) {
+  const 位 = Number(选中 && 选中.value) || 0;
   const 行 = 示例表[位] || 示例表[0];
   return 行 ? 行[1] : "";
 }
@@ -58,8 +58,8 @@ export function 取文本(编辑) {
 }
 
 /** 往编辑区放文本（**原样**，不规范化换行、不动缩进）。 */
-export function 置文本(编辑, 文) {
-  编辑.value = 文 === undefined || 文 === null ? "" : String(文);
+export function 置文本(编辑, 文本) {
+  编辑.value = 文本 === undefined || 文本 === null ? "" : String(文本);
   编辑.dispatchEvent(new Event("input"));
 }
 
@@ -100,9 +100,9 @@ export function 装编辑器(取元素) {
     号.scrollTop = 编辑.scrollTop;
   });
 
-  编辑.addEventListener("keydown", (事) => {
-    if (事.key !== "Tab" || 事.ctrlKey || 事.metaKey || 事.altKey) return;
-    事.preventDefault();
+  编辑.addEventListener("keydown", (事件) => {
+    if (事件.key !== "Tab" || 事件.ctrlKey || 事件.metaKey || 事件.altKey) return;
+    事件.preventDefault();
     编辑.setRangeText("    ", 编辑.selectionStart, 编辑.selectionEnd, "end");
     重绘();
   });
@@ -110,9 +110,9 @@ export function 装编辑器(取元素) {
   // 示例下拉与载入按钮
   const 选 = 取元素("示例选");
   const 状态 = 取元素("工具状态");
-  示例表.forEach(([标签], 位) => {
+  示例表.forEach(([标签], 位置) => {
     const 项 = document.createElement("option");
-    项.value = String(位);
+    项.value = String(位置);
     项.textContent = 标签;
     选.append(项);
   });
@@ -148,7 +148,7 @@ export function 装编辑器(取元素) {
   }
 
   取元素("载入按钮").addEventListener("click", () => {
-    载入示例().catch((错) => 写状态(状态, "载入失败：" + 错.message, false));
+    载入示例().catch((错误) => 写状态(状态, "载入失败：" + 错误.message, false));
   });
   取元素("清空按钮").addEventListener("click", 清空编辑);
 

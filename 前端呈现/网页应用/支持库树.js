@@ -19,8 +19,8 @@ import { 号段, 找段, 找扩展, 拉扩展表 } from "./号段表.js";
 import { 画图标 } from "./图标.js";
 
 /** 从 `GET /接口` 的应答里取能力清单。键名 `能力` 是冻结的返回体形状（`接口面形状.md` §二）。 */
-function 取能力表(体) {
-  if (体 && typeof 体 === "object" && Array.isArray(体.能力)) return 体.能力;
+function 取能力表(应答体) {
+  if (应答体 && typeof 应答体 === "object" && Array.isArray(应答体.能力)) return 应答体.能力;
   return [];
 }
 
@@ -60,14 +60,14 @@ export function 装支持库树(取元素, 钩子) {
   let 选中行 = null;
 
   /** 一行：缩进 + 折标 + 小图 + 文字 +（可选）条数。 */
-  function 建行(深度, 名, 图名, 折标, 尾巴, 类名) {
+  function 建行(深度, 名称, 图名, 折标, 尾巴, 类名) {
     const 行 = 建元素("div", "树行" + (类名 ? " " + 类名 : ""));
     行.style.paddingLeft = 2 + 深度 * 12 + "px";
     行.append(建元素("span", "折标", 折标 || ""));
     const 图槽 = 建元素("span", "图槽");
     图槽.append(画图标(图名));
     行.append(图槽);
-    行.append(建元素("span", null, 名));
+    行.append(建元素("span", null, 名称));
     if (尾巴) 行.append(建元素("span", "多", " " + 尾巴));
     return 行;
   }
@@ -78,41 +78,41 @@ export function 装支持库树(取元素, 钩子) {
    * 为什么必须接上：这一行画了 `▾` 却点不动，就是**空响的指示符** —— 指示符是给用户看的承诺，
    * 承诺了「这里能收放」就得真能收放。段行、扩展行、根行三处都走这一条。
    */
-  function 接折(行, 盒) {
-    const 标 = 行.querySelector(".折标");
+  function 接折(源码行, 容器盒) {
+    const 标 = 源码行.querySelector(".折标");
     const 翻 = () => {
-      const 收 = !盒.hidden;
-      盒.hidden = 收;
+      const 收 = !容器盒.hidden;
+      容器盒.hidden = 收;
       标.textContent = 收 ? "▸" : "▾";
-      行.setAttribute("aria-expanded", 收 ? "false" : "true");
+      源码行.setAttribute("aria-expanded", 收 ? "false" : "true");
     };
-    行.classList.add("枝");
-    行.tabIndex = 0;
-    行.setAttribute("role", "button");
-    行.setAttribute("aria-expanded", "true");
-    行.addEventListener("click", 翻);
-    行.addEventListener("keydown", (事) => {
-      if (事.key === "Enter" || 事.key === " ") {
-        事.preventDefault();
+    源码行.classList.add("枝");
+    源码行.tabIndex = 0;
+    源码行.setAttribute("role", "button");
+    源码行.setAttribute("aria-expanded", "true");
+    源码行.addEventListener("click", 翻);
+    源码行.addEventListener("keydown", (事件) => {
+      if (事件.key === "Enter" || 事件.key === " ") {
+        事件.preventDefault();
         翻();
       }
     });
   }
 
-  function 建叶(深度, 能) {
-    const 编号 = Number(能.编号);
-    const 行 = 建行(深度, 编号 + " " + String(能.名称), "能力", "", null, "叶");
+  function 建叶(深度, 能力) {
+    const 编号 = Number(能力.编号);
+    const 行 = 建行(深度, 编号 + " " + String(能力.名称), "能力", "", null, "叶");
     行.title = "点一下：真调 GET /接口/能力/" + 编号
-      + "（参数 " + 能.参数个数 + " 个 · 返回类型 " + 能.返回类型 + "）";
+      + "（参数 " + 能力.参数个数 + " 个 · 返回类型 " + 能力.返回类型 + "）";
     行.addEventListener("click", () => 点叶(行, 编号));
     return 行;
   }
 
   /** 点一片叶子：真调一次契约端点，读数落到「搜寻2」那一格。 */
-  async function 点叶(行, 编号) {
+  async function 点叶(源码行, 编号) {
     if (选中行) 选中行.classList.remove("选");
-    选中行 = 行;
-    行.classList.add("选");
+    选中行 = 源码行;
+    源码行.classList.add("选");
     取元素("契约编号").value = String(编号);
     钩子.切页签("搜寻2");
     await 钩子.取契约(String(编号));
@@ -125,7 +125,7 @@ export function 装支持库树(取元素, 钩子) {
     const 根盒 = 建元素("div", "树子");
     for (const 段 of 号段) {
       const 槽 = 枝.get(段.名);
-      const 条数 = 槽.直挂.length + [...槽.扩.values()].reduce((和, 项) => 和 + 项.能.length, 0);
+      const 条数 = 槽.直挂.length + [...槽.扩.values()].reduce((累加和, 一项) => 累加和 + 一项.能.length, 0);
       总 += 条数;
       const 段行 = 建行(0, 段.名 + "（" + 段.起 + "–" + 段.止 + "）", "段",
         条数 ? "▾" : "", 条数 + " 条");
@@ -152,8 +152,8 @@ export function 装支持库树(取元素, 钩子) {
     容器.append(根行);
     容器.append(根盒);
     写状态(状态, "GET /接口 回了 " + 能力表.length + " 条能力 · 按号段表折成 "
-      + 号段.filter((段) => 枝.get(段.名).直挂.length
-        || [...枝.get(段.名).扩.values()].length).length + " 段有内容 / 共 " + 号段.length + " 段");
+      + 号段.filter((号段) => 枝.get(号段.名).直挂.length
+        || [...枝.get(号段.名).扩.values()].length).length + " 段有内容 / 共 " + 号段.length + " 段");
   }
 
   /** 拉一次清单，摆树。返回应答（好让别的格子复用同一次读数）。 */
