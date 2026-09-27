@@ -65,6 +65,6 @@ def 主资源声明(参数):
         if 检查模式:
             return 检查资源声明(根目录)
         return 生成资源声明(根目录)
-    except 生成失败 as 错:
-        print("生成失败（fail-closed，产物未动）：%s" % 错, file=sys.stderr)
+    except 生成失败 as 错误:
+        print("生成失败（fail-closed，产物未动）：%s" % 错误, file=sys.stderr)
         return 2

@@ -46,12 +46,12 @@ def 检查16_底座不认识扩展(上层读数: dict) -> list:
         return 输出缓冲
 
     扫描件源 = [
-        (键, 项["文本"])
-        for 键, 项 in 文件.items()
-        if 项["文本"] is not None
-        and 键.endswith(代码后缀)
-        and 键.split("/")[0] in 底座代码树
-        and not 键.startswith(底座代码面排除)
+        (键名, 一项["文本"])
+        for 键名, 一项 in 文件.items()
+        if 一项["文本"] is not None
+        and 键名.endswith(代码后缀)
+        and 键名.split("/")[0] in 底座代码树
+        and not 键名.startswith(底座代码面排除)
     ]
     if not 扫描件源:
         判不了(
@@ -66,7 +66,7 @@ def 检查16_底座不认识扩展(上层读数: dict) -> list:
     生产 = 并行生产区(扫描件源, 上层读数["测试文件集"], 保串=True)
     for 键名 in sorted(生产):
         文本 = 生产[键名]
-        命中 = [名 for 名 in 扩展名 if 名 in 文本]
+        命中 = [名称 for 名称 in 扩展名 if 名称 in 文本]
         if not 命中:
             continue
         # 行号取第一处命中的行（生产区文本与原文等长 ⇒ 偏移与行号仍对齐）
@@ -99,12 +99,12 @@ def 检查17_临时件不落源码树(上层读数: dict) -> list:
     输出缓冲 = []
     仓根 = 上层读数["仓根"]
     命中 = []
-    for 根, 目录表, 文件表 in os.walk(仓根):
+    for 根目录, 目录表, 文件表 in os.walk(仓根):
         目录表[:] = [目录名 for 目录名 in 目录表 if 目录名 != ".git"]
         临时目录 = [目录名 for 目录名 in 目录表 if 目录名.startswith(常量.临时目录前缀)]
         临时文件 = [文件名 for 文件名 in 文件表 if 文件名.startswith(常量.临时目录前缀)]
-        命中 += [相对(仓根, Path(根) / 目录名) for 目录名 in 临时目录]
-        命中 += [相对(仓根, Path(根) / 文件名) for 文件名 in 临时文件]
+        命中 += [相对(仓根, Path(根目录) / 目录名) for 目录名 in 临时目录]
+        命中 += [相对(仓根, Path(根目录) / 文件名) for 文件名 in 临时文件]
         # 不再往临时目录里钻（报最外层那一处就够，免得一个临时根报出几百条）
         目录表[:] = [目录名 for 目录名 in 目录表 if not 目录名.startswith(常量.临时目录前缀)]
     for 键名 in sorted(set(命中)):
@@ -145,10 +145,10 @@ def 检查20_运行数据不落源码树(上层读数: dict) -> list:
     输出缓冲 = []
     仓根 = 上层读数["仓根"]
     命中 = []
-    for 根, 目录表, 文件表 in os.walk(仓根):
+    for 根目录, 目录表, 文件表 in os.walk(仓根):
         目录表[:] = [目录名 for 目录名 in 目录表 if 目录名 != ".git"]
-        命中 += [相对(仓根, Path(根) / 目录名) for 目录名 in 目录表 if 目录名 in 运行数据目录名]
-        命中 += [相对(仓根, Path(根) / 文件名) for 文件名 in 文件表 if 文件名 in 运行数据目录名]
+        命中 += [相对(仓根, Path(根目录) / 目录名) for 目录名 in 目录表 if 目录名 in 运行数据目录名]
+        命中 += [相对(仓根, Path(根目录) / 文件名) for 文件名 in 文件表 if 文件名 in 运行数据目录名]
         # 命中的目录不再下钻（报最外层那一处就够）
         目录表[:] = [目录名 for 目录名 in 目录表 if 目录名 not in 运行数据目录名]
     for 键名 in sorted(set(命中)):

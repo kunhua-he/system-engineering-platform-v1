@@ -52,9 +52,9 @@ def 检查15_禁按行号引用(上层读数: dict) -> list:
     """
     输出缓冲 = []
     件表 = {
-        键: 项["文本"]
-        for 键, 项 in 上层读数["文件"].items()
-        if 键.endswith(行号引用后缀) and 项.get("文本") is not None
+        键名: 一项["文本"]
+        for 键名, 一项 in 上层读数["文件"].items()
+        if 键名.endswith(行号引用后缀) and 一项.get("文本") is not None
     }
     理由 = (
         "按行号引用**没人会去数** ⇒ 源码一改它就静默失效、判据照报绿（实测多数已漂）。"
@@ -63,55 +63,55 @@ def 检查15_禁按行号引用(上层读数: dict) -> list:
     )
     for 键名 in sorted(件表):
         行表 = 件表[键名].split("\n")
-        for 序, 行 in enumerate(行表):
+        for 序号, 源码行 in enumerate(行表):
             # ── 形一：`路径.扩展名:行号`（可带区间）──
-            for 匹配结果 in 行号引用_路径.finditer(行):
+            for 匹配结果 in 行号引用_路径.finditer(源码行):
                 被引路径, 扩展名, 行号 = 匹配结果.group(1), 匹配结果.group(2), int(匹配结果.group(3))
                 if 扩展名.isdigit():
                     continue  # `127.0.0.1:43110` 这类 IP:端口，不是文件引用
                 if 行号 <= 1:
                     continue  # 豁免①：第 1 行不可能漂（生成物第 1 行是生成器契约固定）
-                if 扩展名 in 语料后缀 or any(片 in 被引路径 for 片 in 语料路径片段):
+                if 扩展名 in 语料后缀 or any(片段 in 被引路径 for 片段 in 语料路径片段):
                     continue  # 豁免②：语料 / 样本件（按**这一条引用自身的路径**判）
                 输出缓冲.append(
                     违规(
                         检查名[14],
-                        f"{键名} 第 {序 + 1} 行",
-                        f"按行号引用 `{匹配结果.group(0)}`（原文：{行.strip()[:90]}）",
+                        f"{键名} 第 {序号 + 1} 行",
+                        f"按行号引用 `{匹配结果.group(0)}`（原文：{源码行.strip()[:90]}）",
                         理由,
                     )
                 )
             # ── 形二：`第 N 行`（md 行号引用同罪）──
-            for 匹配结果 in 行号引用_第几行.finditer(行):
+            for 匹配结果 in 行号引用_第几行.finditer(源码行):
                 号表 = [int(号片) for 号片 in re.split(r"[/、,]", 匹配结果.group(1)) if 号片.strip().isdigit()]
                 for 号值 in 号表:
                     if 号值 <= 1:
                         continue
-                    豁免理由 = _形二豁免(行表, 序, 匹配结果.start(), 号值)
+                    豁免理由 = _形二豁免(行表, 序号, 匹配结果.start(), 号值)
                     if 豁免理由:
                         continue
                     输出缓冲.append(
                         违规(
                             检查名[14],
-                            f"{键名} 第 {序 + 1} 行",
-                            f"按行号引用 `{匹配结果.group(0)}`（原文：{行.strip()[:90]}）",
+                            f"{键名} 第 {序号 + 1} 行",
+                            f"按行号引用 `{匹配结果.group(0)}`（原文：{源码行.strip()[:90]}）",
                             理由,
                         )
                     )
             # ── 形三：`L` 前缀的行号记法（只认区间形与紧跟「行」的，见上面的收窄理由）──
             # 形三不捕获被引路径（`L` 记法本身不带路径）⇒ 语料豁免只能按整行判（宁可少豁免）。
-            for 匹配结果 in 行号引用_L前缀.finditer(行):
+            for 匹配结果 in 行号引用_L前缀.finditer(源码行):
                 if int(匹配结果.group(1)) <= 1:
                     continue
-                if 匹配结果.group(2) is None and "行" not in 行[匹配结果.end() : 匹配结果.end() + 3]:
+                if 匹配结果.group(2) is None and "行" not in 源码行[匹配结果.end() : 匹配结果.end() + 3]:
                     continue  # 单个 `L<数字>`：与字段名分不开 ⇒ 不认（防假红）
-                if any(片 in 行 for 片 in 语料路径片段):
+                if any(片段 in 源码行 for 片段 in 语料路径片段):
                     continue
                 输出缓冲.append(
                     违规(
                         检查名[14],
-                        f"{键名} 第 {序 + 1} 行",
-                        f"按行号引用 `{匹配结果.group(0)}`（原文：{行.strip()[:90]}）",
+                        f"{键名} 第 {序号 + 1} 行",
+                        f"按行号引用 `{匹配结果.group(0)}`（原文：{源码行.strip()[:90]}）",
                         理由,
                     )
                 )

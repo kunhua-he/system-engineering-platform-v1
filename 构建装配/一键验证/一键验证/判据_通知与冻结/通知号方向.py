@@ -15,12 +15,12 @@ def 检查8_通知号落在对应方向的号段内(上层读数: dict) -> list:
     合法方向 = ("下行", "上行")
     号段图 = 上层读数["号段图"] or {}
     段表 = []
-    for 序, 段 in enumerate(号段图.get("通知号段") or []):
-        if not isinstance(段, dict):
+    for 序号, 号段 in enumerate(号段图.get("通知号段") or []):
+        if not isinstance(号段, dict):
             continue
-        起, 止 = 段.get("起"), 段.get("止")
+        起, 止 = 号段.get("起"), 号段.get("止")
         if 是整数(起) and 是整数(止) and 起 <= 止:
-            段表.append((起, 止, 段归属标签(段)))
+            段表.append((起, 止, 段归属标签(号段)))
 
     for 记录 in 上层读数["编号表"]["通知号段"]:
         位置 = f"{契约目录名}/通知号段/{记录['文件名']}"

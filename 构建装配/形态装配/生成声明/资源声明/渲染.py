@@ -70,8 +70,8 @@ def 渲染资源声明(根目录):
         "//",
         "// 源指纹：",
     ]
-    for 相对, 值 in 指纹行:
-        源码行.append("//   %s = %s" % (相对, 值))
+    for 相对, 待处理值 in 指纹行:
+        源码行.append("//   %s = %s" % (相对, 待处理值))
     源码行.extend(
         [
             "use v1_resource_gateway::{",

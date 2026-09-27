@@ -72,13 +72,13 @@ def 扫入口(仓根: Path) -> dict:
     if 键名 in _入口面缓存:
         return _入口面缓存[键名]
     输出缓冲 = {}
-    for 根, 目录表, 文件表 in os.walk(仓根):
-        相对根 = os.path.relpath(根, 仓根).replace(os.sep, "/")
+    for 根目录, 目录表, 文件表 in os.walk(仓根):
+        相对根 = os.path.relpath(根目录, 仓根).replace(os.sep, "/")
         目录表[:] = [目录名 for 目录名 in 目录表 if not _排掉(相对根, 目录名)]
         for 名称 in sorted(文件表):
             if not (名称.endswith(".py") or 名称.endswith(".sh")):
                 continue
-            路径 = Path(根) / 名称
+            路径 = Path(根目录) / 名称
             try:
                 文本 = 路径.read_text(encoding="utf-8", errors="replace")
             except OSError:
@@ -93,7 +93,7 @@ def 扫入口(仓根: Path) -> dict:
 def 带壳(路径: str, 文本: str) -> bool:
     """这条入口带壳吗（口径逐字抄 §四/§六）。"""
     标记 = 外壳脚本带壳标记 if 路径.endswith(".sh") else 脚本带壳标记
-    return any(词 in 文本 for 词 in 标记)
+    return any(关键词 in 文本 for 关键词 in 标记)
 
 
 def 读白名单(仓根: Path) -> tuple:
@@ -103,8 +103,8 @@ def 读白名单(仓根: Path) -> tuple:
         return {}, f"白名单文件不存在（{入口白名单路径}）"
     try:
         数据 = json.loads(节点件.read_text(encoding="utf-8"))
-    except Exception as 错:
-        return {}, f"白名单解析不了（{type(错).__name__}）"
+    except Exception as 错误:
+        return {}, f"白名单解析不了（{type(错误).__name__}）"
     项表 = {}
     for 一条 in 数据.get("白名单") or []:
         try:

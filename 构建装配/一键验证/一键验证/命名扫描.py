@@ -234,9 +234,9 @@ def _抹属性(文本: str) -> str:
 def 剥后缀(后缀: str, 文本: str) -> str:
     """按后缀剥注释与字符串，返回**等长**净文本（`__init__` 之类无后缀的不收）。"""
     if 后缀 == ".rs":
-        净文本 = _Rust转义字符.sub(lambda 命: " " * len(命.group(0)), 文本)
+        净文本 = _Rust转义字符.sub(lambda 命中: " " * len(命中.group(0)), 文本)
         净文本 = 去字面量(净文本)
-        净文本 = _Rust生命周期.sub(lambda 命: " " * len(命.group(0)), 净文本)
+        净文本 = _Rust生命周期.sub(lambda 命中: " " * len(命中.group(0)), 净文本)
         return _抹属性(净文本)
     if 后缀 == ".py":
         return 剥Python(文本)

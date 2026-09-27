@@ -64,22 +64,22 @@ def 前端命中(文本: str) -> list:
     区段 += [(位, 位 + len(文), 文) for 位, 文 in 扫正则字面量(文本)]
     输出缓冲 = []
     止于 = -1
-    for 起, 止, 文 in sorted(区段):
-        if 起 < 止于:
+    for 区间起点, 区间终点, 文本 in sorted(区段):
+        if 区间起点 < 止于:
             continue  # 与上一处重叠 ⇒ 同一处被两支都认出来了，只报一次
-        输出缓冲.append(文)
-        止于 = 止
+        输出缓冲.append(文本)
+        止于 = 区间终点
     return 输出缓冲
 
 
 def 命中处前端(件表: dict) -> list:
     """前端件表 ⇒ `["路径:行号"]`（⑪-6 的命中位置；口径与 `前端命中` 同一处）。"""
     命中处表 = []
-    for 键, 文本 in 件表.items():
+    for 键名, 文本 in 件表.items():
         for 命中文字 in 前端命中(文本):
             位置 = 文本.find(命中文字)
             行号 = (文本[:位置].count(chr(10)) + 1) if 位置 >= 0 else 0
-            命中处表.append(f"{键}:{行号}")
+            命中处表.append(f"{键名}:{行号}")
     return 命中处表
 
 
@@ -98,21 +98,21 @@ def 检查11_拓扑唯一性(上层读数: dict) -> list:
     # **不参与运行**」，验证器与生成器是开发期工具，不是平台运行时的一条腿。
     跳过工具目录 = ("构建装配/", "开发工具/")
     扫描件源 = [
-        (键, 项["文本"])
-        for 键, 项 in 文件.items()
-        if 键.endswith(代码后缀)
-        and 项["文本"] is not None
-        and not 键.startswith(跳过工具目录)
+        (键名, 一项["文本"])
+        for 键名, 一项 in 文件.items()
+        if 键名.endswith(代码后缀)
+        and 一项["文本"] is not None
+        and not 键名.startswith(跳过工具目录)
     ]
     # Rust 类子判据（1/2/3/4/5）只收 `.rs`；判据 6 是前端类，另起一份。
-    扫描件源_rs = [项 for 项 in 扫描件源 if 项[0].endswith(Rust后缀)]
+    扫描件源_rs = [一项 for 一项 in 扫描件源 if 一项[0].endswith(Rust后缀)]
     代码件 = 并行生产区(扫描件源_rs, 上层读数["测试文件集"])
 
     def 命中处(模式, 件表=None):
         命中处表 = []
-        for 键, 文本 in (代码件 if 件表 is None else 件表).items():
+        for 键名, 文本 in (代码件 if 件表 is None else 件表).items():
             for 匹配结果 in 模式.finditer(文本):
-                命中处表.append(f"{键}:{文本[: 匹配结果.start()].count(chr(10)) + 1}")
+                命中处表.append(f"{键名}:{文本[: 匹配结果.start()].count(chr(10)) + 1}")
         return 命中处表
 
     def 命中位置(标目: str, 处表: list) -> str:
@@ -143,9 +143,9 @@ def 检查11_拓扑唯一性(上层读数: dict) -> list:
     # ── 2a 宿主侧「对外边界」恰好 1 组（三个符号；接缝 GetPlatformInfo 不算）──
     #     导出符号名写在字符串里 ⇒ 这一处必须用**保串**的生产区文本
     导出表 = 收集导出(并行生产区(扫描件源_rs, 上层读数["测试文件集"], 保串=True))
-    对外名 = sorted(名 for 名 in 导出表 if 名 != 接缝符号)
-    缺名 = [名 for 名 in 对外边界符号 if 名 not in 对外名]
-    多名 = [名 for 名 in 对外名 if 名 not in 对外边界符号]
+    对外名 = sorted(名称 for 名称 in 导出表 if 名称 != 接缝符号)
+    缺名 = [名称 for 名称 in 对外边界符号 if 名称 not in 对外名]
+    多名 = [名称 for 名称 in 对外名 if 名称 not in 对外边界符号]
     if 缺名 or 多名:
         情形 = (
             f"一个都没导出 ⇒ 不是「多了一条腿」，是「腿还没接上」"
@@ -153,7 +153,7 @@ def 检查11_拓扑唯一性(上层读数: dict) -> list:
             if not 对外名
             else f"多出来的就是第二条对外面：{多名}"
         )
-        命中处表 = [处 for 名 in 多名 for 处 in 导出表.get(名, [])]
+        命中处表 = [处 for 名称 in 多名 for 处 in 导出表.get(名称, [])]
         输出缓冲.append(
             违规(
                 检查名[10],
@@ -172,8 +172,8 @@ def 检查11_拓扑唯一性(上层读数: dict) -> list:
     # ── 3 内核入口恰好 1 处调用 载入 ──
     #     只认**调用形**（定义 / 枚举变体声明 / **模式位解构**都不算）——收窄口径见 `载入调用点`。
     载入处 = []
-    for 键, 文本 in 代码件.items():
-        载入处 += [f"{键}:{行}" for 行 in 载入调用点(文本)]
+    for 键名, 文本 in 代码件.items():
+        载入处 += [f"{键名}:{源码行}" for 源码行 in 载入调用点(文本)]
     if len(载入处) != 1:
         情形 = (
             "一处都没有 ⇒ 内核入口还没被接上（网关 / 连接器 尚未落地）"
@@ -213,8 +213,8 @@ def 检查11_拓扑唯一性(上层读数: dict) -> list:
     # ── 5 层间边：不许跳层 · 不许反向（判据 5 已改：原「同一对层之间不许有两条边」是空转的）──
     包到层 = 上层读数["包到层"]
     边表 = {}
-    for 键, 文本 in 代码件.items():
-        源层 = 路径到层(键)
+    for 键名, 文本 in 代码件.items():
+        源层 = 路径到层(键名)
         if not 源层:
             continue
         for 匹配结果 in re.finditer(r"(?m)^[ \t]*(?:pub[ \t]+)?use[ \t]+([A-Za-z_][\w]*)", 文本):
@@ -223,7 +223,7 @@ def 检查11_拓扑唯一性(上层读数: dict) -> list:
             if not 目标层:
                 continue
             行号 = 文本[: 匹配结果.start()].count(chr(10)) + 1
-            边表.setdefault((源层, 目标层), []).append(f"{键}:{行号}")
+            边表.setdefault((源层, 目标层), []).append(f"{键名}:{行号}")
     for (源层, 目标层), 处表 in sorted(边表.items()):
         if 源层 == 目标层:
             continue  # 同层互依（`运行内核/` 内部各 crate）——**已裁：不算违规**
@@ -272,10 +272,10 @@ def 检查11_拓扑唯一性(上层读数: dict) -> list:
     # 这正是 2026-09-27 收窄的前提（判「有没有自身解析」之前，得先保证读的是**代码**）。
     前端件 = 并行生产区(
         [
-            (键, 文本)
-            for 键, 文本 in 扫描件源
-            if 键.startswith("前端呈现/")
-            and 键.endswith((".js", ".jsx", ".ts", ".tsx", ".vue", ".svelte"))
+            (键名, 文本)
+            for 键名, 文本 in 扫描件源
+            if 键名.startswith("前端呈现/")
+            and 键名.endswith((".js", ".jsx", ".ts", ".tsx", ".vue", ".svelte"))
         ],
         上层读数["测试文件集"],
     )

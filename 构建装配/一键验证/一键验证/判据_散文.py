@@ -48,15 +48,15 @@ def 忽略条目(仓根) -> tuple:
             ["git", "-C", 键名, "ls-files", "--others", "--ignored", "--exclude-standard"],
             capture_output=True, text=True, timeout=5,
         )
-    except (OSError, subprocess.SubprocessError) as 错:
-        待处理值 = ([], f"跑不动 git（{type(错).__name__}：{错}）")
+    except (OSError, subprocess.SubprocessError) as 错误:
+        待处理值 = ([], f"跑不动 git（{type(错误).__name__}：{错误}）")
         _忽略条目缓存[键名] = 待处理值
         return 待处理值
     if 结果.returncode != 0:
         待处理值 = ([], f"git ls-files 退出码 {结果.returncode}：{结果.stderr.strip()[:200]}")
         _忽略条目缓存[键名] = 待处理值
         return 待处理值
-    待处理值 = ([行 for 行 in 结果.stdout.splitlines() if 行], None)
+    待处理值 = ([源码行 for 源码行 in 结果.stdout.splitlines() if 源码行], None)
     _忽略条目缓存[键名] = 待处理值
     return 待处理值
 

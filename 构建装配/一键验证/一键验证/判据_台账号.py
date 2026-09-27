@@ -84,7 +84,7 @@ def 去围栏块(文本: str) -> str:
 
 def 去行内代码(文本: str) -> str:
     """把行内代码 span 换成等长空格（列位置不变）。"""
-    return _行内代码.sub(lambda 命: " " * len(命.group(0)), 文本)
+    return _行内代码.sub(lambda 命中: " " * len(命中.group(0)), 文本)
 
 
 def 是制品产物(键名: str) -> bool:
@@ -102,9 +102,9 @@ def 台账号面(上层读数: dict) -> dict:
     if 键名 in _面缓存:
         return _面缓存[键名]
     扫描面 = {
-        路: 项["文本"]
-        for 路, 项 in 上层读数["文件"].items()
-        if 项.get("文本") is not None and not 是制品产物(路)
+        路径: 一项["文本"]
+        for 路径, 一项 in 上层读数["文件"].items()
+        if 一项.get("文本") is not None and not 是制品产物(路径)
     }
     _面缓存[键名] = 扫描面
     return 扫描面
@@ -128,17 +128,17 @@ def 扫台账号(扫描面: dict) -> list:
         文本 = 扫描面[路径] or ""
         if not 文本:
             continue
-        for 号, 行 in enumerate(文本.split("\n"), 1):
-            if _台账引用.search(行):
-                输出缓冲.append((路径, 号, "形①②③（前缀后 24 字符内出现号）", 行.strip()[:120]))
+        for 号值, 源码行 in enumerate(文本.split("\n"), 1):
+            if _台账引用.search(源码行):
+                输出缓冲.append((路径, 号值, "形①②③（前缀后 24 字符内出现号）", 源码行.strip()[:120]))
         if not 路径.endswith(".md"):
             continue
         散文 = 去行内代码(去围栏块(文本))
-        for 号, 行 in enumerate(散文.split("\n"), 1):
-            for 匹配结果 in _裸号引用.finditer(行):
-                if 匹配结果.start() > 0 and 行[匹配结果.start() - 1] in _引号:
+        for 号值, 源码行 in enumerate(散文.split("\n"), 1):
+            for 匹配结果 in _裸号引用.finditer(源码行):
+                if 匹配结果.start() > 0 and 源码行[匹配结果.start() - 1] in _引号:
                     continue  # 半角字面量里的号 —— 程序内容，不是引用
-                输出缓冲.append((路径, 号, "形④（散文里的裸号）", 行.strip()[:120]))
+                输出缓冲.append((路径, 号值, "形④（散文里的裸号）", 源码行.strip()[:120]))
     return 输出缓冲
 
 
@@ -166,8 +166,8 @@ def 检查38_台账号不悬空(上层读数: dict) -> list:
         "`决策记录/… §节名`（**不许把一个号换成另一个号**，那只是把悬空换个地方）。"
         "⇒ 改指哪一处只有该件的作者能定"
     )
-    for 路, 号, 形式, 原文 in 扫台账号(扫描面):
-        输出缓冲.append(违规(检查名[37], f"{路}:{号}", f"{形式}（原文：{原文}）", 口径))
+    for 路径, 号值, 形式, 原文 in 扫台账号(扫描面):
+        输出缓冲.append(违规(检查名[37], f"{路径}:{号值}", f"{形式}（原文：{原文}）", 口径))
     return 输出缓冲
 
 
@@ -198,7 +198,7 @@ def 自检_台账号扫描() -> list:
     说明文字 = " | ".join("%s:%d %s" % (条[0], 条[1], 条[2]) for 条 in 匹配结果)
 
     def 那件(路径: str, 形式前缀: str = "") -> list:
-        return [条 for 条 in 匹配结果 if 条[0] == 路径 and 条[2].startswith(形式前缀)]
+        return [一条 for 一条 in 匹配结果 if 一条[0] == 路径 and 一条[2].startswith(形式前缀)]
 
     return [
         ("反向样本：形①②③ 带前缀的两种写法各抓得住（同一散文里两处）",
