@@ -40,11 +40,11 @@ pub fn 解码容器(字节: &[u8]) -> Option<容器> {
         let 校验和 = 读.u32()?;
         let 段类型 = 读.u8()?;
         let mut 名称区 = [0u8; 27];
-        名称区.copy_from_slice(读.取(27)?);
+        名称区.copy_from_slice(读.取字节(27)?);
         let 名长 = 读.u32()? as usize;
-        let 段名 = 读.取(名长)?.to_vec();
+        let 段名 = 读.取字节(名长)?.to_vec();
         let 数长 = 读.u64()? as usize;
-        let 数据 = 读.取(数长)?.to_vec();
+        let 数据 = 读.取字节(数长)?.to_vec();
         段表.push(段 {
             头: 段头 { 校验和, 段类型, 名称区, 段名 },
             数据,
@@ -57,14 +57,14 @@ pub fn 解码容器(字节: &[u8]) -> Option<容器> {
     Some(容器 { 段表 })
 }
 
-/// 顺序读器：每个 `取` 都查边界，越界给 `None`。
+/// 顺序读器：每个 `取字节` 都查边界，越界给 `None`。
 struct 读器<'a> {
     字节: &'a [u8],
     位: usize,
 }
 
 impl<'a> 读器<'a> {
-    fn 取(&mut self, 数: usize) -> Option<&'a [u8]> {
+    fn 取字节(&mut self, 数: usize) -> Option<&'a [u8]> {
         let 尾 = self.位.checked_add(数)?;
         if 尾 > self.字节.len() {
             return None;
@@ -75,14 +75,14 @@ impl<'a> 读器<'a> {
     }
 
     fn u8(&mut self) -> Option<u8> {
-        self.取(1).map(|片| 片[0])
+        self.取字节(1).map(|片| 片[0])
     }
 
     fn u32(&mut self) -> Option<u32> {
-        Some(u32::from_le_bytes(self.取(4)?.try_into().ok()?))
+        Some(u32::from_le_bytes(self.取字节(4)?.try_into().ok()?))
     }
 
     fn u64(&mut self) -> Option<u64> {
-        Some(u64::from_le_bytes(self.取(8)?.try_into().ok()?))
+        Some(u64::from_le_bytes(self.取字节(8)?.try_into().ok()?))
     }
 }

@@ -5,30 +5,30 @@
 是它的公开面；这里把它们**全导一遍**，调用地址 `from 挖真文本 import <名>` 逐字不变。
 """
 from .常量 import (
-    CONST_RE,
-    CTRL,
-    DECL,
-    DECL_RE,
-    DST,
-    HDR,
-    HDR_END,
-    HERE,
-    MAXLINE,
-    MIN_DECL,
+    常量记录正则,
+    控制字符,
+    声明词表,
+    声明行正则,
+    真文本目录,
+    段头魔数,
+    段头终止,
+    语料根,
+    最大行长,
+    最少声明行数,
     OUTJSON,
-    SRC,
-    VER,
-    VER_LINE,
-    WEAK_FILES,
+    源码根,
+    版本锚,
+    版本行首,
+    弱证据白名单,
 )
-from .容器段表 import const_name, seg_of, seg_table
-from .行判定 import check_value, classify, decl_lines, expand, gbk_ok, line_at
+from .容器段表 import 常量名, 所属段, 段表
+from .行判定 import 检查取值, 行分类, 声明行数, 扩张边界, gbk_ok, 定位行
 from .主流程 import main
 
 __all__ = [
-    "CONST_RE", "CTRL", "DECL", "DECL_RE", "DST", "HDR", "HDR_END", "HERE",
-    "MAXLINE", "MIN_DECL", "OUTJSON", "SRC", "VER", "VER_LINE", "WEAK_FILES",
-    "const_name", "seg_of", "seg_table",
-    "check_value", "classify", "decl_lines", "expand", "gbk_ok", "line_at",
+    "常量记录正则", "控制字符", "声明词表", "声明行正则", "真文本目录", "段头魔数", "段头终止", "语料根",
+    "最大行长", "最少声明行数", "OUTJSON", "源码根", "版本锚", "版本行首", "弱证据白名单",
+    "常量名", "所属段", "段表",
+    "检查取值", "行分类", "声明行数", "扩张边界", "gbk_ok", "定位行",
     "main",
 ]

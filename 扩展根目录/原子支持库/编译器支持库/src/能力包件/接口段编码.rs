@@ -141,7 +141,7 @@ fn 读错误项(读: &mut 读器) -> Option<接口错误项> {
     })
 }
 
-/// 顺序读器：每个 `取` 都查边界，越界给 `None`（不 panic）。同 `注册表定义.rs` 的形状。
+/// 顺序读器：每个 `取字节` 都查边界，越界给 `None`（不 panic）。同 `注册表定义.rs` 的形状。
 struct 读器<'a> {
     字节: &'a [u8],
     位: usize,
@@ -152,7 +152,7 @@ impl<'a> 读器<'a> {
         self.字节.len().saturating_sub(self.位)
     }
 
-    fn 取(&mut self, 数: usize) -> Option<&'a [u8]> {
+    fn 取字节(&mut self, 数: usize) -> Option<&'a [u8]> {
         let 尾 = self.位.checked_add(数)?;
         if 尾 > self.字节.len() {
             return None;
@@ -163,25 +163,25 @@ impl<'a> 读器<'a> {
     }
 
     fn u16(&mut self) -> Option<u16> {
-        Some(u16::from_le_bytes(self.取(2)?.try_into().ok()?))
+        Some(u16::from_le_bytes(self.取字节(2)?.try_into().ok()?))
     }
 
     fn u32(&mut self) -> Option<u32> {
-        Some(u32::from_le_bytes(self.取(4)?.try_into().ok()?))
+        Some(u32::from_le_bytes(self.取字节(4)?.try_into().ok()?))
     }
 
     fn u64(&mut self) -> Option<u64> {
-        Some(u64::from_le_bytes(self.取(8)?.try_into().ok()?))
+        Some(u64::from_le_bytes(self.取字节(8)?.try_into().ok()?))
     }
 
     fn 文本(&mut self) -> Option<String> {
         let 长 = self.u32()? as usize;
-        let 片 = self.取(长)?;
+        let 片 = self.取字节(长)?;
         Some(core::str::from_utf8(片).ok()?.to_owned())
     }
 
     fn 布尔(&mut self) -> Option<bool> {
-        Some(match self.取(1)?[0] {
+        Some(match self.取字节(1)?[0] {
             0 => false,
             1 => true,
             _ => return None,
