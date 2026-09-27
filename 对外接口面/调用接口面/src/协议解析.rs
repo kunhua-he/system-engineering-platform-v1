@@ -162,8 +162,8 @@ impl<'a> 游标<'a> {
                 Some(b'"') => break,
                 Some(b'\\') => self.取转义(&mut 输出缓冲)?,
                 // 未转义的控制字符在 JSON 里不合法（含裸换行）。
-                Some(字) if 字 < 0x20 => return Err(self.报错("字符串里有未转义的控制字符")),
-                Some(字) => 输出缓冲.push(字),
+                Some(字符表) if 字符表 < 0x20 => return Err(self.报错("字符串里有未转义的控制字符")),
+                Some(字符表) => 输出缓冲.push(字符表),
             }
         }
         String::from_utf8(输出缓冲).map_err(|_| self.报错("字符串不是合法 UTF-8"))

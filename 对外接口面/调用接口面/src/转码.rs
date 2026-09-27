@@ -52,7 +52,7 @@ pub fn base64编码(来源: &[u8]) -> String {
 /// 一位 base64 字符 → 6 位值。`=` 与表外字符都算不合法。
 fn 取值(字符表: u8, 位置: usize) -> Result<u32, 转码错误> {
     match 字母表.iter().position(|一项| *一项 == 字符表) {
-        Some(序) => Ok(序 as u32),
+        Some(序号) => Ok(序号 as u32),
         None => Err(转码错误 {
             位置: 位置,
             说明: "base64 里有表外字符",

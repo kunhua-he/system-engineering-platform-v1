@@ -102,7 +102,7 @@ pub(super) fn 失败(适配器: &适配器, 错误码: u32, 数据: Option<协�
 fn 微秒(区间起点: &Instant) -> 协议值 {
     let 微秒 = 区间起点.elapsed().as_micros().min(u128::from(u64::MAX)) as u64;
     match i64::try_from(微秒) {
-        Ok(数) => 协议值::整数(数),
+        Ok(个数) => 协议值::整数(个数),
         Err(_) => 协议值::无符号(微秒),
     }
 }

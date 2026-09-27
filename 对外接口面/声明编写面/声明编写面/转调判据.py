@@ -51,7 +51,7 @@ def 跑判据(判据器, 仓根):
     失败 = [一项 for 一项 in 结果.get("失败", []) if isinstance(一项, str)]
     未判 = sorted(
         {一项 for 一项 in 结果.get("未判", []) if isinstance(一项, str)}
-        | {项["检查"] for 项 in 结果.get("未判", []) if isinstance(项, dict)}
+        | {一项["检查"] for 一项 in 结果.get("未判", []) if isinstance(一项, dict)}
     )
     读数 = {
         "通过": len(通过),

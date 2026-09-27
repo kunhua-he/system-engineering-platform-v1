@@ -110,8 +110,8 @@ pub fn 解析导出(请求体: &协议值) -> Result<导出请求, String> {
     )?;
     let 标识 = match 请求体.取成员("标识") {
         None => None,
-        Some(值) => Some(
-            值.取文本()
+        Some(待处理值) => Some(
+            待处理值.取文本()
                 .map(str::to_owned)
                 .ok_or_else(|| "标识 必须是文本（制品标识，形如 <提交12位>-<指纹16位>）".to_owned())?,
         ),
@@ -150,7 +150,7 @@ pub fn 解析程序文本(请求体: &协议值) -> Result<程序文本请求, S
     // 路径：缺键按空串读（业务失败 ⇒ 9008，见本函数头）；给了就必须是文本。
     let 路径 = match 请求体.取成员("路径") {
         None => String::new(),
-        Some(值) => 值
+        Some(待处理值) => 待处理值
             .取文本()
             .map(str::to_owned)
             .ok_or_else(|| "路径 必须是文本（调用方自带的路径；缺键 / 空串按 9008 报，不是 400）".to_owned())?,
@@ -165,8 +165,8 @@ pub fn 解析程序文本(请求体: &协议值) -> Result<程序文本请求, S
             }
             None
         }
-        Some(值) => Some(
-            值.取文本()
+        Some(待处理值) => Some(
+            待处理值.取文本()
                 .map(str::to_owned)
                 .ok_or_else(|| "正文 必须是文本".to_owned())?,
         ),

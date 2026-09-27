@@ -50,7 +50,7 @@ pub fn 列案例(适配器: &适配器, 工具根: &Path) -> 协议值 {
     let 区间起点 = Instant::now();
     let 案例根 = 工具根.join(常量::案例根);
     let 目录表 = match 列子目录(&案例根) {
-        Ok(表) => 表,
+        Ok(项表) => 项表,
         Err(说明) => {
             return 失败(
                 适配器,
@@ -110,7 +110,7 @@ pub fn 列案例(适配器: &适配器, 工具根: &Path) -> 协议值 {
             成员.push(键文("说明", 说明));
         }
         match 回执 {
-            Some(值) => 成员.push(("最新回执".to_owned(), 值.clone())),
+            Some(待处理值) => 成员.push(("最新回执".to_owned(), 待处理值.clone())),
             None => 成员.push(("最新回执".to_owned(), 协议值::空值)),
         }
         案例表.push(协议值::对象(成员));
