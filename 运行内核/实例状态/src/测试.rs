@@ -5,37 +5,37 @@ use std::collections::HashSet;
 
 #[test]
 fn 开启后校验通过() {
-    let mut 表 = 实例表::新建();
-    let 句柄 = 表.开启();
-    assert_eq!(表.校验(句柄), Ok(()));
+    let mut 项表 = 实例表::新建();
+    let 句柄 = 项表.开启();
+    assert_eq!(项表.校验(句柄), Ok(()));
 }
 
 #[test]
 fn 关闭后校验报失效() {
-    let mut 表 = 实例表::新建();
-    let 句柄 = 表.开启();
-    assert_eq!(表.关闭(句柄), Ok(()));
-    assert_eq!(表.校验(句柄), Err(实例错误::句柄失效));
+    let mut 项表 = 实例表::新建();
+    let 句柄 = 项表.开启();
+    assert_eq!(项表.关闭(句柄), Ok(()));
+    assert_eq!(项表.校验(句柄), Err(实例错误::句柄失效));
 }
 
 #[test]
 fn 重复关闭报失效() {
-    let mut 表 = 实例表::新建();
-    let 句柄 = 表.开启();
-    assert_eq!(表.关闭(句柄), Ok(()));
-    assert_eq!(表.关闭(句柄), Err(实例错误::句柄失效));
+    let mut 项表 = 实例表::新建();
+    let 句柄 = 项表.开启();
+    assert_eq!(项表.关闭(句柄), Ok(()));
+    assert_eq!(项表.关闭(句柄), Err(实例错误::句柄失效));
 }
 
 #[test]
 fn 陌生句柄报越界() {
-    let mut 表 = 实例表::新建();
+    let mut 项表 = 实例表::新建();
     // 没开过任何实例：任何句柄都不属于本表。
-    assert_eq!(表.校验(实例句柄(0)), Err(实例错误::句柄越界));
-    assert_eq!(表.关闭(实例句柄(0)), Err(实例错误::句柄越界));
+    assert_eq!(项表.校验(实例句柄(0)), Err(实例错误::句柄越界));
+    assert_eq!(项表.关闭(实例句柄(0)), Err(实例错误::句柄越界));
 
     // 开过一个之后，陌生句柄仍然报越界（不是失效）。
-    let 句柄 = 表.开启();
-    assert_eq!(表.校验(实例句柄(句柄.0.wrapping_add(4096))), Err(实例错误::句柄越界));
+    let 句柄 = 项表.开启();
+    assert_eq!(项表.校验(实例句柄(句柄.0.wrapping_add(4096))), Err(实例错误::句柄越界));
 }
 
 /// 最关键的反向验证：两张独立实例表，各自开实例，互不污染。
@@ -69,26 +69,26 @@ fn 两表互不污染() {
 #[test]
 fn 句柄生成器不重复() {
     let 数量 = 10_000u32;
-    let mut 表 = 实例表::新建();
+    let mut 项表 = 实例表::新建();
     let mut 见过 = HashSet::new();
     let mut 首批 = Vec::new();
     for _ in 0..数量 {
-        首批.push(表.开启());
+        首批.push(项表.开启());
     }
     for 句柄 in &首批 {
         assert!(见过.insert(句柄.0), "句柄重复：{句柄:?}");
     }
     assert_eq!(见过.len(), 数量 as usize);
     for 句柄 in &首批 {
-        assert_eq!(表.校验(*句柄), Ok(()));
+        assert_eq!(项表.校验(*句柄), Ok(()));
     }
 
     for 句柄 in 首批.iter().step_by(2) {
-        assert_eq!(表.关闭(*句柄), Ok(()));
+        assert_eq!(项表.关闭(*句柄), Ok(()));
     }
     let mut 次批 = Vec::new();
     for _ in 0..数量 {
-        次批.push(表.开启());
+        次批.push(项表.开启());
     }
     for 句柄 in &次批 {
         assert!(见过.insert(句柄.0), "新旧句柄撞号：{句柄:?}");

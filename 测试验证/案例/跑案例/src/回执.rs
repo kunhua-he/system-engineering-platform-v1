@@ -88,7 +88,7 @@ impl 回执 {
         写可选串(&mut 文本缓冲, self.死在哪一步.as_deref());
         文本缓冲.push_str(",\"错误码\":");
         match &self.错误码 {
-            Some(码) => 文本缓冲.push_str(&码.转JSON文本()),
+            Some(错误码) => 文本缓冲.push_str(&错误码.转JSON文本()),
             None => 文本缓冲.push_str("null"),
         }
         文本缓冲.push_str(&format!(",\"耗时微秒\":{}", self.耗时微秒));
@@ -97,29 +97,29 @@ impl 回执 {
         文本缓冲.push_str(",\"说明\":");
         crate::最小JSON::写串(&mut 文本缓冲, &self.说明);
         文本缓冲.push_str(",\"步骤\":[");
-        for (序, 步) in self.步骤.iter().enumerate() {
-            if 序 > 0 {
+        for (序号, 步序) in self.步骤.iter().enumerate() {
+            if 序号 > 0 {
                 文本缓冲.push(',');
             }
             文本缓冲.push('{');
             文本缓冲.push_str("\"名\":");
-            crate::最小JSON::写串(&mut 文本缓冲, &步.名);
-            文本缓冲.push_str(&format!(",\"能力编号\":{},\"能力名\":", 步.能力编号));
-            写可选串(&mut 文本缓冲, 步.能力名.as_deref());
+            crate::最小JSON::写串(&mut 文本缓冲, &步序.名);
+            文本缓冲.push_str(&format!(",\"能力编号\":{},\"能力名\":", 步序.能力编号));
+            写可选串(&mut 文本缓冲, 步序.能力名.as_deref());
             文本缓冲.push_str(",\"调用结果\":");
-            crate::最小JSON::写串(&mut 文本缓冲, &步.调用结果);
-            文本缓冲.push_str(&format!(",\"符合期望\":{}", 步.符合期望));
+            crate::最小JSON::写串(&mut 文本缓冲, &步序.调用结果);
+            文本缓冲.push_str(&format!(",\"符合期望\":{}", 步序.符合期望));
             文本缓冲.push_str(",\"死在哪一层\":");
-            写可选串(&mut 文本缓冲, 步.死在哪一层.as_deref());
+            写可选串(&mut 文本缓冲, 步序.死在哪一层.as_deref());
             文本缓冲.push_str(",\"死在哪一步\":");
-            写可选串(&mut 文本缓冲, 步.死在哪一步.as_deref());
+            写可选串(&mut 文本缓冲, 步序.死在哪一步.as_deref());
             文本缓冲.push_str(",\"错误码\":");
-            match &步.错误码 {
-                Some(码) => 文本缓冲.push_str(&码.转JSON文本()),
+            match &步序.错误码 {
+                Some(错误码) => 文本缓冲.push_str(&错误码.转JSON文本()),
                 None => 文本缓冲.push_str("null"),
             }
-            文本缓冲.push_str(&format!(",\"耗时微秒\":{},\"说明\":", 步.耗时微秒));
-            crate::最小JSON::写串(&mut 文本缓冲, &步.说明);
+            文本缓冲.push_str(&format!(",\"耗时微秒\":{},\"说明\":", 步序.耗时微秒));
+            crate::最小JSON::写串(&mut 文本缓冲, &步序.说明);
             文本缓冲.push('}');
         }
         文本缓冲.push_str("]}");
@@ -129,23 +129,23 @@ impl 回执 {
 
 fn 写可选串(文本缓冲: &mut String, 待处理值: Option<&str>) {
     match 待处理值 {
-        Some(文) => crate::最小JSON::写串(文本缓冲, 文),
+        Some(文本) => crate::最小JSON::写串(文本缓冲, 文本),
         None => 文本缓冲.push_str("null"),
     }
 }
 
 /// **追加**一行。追加不是覆盖：回执是历史，抹掉历史就没法判「回执是不是旧的」。
 pub fn 追加(路径: &Path, 源码行: &str) -> Result<(), String> {
-    if let Some(父) = 路径.parent() {
-        std::fs::create_dir_all(父).map_err(|错| format!("建不了 {}：{错}", 父.display()))?;
+    if let Some(父目录) = 路径.parent() {
+        std::fs::create_dir_all(父目录).map_err(|错| format!("建不了 {}：{错}", 父目录.display()))?;
     }
-    let mut 件 = std::fs::OpenOptions::new()
+    let mut 节点件 = std::fs::OpenOptions::new()
         .create(true)
         .append(true)
         .open(路径)
         .map_err(|错| format!("打不开 {}：{错}", 路径.display()))?;
-    件.write_all(源码行.as_bytes())
-        .and_then(|()| 件.write_all(b"\n"))
+    节点件.write_all(源码行.as_bytes())
+        .and_then(|()| 节点件.write_all(b"\n"))
         .map_err(|错| format!("写不进 {}：{错}", 路径.display()))
 }
 
@@ -190,15 +190,15 @@ pub fn 工作区干净(仓根: &Path) -> Result<bool, String> {
 
 /// UTC 的 `YYYY-MM-DDTHH:MM:SSZ`。自身算，不调外部程序（少一个环境依赖）。
 pub fn 现在UTC() -> String {
-    let 秒 = SystemTime::now()
+    let 纪元秒数 = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .map(|时| 时.as_secs() as i64)
         .unwrap_or(0);
-    let 天 = 秒.div_euclid(86_400);
-    let 日内 = 秒.rem_euclid(86_400);
-    let (年, 月, 日) = 民用日期(天);
+    let 天数 = 纪元秒数.div_euclid(86_400);
+    let 日内 = 纪元秒数.rem_euclid(86_400);
+    let (年份, 月份, 日序号) = 民用日期(天数);
     format!(
-        "{年:04}-{月:02}-{日:02}T{:02}:{:02}:{:02}Z",
+        "{年份:04}-{月份:02}-{日序号:02}T{:02}:{:02}:{:02}Z",
         日内 / 3600,
         (日内 % 3600) / 60,
         日内 % 60
@@ -207,16 +207,16 @@ pub fn 现在UTC() -> String {
 
 /// 天数（1970-01-01 起）→ 公历日期。Howard Hinnant 的 `civil_from_days`，整数运算，无外部依赖。
 fn 民用日期(天数: i64) -> (i64, u32, u32) {
-    let 移 = 天数 + 719_468;
-    let 纪元 = if 移 >= 0 { 移 } else { 移 - 146_096 } / 146_097;
-    let 纪内 = (移 - 纪元 * 146_097) as u64;
+    let 偏移天数 = 天数 + 719_468;
+    let 纪元 = if 偏移天数 >= 0 { 偏移天数 } else { 偏移天数 - 146_096 } / 146_097;
+    let 纪内 = (偏移天数 - 纪元 * 146_097) as u64;
     let 年内 = (纪内 - 纪内 / 1460 + 纪内 / 36_524 - 纪内 / 146_096) / 365;
-    let 年 = 年内 as i64 + 纪元 * 400;
+    let 年份 = 年内 as i64 + 纪元 * 400;
     let 日年 = 纪内 - (365 * 年内 + 年内 / 4 - 年内 / 100);
     let 月内 = (5 * 日年 + 2) / 153;
-    let 日 = (日年 - (153 * 月内 + 2) / 5 + 1) as u32;
-    let 月 = if 月内 < 10 { 月内 + 3 } else { 月内 - 9 } as u32;
-    (if 月 <= 2 { 年 + 1 } else { 年 }, 月, 日)
+    let 日序号 = (日年 - (153 * 月内 + 2) / 5 + 1) as u32;
+    let 月份 = if 月内 < 10 { 月内 + 3 } else { 月内 - 9 } as u32;
+    (if 月份 <= 2 { 年份 + 1 } else { 年份 }, 月份, 日序号)
 }
 
 #[cfg(test)]
@@ -240,15 +240,15 @@ mod 测试 {
 
     #[test]
     fn 时间戳形状是UTC() {
-        let 时 = 现在UTC();
-        assert_eq!(时.len(), 20, "形状该是 YYYY-MM-DDTHH:MM:SSZ：{时}");
-        assert!(时.ends_with('Z'));
+        let 时间戳 = 现在UTC();
+        assert_eq!(时间戳.len(), 20, "形状该是 YYYY-MM-DDTHH:MM:SSZ：{时间戳}");
+        assert!(时间戳.ends_with('Z'));
     }
 
     /// 正向样本：一行回执必须是**合法 JSON**（回执自身读不回来就是假读数）。
     #[test]
     fn 回执行是合法JSON() {
-        let 回 = 回执 {
+        let 回执值 = 回执 {
             提交哈希: "a".repeat(40),
             工作区是否干净: false,
             案例名: "首项\"次项".to_owned(),
@@ -280,10 +280,10 @@ mod 测试 {
                 说明: "无".to_owned(),
             }],
         };
-        let 行 = 回.到行();
-        let 解 = crate::最小JSON::解析(&行).expect("回执必须是合法 JSON");
-        assert_eq!(解.取成员("案例名").and_then(|一| 一.取字符串()), Some("首项\"次项"));
-        assert_eq!(解.取成员("死在哪一层").and_then(|一| 一.取字符串()), Some("内核"));
-        assert!(matches!(解.取成员("步骤").and_then(|一| 一.取数组()).map(<[crate::最小JSON::JSON值]>::len), Some(1)));
+        let 源码行 = 回执值.到行();
+        let 解析值 = crate::最小JSON::解析(&源码行).expect("回执必须是合法 JSON");
+        assert_eq!(解析值.取成员("案例名").and_then(|一| 一.取字符串()), Some("首项\"次项"));
+        assert_eq!(解析值.取成员("死在哪一层").and_then(|一| 一.取字符串()), Some("内核"));
+        assert!(matches!(解析值.取成员("步骤").and_then(|一| 一.取数组()).map(<[crate::最小JSON::JSON值]>::len), Some(1)));
     }
 }

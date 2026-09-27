@@ -39,12 +39,12 @@ def 入口函数(参数: list) -> int:
         return 自测()
     if "--样本" in 参数:
         return 样本()
-    根 = 案例根
+    根目录 = 案例根
     if "--案例根" in 参数:
-        序 = 参数.index("--案例根")
-        if 序 + 1 < len(参数):
-            根 = Path(参数[序 + 1]).resolve()
-    return 查根(根)
+        序号 = 参数.index("--案例根")
+        if 序号 + 1 < len(参数):
+            根目录 = Path(参数[序号 + 1]).resolve()
+    return 查根(根目录)
 
 
 if __name__ == "__main__":

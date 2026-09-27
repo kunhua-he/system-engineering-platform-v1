@@ -72,8 +72,8 @@ impl 载入台账 {
     ///
     /// `声明` 的串与表段按契约指向静态只读数据（与 `判定可装载` 同一前提）。
     pub fn 登记(&mut self, 声明: &平台信息) {
-        if let Some(串) = unsafe { 读串(声明.标识串, 标识串字节数 + 1) }
-            && let Ok(定长) = <[u8; 标识串字节数]>::try_from(串)
+        if let Some(字节串) = unsafe { 读串(声明.标识串, 标识串字节数 + 1) }
+            && let Ok(定长) = <[u8; 标识串字节数]>::try_from(字节串)
             && !self.标识串表.contains(&定长)
         {
             self.标识串表.push(定长);
@@ -94,10 +94,10 @@ impl 已载入台账 for 载入台账 {
     #[allow(clippy::not_unsafe_ptr_arg_deref)]
     fn 是否已载入(&self, 标识串: *const u8) -> bool {
         // SAFETY: 由契约保证 标识串 要么为空、要么指向静态只读 NUL 结尾串。
-        let Some(串) = (unsafe { 读串(标识串, 标识串字节数 + 1) }) else {
+        let Some(字节串) = (unsafe { 读串(标识串, 标识串字节数 + 1) }) else {
             return false;
         };
-        let Ok(定长) = <[u8; 标识串字节数]>::try_from(串) else {
+        let Ok(定长) = <[u8; 标识串字节数]>::try_from(字节串) else {
             return false;
         };
         self.标识串表.contains(&定长)
@@ -107,12 +107,12 @@ impl 已载入台账 for 载入台账 {
     /// 在两个空间里可以各占一次，不算冲突。**不取并集**——并集会产生假冲突
     /// （「扩展占能力 2000–2999」会被「底座占通知 2000–2999」误拦，合法扩展载不进来）。
     fn 号段已占用(&self, 空间: 号段空间, 区间起点: v1_contract::号值, 区间终点: v1_contract::号值) -> bool {
-        let 账 = match 空间 {
+        let 号段账 = match 空间 {
             号段空间::能力号 => &self.能力号段表,
             号段空间::通知号 => &self.通知号段表,
         };
         let 号段 = 号段 { 起: 区间起点, 止: 区间终点 };
-        账.iter().any(|已| 已.相交(&号段))
+        号段账.iter().any(|已| 已.相交(&号段))
     }
 }
 
