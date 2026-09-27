@@ -19,22 +19,22 @@
 //! 少转一个控制字符就产出非法 JSON，多转一个就是无谓体积。
 
 /// 接口描述用得到的值形状。**六种就是六种**。
-pub enum 值 {
-    空,
-    真,
-    假,
+pub enum JSON值 {
+    空值,
+    逻辑真,
+    逻辑假,
     整数(i64),
     文本(String),
-    数组(Vec<值>),
+    数组(Vec<JSON值>),
     /// 键序 = 插入序（见文件头：确定性）。
-    对象(Vec<(String, 值)>),
+    对象(Vec<(String, JSON值)>),
 }
 
 /// 序列化为**缩进版**（两空格）JSON 文本，**不含**结尾换行。
 ///
 /// 缩进的理由与 `接口面形状.md` 同一条：根端点的返回是给人也是给 agent 读的说明书，
 /// 压成一行就丢掉了这层用途。
-pub fn 写(值: &值) -> String {
+pub fn 写协议值(值: &JSON值) -> String {
     let mut 出 = String::new();
     写值(&mut 出, 值, 0);
     出
@@ -49,14 +49,14 @@ pub fn 缩进(出: &mut String, 层: usize) {
     }
 }
 
-fn 写值(出: &mut String, 值: &值, 层: usize) {
+fn 写值(出: &mut String, 值: &JSON值, 层: usize) {
     match 值 {
-        值::空 => 出.push_str("null"),
-        值::真 => 出.push_str("true"),
-        值::假 => 出.push_str("false"),
-        值::整数(数) => 出.push_str(&数.to_string()),
-        值::文本(文) => 写文本(出, 文),
-        值::数组(项) => {
+        JSON值::空值 => 出.push_str("null"),
+        JSON值::逻辑真 => 出.push_str("true"),
+        JSON值::逻辑假 => 出.push_str("false"),
+        JSON值::整数(数) => 出.push_str(&数.to_string()),
+        JSON值::文本(文) => 写文本(出, 文),
+        JSON值::数组(项) => {
             if 项.is_empty() {
                 出.push_str("[]");
                 return;
@@ -72,7 +72,7 @@ fn 写值(出: &mut String, 值: &值, 层: usize) {
             缩进(出, 层);
             出.push(']');
         }
-        值::对象(成员) => {
+        JSON值::对象(成员) => {
             if 成员.is_empty() {
                 出.push_str("{}");
                 return;

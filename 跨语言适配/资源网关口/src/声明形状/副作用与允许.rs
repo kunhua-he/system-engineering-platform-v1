@@ -25,7 +25,7 @@ impl 副作用 {
     ];
 
     /// 名字（错误码说明与留痕里要能读到它）。
-    pub const fn 名(&self) -> &'static str {
+    pub const fn 取名称(&self) -> &'static str {
         match self {
             副作用::读文件 => "读文件",
             副作用::写文件 => "写文件",
@@ -35,7 +35,7 @@ impl 副作用 {
     }
 
     /// 它在位图里的那一位。
-    const fn 位(&self) -> u8 {
+    const fn 取位掩码(&self) -> u8 {
         1 << (*self as u8)
     }
 }
@@ -49,23 +49,23 @@ pub struct 副作用集(u8);
 
 impl 副作用集 {
     /// 空集：不碰任何副作用。
-    pub const 空: Self = Self(0);
+    pub const 空实例: Self = Self(0);
     /// 全集：四种全要。**只做 fail-closed 兜底用**（见 [`操作声明::需要的副作用`]）。
-    pub const 全: Self = Self(0b1111);
+    pub const 全集: Self = Self(0b1111);
 
     /// 只含一项。
     pub const fn 单个(项: 副作用) -> Self {
-        Self(项.位())
+        Self(项.取位掩码())
     }
 
     /// 这一项在不在集合里。
-    pub const fn 含(&self, 项: 副作用) -> bool {
-        self.0 & 项.位() != 0
+    pub const fn 包含(&self, 项: 副作用) -> bool {
+        self.0 & 项.取位掩码() != 0
     }
 
     /// 并进一项。
     pub fn 并入(&mut self, 项: 副作用) {
-        self.0 |= 项.位();
+        self.0 |= 项.取位掩码();
     }
 
     /// 集合为空？
@@ -75,7 +75,7 @@ impl 副作用集 {
 
     /// 逐项列出（**次序固定**，取 [`副作用::全部`] 的次序）。
     pub fn 逐个(&self) -> impl Iterator<Item = 副作用> + '_ {
-        副作用::全部.into_iter().filter(move |项| self.含(*项))
+        副作用::全部.into_iter().filter(move |项| self.包含(*项))
     }
 }
 
