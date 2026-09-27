@@ -18,9 +18,9 @@
 // 已于 2026-09-28 落地，不再是卡点。画布上如实标注这一句，见 `画布注`。
 
 import { 取根, 取能力 } from "./取接口.js";
-import { 建, 清空, 写状态 } from "./呈现.js";
+import { 建元素, 清空, 写状态 } from "./呈现.js";
 import { 找段, 找扩展, 拉扩展表 } from "./号段表.js";
-import { 画 } from "./图标.js";
+import { 画图标 } from "./图标.js";
 
 /** 属性名列：逐字照抄参考图那一列，行序也一样。 */
 export const 属性名表 = ["名称", "备注", "左边", "顶边", "宽度", "高度", "标记", "可视",
@@ -42,9 +42,9 @@ export function 装设计视图(取元素, 钩子) {
     属头类.textContent = 对.类;
     清空(属表);
     for (const 名 of 属性名表) {
-      const 行 = 建("div", "属行");
-      行.append(建("div", "属名", 名));
-      行.append(建("div", "属值", String(对.值[名] ?? "（空）")));
+      const 行 = 建元素("div", "属行");
+      行.append(建元素("div", "属名", 名));
+      行.append(建元素("div", "属值", String(对.值[名] ?? "（空）")));
       属表.append(行);
     }
   }
@@ -123,7 +123,7 @@ export function 装设计视图(取元素, 钩子) {
 
   function 装画布() {
     清空(窗体身);
-    const 标 = 建("div", "窗件 标签", "系统工程平台 · 窗体1（只摆形状：拖放出代码不做，缺控件库 · 代码生成器）");
+    const 标 = 建元素("div", "窗件 标签", "系统工程平台 · 窗体1（只摆形状：拖放出代码不做，缺控件库 · 代码生成器）");
     标.id = "标签_题";
     摆件(标, 8, 6, 470, 16, "标签");
     窗体身.append(标);
@@ -135,7 +135,7 @@ export function 装设计视图(取元素, 钩子) {
       ["按钮_诊断", "诊断", () => { 钩子.切页签("提示"); return 钩子.跑诊断(); }],
     ];
     钮表.forEach(([号, 文, 做], 位) => {
-      const 钮 = 建("button", "窗件", 文);
+      const 钮 = 建元素("button", "窗件", 文);
       钮.id = 号;
       摆件(钮, 8 + 位 * 92, 30, 86, 24, "");
       钮.addEventListener("click", (事) => { 事.stopPropagation(); 做(); });
@@ -143,7 +143,7 @@ export function 装设计视图(取元素, 钩子) {
       窗体身.append(钮);
     });
 
-    const 表 = 建("div", "窗件 表格");
+    const 表 = 建元素("div", "窗件 表格");
     表.id = "表格_清单";
     摆件(表, 8, 62, 486, 250, "表格");
     表.title = "能力清单（真调 GET /接口 的结果）";
@@ -154,13 +154,13 @@ export function 装设计视图(取元素, 钩子) {
   /** 往窗体那张表里填能力清单 —— 数据来自真应答，本页不编行。 */
   function 填表(表) {
     if (!表) return;
-    const 头 = 建("div", "表格行 表头");
-    for (const 名 of ["编号", "名称", "参数个数", "返回类型"]) 头.append(建("span", null, 名));
+    const 头 = 建元素("div", "表格行 表头");
+    for (const 名 of ["编号", "名称", "参数个数", "返回类型"]) 头.append(建元素("span", null, 名));
     清空(表);
     表.append(头);
     for (const 能 of 能表) {
-      const 行 = 建("div", "表格行");
-      for (const 值 of [能.编号, 能.名称, 能.参数个数, 能.返回类型]) 行.append(建("span", null, String(值)));
+      const 行 = 建元素("div", "表格行");
+      for (const 值 of [能.编号, 能.名称, 能.参数个数, 能.返回类型]) 行.append(建元素("span", null, String(值)));
       表.append(行);
     }
   }
@@ -173,17 +173,17 @@ export function 装设计视图(取元素, 钩子) {
       ["扩展组件 · 扩展根热载入（1000–9999）", 能表.filter((能) => Number(能.编号) >= 1000), "模块"],
     ];
     for (const [名, 项表, 图名] of 组) {
-      箱.append(建("div", "箱组", 名 + "（" + 项表.length + "）"));
+      箱.append(建元素("div", "箱组", 名 + "（" + 项表.length + "）"));
       if (!项表.length) {
-        箱.append(建("div", "箱空", "本类此刻 0 条 —— 应答里没有落在这段的编号"));
+        箱.append(建元素("div", "箱空", "本类此刻 0 条 —— 应答里没有落在这段的编号"));
         continue;
       }
-      const 格 = 建("div", "箱格");
+      const 格 = 建元素("div", "箱格");
       for (const 能 of 项表) {
-        const 钮 = 建("button", "箱件");
+        const 钮 = 建元素("button", "箱件");
         钮.type = "button";
         钮.title = String(能.编号) + " " + String(能.名称) + "（点一下：属性面板看它，并真调它的契约）";
-        钮.append(画(图名));
+        钮.append(画图标(图名));
         钮.addEventListener("click", () => 点箱件(钮, 能));
         格.append(钮);
       }
@@ -202,7 +202,7 @@ export function 装设计视图(取元素, 钩子) {
   }
 
   /** 拉一次清单：填画布那张表 + 摆组件箱。 */
-  async function 刷() {
+  async function 重绘() {
     装画布();
     try {
       // 扩展分组实时取（判据 ⑯：底座不许点名扩展）；取不到就当「没有扩展这一层」，不拦着能力表。
@@ -225,5 +225,5 @@ export function 装设计视图(取元素, 钩子) {
     }
   }
 
-  return { 刷, 摆属, 选件, 读件属性 };
+  return { 重绘, 摆属, 选件, 读件属性 };
 }

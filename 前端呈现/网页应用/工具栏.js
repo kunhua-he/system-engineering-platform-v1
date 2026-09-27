@@ -9,8 +9,8 @@
 //
 // 图标是内联 SVG（`图标.js`），不是位图 —— 位图在 e.exe 资源里是索引不是像素，本页量不到。
 
-import { 建, 摘要, 写状态 } from "./呈现.js";
-import { 画 } from "./图标.js";
+import { 建元素, 摘要, 写状态 } from "./呈现.js";
+import { 画图标 } from "./图标.js";
 import { 选中路径 } from "./编辑器.js";
 import { 发程序文本 } from "./取接口.js";
 
@@ -43,7 +43,7 @@ export function 装工具栏(取元素, 钩子) {
 
   const 报 = (文, 好) => {
     写状态(状态, 文, 好);
-    钩子.记("工具条", 文);
+    钩子.记流水("工具条", 文);
   };
 
   /** 真剪贴板：`navigator.clipboard` 要安全上下文；被挡就把原因原样报出来，不吞。 */
@@ -146,16 +146,16 @@ export function 装工具栏(取元素, 钩子) {
 
   for (const 项 of 钮表) {
     if (!项) {
-      const 隔 = 建("span", "图标隔");
+      const 隔 = 建元素("span", "图标隔");
       行.append(隔);
       continue;
     }
     const [图名, 提示, 名] = 项;
-    const 钮 = 建("button", "图标钮");
+    const 钮 = 建元素("button", "图标钮");
     钮.type = "button";
     钮.title = 提示;
     钮.setAttribute("aria-label", 提示);
-    钮.append(画(图名));
+    钮.append(画图标(图名));
     钮.addEventListener("click", () => {
       const 果 = 动作[名]();
       if (果 && typeof 果.catch === "function") 果.catch((错) => 报(名 + "：动作抛了 —— " + 错.message, false));

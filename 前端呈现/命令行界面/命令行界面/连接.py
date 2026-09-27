@@ -14,7 +14,7 @@ def 拼请求地址(端口: int, 路径: str) -> str:
     return "http://{}:{}{}".format(回环地址, 端口, urllib.parse.quote(路径, safe="/"))
 
 
-def 发(端口: int, 方法: str, 路径: str, 体文本: str, 显示请求: bool) -> tuple:
+def 发请求(端口: int, 方法: str, 路径: str, 体文本: str, 显示请求: bool) -> tuple:
     """发一条请求 → `(状态码, 应答体文本)`。**不解析、不校验**，只搬运。"""
     数据 = 体文本.encode("utf-8") if 体文本 is not None else None
     请求 = urllib.request.Request(拼请求地址(端口, 路径), data=数据, method=方法)

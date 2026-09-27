@@ -14,9 +14,9 @@
 // 没有一处写着「这个编号合不合法」——发出去，后端说了算。
 
 import { 取根 } from "./取接口.js";
-import { 建, 清空, 写状态 } from "./呈现.js";
+import { 建元素, 清空, 写状态 } from "./呈现.js";
 import { 号段, 找段, 找扩展, 拉扩展表 } from "./号段表.js";
-import { 画 } from "./图标.js";
+import { 画图标 } from "./图标.js";
 
 /** 从 `GET /接口` 的应答里取能力清单。键名 `能力` 是冻结的返回体形状（`接口面形状.md` §二）。 */
 function 取能力表(体) {
@@ -61,14 +61,14 @@ export function 装支持库树(取元素, 钩子) {
 
   /** 一行：缩进 + 折标 + 小图 + 文字 +（可选）条数。 */
   function 建行(深度, 名, 图名, 折标, 尾巴, 类名) {
-    const 行 = 建("div", "树行" + (类名 ? " " + 类名 : ""));
+    const 行 = 建元素("div", "树行" + (类名 ? " " + 类名 : ""));
     行.style.paddingLeft = 2 + 深度 * 12 + "px";
-    行.append(建("span", "折标", 折标 || ""));
-    const 图槽 = 建("span", "图槽");
-    图槽.append(画(图名));
+    行.append(建元素("span", "折标", 折标 || ""));
+    const 图槽 = 建元素("span", "图槽");
+    图槽.append(画图标(图名));
     行.append(图槽);
-    行.append(建("span", null, 名));
-    if (尾巴) 行.append(建("span", "多", " " + 尾巴));
+    行.append(建元素("span", null, 名));
+    if (尾巴) 行.append(建元素("span", "多", " " + 尾巴));
     return 行;
   }
 
@@ -118,11 +118,11 @@ export function 装支持库树(取元素, 钩子) {
     await 钩子.取契约(String(编号));
   }
 
-  function 摆(能力表) {
+  function 摆能力树(能力表) {
     const 枝 = 折树(能力表);
     清空(容器);
     let 总 = 0;
-    const 根盒 = 建("div", "树子");
+    const 根盒 = 建元素("div", "树子");
     for (const 段 of 号段) {
       const 槽 = 枝.get(段.名);
       const 条数 = 槽.直挂.length + [...槽.扩.values()].reduce((和, 项) => 和 + 项.能.length, 0);
@@ -132,12 +132,12 @@ export function 装支持库树(取元素, 钩子) {
       段行.title = 段.注;
       根盒.append(段行);
       if (!条数) continue;
-      const 段盒 = 建("div", "树子");
+      const 段盒 = 建元素("div", "树子");
       for (const 项 of 槽.扩.values()) {
         const 扩行 = 建行(1, 项.扩.名 + "（" + 项.扩.起 + "–" + 项.扩.止 + "）", "模块",
           "▾", 项.能.length + " 条");
         扩行.title = 种类说明(项.扩.种类);
-        const 扩盒 = 建("div", "树子");
+        const 扩盒 = 建元素("div", "树子");
         for (const 能 of 项.能) 扩盒.append(建叶(2, 能));
         接折(扩行, 扩盒);
         段盒.append(扩行);
@@ -157,7 +157,7 @@ export function 装支持库树(取元素, 钩子) {
   }
 
   /** 拉一次清单，摆树。返回应答（好让别的格子复用同一次读数）。 */
-  async function 拉() {
+  async function 拉清单() {
     写状态(状态, "取清单中…");
     try {
       const 应答 = await 取根();
@@ -177,7 +177,7 @@ export function 装支持库树(取元素, 钩子) {
           + "）", false);
         return null;
       }
-      摆(能力表);
+      摆能力树(能力表);
       return 应答;
     } catch (错) {
       清空(容器);
@@ -186,5 +186,5 @@ export function 装支持库树(取元素, 钩子) {
     }
   }
 
-  return { 拉 };
+  return { 拉清单 };
 }
