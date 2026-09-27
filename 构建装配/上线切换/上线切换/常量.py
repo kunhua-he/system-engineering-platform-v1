@@ -1,12 +1,19 @@
 """常量 —— 落点与环境变量（都在这一处，别处只引不抄）。"""
 
-import os
-import tempfile
+import sys
 from pathlib import Path
 
 仓根 = Path(__file__).resolve().parents[3]
 制品落点 = 仓根 / "构建装配" / "制品产物"
-运行根 = Path(os.environ.get("ZCODE_SWITCH_RUN_ROOT") or Path(tempfile.gettempdir()) / "系统工程平台V1-上线切换")
+
+# 运行根 = **运行数据根**（第 13 个唯一物）的「临时件」类 —— 唯一解析器是
+# `运行内核/运行数据根/`，Python 侧只经 `开发工具/运行数据根.py` 这一个入口调它，
+# **不许自己拼路径**（自己拼 = 第二个来源 ⇒ 位置漂了没人拦）。覆盖只走唯一解析器的
+# `V1_RUN_DATA_ROOT`，本节点不另设私有覆盖变量（老仓 1.2：不新增分发腿 / 不留旧腿）。
+sys.path.insert(0, str(仓根 / "开发工具"))
+from 运行数据根 import 解析当前, 子目录路径  # noqa: E402
+
+运行根 = 子目录路径(解析当前(), "临时件") / "上线切换"
 
 # ── 两个等待上界：它们同时受「所有运行五秒硬顶」约束（`决策记录/2026-09-27_所有运行五秒硬顶.md` §一）──
 #
