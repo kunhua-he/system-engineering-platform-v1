@@ -105,7 +105,7 @@ impl 支持库引用 {
         self.五段()?.first().map(Vec::as_slice)
     }
     /// 5 段时取 `GUID`。
-    pub fn GUID(&self) -> Option<&[u8]> {
+    pub fn 取GUID(&self) -> Option<&[u8]> {
         self.五段()?.get(1).map(Vec::as_slice)
     }
     /// 5 段时取 `版本首`。

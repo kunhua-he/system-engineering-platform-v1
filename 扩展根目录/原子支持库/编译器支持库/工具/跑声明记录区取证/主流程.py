@@ -4,10 +4,10 @@ import os
 
 from .常量 import 仓库根, 取证器, 语料根
 from .检查 import 全语料, 自测
-from .跑取证 import 跑
+from .跑取证 import 跑取证
 
 
-def main(参数):
+def 入口函数(参数):
     分片 = None
     if "--分片" in 参数:
         下标 = 参数.index("--分片")
@@ -17,7 +17,7 @@ def main(参数):
             return 2
     if 分片:
         # 只算一片：全量的计算就靠跑齐这些片（本脚本不自行循环 —— 一条命令 5 秒内）
-        码, 出 = 跑(["--分片", 分片, "--目录", 语料根])
+        码, 出 = 跑取证(["--分片", 分片, "--目录", 语料根])
         for 行 in 出.rstrip().splitlines():
             print("    | " + 行)
         print("结论：第 %s 片跑完，退出码 %d（全量读数由 --全部 归并）" % (分片, 码))

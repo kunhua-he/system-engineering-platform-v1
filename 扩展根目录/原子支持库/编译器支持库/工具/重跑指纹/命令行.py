@@ -5,6 +5,6 @@ import sys
 from .刷新 import 刷新, 检查
 
 
-def main():
+def 入口函数():
     检查档 = "--检查" in sys.argv[1:]
     return 检查() if 检查档 else 刷新()

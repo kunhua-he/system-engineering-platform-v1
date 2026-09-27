@@ -6,12 +6,12 @@ import os
 import re
 
 from .容器段表 import 常量名, 所属段, 段表
-from .常量 import 真文本目录, 最少声明行数, OUTJSON, 源码根, 版本锚, 版本行首, 弱证据白名单
+from .常量 import 真文本目录, 最少声明行数, 挖出JSON路径, 源码根, 版本锚, 版本行首, 弱证据白名单
 from .行判定 import 检查取值, 声明行数, 扩张边界
 
 
 # ── 主流程 ────────────────────────────────────────────────────────────────
-def main():
+def 入口函数():
     hard, weak_ev, weak_json = [], [], []
     for dp, dn, fn in os.walk(源码根):
         for 文件名 in fn:
@@ -149,7 +149,7 @@ def main():
                "hard_plain": [{键: 值 for 键, 值 in 记录.items() if 键 != "text"} for 记录 in plain],
                "weak": [{键: 值 for 键, 值 in 记录.items() if 键 != "text"} for 记录 in weak_ev],
                "weak_rejected": weak_json},
-              open(OUTJSON, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+              open(挖出JSON路径, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
 
     uniq = {}
     for 记录 in hard + plain + weak_ev:

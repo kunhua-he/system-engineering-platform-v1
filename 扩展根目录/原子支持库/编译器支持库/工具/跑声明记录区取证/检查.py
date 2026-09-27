@@ -4,7 +4,7 @@ import os
 import re
 
 from .常量 import 取证器, 样本, 语料根
-from .跑取证 import 跑, 断言
+from .跑取证 import 跑取证, 断言
 
 
 def 自测(失败集):
@@ -16,7 +16,7 @@ def 自测(失败集):
         print("  ✗ 自测样本不在：%s" % 样本)
         失败集.append("样本缺失")
         return
-    码, 出 = 跑(["--自测", "--样本", 样本])
+    码, 出 = 跑取证(["--自测", "--样本", 样本])
     for 行 in 出.rstrip().splitlines():
         print("    | " + 行)
     断言(码 == 0, "自测退出码 = 0（实得 %d）" % 码, 失败集)
@@ -28,7 +28,7 @@ def 全语料(失败集):
     if not os.path.isdir(语料根):
         print("  · 未判：仓外语料 %s 不在 ⇒ --全部 没跑（**不是通过**）" % 语料根)
         return
-    码, 出 = 跑(["--全部", "--目录", 语料根])
+    码, 出 = 跑取证(["--全部", "--目录", 语料根])
     for 行 in 出.rstrip().splitlines():
         print("    | " + 行)
     if "逐件缓存不齐" in 出:

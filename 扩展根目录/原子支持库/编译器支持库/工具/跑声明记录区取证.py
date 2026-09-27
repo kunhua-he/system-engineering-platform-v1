@@ -20,7 +20,7 @@ import sys
 import time
 from pathlib import Path
 
-起 = time.monotonic()  # 壳起表点：必须在 import 业务包**之前**（见 构建装配/门禁/壳.py）
+起始时刻 = time.monotonic()  # 壳起表点：必须在 import 业务包**之前**（见 构建装配/门禁/壳.py）
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[4]))  # 仓根：取共享门禁
 from 构建装配.门禁 import 自门禁  # noqa: E402
@@ -28,8 +28,8 @@ from 构建装配.门禁 import 自门禁  # noqa: E402
 sys.path.insert(0, str(Path(__file__).resolve().parent))  # 同名字包所在的 <工具>/
 
 from 跑声明记录区取证 import *  # noqa: E402,F401,F403 —— 再导出公开面（包 `__init__.py::__all__`）
-from 跑声明记录区取证 import main  # noqa: E402
+from 跑声明记录区取证 import 入口函数  # noqa: E402
 
 if __name__ == "__main__":
-    sys.exit(自门禁(起, main(sys.argv[1:]), 尾巴余量毫秒=200,
+    sys.exit(自门禁(起始时刻, 入口函数(sys.argv[1:]), 尾巴余量毫秒=200,
                    修法="本件转调取证器；`--分片 i/n` 把 n 调大，把重活移出命令路（裁决 §三.2/§三.3）"))

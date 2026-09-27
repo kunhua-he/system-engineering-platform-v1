@@ -32,7 +32,7 @@ pub(crate) struct 草稿表 {
 }
 
 impl 草稿表 {
-    pub(crate) fn 叶(&mut self, 种类: 节点种类, 起: u32, 止: u32) -> u32 {
+    pub(crate) fn 追加叶节点(&mut self, 种类: 节点种类, 起: u32, 止: u32) -> u32 {
         self.表.push(草稿 { 种类, 区间: (起, 止), 子: Vec::new() });
         (self.表.len() - 1) as u32
     }
@@ -46,15 +46,15 @@ impl 草稿表 {
         self.表[下标 as usize].种类
     }
 
-    pub(crate) fn 起(&self, 下标: u32) -> u32 {
+    pub(crate) fn 取原文起点(&self, 下标: u32) -> u32 {
         self.表[下标 as usize].区间.0
     }
 
-    pub(crate) fn 止(&self, 下标: u32) -> u32 {
+    pub(crate) fn 取原文终点(&self, 下标: u32) -> u32 {
         self.表[下标 as usize].区间.1
     }
 
-    pub(crate) fn 子(&self, 下标: u32) -> &[u32] {
+    pub(crate) fn 取子节点(&self, 下标: u32) -> &[u32] {
         &self.表[下标 as usize].子
     }
 
@@ -70,7 +70,7 @@ impl 草稿表 {
         while let Some(节点位) = 栈.pop() {
             let 位置 = 出.len() as u32;
             let 草 = &self.表[节点位 as usize];
-            出.push(节点::叶(草.种类, 草.区间));
+            出.push(节点::叶节点(草.种类, 草.区间));
             出[位置 as usize].子区间 = 语法树::先序子区间(位置, 大小[节点位 as usize] - 1);
             // 逆序入栈 ⇒ 出栈即先序。
             栈.extend(草.子.iter().rev().copied());

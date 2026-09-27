@@ -31,7 +31,7 @@ pub struct 注册表 {
 }
 
 impl 注册表 {
-    pub fn 空() -> Self {
+    pub fn 空实例() -> Self {
         Self { 项: Vec::new() }
     }
 
@@ -44,12 +44,12 @@ impl 注册表 {
         self.项.len()
     }
 
-    pub fn 项(&self) -> &[(Vec<u8>, u16)] {
+    pub fn 取项表(&self) -> &[(Vec<u8>, u16)] {
         &self.项
     }
 
     /// 按名字（**原始字节**）找号。同名取**先出现的那一项**。
-    pub fn 找(&self, 名: &[u8]) -> Option<u16> {
+    pub fn 按名取号(&self, 名: &[u8]) -> Option<u16> {
         self.项
             .iter()
             .find(|(表名, _)| 表名.as_slice() == 名)
@@ -73,10 +73,10 @@ impl 注册表 {
     /// **空字节集 = 空表**（见文件头）；非空字节集必须**正好**解完，不许「尽力而为」。
     pub fn 解码(字节: &[u8]) -> Option<Self> {
         if 字节.is_empty() {
-            return Some(Self::空());
+            return Some(Self::空实例());
         }
         let mut 读 = 读器 { 字节, 位: 0 };
-        let 项数 = 读.u32()? as usize;
+        let 项数 = 读.读四字节()? as usize;
         // 每项至少 4 字节名长 + 2 字节号 = 6 字节 ⇒ 项数不可能超过 字节.len()/6。
         // 先卡这一条，免得下面 `Vec::with_capacity` 被一个伪造的大项数撑爆内存。
         if 项数 > 字节.len() / 6 {
@@ -84,9 +84,9 @@ impl 注册表 {
         }
         let mut 项 = Vec::with_capacity(项数);
         for _ in 0..项数 {
-            let 名长 = 读.u32()? as usize;
+            let 名长 = 读.读四字节()? as usize;
             let 名 = 读.取字节(名长)?.to_vec();
-            let 号 = 读.u16()?;
+            let 号 = 读.读双字节()?;
             项.push((名, 号));
         }
         // 尾部有多余字节 ⇒ 非法（不许静默忽略）。
@@ -114,11 +114,11 @@ impl<'a> 读器<'a> {
         Some(片)
     }
 
-    fn u16(&mut self) -> Option<u16> {
+    fn 读双字节(&mut self) -> Option<u16> {
         Some(u16::from_le_bytes(self.取字节(2)?.try_into().ok()?))
     }
 
-    fn u32(&mut self) -> Option<u32> {
+    fn 读四字节(&mut self) -> Option<u32> {
         Some(u32::from_le_bytes(self.取字节(4)?.try_into().ok()?))
     }
 }

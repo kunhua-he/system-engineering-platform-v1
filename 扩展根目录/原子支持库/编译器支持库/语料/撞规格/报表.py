@@ -4,7 +4,7 @@ import json
 import os
 from collections import Counter
 
-from .规格词表 import 已知带点词, SPEC_DELIM, SPEC_KEYWORD_DOTTED, SPEC_OP
+from .规格词表 import 已知带点词, 规格界符, 规格带点关键字, 规格运算符
 
 语料目录 = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 真文本目录 = os.path.join(语料目录, "真文本")
@@ -20,14 +20,14 @@ def 打印(读数, rows, tier_bytes):
     print("\n【关键字 · 以 . 开头】共 %d 种 / %d 次"
           % (len(读数["关键字_带点"]), sum(读数["关键字_带点"].values())))
     for 关键字, 计数 in 读数["关键字_带点"].most_common():
-        mark = "" if 关键字 in SPEC_KEYWORD_DOTTED else ("  ← 规格未点名" if 关键字 in 已知带点词 else "  ← 规格未点名（且不在已知词表）")
+        mark = "" if 关键字 in 规格带点关键字 else ("  ← 规格未点名" if 关键字 in 已知带点词 else "  ← 规格未点名（且不在已知词表）")
         print(f"    .{关键字:<20} {计数:>7}{mark}")
 
     print("\n【关键字 · 不带点】%s" % dict(读数["关键字_不带点"]))
 
     print("\n【样本里出现、但规格 §二 没点名的关键字 · 各附一条上下文】")
     for 关键字, 计数 in 读数["关键字_带点"].most_common():
-        if 关键字 in SPEC_KEYWORD_DOTTED:
+        if 关键字 in 规格带点关键字:
             continue
         name, line = 读数["关键字上下文"].get("." + 关键字, ("", ""))
         print(f"    .{关键字:<12} {计数:>5} 次   {name[:34]:<36} | {line[:96]}")
@@ -40,12 +40,12 @@ def 打印(读数, rows, tier_bytes):
 
     print("\n【运算符】共 %d 种" % len(读数["运算符"]))
     for ch, 计数 in 读数["运算符"].most_common():
-        mark = "" if ch in SPEC_OP else "  ← 规格只列 ＝ ＋ ÷，这个没列"
+        mark = "" if ch in 规格运算符 else "  ← 规格只列 ＝ ＋ ÷，这个没列"
         print(f"    {ch}  U+{ord(ch):04X}  {计数:>7}{mark}")
 
     print("\n【界符】共 %d 种" % len(读数["界符"]))
     for ch, 计数 in 读数["界符"].most_common():
-        mark = "" if ch in SPEC_DELIM else "  ← 规格只列 ( ) [ ] , . & { }，这个没列"
+        mark = "" if ch in 规格界符 else "  ← 规格只列 ( ) [ ] , . & { }，这个没列"
         print(f"    {ch!r:<6} {计数:>7}{mark}")
 
     print("\n【注释】%d 条 · 内含第二个单引号 %d 条" % (读数["注释"], 读数["注释里有单引号"]))

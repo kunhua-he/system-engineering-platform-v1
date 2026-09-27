@@ -78,7 +78,7 @@ fn 语料_53份_兜底归类字节读数() {
         总字节 += 原文.len();
         let 流 = 切记号(&原文).expect("切分");
         for 记号 in &流.记号表 {
-            *记号种数.entry(记号.种类.号()).or_default() += 1;
+            *记号种数.entry(记号.种类.取号值()).or_default() += 1;
         }
         for (位, 字符) in 原文.char_indices() {
             总字符 += 1;
