@@ -11,7 +11,7 @@ from ..常量 import 契约目录名, 检查名
 
 
 def 检查9_冻结登记(上层读数: dict) -> list:
-    出 = []
+    输出缓冲 = []
     仓根 = 上层读数["仓根"]
     位置 = f"{契约目录名}/冻结登记.json"
     冻结 = 上层读数["冻结"]
@@ -28,7 +28,7 @@ def 检查9_冻结登记(上层读数: dict) -> list:
 
     冻结项 = 冻结.get("冻结项")
     if not isinstance(冻结项, list) or not 冻结项:
-        出.append(
+        输出缓冲.append(
             违规(
                 检查名[8],
                 f"{位置}:冻结项",
@@ -42,7 +42,7 @@ def 检查9_冻结登记(上层读数: dict) -> list:
         for 序, 项 in enumerate(冻结项):
             项位置 = f"{位置}:冻结项[{序}]"
             if not isinstance(项, dict):
-                出.append(
+                输出缓冲.append(
                     违规(
                         检查名[8],
                         项位置,
@@ -52,13 +52,13 @@ def 检查9_冻结登记(上层读数: dict) -> list:
                     )
                 )
                 continue
-            缺 = [键 for 键 in ("名称", "内容", "落点") if 键 not in 项]
-            if 缺:
-                出.append(
+            缺失项 = [键名 for 键名 in ("名称", "内容", "落点") if 键名 not in 项]
+            if 缺失项:
+                输出缓冲.append(
                     违规(
                         检查名[8],
-                        f"{项位置}:{(' · '.join(缺))}",
-                        f"缺 {(' · '.join(缺))}",
+                        f"{项位置}:{(' · '.join(缺失项))}",
+                        f"缺 {(' · '.join(缺失项))}",
                         f"冻结项靠 落点 指到实际形状所在（README 第八节）；"
                         f"缺落点就没有对照物，缺内容就不知道冻的是什么，"
                         f"事后补内容要凭当时意图 ⇒ 只能由声明方补",
@@ -95,11 +95,11 @@ def 检查9_冻结登记(上层读数: dict) -> list:
                     f"会让同一份登记在不同检出位置指到不同的东西 ⇒ 只能由声明方补",
                 )
             if 形状错:
-                出.append(违规(检查名[8], f"{项位置}:落点", 形状错[0], 形状错[1]))
+                输出缓冲.append(违规(检查名[8], f"{项位置}:落点", 形状错[0], 形状错[1]))
                 continue
             若路径, _, 符号 = 落点.partition("::")
             if "::" in 落点 and 符号.strip() == "":
-                出.append(
+                输出缓冲.append(
                     违规(
                         检查名[8],
                         f"{项位置}:落点",
@@ -111,7 +111,7 @@ def 检查9_冻结登记(上层读数: dict) -> list:
                 continue
             实体 = 仓根 / 若路径
             if not 实体.exists():
-                出.append(
+                输出缓冲.append(
                     违规(
                         检查名[8],
                         f"{项位置}:落点",
@@ -124,7 +124,7 @@ def 检查9_冻结登记(上层读数: dict) -> list:
             if 符号 and 实体.is_file():
                 文本 = 上层读数["文件"].get(若路径, {}).get("文本") or ""
                 if 符号 not in 文本:
-                    出.append(
+                    输出缓冲.append(
                         违规(
                             检查名[8],
                             f"{项位置}:落点",
@@ -141,7 +141,7 @@ def 检查9_冻结登记(上层读数: dict) -> list:
                 登记指纹 = 项.get("形状指纹")
                 实得, 形状 = 算落点指纹(文本, 符号)
                 if not isinstance(登记指纹, str) or not 登记指纹:
-                    出.append(
+                    输出缓冲.append(
                         违规(
                             检查名[8],
                             f"{项位置}:形状指纹",
@@ -152,7 +152,7 @@ def 检查9_冻结登记(上层读数: dict) -> list:
                         )
                     )
                 elif 实得 is None:
-                    出.append(
+                    输出缓冲.append(
                         违规(
                             检查名[8],
                             f"{项位置}:形状指纹",
@@ -163,7 +163,7 @@ def 检查9_冻结登记(上层读数: dict) -> list:
                         )
                     )
                 elif 实得 != 登记指纹:
-                    出.append(
+                    输出缓冲.append(
                         违规(
                             检查名[8],
                             f"{项位置}:形状指纹",
@@ -181,7 +181,7 @@ def 检查9_冻结登记(上层读数: dict) -> list:
     ):
         条目表 = 冻结.get(键名)
         if not isinstance(条目表, list):
-            出.append(
+            输出缓冲.append(
                 违规(
                     检查名[8],
                     f"{位置}:{键名}",
@@ -194,7 +194,7 @@ def 检查9_冻结登记(上层读数: dict) -> list:
         for 序, 条 in enumerate(条目表):
             条位置 = f"{位置}:{键名}[{序}]"
             if not isinstance(条, dict):
-                出.append(
+                输出缓冲.append(
                     违规(
                         检查名[8],
                         条位置,
@@ -203,13 +203,13 @@ def 检查9_冻结登记(上层读数: dict) -> list:
                     )
                 )
                 continue
-            缺 = [键 for 键 in 必填 if 键 not in 条]
-            if 缺:
-                出.append(
+            缺失项 = [键名 for 键名 in 必填 if 键名 not in 条]
+            if 缺失项:
+                输出缓冲.append(
                     违规(
                         检查名[8],
-                        f"{条位置}:{(' · '.join(缺))}",
-                        f"缺 {(' · '.join(缺))}（{谁} 要求：{(' · '.join(必填))}）",
+                        f"{条位置}:{(' · '.join(缺失项))}",
+                        f"缺 {(' · '.join(缺失项))}（{谁} 要求：{(' · '.join(必填))}）",
                         f"旁路登记是「形状变化被允许」的唯一凭据（README 第八节："
                         f"没有登记的形状变化视为违规）；缺口与理由只能来自当时的裁决 ⇒ 只能由声明方补",
                     )
@@ -218,7 +218,7 @@ def 检查9_冻结登记(上层读数: dict) -> list:
             if 键名 == "旁路":
                 日期 = str(条.get("日期", ""))
                 if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", 日期):
-                    出.append(
+                    输出缓冲.append(
                         违规(
                             检查名[8],
                             f"{条位置}:日期",
@@ -237,7 +237,7 @@ def 检查9_冻结登记(上层读数: dict) -> list:
     # 三问：是 0–255 的整数 · 不撞已占用 · 容器形状真能表示。
     段登记 = 冻结.get("段类型号登记")
     if 段登记 is None:
-        出.append(
+        输出缓冲.append(
             违规(
                 检查名[8],
                 f"{位置}:段类型号登记",
@@ -248,7 +248,7 @@ def 检查9_冻结登记(上层读数: dict) -> list:
             )
         )
     elif not isinstance(段登记, dict):
-        出.append(
+        输出缓冲.append(
             违规(
                 检查名[8],
                 f"{位置}:段类型号登记",
@@ -270,11 +270,11 @@ def 检查9_冻结登记(上层读数: dict) -> list:
         形状文本 = (上层读数["文件"].get(形状路径, {}) or {}).get("文本") or ""
         可表示 = set()
         if 形状文本:
-            块 = re.search(r"pub enum 段类型\s*\{(.*?)\n\}", 形状文本, re.S)
-            if 块:
-                可表示 = {int(数字) for 数字 in re.findall(r"=\s*(\d+)\s*,", 块.group(1))}
+            数据块 = re.search(r"pub enum 段类型\s*\{(.*?)\n\}", 形状文本, re.S)
+            if 数据块:
+                可表示 = {int(数字) for 数字 in re.findall(r"=\s*(\d+)\s*,", 数据块.group(1))}
         if not isinstance(新增, dict) or not 新增:
-            出.append(
+            输出缓冲.append(
                 违规(
                     检查名[8],
                     f"{位置}:段类型号登记:新增",
@@ -286,7 +286,7 @@ def 检查9_冻结登记(上层读数: dict) -> list:
             for 段名, 号 in 新增.items():
                 条位置 = f"{位置}:段类型号登记:新增:{段名}"
                 if not isinstance(号, int) or isinstance(号, bool):
-                    出.append(
+                    输出缓冲.append(
                         违规(
                             检查名[8],
                             条位置,
@@ -296,7 +296,7 @@ def 检查9_冻结登记(上层读数: dict) -> list:
                     )
                     continue
                 if not (0 <= 号 <= 255):
-                    出.append(
+                    输出缓冲.append(
                         违规(
                             检查名[8],
                             条位置,
@@ -309,7 +309,7 @@ def 检查9_冻结登记(上层读数: dict) -> list:
                     )
                     continue
                 if 号 in 占号:
-                    出.append(
+                    输出缓冲.append(
                         违规(
                             检查名[8],
                             条位置,
@@ -320,7 +320,7 @@ def 检查9_冻结登记(上层读数: dict) -> list:
                     )
                     continue
                 if 形状文本 and 号 not in 可表示:
-                    出.append(
+                    输出缓冲.append(
                         违规(
                             检查名[8],
                             条位置,
@@ -331,4 +331,4 @@ def 检查9_冻结登记(上层读数: dict) -> list:
                             f"两处必须一处为准：要么形状里补上这个号，要么登记改掉 ⇒ 只能由声明方补",
                         )
                     )
-    return 出
+    return 输出缓冲

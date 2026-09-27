@@ -62,25 +62,25 @@ def 前端命中(文本: str) -> list:
     """
     区段 = [(命.start(), 命.end(), 命.group(0)) for 命 in 常量.前端逻辑模式.finditer(文本)]
     区段 += [(位, 位 + len(文), 文) for 位, 文 in 扫正则字面量(文本)]
-    出 = []
+    输出缓冲 = []
     止于 = -1
     for 起, 止, 文 in sorted(区段):
         if 起 < 止于:
             continue  # 与上一处重叠 ⇒ 同一处被两支都认出来了，只报一次
-        出.append(文)
+        输出缓冲.append(文)
         止于 = 止
-    return 出
+    return 输出缓冲
 
 
 def 命中处前端(件表: dict) -> list:
     """前端件表 ⇒ `["路径:行号"]`（⑪-6 的命中位置；口径与 `前端命中` 同一处）。"""
-    处 = []
+    命中处表 = []
     for 键, 文本 in 件表.items():
-        for 文 in 前端命中(文本):
-            位 = 文本.find(文)
-            行号 = (文本[:位].count(chr(10)) + 1) if 位 >= 0 else 0
-            处.append(f"{键}:{行号}")
-    return 处
+        for 命中文字 in 前端命中(文本):
+            位置 = 文本.find(命中文字)
+            行号 = (文本[:位置].count(chr(10)) + 1) if 位置 >= 0 else 0
+            命中处表.append(f"{键}:{行号}")
+    return 命中处表
 
 
 def 检查11_拓扑唯一性(上层读数: dict) -> list:
@@ -88,7 +88,7 @@ def 检查11_拓扑唯一性(上层读数: dict) -> list:
 
     六条子判据。判不了的**如实报「判不了 + 缺什么」**，不许写成判过了。
     """
-    出 = []
+    输出缓冲 = []
     仓根 = 上层读数["仓根"]
     文件 = 上层读数["文件"]
     # 代码后缀 用模块级那一份（一个地方定义）——原来这里是第二份，实测差点漂移。
@@ -109,11 +109,11 @@ def 检查11_拓扑唯一性(上层读数: dict) -> list:
     代码件 = 并行生产区(扫描件源_rs, 上层读数["测试文件集"])
 
     def 命中处(模式, 件表=None):
-        处 = []
+        命中处表 = []
         for 键, 文本 in (代码件 if 件表 is None else 件表).items():
-            for 命 in 模式.finditer(文本):
-                处.append(f"{键}:{文本[: 命.start()].count(chr(10)) + 1}")
-        return 处
+            for 匹配结果 in 模式.finditer(文本):
+                命中处表.append(f"{键}:{文本[: 匹配结果.start()].count(chr(10)) + 1}")
+        return 命中处表
 
     def 命中位置(标目: str, 处表: list) -> str:
         """位置字段：有命中就列出来（「哪个文件」要落在位置里），没有就给标目。"""
@@ -129,7 +129,7 @@ def 检查11_拓扑唯一性(上层读数: dict) -> list:
             if not 监听
             else f"多出来的就是第二条腿：{监听[1:]}"
         )
-        出.append(
+        输出缓冲.append(
             违规(
                 检查名[10],
                 命中位置("对外监听", 监听),
@@ -154,7 +154,7 @@ def 检查11_拓扑唯一性(上层读数: dict) -> list:
             else f"多出来的就是第二条对外面：{多名}"
         )
         命中处表 = [处 for 名 in 多名 for 处 in 导出表.get(名, [])]
-        出.append(
+        输出缓冲.append(
             违规(
                 检查名[10],
                 "全仓代码:宿主侧对外边界"
@@ -180,7 +180,7 @@ def 检查11_拓扑唯一性(上层读数: dict) -> list:
             if not 载入处
             else f"多出来的就是第二条腿：{载入处[1:]}"
         )
-        出.append(
+        输出缓冲.append(
             违规(
                 检查名[10],
                 命中位置("载入 调用点", 载入处),
@@ -200,7 +200,7 @@ def 检查11_拓扑唯一性(上层读数: dict) -> list:
             if not 资源处
             else f"多出来的就是第二条腿：{资源处[1:]}"
         )
-        出.append(
+        输出缓冲.append(
             违规(
                 检查名[10],
                 命中位置("资源出入口", 资源处),
@@ -217,12 +217,12 @@ def 检查11_拓扑唯一性(上层读数: dict) -> list:
         源层 = 路径到层(键)
         if not 源层:
             continue
-        for 命 in re.finditer(r"(?m)^[ \t]*(?:pub[ \t]+)?use[ \t]+([A-Za-z_][\w]*)", 文本):
-            目标包 = 命.group(1)
+        for 匹配结果 in re.finditer(r"(?m)^[ \t]*(?:pub[ \t]+)?use[ \t]+([A-Za-z_][\w]*)", 文本):
+            目标包 = 匹配结果.group(1)
             目标层 = 包到层.get(目标包)
             if not 目标层:
                 continue
-            行号 = 文本[: 命.start()].count(chr(10)) + 1
+            行号 = 文本[: 匹配结果.start()].count(chr(10)) + 1
             边表.setdefault((源层, 目标层), []).append(f"{键}:{行号}")
     for (源层, 目标层), 处表 in sorted(边表.items()):
         if 源层 == 目标层:
@@ -232,7 +232,7 @@ def 检查11_拓扑唯一性(上层读数: dict) -> list:
             # 内部各能力 —— 两处说的不是同一个「同层」，按各自适用范围读，不合并。
         源序, 目标序 = 层序.get(源层), 层序.get(目标层)
         if 源序 is not None and 目标序 is not None and 目标序 > 源序:
-            出.append(
+            输出缓冲.append(
                 违规(
                     检查名[10],
                     f"层间边 {源层} → {目标层}（{' · '.join(处表)}）",
@@ -244,7 +244,7 @@ def 检查11_拓扑唯一性(上层读数: dict) -> list:
             )
             continue
         if 目标层 != 层相邻下层.get(源层) and 目标层 != 公共底层:
-            出.append(
+            输出缓冲.append(
                 违规(
                     检查名[10],
                     f"层间边 {源层} → {目标层}（{' · '.join(处表)}）",
@@ -285,18 +285,18 @@ def 检查11_拓扑唯一性(上层读数: dict) -> list:
     内联脚本件 = {}
     for 路径 in sorted((仓根 / "前端呈现").rglob("*.html")):
         try:
-            文 = 路径.read_text(encoding="utf-8")
+            文本 = 路径.read_text(encoding="utf-8")
         except OSError:
             continue
-        体 = "\n".join(
-            配.group(2)
-            for 配 in re.finditer(r"<script\b([^>]*)>(.*?)</script>", 文, re.S | re.I)
-            if "src" not in 配.group(1).lower()
+        应答体 = "\n".join(
+            匹配结果.group(2)
+            for 匹配结果 in re.finditer(r"<script\b([^>]*)>(.*?)</script>", 文本, re.S | re.I)
+            if "src" not in 匹配结果.group(1).lower()
         )
-        if 体.strip():
+        if 应答体.strip():
             # 键上标注「（内联脚本体）」：报出的行号是**脚本体里**的行号，不是 `.html` 文件的行号
             # （多个 `<script>` 体拼在一起 ⇒ 与 html 行号不同）——位置必须诚实（判据的可信性.md #185 同理）。
-            内联脚本件[f"{相对(仓根, 路径)}（内联脚本体）"] = 体
+            内联脚本件[f"{相对(仓根, 路径)}（内联脚本体）"] = 应答体
     if 内联脚本件:
         前端件 = {**前端件, **并行生产区(list(内联脚本件.items()), 上层读数["测试文件集"])}
     前端命中处表 = 命中处前端(前端件)
@@ -310,7 +310,7 @@ def 检查11_拓扑唯一性(上层读数: dict) -> list:
             "前端落地不属验证面（验证面不写前端）⇒ 只能由 前端呈现 节点补",
         )
     elif 前端命中处表:
-        出.append(
+        输出缓冲.append(
             违规(
                 检查名[10],
                 f"前端呈现/:解析·生成·校验（命中 {len(前端命中处表)} 处："
@@ -324,4 +324,4 @@ def 检查11_拓扑唯一性(上层读数: dict) -> list:
                 f"搬去哪一层是结构裁决 ⇒ 只能人来裁",
             )
         )
-    return 出
+    return 输出缓冲
