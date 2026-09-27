@@ -163,3 +163,35 @@
 /* 收起来的子盒。用 hidden 属性（不是 class），免得与 `.折`（details）那套混在一起。 */
 .树子[hidden] { display: none; }
 
+/* ── 客户区的「行分隔线」与分带 3D 刻蚀对（台账 #183）────────────────────
+ *
+ * **照参考图量出来的**（逐像素，读法与脚本见 `开发工具/取证/配色对拍.py` 那一族）：
+ * 参考图客户区是一张 **21 像素行距**的表 —— 行线落在 y=172/193/214/235…（步距 21），
+ * 窄列区那条行线实测 `rgb(136,136,136)`；我方客户区是编辑区，行距同为 21 像素
+ * （`样式.css` 的 `line-height: 21px`）。这一块把参考图那张表的**行分隔线**按同一步距
+ * 补进编辑区，并把分带的**平分隔线**补成参考图的 3D 刻蚀对（暗线 + 白高光）。
+ *
+ * 口径：这不是加内容，是补「边框/分隔线的立体结构」—— 线的**位置**照参考图（21px 步距）。
+ * 线色取参考图的**浅分隔**档 `#e3e3e3`（参考图实测有 `rgb(227,227,227)`），不取那根更深的
+ * `#888888`：我方编辑区比参考图那张表的列区宽得多，用深线会把「强边」顶过头。
+ * 读数由 `说明.md §八` 那条对拍命令出，本件不复述。
+ */
+.编辑区 {
+  /* 行分隔线：每 21px 一条 `#e3e3e3`（参考图的浅分隔色，实测 rgb(227,227,227)）。
+     浅线在白底上不出强边（亮度差 28 < 30），只出「斜面」（上亮下暗，差 28 > 12）
+     —— 与参考图那张表的行线同族。 */
+  background-color: transparent;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0, transparent 20px,
+    #e3e3e3 20px, #e3e3e3 21px
+  );
+}
+
+/* 分带与面板的 3D 刻蚀对：参考图每条分带都是「暗线 + 白高光」一对，不是单根平线。 */
+.客户区 { box-shadow: inset 0 1px 0 var(--深线), inset 0 -1px 0 var(--线), inset 0 -2px 0 var(--底); }
+.左栏 { border-bottom: 1px solid var(--线); box-shadow: 0 1px 0 var(--底); }
+.主区 { border-left: 1px solid var(--线); border-bottom: 1px solid var(--线); box-shadow: 1px 0 0 var(--底), 0 1px 0 var(--底); }
+.页签体 { border-top: 1px solid var(--深线); box-shadow: inset 0 1px 0 var(--线); }
+.区头 { border-bottom: 1px solid var(--线); box-shadow: 0 1px 0 var(--底); }
+
