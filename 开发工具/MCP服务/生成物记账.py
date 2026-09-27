@@ -17,7 +17,7 @@
 import sys
 from pathlib import Path
 
-from .开工 import 变更路径表, 跑, 超时秒      # 先导开工：它把 开发工具/ 挂上 sys.path
+from .开工 import 变更路径表, 跑命令, 超时秒      # 先导开工：它把 开发工具/ 挂上 sys.path
 from 代码地图 import 文件指纹                 # noqa: E402
 from . import 开工账本 as 账本                # noqa: E402
 
@@ -88,7 +88,7 @@ def 记账(仓根, 开工号: str, 生成器: str, 参数) -> tuple:
         跑前 = 脏件指纹(工作树)
         if 跑前 is None:
             return 1, "查不清盘上动了什么（git status 失败）⇒ 没跑生成器、没记账"
-        码, 出 = 跑([sys.executable, 相对] + 参, cwd=工作树, 超时秒数=超时秒)
+        码, 出 = 跑命令([sys.executable, 相对] + 参, cwd=工作树, 超时秒数=超时秒)
         if 码 != 0:
             return 1, ("生成器没跑通（退出码 %d）⇒ **一件都不记**（账本一个字没动）：\n%s"
                      % (码, 出.strip()[-500:]))

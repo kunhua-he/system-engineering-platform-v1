@@ -42,7 +42,7 @@ def _自家条(条) -> bool:
               for 一个 in (条.get("hooks") or []) if isinstance(一个, dict))
 
 
-def 装() -> int:
+def 装钩子() -> int:
     数据 = _读配置()
     钩子块 = 数据.get("hooks")
     if not isinstance(钩子块, dict):
@@ -71,7 +71,7 @@ def 装() -> int:
     return 0
 
 
-def 卸() -> int:
+def 卸钩子() -> int:
     数据 = _读配置()
     钩子块 = 数据.get("hooks")
     if not isinstance(钩子块, dict) or not isinstance(钩子块.get("events"), dict):
@@ -96,8 +96,8 @@ def 卸() -> int:
     return 0
 
 
-def main(argv=None) -> int:
+def 入口函数(argv=None) -> int:
     参 = list(sys.argv[1:] if argv is None else argv)
     if "--卸" in 参 or "--uninstall" in 参:
-        return 卸()
-    return 装()
+        return 卸钩子()
+    return 装钩子()

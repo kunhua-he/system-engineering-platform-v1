@@ -39,7 +39,7 @@ sys.path.insert(0, str(仓根 / "开发工具"))  # 取 代码地图 包
 from 构建装配.门禁 import 报告环境步, 自门禁  # noqa: E402
 
 from 代码地图 import (  # noqa: E402
-    建, 报缺工具, 找命令, 索引状态, 查行, 引用行, 状态行, 检名,
+    建索引, 报缺工具, 找命令, 索引状态, 查行, 引用行, 状态行, 检名,
 )
 
 用法说明 = ("用法：python3 开发工具/代码地图.py "
@@ -48,14 +48,14 @@ from 代码地图 import (  # noqa: E402
 没有索引的提示 = "代码地图：还没有索引库 ⇒ 先跑 `python3 开发工具/代码地图.py 建`"
 
 
-def main(argv=None):
+def 入口函数(argv=None):
     命令行参数 = list(sys.argv[1:] if argv is None else argv)
     子命令 = 命令行参数[0] if 命令行参数 else "状态"
 
     if 子命令 == "建":
         if not 找命令():
             return 报缺工具()
-        退出码, 墙钟毫秒, 建索引说明 = 建(仓根)
+        退出码, 墙钟毫秒, 建索引说明 = 建索引(仓根)
         print("代码地图 · 建索引：%s" % 建索引说明)
         print("  冷构建墙钟 %d ms（环境步：照实报，不判顶）" % 墙钟毫秒)
         return 退出码
@@ -95,7 +95,7 @@ def main(argv=None):
 
 if __name__ == "__main__":
     是建索引 = bool(sys.argv[1:]) and sys.argv[1] == "建"
-    退出码 = main()
+    退出码 = 入口函数()
     if 是建索引:
         sys.exit(
             报告环境步(

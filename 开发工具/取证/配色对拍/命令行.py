@@ -22,7 +22,7 @@ from .像素 import 分析
 from .打印 import 打印
 
 
-def main(参数):
+def 入口函数(参数):
     if len(参数) < 2:
         print(__doc__)
         return 1

@@ -30,7 +30,7 @@ def 新读数() -> dict:
     return {"段数": 0, "区长": [], "首4零": 0, "全零": 0, "计": {}, "未解": 0, "字节": 0, "坏": None}
 
 
-def 键(路径):
+def 取缓存键(路径):
     """缓存键：`[路径, 大小, mtime_ns]`。取不到 stat 就返回 `None`（调用方据此不复用缓存）。"""
     try:
         st = os.stat(路径)
@@ -47,7 +47,7 @@ def 单件读数(路径) -> dict:
     """
     t0 = time.monotonic()
     读数 = 新读数()
-    读数["键"] = 键(路径)
+    读数["键"] = 取缓存键(路径)
     try:
         with open(路径, "rb") as fh:
             数据 = fh.read()
@@ -90,7 +90,7 @@ def 取缓存(缓存目录, 路径):
         装 = json.loads(缓存文件(缓存目录, 路径).read_text(encoding="utf-8"))
     except (OSError, ValueError):
         return None
-    if 装.get("版本") != 缓存版本 or 装.get("键") != 键(路径):
+    if 装.get("版本") != 缓存版本 or 装.get("键") != 取缓存键(路径):
         return None
     读数 = 装.get("读数")
     return 读数 if isinstance(读数, dict) and 读数.get("键") == 装.get("键") else None

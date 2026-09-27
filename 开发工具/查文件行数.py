@@ -25,7 +25,7 @@ import sys
 import time
 from pathlib import Path
 
-起 = time.monotonic()  # 壳起表点：必须在 import 业务包**之前**（见 构建装配/门禁/壳.py）
+起始时刻 = time.monotonic()  # 壳起表点：必须在 import 业务包**之前**（见 构建装配/门禁/壳.py）
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))  # 仓根：取共享门禁
 from 构建装配.门禁 import 自门禁  # noqa: E402
@@ -33,20 +33,20 @@ from 构建装配.门禁 import 自门禁  # noqa: E402
 from 查文件行数 import 核心
 
 
-def main(argv=None):
+def 入口函数(argv=None):
     析 = argparse.ArgumentParser(description="开发规范.md 第六节硬数的机器判据")
     析.add_argument("--仓根", default=None, help="默认 = 本文件所在仓")
     析.add_argument("--自测", action="store_true", help="反向样本自测")
     参数 = 析.parse_args(argv)
     if 参数.自测:
         return 核心.自测()
-    return 核心.跑(参数.仓根 or os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    return 核心.跑一遍(参数.仓根 or os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
 if __name__ == "__main__":
     sys.exit(
         自门禁(
-            起, main(), 尾巴余量毫秒=200,
+            起始时刻, 入口函数(), 尾巴余量毫秒=200,
             修法="本命令扫全仓行数 —— 树长大它自身会超顶。修法是分片（照 "
                  "开发工具/取证/声明记录区反解.py 的 `--分片 i/n`）或按 mtime 缓存，别砍扫描面。",
         )
