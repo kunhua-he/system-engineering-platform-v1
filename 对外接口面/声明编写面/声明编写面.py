@@ -20,7 +20,7 @@ import sys
 import time
 from pathlib import Path
 
-起 = time.monotonic()  # 壳起表点：必须在 import 业务包**之前**（见 构建装配/门禁/壳.py）
+起始时刻 = time.monotonic()  # 壳起表点：必须在 import 业务包**之前**（见 构建装配/门禁/壳.py）
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))  # 仓根：取共享门禁
 from 构建装配.门禁 import 自门禁  # noqa: E402
@@ -30,7 +30,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from 声明编写面 import 建解析器, 处理分配, 处理写入, 读请求, 用法  # noqa: E402
 
 
-def 主(参数: list) -> int:
+def 入口函数(参数: list) -> int:
     解 = 建解析器()
     选项 = 解.parse_args(参数)
     if (选项.请求 is None) == (选项.分配 is None):
@@ -53,5 +53,5 @@ def 主(参数: list) -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(自门禁(起, 主(sys.argv[1:]), 尾巴余量毫秒=200,
+    sys.exit(自门禁(起始时刻, 入口函数(sys.argv[1:]), 尾巴余量毫秒=200,
                    修法="本面转调闸1 校验；若闸1 变慢，先修闸1（裁决 §三.3）"))

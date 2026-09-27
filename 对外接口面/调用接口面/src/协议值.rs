@@ -14,9 +14,9 @@
 /// 同一条请求两次的结果必须逐字段相同）。
 #[derive(Debug, Clone, PartialEq)]
 pub enum 协议值 {
-    空,
-    真,
-    假,
+    空值,
+    逻辑真,
+    逻辑假,
     整数(i64),
     /// 超出 `i64::MAX` 但仍在 64 位无符号范围内的整数。
     ///
@@ -39,13 +39,13 @@ impl 协议值 {
                 .iter()
                 .find(|(名, _)| 名 == 键)
                 .map(|(_, 值)| 值)
-                .filter(|值| !matches!(值, 协议值::空)),
+                .filter(|值| !matches!(值, 协议值::空值)),
             _ => None,
         }
     }
 
     /// 这个键在不在（含值为 `null` 的情形）。`POST /接口/声明` 的 `编号: null` 靠它。
-    pub fn 有(&self, 键: &str) -> bool {
+    pub fn 是否含键(&self, 键: &str) -> bool {
         match self {
             协议值::对象(成员) => 成员.iter().any(|(名, _)| 名 == 键),
             _ => false,
@@ -53,7 +53,7 @@ impl 协议值 {
     }
 
     pub fn 是空(&self) -> bool {
-        matches!(self, 协议值::空)
+        matches!(self, 协议值::空值)
     }
 
     pub fn 取文本(&self) -> Option<&str> {

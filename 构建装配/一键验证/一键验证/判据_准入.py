@@ -313,8 +313,8 @@ def 检查36_准入并发(上: dict) -> list:
         缺.append("线程安全.rs 无 unsafe impl Sync for 适配器")
     if "pub fn 跑并发" not in 网关 or "thread::scope" not in 网关:
         缺.append("网关.rs 无 跑并发 + thread::scope（accept 仍单线程）")
-    if "服务.跑()" not in 启动网关:
-        缺.append("启动网关未走 服务.跑()（生产入口没接并发）")
+    if "服务.跑服务()" not in 启动网关:
+        缺.append("启动网关未走 服务.跑服务()（生产入口没接并发）")
     if 缺:
         出.append(违规(名, "跨语言适配/适配器实现/src/线程安全.rs · 网关.rs · 启动网关", "；".join(缺),
                        "准入判据 ⑯：适配器 Send/Sync 断言在 + 网关跑并发(thread::scope) + 生产入口走它 ⇒ "

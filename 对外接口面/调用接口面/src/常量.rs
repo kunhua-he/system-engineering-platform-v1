@@ -72,7 +72,7 @@ pub use v1_adapter::号段类宽度;
 /// 这**不是**业务判断：网关不看「编号是不是 X」，只看「这个标签的 JSON 形状是什么」——
 /// 是协议翻译。未登记的标签一律 400（形状未定义，猜一个就是把语义改错）。
 pub mod 类型标签 {
-    pub const 空: u32 = 0;
+    pub const 无值: u32 = 0;
     pub const 整数: u32 = 1;
     pub const 双精度: u32 = 2;
     pub const 逻辑: u32 = 3;

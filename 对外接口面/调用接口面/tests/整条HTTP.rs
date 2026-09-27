@@ -118,7 +118,7 @@ mod 整条HTTP {
     }
 
     /// 发一条原始请求并收回应答（状态码 + 原始文本）。
-    fn 发(服务: &服务, 请求: &str) -> (u16, String) {
+    fn 发请求(服务: &服务, 请求: &str) -> (u16, String) {
         let mut 流 = TcpStream::connect(("127.0.0.1", 服务.端口())).expect("必须连得上（监听已 bind）");
         流.write_all(请求.as_bytes()).expect("写请求");
         流.flush().expect("刷请求");
@@ -140,7 +140,7 @@ mod 整条HTTP {
     #[test]
     fn 整条HTTP_自描述根带出合成扩展的能力() {
         let 服务 = 起服务();
-        let (状态, 体) = 发(&服务, "GET /接口 HTTP/1.1\r\nHost: 127.0.0.1\r\n\r\n");
+        let (状态, 体) = 发请求(&服务, "GET /接口 HTTP/1.1\r\nHost: 127.0.0.1\r\n\r\n");
         assert_eq!(状态, 200);
         assert!(
             体.contains(&format!("\"编号\": {合成编号}")),
@@ -161,7 +161,7 @@ mod 整条HTTP {
             "POST /接口/调用 HTTP/1.1\r\nHost: 127.0.0.1\r\nContent-Type: application/json; charset=utf-8\r\nContent-Length: {}\r\n\r\n{体}",
             体.len()
         );
-        let (状态, 应答) = 发(&服务, &请求);
+        let (状态, 应答) = 发请求(&服务, &请求);
         assert_eq!(状态, 200, "业务结果不许进 HTTP 状态码：\n{应答}");
         assert!(应答.contains("\"成功\": true"), "调用必须成功：\n{应答}");
         assert!(
@@ -175,7 +175,7 @@ mod 整条HTTP {
     fn 整条HTTP_合成能力的契约端点() {
         let 服务 = 起服务();
         let 请求 = format!("GET /接口/能力/{合成编号} HTTP/1.1\r\nHost: 127.0.0.1\r\n\r\n");
-        let (状态, 体) = 发(&服务, &请求);
+        let (状态, 体) = 发请求(&服务, &请求);
         assert_eq!(状态, 200);
         assert!(体.contains("\"成功\": true"), "能力端点应答：\n{体}");
         assert!(
@@ -193,7 +193,7 @@ mod 整条HTTP {
     fn 整条HTTP_可抛错误码按命令给出且六项齐() {
         let 服务 = 起服务();
         let 请求 = format!("GET /接口/能力/{合成编号} HTTP/1.1\r\nHost: 127.0.0.1\r\n\r\n");
-        let (状态, 体) = 发(&服务, &请求);
+        let (状态, 体) = 发请求(&服务, &请求);
         assert_eq!(状态, 200);
         for 片段 in [
             format!("\"码\": {合成可抛码}"),

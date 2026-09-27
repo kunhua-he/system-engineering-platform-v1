@@ -32,7 +32,7 @@ _类别到号空间 = {"能力": "能力", "类型": "类型", "通知号": "通
 号空间到类别 = {空间: 类别 for 类别, 空间 in _类别到号空间.items()}
 
 
-def 读json(路径):
+def 读JSON件(路径):
     """读一个 JSON；读不动 / 解析不了 ⇒ None（判不了就说判不了，不猜）。"""
     try:
         return json.loads(Path(路径).read_text(encoding="utf-8"))
@@ -58,7 +58,7 @@ def 该层号段(声明根, 类别):
     声 = 声明文件(声明根)
     if 声 is None:
         return None, "找不到 %s（该层占哪几段没有来源）" % " / ".join(声明文件名)
-    数据 = 读json(声)
+    数据 = 读JSON件(声)
     if not isinstance(数据, dict):
         return None, "%s 读不动或不是对象" % 声.name
 
@@ -107,7 +107,7 @@ def 已用号(声明根, 目录, 字段):
         杆 = 路径.name[: -len(".json")]
         if 杆.isdigit():
             出.add(int(杆))
-        数据 = 读json(路径)
+        数据 = 读JSON件(路径)
         if isinstance(数据, dict) and _是整数(数据.get(字段)):
             出.add(int(数据[字段]))
     return 出
@@ -126,7 +126,7 @@ def 作废号(声明根, 类别):
     空间 = _类别到号空间.get(类别)
     if 空间 is None:
         return set()
-    数据 = 读json(Path(声明根) / "作废号表.json")
+    数据 = 读JSON件(Path(声明根) / "作废号表.json")
     条目 = 数据.get("作废") if isinstance(数据, dict) else None
     出 = set()
     if isinstance(条目, list):
@@ -153,7 +153,7 @@ def 分配(段表, 已用, 作废):
 
 def 层标签(声明根, 类别, 编号):
     """这个号落在 `号段图.json` 的哪一层（只做标注，不做归属裁决）。"""
-    图 = 读json(Path(声明根) / "号段图.json")
+    图 = 读JSON件(Path(声明根) / "号段图.json")
     if not isinstance(图, dict):
         return ""
     键 = _类别到布局键.get(类别)
