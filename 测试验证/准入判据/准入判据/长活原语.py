@@ -116,8 +116,8 @@ def 解测果(输出: str) -> dict:
         净文本 = 源码行.strip()
         if not 净文本.startswith("test ") or " ... " not in 净文本:
             continue
-        名, _, 尾 = 净文本[5:].partition(" ... ")
-        项表[名.strip()] = 尾.strip().startswith("ok")
+        名称, _, 尾部 = 净文本[5:].partition(" ... ")
+        项表[名称.strip()] = 尾部.strip().startswith("ok")
     return 项表
 
 

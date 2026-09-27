@@ -38,7 +38,7 @@ def 读生成物面(根目录: Path) -> str:
     if not 目录.is_dir():
         return ""
     return "".join(
-        读文本(路) for 路 in sorted(目录.glob("*数据.rs"))
+        读文本(路径) for 路径 in sorted(目录.glob("*数据.rs"))
     )
 
 
@@ -51,7 +51,7 @@ def 读装配器源码(根目录: Path) -> str:
     """
     文本 = 读文本(根目录 / "构建装配/上线切换/构建制品.py")
     return 文本 + "".join(
-        读文本(路) for 路 in sorted((根目录 / "构建装配/上线切换/构建制品").rglob("*.py"))
+        读文本(路径) for 路径 in sorted((根目录 / "构建装配/上线切换/构建制品").rglob("*.py"))
     )
 
 
@@ -59,7 +59,7 @@ def 读目录全部源文件(目录: Path) -> str:
     """一个目录下全部 `.rs`（含子目录）拼起来 —— 判据读「面」，不读某一个写死的文件。"""
     if not 目录.is_dir():
         return ""
-    return "".join(读文本(路) for 路 in sorted(目录.rglob("*.rs")))
+    return "".join(读文本(路径) for 路径 in sorted(目录.rglob("*.rs")))
 
 
 def _码文(根目录: Path, 号值: str) -> str:

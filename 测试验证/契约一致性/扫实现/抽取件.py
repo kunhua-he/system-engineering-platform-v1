@@ -70,8 +70,8 @@ def 抽构造器(掩码文本: str, 返回型: str) -> dict:
         字段 = {}
         for 匹配项 in 拆顶层项(应答体):
             if ":" in 匹配项:
-                名, 值 = 匹配项.split(":", 1)
-                字段[名.strip()] = ("表达式", 值.strip())
+                名称, 待处理值 = 匹配项.split(":", 1)
+                字段[名称.strip()] = ("表达式", 待处理值.strip())
             else:
                 字段[匹配项.strip()] = ("形参", 匹配项.strip())
         结果[匹配.group(1)] = {"形参": 形参名, "字段": 字段}
@@ -92,15 +92,15 @@ def 抽本文件整数常量(掩码文本: str) -> dict:
         # const 命令表项数: usize = 能力号段[0].止 as usize + 1;
         m2 = re.fullmatch(r"([^\s\[]+)\s*\[\s*(\d+)\s*\]\s*\.\s*止\s+as\s+usize\s*\+\s*(\d+)", 值文 or "")
         if m2:
-            段名, 序, 加数 = m2.group(1), int(m2.group(2)), int(m2.group(3))
+            段名, 序号, 加数 = m2.group(1), int(m2.group(2)), int(m2.group(3))
             m3 = re.search(
                 r"const\s+" + re.escape(段名) + r"\s*:\s*\[[^\]]*\]\s*=\s*\[([^\]]*)\]",
                 掩码文本,
             )
             if m3:
                 一项 = 拆顶层项(m3.group(1))
-                if 序 < len(一项):
-                    内层 = re.search(r"\(\s*(\d+)\s*,\s*(\d+)\s*\)", 一项[序])
+                if 序号 < len(一项):
+                    内层 = re.search(r"\(\s*(\d+)\s*,\s*(\d+)\s*\)", 一项[序号])
                     if 内层:
                         项表[名称] = int(内层.group(2)) + 加数
     return 项表

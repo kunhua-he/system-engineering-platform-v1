@@ -49,8 +49,8 @@ def 找条件属性(掩码文本: str) -> list:
         属性解析 = 解析条件属性(掩码文本, 匹配.start())
         if 属性解析 is None:
             continue
-        属性文本, 止 = 属性解析
-        结果.append((匹配.start(), 止, 属性文本, bool(re.search(r"\btest\b", 属性文本))))
+        属性文本, 区间终点 = 属性解析
+        结果.append((匹配.start(), 区间终点, 属性文本, bool(re.search(r"\btest\b", 属性文本))))
     return 结果
 
 
@@ -82,17 +82,17 @@ def 找夹具项(掩码文本: str, 原文本: str) -> tuple:
     for 区间起点, 属止, _属性文本, 含test in 找条件属性(掩码文本):
         if not 含test:
             continue
-        头, 终 = _项头(掩码文本, 属止)
-        if 终 >= len(掩码文本):
+        头部, 终止位 = _项头(掩码文本, 属止)
+        if 终止位 >= len(掩码文本):
             continue
-        if 掩码文本[终] == ";":
-            数据块.append((区间起点, 终 + 1))
+        if 掩码文本[终止位] == ";":
+            数据块.append((区间起点, 终止位 + 1))
         else:
-            区间终点 = 配对(掩码文本, 终)
+            区间终点 = 配对(掩码文本, 终止位)
             if 区间终点 < 0:
                 continue
             数据块.append((区间起点, 区间终点 + 1))
-        名配 = re.search(r"\bmod\s+([^\s;{]+)", 头)
+        名配 = re.search(r"\bmod\s+([^\s;{]+)", 头部)
         if not 名配:
             continue
         名称 = 名配.group(1)
@@ -100,8 +100,8 @@ def 找夹具项(掩码文本: str, 原文本: str) -> tuple:
         # 窗口取「本项起点 → 项尾」：`#[path]` 可以在 cfg 之前，也可以在 cfg 之后。
         窗起 = _属性窗起(掩码文本, 区间起点)
         路径 = None
-        for 路命 in re.finditer(r"#\[\s*path\b", 掩码文本[窗起:终]):
-            引号位 = 原文本.find('"', 窗起 + 路命.end(), 终)
+        for 路命 in re.finditer(r"#\[\s*path\b", 掩码文本[窗起:终止位]):
+            引号位 = 原文本.find('"', 窗起 + 路命.end(), 终止位)
             if 引号位 >= 0:
                 终引 = 原文本.find('"', 引号位 + 1)
                 if 终引 > 引号位:
@@ -127,9 +127,9 @@ def 建夹具集(件表: dict, 掩表: dict = None) -> dict:
     外部 = []
     其它 = []
     for 键名, 掩码文本 in 掩表.items():
-        块, 外 = 找夹具项(掩码文本, Rs件[键名])
-        块表[键名] = 块
-        for 名称, 路径, 位置 in 外:
+        数据块, 外部夹具表 = 找夹具项(掩码文本, Rs件[键名])
+        块表[键名] = 数据块
+        for 名称, 路径, 位置 in 外部夹具表:
             外部.append((键名, 路径, 位置))
         for 区间起点, _止, _属性文本, 含test in 找条件属性(掩码文本):
             if not 含test:

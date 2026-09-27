@@ -19,12 +19,12 @@ def 解整数(文本) -> object:
         return int(文本, 16)
     匹配 = re.fullmatch(r"(\d+)\s*(<<|>>|\+|\-|\*|/|\||&)\s*(\d+)", 文本)
     if 匹配:
-        左值, 运, 右值 = int(匹配.group(1)), 匹配.group(2), int(匹配.group(3))
+        左值, 运算符, 右值 = int(匹配.group(1)), 匹配.group(2), int(匹配.group(3))
         try:
             return {
                 "<<": 左值 << 右值, ">>": 左值 >> 右值, "+": 左值 + 右值, "-": 左值 - 右值,
                 "*": 左值 * 右值, "/": 左值 // 右值, "|": 左值 | 右值, "&": 左值 & 右值,
-            }[运]
+            }[运算符]
         except (ValueError, ZeroDivisionError):
             return None
     匹配 = re.fullmatch(r"(\d+)\s+as\s+\w+", 文本)
