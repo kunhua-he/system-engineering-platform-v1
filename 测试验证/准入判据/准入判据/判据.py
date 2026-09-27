@@ -374,8 +374,8 @@ def 判_16(测试世界: 世界):
         缺.append("线程安全.rs 无 unsafe impl Sync for 适配器")
     if "pub fn 跑并发" not in 测试世界.网关 or "thread::scope" not in 测试世界.网关:
         缺.append("网关.rs 无 跑并发 + thread::scope（accept 仍单线程）")
-    if "服务.跑()" not in 测试世界.启动网关:
-        缺.append("启动网关.rs 未走 服务.跑()（生产入口没接并发）")
+    if "服务.跑服务()" not in 测试世界.启动网关:
+        缺.append("启动网关.rs 未走 服务.跑服务()（生产入口没接并发）")
     对象数 = 3
     if 缺:
         return "失败", "；".join(缺), 对象数
