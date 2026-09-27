@@ -30,7 +30,7 @@
 确定性：所有遍历按编号/键名排序，缩进与换行固定，产物里不含时间戳、绝对路径、随机数。
 
 本文件是**路由**（`开发规范.md` 第六节）：只做三件事 —— 声明子模块 · 再导出公开面 ·
-零实现。实现全在**同名字文件夹** `生成声明/` 里，一个关注点一个文件；`主(参数)` 与
+零实现。实现全在**同名字文件夹** `生成声明/` 里，一个关注点一个文件；`入口函数(参数)` 与
 三档退出码（0 一致 / 1 不新鲜 / 2 生成失败）逐字不变。
 """
 
@@ -38,7 +38,7 @@ import os
 import sys
 import time
 
-起 = time.monotonic()  # 壳起表点：必须在 import 业务包**之前**（见 构建装配/门禁/壳.py）
+起始时刻 = time.monotonic()  # 壳起表点：必须在 import 业务包**之前**（见 构建装配/门禁/壳.py）
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))  # 仓根
 from 构建装配.门禁 import 自门禁  # noqa: E402
@@ -46,8 +46,8 @@ from 构建装配.门禁 import 自门禁  # noqa: E402
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from 生成声明 import *  # noqa: E402,F401,F403 —— 再导出公开面（`生成声明/__init__.py`）
-from 生成声明 import 主  # noqa: E402 —— CLI 入口
+from 生成声明 import 入口函数  # noqa: E402 —— CLI 入口
 
 if __name__ == "__main__":
-    sys.exit(自门禁(起, 主(sys.argv[1:]), 尾巴余量毫秒=200,
+    sys.exit(自门禁(起始时刻, 入口函数(sys.argv[1:]), 尾巴余量毫秒=200,
                    修法="生成器读全部声明件；把重活移出命令路或分片（裁决 §三.3）"))

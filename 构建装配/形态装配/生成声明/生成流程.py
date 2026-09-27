@@ -7,7 +7,7 @@ from .号段归属 import 号段归属表
 from .常量表 import 常量表落点, 读常量表
 from .推导比对 import 交叉比对, 推导号段类
 from .路径形状 import 仓根, 声明根, 生成失败, 生成子件名
-from .小工具 import 列目录json, 源指纹
+from .小工具 import 列目录JSON件, 源指纹
 from .读平台声明 import 判占用落在布局内, 读平台声明, 读号段图, 选声明文件
 from .读子表 import (
     读类型声明,
@@ -26,7 +26,7 @@ def 收集指纹行(根):
     for 目录 in (根.类型声明, 根.能力声明, 根.错误码表, 根.通知号段, 根.命令类别):
         if not os.path.isdir(os.path.join(仓根, 目录)):
             continue
-        for _, 相对路径 in 列目录json(目录):
+        for _, 相对路径 in 列目录JSON件(目录):
             行.append((相对路径, 源指纹(相对路径)))
     行.append((根.作废号表, 源指纹(根.作废号表)))
     return 行

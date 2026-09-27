@@ -41,7 +41,7 @@ def 找仓根() -> Path:
     """仓根：本验证器在 构建装配/一键验证/ 下 ⇒ 由 `常量.仓根目录` 给出（上溯三级）。"""
     return 常量.仓根目录
 
-def main(参数: list) -> int:
+def 入口函数(参数: list) -> int:
     仓根 = 找仓根()
     if not (仓根 / 契约目录名).is_dir():
         print(f"定位不到仓根：{仓根} 下没有 {契约目录名}/", file=sys.stderr)

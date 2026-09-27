@@ -39,7 +39,7 @@ import sys
 import time
 from pathlib import Path
 
-起 = time.monotonic()  # 壳起表点：必须在 import 业务包**之前**（见 构建装配/门禁/壳.py）
+起始时刻 = time.monotonic()  # 壳起表点：必须在 import 业务包**之前**（见 构建装配/门禁/壳.py）
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))  # 仓根：取共享门禁
 from 构建装配.门禁 import 自门禁  # noqa: E402
@@ -52,7 +52,7 @@ from 构建装配.门禁 import 自门禁  # noqa: E402
 读数模式 = re.compile(r"^通过\s.*$", re.M)
 
 
-def main(参数: list) -> int:
+def 入口函数(参数: list) -> int:
     仓根 = Path(__file__).resolve().parents[2]
     全过 = True
     明细 = []
@@ -86,7 +86,7 @@ def main(参数: list) -> int:
 if __name__ == "__main__":
     sys.exit(
         自门禁(
-            起, main(sys.argv[1:]), 尾巴余量毫秒=200,
+            起始时刻, 入口函数(sys.argv[1:]), 尾巴余量毫秒=200,
             修法="两条闸各自提速（分片 / 缓存 / 把重活移出命令路，裁决 §三）；"
                  "本件只串行调用它们，不替它们干活，也不并发抢它们的 CPU（那会污染闸 1 的 ⑱ 读数）。",
         )

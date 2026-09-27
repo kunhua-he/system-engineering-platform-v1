@@ -141,7 +141,7 @@ def 取选项(参: list, 名: str) -> tuple:
     return 值, 位置
 
 
-def main(参: list, 用法文: str) -> int:
+def 入口函数(参: list, 用法文: str) -> int:
     就绪()
     if not 参:
         raise SystemExit(用法文)

@@ -38,4 +38,4 @@ from 一键验证 import (  # noqa: E402
 )
 
 if __name__ == "__main__":
-    sys.exit(main(sys.argv[1:]))
+    sys.exit(入口函数(sys.argv[1:]))

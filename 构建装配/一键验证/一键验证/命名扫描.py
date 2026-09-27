@@ -213,7 +213,7 @@ def _抹属性(文本: str) -> str:
     return "".join(出)
 
 
-def 剥(后缀: str, 文本: str) -> str:
+def 剥后缀(后缀: str, 文本: str) -> str:
     """按后缀剥注释与字符串，返回**等长**净文本（`__init__` 之类无后缀的不收）。"""
     if 后缀 == ".rs":
         净 = _Rust转义字符.sub(lambda 命: " " * len(命.group(0)), 文本)

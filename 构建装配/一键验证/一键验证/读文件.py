@@ -189,7 +189,7 @@ def _合成索引节点(件表: dict) -> list:
     「声明过的名字」，而这里的剥器抽的也正是这些 —— 两边在夹具上读数一致。
     行号从**剥后的净文本**上数（长度不变 ⇒ 行号与原文对齐）。
     """
-    from .命名扫描 import _标识符, _是自身成员访问, 剥
+    from .命名扫描 import _标识符, _是自身成员访问, 剥后缀
 
     行表 = []
     for 键 in sorted(件表):
@@ -197,7 +197,7 @@ def _合成索引节点(件表: dict) -> list:
         if not 文本:
             continue
         后缀 = "." + 键.rsplit(".", 1)[-1]
-        净 = 剥(后缀, 文本)
+        净 = 剥后缀(后缀, 文本)
         for 序, 命 in enumerate(
             命 for 命 in _标识符.finditer(净)
             if not (命.start() > 0 and 净[命.start() - 1] == "."
