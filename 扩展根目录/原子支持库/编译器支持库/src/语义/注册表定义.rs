@@ -53,17 +53,17 @@ impl 注册表 {
         self.项
             .iter()
             .find(|(表名, _)| 表名.as_slice() == 名称)
-            .map(|(_, 号)| *号)
+            .map(|(_, 号值)| *号值)
     }
 
     /// 逐项编成字节集（本件是唯一的编码处）。
     pub fn 编码(&self) -> Vec<u8> {
         let mut 输出缓冲 = Vec::new();
         输出缓冲.extend_from_slice(&(self.项.len() as u32).to_le_bytes());
-        for (名, 号) in &self.项 {
-            输出缓冲.extend_from_slice(&(名.len() as u32).to_le_bytes());
-            输出缓冲.extend_from_slice(名);
-            输出缓冲.extend_from_slice(&号.to_le_bytes());
+        for (名称, 号值) in &self.项 {
+            输出缓冲.extend_from_slice(&(名称.len() as u32).to_le_bytes());
+            输出缓冲.extend_from_slice(名称);
+            输出缓冲.extend_from_slice(&号值.to_le_bytes());
         }
         输出缓冲
     }

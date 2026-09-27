@@ -70,14 +70,14 @@ pub fn 编码语法树(语法树: &语法树) -> Vec<u8> {
 /// `诊断/入口.rs` 文件头原样保留。**空字节集不是本函数的产物**：它留给执行函数
 /// 表示「没跑」（入参槽不合契约），与「全过」的 1 字节标签 0 可区分 —— 测试钉住。
 pub fn 编码诊断结果(结果: Option<&形状错误>) -> Vec<u8> {
-    let Some(错) = 结果 else {
+    let Some(错误) = 结果 else {
         // None = 覆盖到的阶段全过：1 字节标签 0（**非**空字节集，见上）。
         return vec![0];
     };
     let mut 输出缓冲 = vec![1];
-    输出缓冲.extend_from_slice(&crate::诊断::阶段号(错).to_le_bytes());
-    输出缓冲.extend_from_slice(&crate::形状错误码(错).to_le_bytes());
-    match crate::诊断::字节位置(错) {
+    输出缓冲.extend_from_slice(&crate::诊断::阶段号(错误).to_le_bytes());
+    输出缓冲.extend_from_slice(&crate::形状错误码(错误).to_le_bytes());
+    match crate::诊断::字节位置(错误) {
         Some((起, 止)) => {
             输出缓冲.extend_from_slice(&1u32.to_le_bytes());
             输出缓冲.extend_from_slice(&起.to_le_bytes());
@@ -85,7 +85,7 @@ pub fn 编码诊断结果(结果: Option<&形状错误>) -> Vec<u8> {
         }
         None => 输出缓冲.extend_from_slice(&0u32.to_le_bytes()),
     }
-    let 读数 = crate::诊断::读数(错);
+    let 读数 = crate::诊断::读数(错误);
     输出缓冲.extend_from_slice(&(读数.len() as u32).to_le_bytes());
     输出缓冲.extend_from_slice(读数.as_bytes());
     输出缓冲

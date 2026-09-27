@@ -19,7 +19,7 @@ pub(crate) enum JSON值 {
 impl JSON值 {
     pub(crate) fn 取成员(&self, 键名: &str) -> Option<&JSON值> {
         match self {
-            JSON值::对象(项s) => 项s.iter().find(|(名, _)| 名 == 键名).map(|(_, 值)| 值),
+            JSON值::对象(项s) => 项s.iter().find(|(名称, _)| 名称 == 键名).map(|(_, 待处理值)| 待处理值),
             _ => None,
         }
     }

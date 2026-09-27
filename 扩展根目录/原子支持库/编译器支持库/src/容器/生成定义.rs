@@ -14,13 +14,13 @@ use super::形状::{
 pub fn 生成(容器: &容器) -> Result<Vec<u8>, 生成错误> {
     let 预估 = 魔数.len()
         + 容器.段表.len().saturating_mul(段头长度)
-        + 容器.段表.iter().map(|段| 段.数据.len()).sum::<usize>();
+        + 容器.段表.iter().map(|号段| 号段.数据.len()).sum::<usize>();
     let mut 输出缓冲 = Vec::with_capacity(预估);
     输出缓冲.extend_from_slice(&魔数);
-    for (序号, 段) in 容器.段表.iter().enumerate() {
+    for (序号, 号段) in 容器.段表.iter().enumerate() {
         let 第几段 = u32::try_from(序号).unwrap_or(u32::MAX);
-        输出缓冲.extend_from_slice(&写段头(&段.头, 第几段)?);
-        输出缓冲.extend_from_slice(&段.数据);
+        输出缓冲.extend_from_slice(&写段头(&号段.头, 第几段)?);
+        输出缓冲.extend_from_slice(&号段.数据);
     }
     Ok(输出缓冲)
 }

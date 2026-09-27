@@ -62,7 +62,7 @@ pub(crate) unsafe extern "C" fn 语法分析执行(返回槽: *mut 数据槽, �
         return;
     };
     // SAFETY: 返回槽 可写。
-    let 错误码 = match 词法::切记号(&原文).and_then(|流| 语法::建树(&流)) {
+    let 错误码 = match 词法::切记号(&原文).and_then(|输出流| 语法::建树(&输出流)) {
         Ok(树) => {
             // SAFETY: 返回槽 可写。
             unsafe { 写字节集(返回槽, 原生路编码::编码语法树(&树)) };
@@ -117,7 +117,7 @@ pub(crate) unsafe extern "C" fn 语义分析执行(返回槽: *mut 数据槽, �
         return;
     };
     // SAFETY: 返回槽 可写。
-    let 错误码 = match 词法::切记号(&原文).and_then(|流| 语法::建树(&流)) {
+    let 错误码 = match 词法::切记号(&原文).and_then(|输出流| 语法::建树(&输出流)) {
         Ok(树) => match 语义::分析(&树, &命令表, &常量表, &类型表) {
             Ok(构) => {
                 // SAFETY: 返回槽 可写。
@@ -199,7 +199,7 @@ pub(crate) unsafe extern "C" fn 编译执行(返回槽: *mut 数据槽, 参数�
         return;
     };
     // 上游链：与 `语义分析执行` 逐字同路（1101 → 1102 → 1103）。带号结构不进包（见上）。
-    let 错误码 = match 词法::切记号(&原文).and_then(|流| 语法::建树(&流)) {
+    let 错误码 = match 词法::切记号(&原文).and_then(|输出流| 语法::建树(&输出流)) {
         Ok(树) => match 语义::分析(&树, &命令表, &常量表, &类型表) {
             Ok(_构) => match 装包件(&说明, &能力码) {
                 Ok(包) => {
@@ -288,12 +288,12 @@ pub(crate) unsafe extern "C" fn 生成容器执行(返回槽: *mut 数据槽, �
         unsafe { 写错误码(返回槽, 错误码::参数槽不符) };
         return;
     };
-    let Some(容) = 结构编码::解码容器(&输入) else {
+    let Some(容器) = 结构编码::解码容器(&输入) else {
         // SAFETY: 返回槽 可写。
         unsafe { 写错误码(返回槽, 错误码::结构编码非法) };
         return;
     };
-    let 错误码 = match 容器::生成(&容) {
+    let 错误码 = match 容器::生成(&容器) {
         Ok(字节) => {
             // SAFETY: 返回槽 可写。
             unsafe { 写字节集(返回槽, 字节) };

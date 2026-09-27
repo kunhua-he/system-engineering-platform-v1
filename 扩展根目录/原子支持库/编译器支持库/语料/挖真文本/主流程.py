@@ -145,9 +145,9 @@ def 入口函数():
     m2 = 落盘(plain, "硬文本")
     m3 = 落盘(weak_ev, "弱")
 
-    json.dump({"hard": [{键: 值 for 键, 值 in 记录.items() if 键 != "text"} for 记录 in hard],
-               "hard_plain": [{键: 值 for 键, 值 in 记录.items() if 键 != "text"} for 记录 in plain],
-               "weak": [{键: 值 for 键, 值 in 记录.items() if 键 != "text"} for 记录 in weak_ev],
+    json.dump({"hard": [{键名: 待处理值 for 键名, 待处理值 in 记录.items() if 键名 != "text"} for 记录 in hard],
+               "hard_plain": [{键名: 待处理值 for 键名, 待处理值 in 记录.items() if 键名 != "text"} for 记录 in plain],
+               "weak": [{键名: 待处理值 for 键名, 待处理值 in 记录.items() if 键名 != "text"} for 记录 in weak_ev],
                "weak_rejected": weak_json},
               open(挖出JSON路径, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
 

@@ -84,8 +84,8 @@ impl 记号流 {
     pub fn 还原(&self) -> Vec<u8> {
         let mut 输出缓冲 = Vec::with_capacity(self.原文.len());
         for 本记号 in &self.记号表 {
-            if let Some(片) = self.原文.get(本记号.起 as usize..本记号.止 as usize) {
-                输出缓冲.extend_from_slice(片);
+            if let Some(片段) = self.原文.get(本记号.起 as usize..本记号.止 as usize) {
+                输出缓冲.extend_from_slice(片段);
             }
         }
         输出缓冲

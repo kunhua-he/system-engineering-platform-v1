@@ -46,9 +46,9 @@ fn 解析段数据头(字节: &[u8]) -> Result<段数据头, 反解错误> {
         });
     }
     let 补零尾 = 头偏移::补零 + 头偏移::补零长度;
-    if let Some(位) = 字节[头偏移::补零..补零尾].iter().position(|&字节| 字节 != 0) {
+    if let Some(位置) = 字节[头偏移::补零..补零尾].iter().position(|&字节| 字节 != 0) {
         return Err(反解错误::段数据头补零非零 {
-            位置: (头偏移::补零 + 位) as u64,
+            位置: (头偏移::补零 + 位置) as u64,
         });
     }
     let mut 补零 = [0u8; 头偏移::补零长度];
@@ -184,10 +184,10 @@ fn 读长度前缀(段体: &[u8], 位置: &mut usize, 第几: u8, 元素宽: u8)
 pub(crate) fn 切串(字节串: &[u8]) -> Vec<Vec<u8>> {
     let mut 输出缓冲: Vec<Vec<u8>> = Vec::new();
     let mut 区间起点 = 0usize;
-    for (位, &字节) in 字节串.iter().enumerate() {
+    for (位置, &字节) in 字节串.iter().enumerate() {
         if 字节 == 引用分隔符 {
-            输出缓冲.push(字节串[区间起点..位].to_vec());
-            区间起点 = 位 + 1;
+            输出缓冲.push(字节串[区间起点..位置].to_vec());
+            区间起点 = 位置 + 1;
         }
     }
     输出缓冲.push(字节串[区间起点..].to_vec());

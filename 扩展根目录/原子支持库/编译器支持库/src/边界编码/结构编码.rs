@@ -75,7 +75,7 @@ impl<'a> 读器<'a> {
     }
 
     fn 读单字节(&mut self) -> Option<u8> {
-        self.取字节(1).map(|片| 片[0])
+        self.取字节(1).map(|片段| 片段[0])
     }
 
     fn 读四字节(&mut self) -> Option<u32> {
