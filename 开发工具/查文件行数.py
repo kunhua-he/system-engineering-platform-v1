@@ -34,10 +34,10 @@ from 查文件行数 import 核心
 
 
 def 入口函数(argv=None):
-    析 = argparse.ArgumentParser(description="开发规范.md 第六节硬数的机器判据")
-    析.add_argument("--仓根", default=None, help="默认 = 本文件所在仓")
-    析.add_argument("--自测", action="store_true", help="反向样本自测")
-    参数 = 析.parse_args(argv)
+    解析器 = argparse.ArgumentParser(description="开发规范.md 第六节硬数的机器判据")
+    解析器.add_argument("--仓根", default=None, help="默认 = 本文件所在仓")
+    解析器.add_argument("--自测", action="store_true", help="反向样本自测")
+    参数 = 解析器.parse_args(argv)
     if 参数.自测:
         return 核心.自测()
     return 核心.跑一遍(参数.仓根 or os.path.dirname(os.path.dirname(os.path.abspath(__file__))))

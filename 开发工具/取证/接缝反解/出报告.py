@@ -11,14 +11,14 @@ from PE形状 import 解析错误
 
 def 出报告(读数):
     字典, pe = 读数["字典"], 读数["pe"]
-    基 = pe.转偏移(读数["结构rva"])
+    文件偏移 = pe.转偏移(读数["结构rva"])
     print("=" * 78 + "\n样本 %s（%d 字节）｜ 机器 0x%04x · %d 节 · 魔数 0x%x(PE32) · ImageBase 0x%08x"
           % (读数["路径"], 读数["字节数"], pe.机器, pe.节数, pe.魔数, pe.基址))
     print("  节：" + " ".join("%s[rva %x vsz %x raw %x]" % (节名, 虚址, 虚长, 原址) for 节名, 虚址, 虚长, 原址, _ in pe.节))
     print("① 导出 %s：序号 %d · RVA 0x%x · 前 8 字节 %s ｜ 返回值形式：%s"
           % (导出名.decode(), 读数["序号"], 读数["导出rva"], 读数["机器码"].hex(" "), 读数["形式"]))
-    print("   静态结构 RVA 0x%x（文件偏移 0x%x）；原始字节：" % (读数["结构rva"], 基))
-    print("     " + pe.原始字节[基:基 + 库信息大小].hex(" "))
+    print("   静态结构 RVA 0x%x（文件偏移 0x%x）；原始字节：" % (读数["结构rva"], 文件偏移))
+    print("     " + pe.原始字节[文件偏移:文件偏移 + 库信息大小].hex(" "))
     print("② LIB_INFO 逐字段（偏移 · 宽 · 名 · 值 · 可读）：")
     for 偏移, 宽, 名, 类, 值, 读 in 读数["字段"]:
         print("   +0x%02x %2d  %-24s 0x%08x  %s" % (偏移, 宽, 名, 值 & 0xFFFFFFFF, 读))
@@ -31,7 +31,7 @@ def 出报告(读数):
     if 字典["m_nCategoryCount"]:
         文偏移, 类 = pe.转偏移(pe.取址(字典["m_szzCategory"])), []
         for _ in range(字典["m_nCategoryCount"]):
-            尾 = pe.原始字节.find(b"\0", 文偏移); 类.append(pe.原始字节[文偏移:尾].decode("gbk", "replace")); 文偏移 = 尾 + 1
+            尾部 = pe.原始字节.find(b"\0", 文偏移); 类.append(pe.原始字节[文偏移:尾部].decode("gbk", "replace")); 文偏移 = 尾部 + 1
         print("   类别表（m_nCategoryCount=%d）：%s" % (字典["m_nCategoryCount"], 类))
     print("④ 命令表：表项 %d 字节 · 声明数 m_nCmdCount=%d · 物理槽数(观察，非解码依据)=%s"
           % (命令项大小, 字典["m_nCmdCount"], 读数["物理槽"][0]))

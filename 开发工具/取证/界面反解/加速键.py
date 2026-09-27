@@ -15,17 +15,17 @@ def 解加速键(表字节, 资源id):
         fVirt, key, cmd, 垫 = struct.unpack_from("<HHHH", 表字节, 项起)
         if fVirt & 0xFF00:
             raise 解析错误("加速键 %s 第 %d 条 fVirt=0x%04x 高字节非 0：对齐判错" % (资源id, 项起 // 8, fVirt))
-        标 = []
+        标志表 = []
         if fVirt & 0x01:
-            标.append("FVIRTKEY")
+            标志表.append("FVIRTKEY")
         if fVirt & 0x02:
-            标.append("FNOINVERT")
+            标志表.append("FNOINVERT")
         if fVirt & 0x04:
-            标.append("FSHIFT")
+            标志表.append("FSHIFT")
         if fVirt & 0x08:
-            标.append("FCONTROL")
+            标志表.append("FCONTROL")
         if fVirt & 0x10:
-            标.append("FALT")
-        out.append({"fVirt": fVirt, "标志": "|".join(标) or "0", "键": key,
+            标志表.append("FALT")
+        out.append({"fVirt": fVirt, "标志": "|".join(标志表) or "0", "键": key,
                     "键名": 虚拟键名.get(key, "0x%02x" % key), "命令": cmd})
     return out

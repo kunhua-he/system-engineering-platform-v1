@@ -20,15 +20,15 @@ def 出报告(读数):
           % (len(读数["分类"]), len(读数["叶子"]), sum(叶条["大小"] for 叶条 in 读数["叶子"]), 0xba000))
     print("   %-6s %-14s %6s %10s %8s" % ("类型", "名", "条数", "总字节", "占叶字节"))
     总叶 = sum(叶条["大小"] for 叶条 in 读数["叶子"])
-    for 类 in sorted(读数["分类"], key=lambda 叶条: (isinstance(叶条, str), 叶条)):
-        条 = 读数["分类"][类]
-        总 = sum(叶条["大小"] for 叶条 in 条)
-        print("   %-6s %-14s %6d %10d %7.2f%%" % (类, 资源类型名.get(类, "?"), len(条), 总, 100 * 总 / 总叶))
+    for 类别 in sorted(读数["分类"], key=lambda 叶条: (isinstance(叶条, str), 叶条)):
+        一条 = 读数["分类"][类别]
+        字节合计 = sum(叶条["大小"] for 叶条 in 一条)
+        print("   %-6s %-14s %6d %10d %7.2f%%" % (类别, 资源类型名.get(类别, "?"), len(一条), 字节合计, 100 * 字节合计 / 总叶))
     print("   ── 逐条叶子 ──")
-    for 类 in sorted(读数["分类"], key=lambda 叶条: (isinstance(叶条, str), 叶条)):
-        for 叶 in 读数["分类"][类]:
+    for 类别 in sorted(读数["分类"], key=lambda 叶条: (isinstance(叶条, str), 叶条)):
+        for 叶子 in 读数["分类"][类别]:
             print("   type %-4s id %-8s rva 0x%06x 大小 %7d 代码页 %5d 数据项偏移 0x%06x"
-                  % (类, 叶["id"], 叶["rva"], 叶["大小"], 叶["代码页"], 叶["数据项偏移"]))
+                  % (类别, 叶子["id"], 叶子["rva"], 叶子["大小"], 叶子["代码页"], 叶子["数据项偏移"]))
 
     print("\n② 菜单（类型 4）：%d 个资源 · %d 项" % (len(读数["菜单"]), sum(len(表值[1]) for 表值 in 读数["菜单"].values())))
     for rid in sorted(读数["菜单"]):
@@ -97,8 +97,8 @@ def 出报告(读数):
         print("      头 32 字节：%s" % 虚址[:32].hex(" "))
         if 控件["容器"] and 控件["容器"].startswith("ICONDIR"):
             # 这里嵌的是 16 字节 ICONDIRENTRY（组资源用的是 14 字节 GRPICONDIRENTRY）——见界面实测.md §六
-            数 = struct.unpack_from("<H", 虚址, 4)[0]
-            for 条序 in range(数):
+            个数 = struct.unpack_from("<H", 虚址, 4)[0]
+            for 条序 in range(个数):
                 宽, 高, 色数, _, 平面, 位深, 字节数, 项偏移 = struct.unpack_from("<BBBBHHII", 虚址, 6 + 16 * 条序)
                 print("      图[%d] %dx%d 色数=%d 平面=%d 位深=%d 字节=%d 偏移=%d"
                       % (条序, 宽, 高, 色数, 平面, 位深, 字节数, 项偏移))

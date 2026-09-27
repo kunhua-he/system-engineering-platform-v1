@@ -29,17 +29,17 @@ from 运行数据根 import 一致性判据  # noqa: E402
 
 
 def 入口函数(argv=None):
-    参 = list(sys.argv[1:] if argv is None else argv)
+    参数 = list(sys.argv[1:] if argv is None else argv)
     python路 = 一致性判据.镜像源
-    if "--python" in 参:
-        python路 = Path(参[参.index("--python") + 1])
+    if "--python" in 参数:
+        python路 = Path(参数[参数.index("--python") + 1])
     解析路 = 一致性判据.真源解析路径
-    if "--rust" in 参:
-        解析路 = Path(参[参.index("--rust") + 1])
+    if "--rust" in 参数:
+        解析路 = Path(参数[参数.index("--rust") + 1])
     子目录路 = 一致性判据.真源子目录路径
-    if "--rust子目录" in 参:
-        子目录路 = Path(参[参.index("--rust子目录") + 1])
-    if "--反向样本" in 参:
+    if "--rust子目录" in 参数:
+        子目录路 = Path(参数[参数.index("--rust子目录") + 1])
+    if "--反向样本" in 参数:
         with tempfile.TemporaryDirectory(prefix="运行数据根反向样本-") as 临时:
             return 一致性判据.反向样本(Path(临时))
     return 一致性判据.跑一遍(解析路, 子目录路, python路)

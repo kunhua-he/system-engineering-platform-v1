@@ -34,17 +34,17 @@ def _查询根(开工号: str, 仓根) -> tuple:
     """`开工号` ⇒ `(查询根, 索引库路径, 树名, 错误)`。不给开工号就落主工作树。"""
     if not 开工号:
         return Path(仓根), 库路径(), "主工作树", ""
-    连 = 账本.连账本()
+    连接 = 账本.连账本()
     try:
-        一条 = 账本.读开工(连, 开工号)
+        一条 = 账本.读开工(连接, 开工号)
     finally:
-        连.close()
+        连接.close()
     if not 一条:
         return Path(仓根), 库路径(), "", "没有这条开工：%s ⇒ 先 `v1_task` 功能 = 1 登记" % 开工号
-    根 = Path(一条["工作树"])
-    if not 根.is_dir():
-        return 根, 根 / ".codegraph" / "codegraph.db", "", "那条开工的工作树不在了：%s" % 根
-    return 根, 根 / ".codegraph" / "codegraph.db", "%s（支线 %s）" % (开工号, 一条["分支名"]), ""
+    根目录 = Path(一条["工作树"])
+    if not 根目录.is_dir():
+        return 根目录, 根目录 / ".codegraph" / "codegraph.db", "", "那条开工的工作树不在了：%s" % 根目录
+    return 根目录, 根目录 / ".codegraph" / "codegraph.db", "%s（支线 %s）" % (开工号, 一条["分支名"]), ""
 
 
 def _带源码(根目录: Path, 路径: str, 起始行: int, 末行: int, 上限行: int = 源码上限行) -> str:
@@ -56,8 +56,8 @@ def _带源码(根目录: Path, 路径: str, 起始行: int, 末行: int, 上限
         行表 = []
     if not 行表 or not (1 <= 起始行 <= len(行表)):
         return "    （读不到源码：%s）" % 路径
-    末 = min(末行 or 起始行, 起始行 + 上限行 - 1, len(行表))
-    return "\n".join("    %d| %s" % (号, 行表[号 - 1]) for 号 in range(起始行, 末 + 1))
+    尾部 = min(末行 or 起始行, 起始行 + 上限行 - 1, len(行表))
+    return "\n".join("    %d| %s" % (号, 行表[号 - 1]) for 号 in range(起始行, 尾部 + 1))
 
 
 def 搜定义(查询根: Path, 索引库, 关键词: str, 条数: int, 要源码: bool) -> str:

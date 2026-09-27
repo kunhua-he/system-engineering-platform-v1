@@ -38,9 +38,9 @@ def 收集源码(仓根):
     命中表 = []
     for 当前, 目录表, 文件表 in os.walk(仓根):
         目录表[:] = [目录 for 目录 in 目录表 if 目录 not in 跳过目录]
-        for 名 in sorted(文件表):
-            if 是源码(名):
-                命中表.append(os.path.relpath(os.path.join(当前, 名), 仓根))
+        for 名称 in sorted(文件表):
+            if 是源码(名称):
+                命中表.append(os.path.relpath(os.path.join(当前, 名称), 仓根))
     return sorted(命中表)
 
 
@@ -51,12 +51,12 @@ def 读文本(路径):
 
 def 入口类(相对路, 文本):
     """返回入口类别；不是入口给 None。"""
-    名 = os.path.basename(相对路)
-    if 名 in 入口件名:
+    名称 = os.path.basename(相对路)
+    if 名称 in 入口件名:
         return "rust"
-    if 名 == "__init__.py":
+    if 名称 == "__init__.py":
         return "py-init"
-    if 名.endswith(".py") and 主入口行模式.search(文本):
+    if 名称.endswith(".py") and 主入口行模式.search(文本):
         return "py-script"
     return None
 
@@ -146,9 +146,9 @@ def 自测():
     """反向样本：造超限文件，断言判据抓得住；再造合规文件，断言不误报。"""
     with tempfile.TemporaryDirectory(prefix="查行数自测_") as 临时:
         def 造文件(相对路, 内容):
-            路 = os.path.join(临时, 相对路)
-            os.makedirs(os.path.dirname(路), exist_ok=True)
-            with open(路, "w", encoding="utf-8") as 柄:
+            路径 = os.path.join(临时, 相对路)
+            os.makedirs(os.path.dirname(路径), exist_ok=True)
+            with open(路径, "w", encoding="utf-8") as 柄:
                 柄.write(内容)
         造文件("超限.rs", "\n".join(f"// 第 {行序} 行" for 行序 in range(行数上限 + 1)) + "\n")
         造文件("入口超行数/lib.rs", "\n".join("// 占位" for _ in range(入口行数上限 + 1)) + "\n")

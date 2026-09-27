@@ -70,19 +70,19 @@ def 库读数(库路径=None) -> dict:
     """库里的节点 / 边 / 件数（库不在 ⇒ 全 0）。"""
     if not (库路径 or 默认库路径()).is_file():
         return {"节点": 0, "边": 0, "件": 0, "索引器版本": ""}
-    库 = 连库(库路径)
+    动态库 = 连库(库路径)
     try:
-        读数 = {"节点": 库.execute("select count(*) from nodes").fetchone()[0],
-               "边": 库.execute("select count(*) from edges").fetchone()[0],
-               "件": 库.execute("select count(*) from files").fetchone()[0],
+        读数 = {"节点": 动态库.execute("select count(*) from nodes").fetchone()[0],
+               "边": 动态库.execute("select count(*) from edges").fetchone()[0],
+               "件": 动态库.execute("select count(*) from files").fetchone()[0],
                "索引器版本": ""}
-        元数据行 = 库.execute(
+        元数据行 = 动态库.execute(
             "select value from project_metadata where key='indexed_with_version'").fetchone()
         if 元数据行:
             读数["索引器版本"] = 元数据行[0]
         return 读数
     finally:
-        库.close()
+        动态库.close()
 
 
 def 建索引(仓根: Path) -> tuple:
@@ -215,13 +215,13 @@ def 全部定义(库路径=None) -> list:
     """定义面上的全部节点（见 `非标识符种类`）⇒ 定义表。库不在 ⇒ 空表（调用方据此报「先建」）。"""
     if not (库路径 or 默认库路径()).is_file():
         return []
-    库 = 连库(库路径)
+    动态库 = 连库(库路径)
     try:
-        return [节点记录(一行) for 一行 in 库.execute(
+        return [节点记录(一行) for 一行 in 动态库.execute(
             "select %s from nodes n where n.kind <> ? and n.kind <> ?" % _节点字段,
             非标识符种类)]
     finally:
-        库.close()
+        动态库.close()
 
 
 # ── 读库：出现位（定义处 + 引用处）────────────────────────────────────────────────────────
@@ -230,21 +230,21 @@ def 出现数(标识: str, 库路径=None) -> int:
     """该符号的**出现数** = 定义本身 1 处 ＋ 指向它的引用边（`contains` 不算 —— 那是「件包含它」）。"""
     if not (库路径 or 默认库路径()).is_file():
         return 0
-    库 = 连库(库路径)
+    动态库 = 连库(库路径)
     try:
-        引用数 = 库.execute(
+        引用数 = 动态库.execute(
             "select count(*) from edges where target=? and kind<>'contains'", (标识,)).fetchone()[0]
         return 引用数 + 1
     finally:
-        库.close()
+        动态库.close()
 
 
 def _源件路径(动态库: sqlite3.Connection, 来源: str) -> str:
     """边的 `source` ⇒ 件路径。`file:<路径>` 是件节点，否则是符号节点（查它的 `file_path`）。"""
     if 来源.startswith("file:"):
         return 来源[len("file:"):]
-    行 = 动态库.execute("select file_path from nodes where id=?", (来源,)).fetchone()
-    return 行[0] if 行 else ""
+    源码行 = 动态库.execute("select file_path from nodes where id=?", (来源,)).fetchone()
+    return 源码行[0] if 源码行 else ""
 
 
 def 出现位(键名: str, 上限: int = 0, 库路径=None) -> dict:
@@ -258,11 +258,11 @@ def 出现位(键名: str, 上限: int = 0, 库路径=None) -> dict:
     """
     if not (库路径 or 默认库路径()).is_file():
         return {"位置": [], "总数": 0, "口径": "没有索引"}
-    库 = 连库(库路径)
+    动态库 = 连库(库路径)
     try:
         for 匹配列, 口径说明 in (("qualified_name", "限定名（精确）"),
                                 ("name", "名字（同名不同符号会混进来）")):
-            节点行表 = list(库.execute(
+            节点行表 = list(动态库.execute(
                 "select id, name, file_path, start_line, start_column from nodes where %s = ?"
                 % 匹配列, (键名,)))
             if not 节点行表:
@@ -270,10 +270,10 @@ def 出现位(键名: str, 上限: int = 0, 库路径=None) -> dict:
             位置表 = []
             for 标识, 名字, 件路径, 行号, 起始列 in 节点行表:
                 位置表.append((件路径, 行号, 名字列(件路径, 行号, 名字, 起始列)))
-                for 源, 边行, 边列 in 库.execute(
+                for 源, 边行, 边列 in 动态库.execute(
                         "select source, line, col from edges "
                         "where target=? and kind<>'contains' and line is not null", (标识,)):
-                    源件 = _源件路径(库, 源)
+                    源件 = _源件路径(动态库, 源)
                     if 源件:
                         位置表.append((源件, 边行, 边列))
             去重表 = sorted(set(位置表))
@@ -282,4 +282,4 @@ def 出现位(键名: str, 上限: int = 0, 库路径=None) -> dict:
             return {"位置": 去重表, "总数": len(set(位置表)), "口径": 口径说明}
         return {"位置": [], "总数": 0, "口径": "没找到"}
     finally:
-        库.close()
+        动态库.close()
