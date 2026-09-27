@@ -65,17 +65,17 @@ impl 草稿表 {
     /// `子区间` 一律由 [`语法树::先序子区间`] 落，不在这里另写一条布局规则。
     pub(crate) fn 扁平化(&self, 根目录: u32) -> Vec<节点> {
         let 大小 = self.子树大小表(根目录);
-        let mut 出: Vec<节点> = Vec::with_capacity(大小[根目录 as usize] as usize);
-        let mut 栈: Vec<u32> = vec![根目录];
-        while let Some(节点位) = 栈.pop() {
-            let 位置 = 出.len() as u32;
-            let 草 = &self.表[节点位 as usize];
-            出.push(节点::叶节点(草.种类, 草.区间));
-            出[位置 as usize].子区间 = 语法树::先序子区间(位置, 大小[节点位 as usize] - 1);
+        let mut 输出缓冲: Vec<节点> = Vec::with_capacity(大小[根目录 as usize] as usize);
+        let mut 待展开栈: Vec<u32> = vec![根目录];
+        while let Some(节点位) = 待展开栈.pop() {
+            let 位置 = 输出缓冲.len() as u32;
+            let 草稿节点 = &self.表[节点位 as usize];
+            输出缓冲.push(节点::叶节点(草稿节点.种类, 草稿节点.区间));
+            输出缓冲[位置 as usize].子区间 = 语法树::先序子区间(位置, 大小[节点位 as usize] - 1);
             // 逆序入栈 ⇒ 出栈即先序。
-            栈.extend(草.子.iter().rev().copied());
+            待展开栈.extend(草稿节点.子.iter().rev().copied());
         }
-        出
+        输出缓冲
     }
 
     /// 每个草稿节点的**子树节点数**（含自身）。迭代后序，不递归（深脊会爆栈）。
@@ -85,16 +85,16 @@ impl 草稿表 {
     /// 旧基会变垃圾），它们不参与扁平化，大小留 0 即可。
     fn 子树大小表(&self, 根目录: u32) -> Vec<u32> {
         let mut 大小 = vec![0u32; self.表.len()];
-        let mut 栈: Vec<(u32, usize)> = vec![(根目录, 0)];
-        while let Some((节点位, 子序)) = 栈.pop() {
-            let 子 = &self.表[节点位 as usize].子;
-            match 子.get(子序) {
+        let mut 待结算栈: Vec<(u32, usize)> = vec![(根目录, 0)];
+        while let Some((节点位, 子序)) = 待结算栈.pop() {
+            let 子节点表 = &self.表[节点位 as usize].子;
+            match 子节点表.get(子序) {
                 Some(&子下标) => {
-                    栈.push((节点位, 子序 + 1));
-                    栈.push((子下标, 0));
+                    待结算栈.push((节点位, 子序 + 1));
+                    待结算栈.push((子下标, 0));
                 }
                 None => {
-                    大小[节点位 as usize] = 1 + 子.iter().map(|&子下标| 大小[子下标 as usize]).sum::<u32>();
+                    大小[节点位 as usize] = 1 + 子节点表.iter().map(|&子下标| 大小[子下标 as usize]).sum::<u32>();
                 }
             }
         }

@@ -80,27 +80,27 @@ impl<'a> 读器<'a> {
 
     fn 读对象(&mut self) -> Result<JSON值, String> {
         self.位 += 1; // '{'
-        let mut 项 = Vec::new();
+        let mut 一项 = Vec::new();
         self.跳空白();
         if self.字节.get(self.位) == Some(&b'}') {
             self.位 += 1;
-            return Ok(JSON值::对象(项));
+            return Ok(JSON值::对象(一项));
         }
         loop {
             self.跳空白();
-            let 名 = self.读字符串()?;
+            let 名称 = self.读字符串()?;
             self.跳空白();
             if self.字节.get(self.位) != Some(&b':') {
                 return Err(format!("第 {} 字节处缺冒号", self.位));
             }
             self.位 += 1;
-            项.push((名, self.读一个值()?));
+            一项.push((名称, self.读一个值()?));
             self.跳空白();
             match self.字节.get(self.位) {
                 Some(b',') => self.位 += 1,
                 Some(b'}') => {
                     self.位 += 1;
-                    return Ok(JSON值::对象(项));
+                    return Ok(JSON值::对象(一项));
                 }
                 _ => return Err(format!("第 {} 字节处缺逗号或右括号", self.位)),
             }
@@ -109,20 +109,20 @@ impl<'a> 读器<'a> {
 
     fn 读数组(&mut self) -> Result<JSON值, String> {
         self.位 += 1; // '['
-        let mut 项 = Vec::new();
+        let mut 一项 = Vec::new();
         self.跳空白();
         if self.字节.get(self.位) == Some(&b']') {
             self.位 += 1;
-            return Ok(JSON值::数组(项));
+            return Ok(JSON值::数组(一项));
         }
         loop {
-            项.push(self.读一个值()?);
+            一项.push(self.读一个值()?);
             self.跳空白();
             match self.字节.get(self.位) {
                 Some(b',') => self.位 += 1,
                 Some(b']') => {
                     self.位 += 1;
-                    return Ok(JSON值::数组(项));
+                    return Ok(JSON值::数组(一项));
                 }
                 _ => return Err(format!("第 {} 字节处缺逗号或右括号", self.位)),
             }
@@ -134,19 +134,19 @@ impl<'a> 读器<'a> {
             return Err(format!("第 {} 字节处缺字符串", self.位));
         }
         self.位 += 1;
-        let mut 出 = String::new();
+        let mut 输出缓冲 = String::new();
         loop {
             match self.字节.get(self.位) {
                 None => return Err("字符串没闭合".into()),
                 Some(b'"') => {
                     self.位 += 1;
-                    return Ok(出);
+                    return Ok(输出缓冲);
                 }
                 Some(b'\\') => {
                     self.位 += 1;
-                    let 转 = self.字节.get(self.位).copied().unwrap_or(b'?');
+                    let 转义字节 = self.字节.get(self.位).copied().unwrap_or(b'?');
                     self.位 += 1;
-                    出.push(match 转 {
+                    输出缓冲.push(match 转义字节 {
                         b'"' => '"',
                         b'\\' => '\\',
                         b'/' => '/',
@@ -159,17 +159,17 @@ impl<'a> 读器<'a> {
                     });
                 }
                 Some(_) => {
-                    let 余 = core::str::from_utf8(&self.字节[self.位..]).map_err(|_| "不是合法 UTF-8")?;
-                    let 字 = 余.chars().next().ok_or("空字符")?;
-                    出.push(字);
-                    self.位 += 字.len_utf8();
+                    let 剩余文本 = core::str::from_utf8(&self.字节[self.位..]).map_err(|_| "不是合法 UTF-8")?;
+                    let 字符表 = 剩余文本.chars().next().ok_or("空字符")?;
+                    输出缓冲.push(字符表);
+                    self.位 += 字符表.len_utf8();
                 }
             }
         }
     }
 
     fn 读数值(&mut self) -> Result<JSON值, String> {
-        let 起 = self.位;
+        let 区间起点 = self.位;
         while self
             .字节
             .get(self.位)
@@ -177,10 +177,10 @@ impl<'a> 读器<'a> {
         {
             self.位 += 1;
         }
-        core::str::from_utf8(&self.字节[起..self.位])
+        core::str::from_utf8(&self.字节[区间起点..self.位])
             .ok()
             .and_then(|文| 文.parse::<f64>().ok())
             .map(JSON值::数值)
-            .ok_or_else(|| format!("第 {起} 字节处不是合法 JSON 值"))
+            .ok_or_else(|| format!("第 {区间起点} 字节处不是合法 JSON 值"))
     }
 }

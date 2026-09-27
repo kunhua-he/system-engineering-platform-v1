@@ -35,9 +35,9 @@ pub enum JSON值 {
 /// 缩进的理由与 `接口面形状.md` 同一条：根端点的返回是给人也是给 agent 读的说明书，
 /// 压成一行就丢掉了这层用途。
 pub fn 写协议值(待处理值: &JSON值) -> String {
-    let mut 出 = String::new();
-    写值(&mut 出, 待处理值, 0);
-    出
+    let mut 输出缓冲 = String::new();
+    写值(&mut 输出缓冲, 待处理值, 0);
+    输出缓冲
 }
 
 /// 缩进一个单位（两空格）并换行。**公开**：`对外接口面/调用接口面/src/协议写出.rs` 也用它 ——
@@ -98,8 +98,8 @@ fn 写值(输出缓冲: &mut String, 待处理值: &JSON值, 层级: usize) {
 /// （少转一个控制字符就产出非法 JSON）⇒ 只许有一份，上层复用本函数。
 pub fn 写文本(输出缓冲: &mut String, 文本: &str) {
     输出缓冲.push('"');
-    for 字 in 文本.chars() {
-        match 字 {
+    for 字符表 in 文本.chars() {
+        match 字符表 {
             '"' => 输出缓冲.push_str("\\\""),
             '\\' => 输出缓冲.push_str("\\\\"),
             '\n' => 输出缓冲.push_str("\\n"),
@@ -108,8 +108,8 @@ pub fn 写文本(输出缓冲: &mut String, 文本: &str) {
             '\u{08}' => 输出缓冲.push_str("\\b"),
             '\u{0C}' => 输出缓冲.push_str("\\f"),
             // 其余控制字符必须转义（裸控制字符不是合法 JSON）。
-            字 if (字 as u32) < 0x20 => 输出缓冲.push_str(&format!("\\u{:04x}", 字 as u32)),
-            字 => 输出缓冲.push(字),
+            字符表 if (字符表 as u32) < 0x20 => 输出缓冲.push_str(&format!("\\u{:04x}", 字符表 as u32)),
+            字符表 => 输出缓冲.push(字符表),
         }
     }
     输出缓冲.push('"');

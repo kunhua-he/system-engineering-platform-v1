@@ -37,20 +37,20 @@ pub const 槽宽度: usize = 24;
 
 /// 接口说明 → 段数据字节。
 pub fn 编码(说明: &接口说明) -> Vec<u8> {
-    let mut 出 = Vec::new();
-    出.extend_from_slice(&说明.编号.to_le_bytes());
-    写文本(&mut 出, &说明.名称);
-    写文本(&mut 出, &说明.说明);
-    出.extend_from_slice(&(说明.参数表.len() as u32).to_le_bytes());
-    for 参 in &说明.参数表 {
-        写参数项(&mut 出, 参);
+    let mut 输出缓冲 = Vec::new();
+    输出缓冲.extend_from_slice(&说明.编号.to_le_bytes());
+    写文本(&mut 输出缓冲, &说明.名称);
+    写文本(&mut 输出缓冲, &说明.说明);
+    输出缓冲.extend_from_slice(&(说明.参数表.len() as u32).to_le_bytes());
+    for 参数 in &说明.参数表 {
+        写参数项(&mut 输出缓冲, 参数);
     }
-    出.extend_from_slice(&说明.返回类型.to_le_bytes());
-    出.extend_from_slice(&(说明.可抛错误码.len() as u32).to_le_bytes());
-    for 错 in &说明.可抛错误码 {
-        写错误项(&mut 出, 错);
+    输出缓冲.extend_from_slice(&说明.返回类型.to_le_bytes());
+    输出缓冲.extend_from_slice(&(说明.可抛错误码.len() as u32).to_le_bytes());
+    for 错误 in &说明.可抛错误码 {
+        写错误项(&mut 输出缓冲, 错误);
     }
-    出
+    输出缓冲
 }
 
 /// 段数据字节 → 接口说明。`None` = 编码非法（截断 / 尾部多余字节 / 不是合法 UTF-8）。
@@ -58,30 +58,30 @@ pub fn 编码(说明: &接口说明) -> Vec<u8> {
 /// **不许尽力而为**：非空字节集必须**正好**解完，剩余一字节即 `None`（同
 /// [`注册表::解码`](crate::语义::注册表::解码) 的口径）。
 pub fn 解码(字节: &[u8]) -> Option<接口说明> {
-    let mut 读 = 读器 { 字节, 位: 0 };
-    let 编号 = 读.读四字节()?;
-    let 名称 = 读.文本()?;
-    let 说明文本 = 读.文本()?;
-    let 参数个数 = 读.读四字节()? as usize;
+    let mut 读器 = 读器 { 字节, 位: 0 };
+    let 编号 = 读器.读四字节()?;
+    let 名称 = 读器.文本()?;
+    let 说明文本 = 读器.文本()?;
+    let 参数个数 = 读器.读四字节()? as usize;
     // 每项至少 4 字节名长 + 4 类型标签 + 2 状态位 + 24 槽 = 34 字节。
-    if 参数个数 > 读.取剩余长度() / 34 {
+    if 参数个数 > 读器.取剩余长度() / 34 {
         return None;
     }
     let mut 参数表 = Vec::with_capacity(参数个数);
     for _ in 0..参数个数 {
-        参数表.push(读参数项(&mut 读)?);
+        参数表.push(读参数项(&mut 读器)?);
     }
-    let 返回类型 = 读.读四字节()?;
-    let 错误个数 = 读.读四字节()? as usize;
+    let 返回类型 = 读器.读四字节()?;
+    let 错误个数 = 读器.读四字节()? as usize;
     // 每项至少 4 码 + 4 段位 + 4 名长 + 4 布尔 = 16 字节。
-    if 错误个数 > 读.取剩余长度() / 16 {
+    if 错误个数 > 读器.取剩余长度() / 16 {
         return None;
     }
     let mut 可抛错误码 = Vec::with_capacity(错误个数);
     for _ in 0..错误个数 {
-        可抛错误码.push(读错误项(&mut 读)?);
+        可抛错误码.push(读错误项(&mut 读器)?);
     }
-    if 读.位 != 字节.len() {
+    if 读器.位 != 字节.len() {
         return None;
     }
     Some(接口说明 { 编号, 名称, 说明: 说明文本, 参数表, 返回类型, 可抛错误码 })
@@ -153,13 +153,13 @@ impl<'a> 读器<'a> {
     }
 
     fn 取字节(&mut self, 个数: usize) -> Option<&'a [u8]> {
-        let 尾 = self.位.checked_add(个数)?;
-        if 尾 > self.字节.len() {
+        let 尾部 = self.位.checked_add(个数)?;
+        if 尾部 > self.字节.len() {
             return None;
         }
-        let 片 = &self.字节[self.位..尾];
-        self.位 = 尾;
-        Some(片)
+        let 片段 = &self.字节[self.位..尾部];
+        self.位 = 尾部;
+        Some(片段)
     }
 
     fn 读双字节(&mut self) -> Option<u16> {
@@ -175,9 +175,9 @@ impl<'a> 读器<'a> {
     }
 
     fn 文本(&mut self) -> Option<String> {
-        let 长 = self.读四字节()? as usize;
-        let 片 = self.取字节(长)?;
-        Some(core::str::from_utf8(片).ok()?.to_owned())
+        let 长度 = self.读四字节()? as usize;
+        let 片段 = self.取字节(长度)?;
+        Some(core::str::from_utf8(片段).ok()?.to_owned())
     }
 
     fn 布尔(&mut self) -> Option<bool> {
@@ -193,13 +193,13 @@ impl<'a> 读器<'a> {
         let 标志 = self.读双字节()?;
         let 保留 = self.读双字节()?;
         let 长度 = self.读八字节()?;
-        let 值 = self.读八字节()?;
+        let 待处理值 = self.读八字节()?;
         Some(v1_contract::数据槽 {
             类型标签: v1_contract::类型标签::新建(类型标签),
             标志,
             保留,
             长度,
-            值,
+            值: 待处理值,
         })
     }
 }

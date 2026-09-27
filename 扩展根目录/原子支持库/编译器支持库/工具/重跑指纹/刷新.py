@@ -9,9 +9,9 @@ from .收集 import 相对路径, 算表, 读旧表
 
 
 def 刷新():
-    表 = 算表()
+    项表 = 算表()
     时刻 = datetime.now(timezone(timedelta(hours=8))).strftime("%Y-%m-%d %H:%M:%S %z")
-    件 = {
+    指纹文档 = {
         "说明": 说明,
         "算法": "sha256",
         "生成时刻": 时刻,
@@ -22,34 +22,34 @@ def 刷新():
         "生成命令": 生成命令,
         "范围": 范围,
         "缺口": 缺口,
-        "指纹": 表,
+        "指纹": 项表,
     }
     with open(指纹件, "w", encoding="utf-8") as 句柄:
-        json.dump(件, 句柄, ensure_ascii=False, indent=2)
+        json.dump(指纹文档, 句柄, ensure_ascii=False, indent=2)
         句柄.write("\n")
     print("已刷新 %s" % 相对路径(指纹件))
-    print("生成时刻 %s · 文件 %d 个" % (时刻, len(表)))
+    print("生成时刻 %s · 文件 %d 个" % (时刻, len(项表)))
     return 0
 
 
 def 检查():
-    新 = 算表()
-    旧 = 读旧表()
-    if 旧 is None:
+    新指纹表 = 算表()
+    旧指纹表 = 读旧表()
+    if 旧指纹表 is None:
         print("✗ 读不到 %s" % 相对路径(指纹件))
         return 1
-    漂 = []
-    for 相 in sorted(set(新) | set(旧)):
-        if 相 not in 旧:
-            漂.append("  新增未入指纹：%s" % 相)
-        elif 相 not in 新:
-            漂.append("  指纹里有、盘上没有：%s" % 相)
-        elif 新[相] != 旧[相]:
-            漂.append("  内容不符：%s（记录 %s / 实际 %s）" % (相, 旧[相][:8], 新[相][:8]))
-    if 漂:
-        print("✗ 指纹与盘面不符（%d 处）—— 重跑生成命令即可刷新：" % len(漂))
-        for 行 in 漂:
-            print(行)
+    漂移清单 = []
+    for 路径键 in sorted(set(新指纹表) | set(旧指纹表)):
+        if 路径键 not in 旧指纹表:
+            漂移清单.append("  新增未入指纹：%s" % 路径键)
+        elif 路径键 not in 新指纹表:
+            漂移清单.append("  指纹里有、盘上没有：%s" % 路径键)
+        elif 新指纹表[路径键] != 旧指纹表[路径键]:
+            漂移清单.append("  内容不符：%s（记录 %s / 实际 %s）" % (路径键, 旧指纹表[路径键][:8], 新指纹表[路径键][:8]))
+    if 漂移清单:
+        print("✗ 指纹与盘面不符（%d 处）—— 重跑生成命令即可刷新：" % len(漂移清单))
+        for 漂移说明 in 漂移清单:
+            print(漂移说明)
         return 1
-    print("✓ 指纹与盘面逐键一致（%d 个文件）" % len(新))
+    print("✓ 指纹与盘面逐键一致（%d 个文件）" % len(新指纹表))
     return 0

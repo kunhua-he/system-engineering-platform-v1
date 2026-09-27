@@ -30,7 +30,7 @@ def 起实例(标识: str, 端口: int) -> dict:
     """起一份制品的网关实例。`端口=0` ⇒ 由 OS 分配（装载预检用，流量不动）。"""
     目录 = 制品目录(标识)
     日志 = 运行根 / "日志" / "{}-{}.log".format(标识, 端口 or "随机")
-    流 = 日志.open("w", encoding="utf-8")
+    输出流 = 日志.open("w", encoding="utf-8")
     # cwd 必须是**制品目录**：制品内 `扩展根声明.json` 的 `路径基准` 就是「工作目录」，
     # `种类[].目录` 指的是制品内的 `扩展/`（`上线切换/形状.md` §三）。扩展这条路靠 cwd 走。
     # 但**静态件与案例库住在仓根**（`接口面形状.md` §五 静态托管根 = `前端呈现/网页应用`；
@@ -46,7 +46,7 @@ def 起实例(标识: str, 端口: int) -> dict:
             "--工具根", str(仓根),
         ],
         cwd=str(目录),
-        stdout=流,
+        stdout=输出流,
         stderr=subprocess.STDOUT,
         stdin=subprocess.DEVNULL,
         start_new_session=True,  # 脱离本进程组：起完就走，实例活到被显式停掉
@@ -65,9 +65,9 @@ def 等端口(日志: Path, 进程) -> int:
     截止 = time.time() + 健康超时秒
     while time.time() < 截止:
         if 日志.is_file():
-            命 = re.search(r"监听 127\.0\.0\.1:(\d+)", 日志.read_text(encoding="utf-8", errors="replace"))
-            if 命:
-                return int(命.group(1))
+            匹配结果 = re.search(r"监听 127\.0\.0\.1:(\d+)", 日志.read_text(encoding="utf-8", errors="replace"))
+            if 匹配结果:
+                return int(匹配结果.group(1))
         if 进程.poll() is not None:
             return None
         time.sleep(0.05)
@@ -101,18 +101,18 @@ def 健康(端口: int) -> tuple:
     路径 = urllib.parse.quote("/接口")
     try:
         with urllib.request.urlopen("http://127.0.0.1:{}{}".format(端口, 路径), timeout=5) as 应:
-            文 = 应.read().decode("utf-8")
-            状 = 应.status
+            文本 = 应.read().decode("utf-8")
+            状态码 = 应.status
     except (urllib.error.URLError, socket.timeout, ConnectionError) as 错:
         return 0, "连不上：{}".format(错)
     try:
-        描 = json.loads(文)
+        应答描述 = json.loads(文本)
     except ValueError:
-        return 状, "返回不是 JSON（{} 字节）".format(len(文))
-    版 = 描.get("契约版本") or {}
-    return 状, "契约版本 {}.{}.{} · 实际端口 {} · 能力 {} 条".format(
-        版.get("主", "?"), 版.get("次", "?"), 版.get("构建", "?"),
-        描.get("实际端口"), len(描.get("能力", [])),
+        return 状态码, "返回不是 JSON（{} 字节）".format(len(文本))
+    契约版本 = 应答描述.get("契约版本") or {}
+    return 状态码, "契约版本 {}.{}.{} · 实际端口 {} · 能力 {} 条".format(
+        契约版本.get("主", "?"), 契约版本.get("次", "?"), 契约版本.get("构建", "?"),
+        应答描述.get("实际端口"), len(应答描述.get("能力", [])),
     )
 
 

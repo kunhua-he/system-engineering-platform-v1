@@ -160,12 +160,12 @@ pub fn 交请求(路径: &str, 请求体: &str) -> String {
 ///
 /// 顺序固定：连上 → 写请求 → **服务处理一次** → 读应答。见文件头「为什么不必开线程」。
 pub fn 发请求(服务: &服务, 请求: &str) -> 收到 {
-    let mut 流 = TcpStream::connect((监听地址, 服务.端口())).expect("必须连得上（监听已 bind）");
-    流.write_all(请求.as_bytes()).expect("写请求");
-    流.flush().expect("刷请求");
+    let mut 输出流 = TcpStream::connect((监听地址, 服务.端口())).expect("必须连得上（监听已 bind）");
+    输出流.write_all(请求.as_bytes()).expect("写请求");
+    输出流.flush().expect("刷请求");
     服务.处理一个连接().expect("服务必须处理一次");
     let mut 缓冲 = Vec::new();
-    流.read_to_end(&mut 缓冲).expect("读应答");
+    输出流.read_to_end(&mut 缓冲).expect("读应答");
     解析应答(&缓冲)
 }
 
@@ -174,26 +174,26 @@ pub fn 发请求(服务: &服务, 请求: &str) -> 收到 {
 /// 给并发测试用：服务端由 `服务::跑并发` 的工作线程收连接，测试这一侧只能当客户端。
 /// 不能拿 [`发请求`] 代替 —— 它自带一次 `处理一个连接`，会与并发的服务端**抢同一个连接**。
 pub fn 发到端口(端口: u16, 请求: &str) -> 收到 {
-    let mut 流 = TcpStream::connect((监听地址, 端口)).expect("必须连得上（监听已 bind）");
-    流.write_all(请求.as_bytes()).expect("写请求");
-    流.flush().expect("刷请求");
+    let mut 输出流 = TcpStream::connect((监听地址, 端口)).expect("必须连得上（监听已 bind）");
+    输出流.write_all(请求.as_bytes()).expect("写请求");
+    输出流.flush().expect("刷请求");
     let mut 缓冲 = Vec::new();
-    流.read_to_end(&mut 缓冲).expect("读应答");
+    输出流.read_to_end(&mut 缓冲).expect("读应答");
     解析应答(&缓冲)
 }
 
 /// 解析原始应答文本。
 fn 解析应答(字节: &[u8]) -> 收到 {
-    let 文 = String::from_utf8(字节.to_vec()).expect("应答必须是 UTF-8");
-    let (头, 体) = 文
+    let 文本 = String::from_utf8(字节.to_vec()).expect("应答必须是 UTF-8");
+    let (头, 体) = 文本
         .split_once("\r\n\r\n")
-        .unwrap_or_else(|| panic!("应答必须有头体分界：\n{文}"));
+        .unwrap_or_else(|| panic!("应答必须有头体分界：\n{文本}"));
     let 状态 = 头
         .lines()
         .next()
         .and_then(|行| 行.split(' ').nth(1))
         .and_then(|码| 码.parse::<u16>().ok())
-        .unwrap_or_else(|| panic!("应答首行必须是「HTTP/1.1 码 短语」：\n{文}"));
+        .unwrap_or_else(|| panic!("应答首行必须是「HTTP/1.1 码 短语」：\n{文本}"));
     收到 {
         状态,
         头: 头.to_owned(),

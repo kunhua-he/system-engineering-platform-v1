@@ -11,9 +11,9 @@ pub(crate) const GBK系统核心支持库: &[u8] =
 
 pub(crate) fn 首个不一致(原文: &[u8], 产物: &[u8]) -> u64 {
     let 上限 = 原文.len().min(产物.len());
-    for 位 in 0..上限 {
-        if 原文[位] != 产物[位] {
-            return 位 as u64;
+    for 位置 in 0..上限 {
+        if 原文[位置] != 产物[位置] {
+            return 位置 as u64;
         }
     }
     上限 as u64
@@ -35,13 +35,13 @@ pub(crate) fn 收集语料(根目录: &Path, 输出缓冲: &mut Vec<PathBuf>) {
     let Ok(项集) = std::fs::read_dir(根目录) else {
         return;
     };
-    for 项 in 项集.flatten() {
-        let Ok(类型) = 项.file_type() else { continue };
-        let 路 = 项.path();
+    for 一项 in 项集.flatten() {
+        let Ok(类型) = 一项.file_type() else { continue };
+        let 路径 = 一项.path();
         if 类型.is_dir() {
-            收集语料(&路, 输出缓冲);
-        } else if 类型.is_file() && 是语料文件(&路) {
-            输出缓冲.push(路);
+            收集语料(&路径, 输出缓冲);
+        } else if 类型.is_file() && 是语料文件(&路径) {
+            输出缓冲.push(路径);
         }
     }
 }
@@ -74,7 +74,7 @@ pub(crate) fn 样例流() -> 记录流 {
 }
 
 pub(crate) fn 样例字节() -> Vec<u8> {
-    let mut 流 = 样例流();
-    流.重算体长();
-    生成段数据(&流).expect("样例应能生成")
+    let mut 输出流 = 样例流();
+    输出流.重算体长();
+    生成段数据(&输出流).expect("样例应能生成")
 }

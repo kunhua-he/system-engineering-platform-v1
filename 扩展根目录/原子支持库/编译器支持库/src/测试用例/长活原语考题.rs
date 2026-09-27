@@ -68,14 +68,14 @@ fn 本扩展任务表() -> &'static 任务表 {
 
 /// 取任务句柄：**立刻返回**（在表里立一条「在飞」，起一个 6 秒的后台线程，不当场等）。
 fn 取任务句柄() -> u64 {
-    let 表 = 本扩展任务表();
-    let 句柄 = 表.下一个句柄.fetch_add(1, Ordering::Relaxed);
-    表.表.lock().unwrap().insert(句柄, 任务态::在飞);
+    let 项表 = 本扩展任务表();
+    let 句柄 = 项表.下一个句柄.fetch_add(1, Ordering::Relaxed);
+    项表.表.lock().unwrap().insert(句柄, 任务态::在飞);
     thread::spawn(move || {
         thread::sleep(长活时长);
-        let 表 = 本扩展任务表();
-        let mut 锁 = 表.表.lock().unwrap();
-        if let Some(态) = 锁.get_mut(&句柄) {
+        let 项表 = 本扩展任务表();
+        let mut 锁句柄 = 项表.表.lock().unwrap();
+        if let Some(态) = 锁句柄.get_mut(&句柄) {
             // 只把「还在飞」推成完成；已取消的不许被覆盖（取消是终态）。
             if *态 == 任务态::在飞 {
                 *态 = 任务态::已完成(vec![1, 2, 3]);
@@ -87,9 +87,9 @@ fn 取任务句柄() -> u64 {
 
 /// 取消一个句柄：把它打成**终态「已取消」**，返回一个可查的码（本扩展的 `1134` 一类）。
 fn 取消(句柄: u64) -> u32 {
-    let 表 = 本扩展任务表();
-    let mut 锁 = 表.表.lock().unwrap();
-    match 锁.get_mut(&句柄) {
+    let 项表 = 本扩展任务表();
+    let mut 锁句柄 = 项表.表.lock().unwrap();
+    match 锁句柄.get_mut(&句柄) {
         Some(态) if *态 == 任务态::在飞 => {
             *态 = 任务态::已取消;
             取消码
@@ -101,12 +101,12 @@ fn 取消(句柄: u64) -> u32 {
 
 /// 按句柄取结果：**超时即失败**（不许挂死）。取消过的句柄当场给码。
 fn 按句柄取(句柄: u64, 待取项: Duration) -> Result<Vec<u8>, u32> {
-    let 表 = 本扩展任务表();
+    let 项表 = 本扩展任务表();
     let 截止 = Instant::now() + 待取项;
     loop {
         {
-            let 锁 = 表.表.lock().unwrap();
-            match 锁.get(&句柄) {
+            let 锁句柄 = 项表.表.lock().unwrap();
+            match 锁句柄.get(&句柄) {
                 Some(任务态::已完成(字节)) => return Ok(字节.clone()),
                 Some(任务态::已取消) => return Err(取消码),
                 Some(任务态::在飞) => {}
@@ -138,9 +138,9 @@ fn 判据7_句柄过边界不失真_八字节原值逐字节不变() {
 
 #[test]
 fn 判据8_立刻返回_第一次调用一秒内拿到句柄() {
-    let 起 = Instant::now();
+    let 起始时刻 = Instant::now();
     let 句柄 = 取任务句柄();
-    let 耗时 = 起.elapsed();
+    let 耗时 = 起始时刻.elapsed();
     // 身份证：把它写回同步等 6 秒 ⇒ 本断言当场红（且整条命令越过 5 秒硬顶）。
     assert_ne!(句柄, 0, "句柄是 8 字节不透明值，不该为 0");
     assert!(耗时 < 立刻返回上限, "第一次调用耗时已达 {耗时:?}，被同步等了那 6 秒");
@@ -149,10 +149,10 @@ fn 判据8_立刻返回_第一次调用一秒内拿到句柄() {
 #[test]
 fn 判据9_取消后结构化失败_得到码而不是panic() {
     let 句柄 = 取任务句柄();
-    let 码 = 取消(句柄);
+    let 错误码 = 取消(句柄);
     // 取消后按句柄取：给一个远小于 6 秒的等待窗口 ⇒ 必得 Err(码)，不是 Ok、不是 panic。
     match 按句柄取(句柄, Duration::from_millis(50)) {
-        Err(得码) => assert_eq!(得码, 码, "取消后应得结构化失败码"),
+        Err(得码) => assert_eq!(得码, 错误码, "取消后应得结构化失败码"),
         Ok(_) => panic!("取消后仍取到结果，判据 9 红"),
     }
 }

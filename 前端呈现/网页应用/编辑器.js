@@ -47,9 +47,9 @@ export const 示例表 = [
  * `选中` 是「示例选」这个 `<select>` 节点。
  */
 export function 选中路径(选中) {
-  const 位 = Number(选中 && 选中.value) || 0;
-  const 行 = 示例表[位] || 示例表[0];
-  return 行 ? 行[1] : "";
+  const 位置 = Number(选中 && 选中.value) || 0;
+  const 源码行 = 示例表[位置] || 示例表[0];
+  return 源码行 ? 源码行[1] : "";
 }
 
 /** 取编辑区原文。 */
@@ -69,27 +69,27 @@ export function 置文本(编辑, 文本) {
  */
 export function 装编辑器(取元素) {
   const 编辑 = 取元素("编辑区");
-  const 号 = 取元素("行号");
+  const 号值 = 取元素("行号");
   const 行列 = 取元素("行列读数");
   const 字数 = 取元素("字数读数");
 
   function 刷光标() {
-    const 前 = 编辑.value.slice(0, 编辑.selectionStart);
-    const 行 = 前.split("\n").length;
-    const 列 = 前.length - (前.lastIndexOf("\n") + 1) + 1;
-    行列.textContent = 行 + " : " + 列;
+    const 光标前文 = 编辑.value.slice(0, 编辑.selectionStart);
+    const 源码行 = 光标前文.split("\n").length;
+    const 列号 = 光标前文.length - (光标前文.lastIndexOf("\n") + 1) + 1;
+    行列.textContent = 源码行 + " : " + 列号;
   }
 
   function 重绘() {
-    const 文 = 编辑.value;
-    const 行数 = 文.split("\n").length;
-    if (号.dataset.行数 !== String(行数)) {
-      号.dataset.行数 = String(行数);
-      const 表 = [];
-      for (let 序 = 1; 序 <= 行数; 序 += 1) 表.push(String(序));
-      号.textContent = 表.join("\n");
+    const 文本 = 编辑.value;
+    const 行数 = 文本.split("\n").length;
+    if (号值.dataset.行数 !== String(行数)) {
+      号值.dataset.行数 = String(行数);
+      const 项表 = [];
+      for (let 序号 = 1; 序号 <= 行数; 序号 += 1) 项表.push(String(序号));
+      号值.textContent = 项表.join("\n");
     }
-    字数.textContent = String(文.length);
+    字数.textContent = String(文本.length);
     刷光标();
   }
 
@@ -97,7 +97,7 @@ export function 装编辑器(取元素) {
   编辑.addEventListener("keyup", 刷光标);
   编辑.addEventListener("click", 刷光标);
   编辑.addEventListener("scroll", () => {
-    号.scrollTop = 编辑.scrollTop;
+    号值.scrollTop = 编辑.scrollTop;
   });
 
   编辑.addEventListener("keydown", (事件) => {
@@ -108,19 +108,19 @@ export function 装编辑器(取元素) {
   });
 
   // 示例下拉与载入按钮
-  const 选 = 取元素("示例选");
+  const 选中 = 取元素("示例选");
   const 状态 = 取元素("工具状态");
   示例表.forEach(([标签], 位置) => {
-    const 项 = document.createElement("option");
-    项.value = String(位置);
-    项.textContent = 标签;
-    选.append(项);
+    const 一项 = document.createElement("option");
+    一项.value = String(位置);
+    一项.textContent = 标签;
+    选中.append(一项);
   });
 
   // 工具条的「打开」也走这里，所以只写一份（载入示例）。
   // 有路径 ⇒ 经 `POST /接口/程序文本` 真读；空路径 ⇒ 内置模板（没有落点，不调端点）。
   async function 载入示例() {
-    const 路径 = 选中路径(选);
+    const 路径 = 选中路径(选中);
     if (!路径) {
       置文本(编辑, 模板);
       写状态(状态, "已载入内置模板（没有落点，不是语料）", true);
@@ -135,9 +135,9 @@ export function 装编辑器(取元素) {
       return "已载入 " + 路径;
     }
     // 失败：把真错误码原样报出来（后端逐种失败各报一个明确码）。
-    const 码 = 应答.体 && 应答.体.错误 && 应答.体.错误.码;
-    写状态(状态, "载入失败 · HTTP " + 应答.状态 + (码 === undefined ? "" : " · 码 " + 码), false);
-    return "载入失败 · HTTP " + 应答.状态 + (码 === undefined ? "" : " · 码 " + 码);
+    const 错误码 = 应答.体 && 应答.体.错误 && 应答.体.错误.码;
+    写状态(状态, "载入失败 · HTTP " + 应答.状态 + (错误码 === undefined ? "" : " · 码 " + 错误码), false);
+    return "载入失败 · HTTP " + 应答.状态 + (错误码 === undefined ? "" : " · 码 " + 错误码);
   }
 
   // 工具条的「新建」「清空」都走这里。

@@ -38,10 +38,10 @@ export const 钮表 = [
 ];
 
 export function 装工具栏(取元素, 钩子) {
-  const 行 = 取元素("图标行");
+  const 源码行 = 取元素("图标行");
   const 状态 = 取元素("工具状态");
 
-  const 报 = (文本, 是否好) => {
+  const 报状态 = (文本, 是否好) => {
     写状态(状态, 文本, 是否好);
     钩子.记流水("工具条", 文本);
   };
@@ -50,16 +50,16 @@ export function 装工具栏(取元素, 钩子) {
   async function 进剪贴板(文本, 动作) {
     try {
       await navigator.clipboard.writeText(文本);
-      报(动作 + "：" + 文本.length + " 字符已进系统剪贴板", true);
-    } catch (错) {
-      报(动作 + "：系统剪贴板不给写（" + 错.name + "）—— 页面不是安全上下文，或被权限挡了", false);
+      报状态(动作 + "：" + 文本.length + " 字符已进系统剪贴板", true);
+    } catch (错误) {
+      报状态(动作 + "：系统剪贴板不给写（" + 错误.name + "）—— 页面不是安全上下文，或被权限挡了", false);
     }
   }
 
   const 动作 = {
     新建() {
       钩子.清空();
-      报("新建：编辑区已清空（0 字符）", true);
+      报状态("新建：编辑区已清空（0 字符）", true);
     },
     async 打开() {
       await 钩子.载入示例();
@@ -67,64 +67,64 @@ export function 装工具栏(取元素, 钩子) {
     async 保存() {
       const 路径 = 选中路径(取元素("示例选"));
       if (!路径) {
-        报("保存：先在「载入示例」里选一份**带路径**的语料 —— 内置模板没有落点，写不了"
+        报状态("保存：先在「载入示例」里选一份**带路径**的语料 —— 内置模板没有落点，写不了"
           + "（裁决定「程序文本落在哪」由调用方给路径，本页不猜）。", false);
         return;
       }
       const 应答 = await 发程序文本("写", 路径, 钩子.编辑.value);
-      const 词 = 摘要(应答.体);
-      if (词.类 === "好") {
-        报("保存：已写入 " + 路径 + "（" + 钩子.编辑.value.length + " 字符）", true);
+      const 摘要结果 = 摘要(应答.体);
+      if (摘要结果.类 === "好") {
+        报状态("保存：已写入 " + 路径 + "（" + 钩子.编辑.value.length + " 字符）", true);
       } else {
-        const 码 = 应答.体 && 应答.体.错误 && 应答.体.错误.码;
-        报("保存：写不进去 —— HTTP " + 应答.状态 + (码 === undefined ? "" : " · 码 " + 码)
+        const 错误码 = 应答.体 && 应答.体.错误 && 应答.体.错误.码;
+        报状态("保存：写不进去 —— HTTP " + 应答.状态 + (错误码 === undefined ? "" : " · 码 " + 错误码)
           + "（真读数，不是本页编的）", false);
       }
     },
     剪切() {
       const 编辑 = 钩子.编辑;
-      const 文 = 编辑.value.slice(编辑.selectionStart, 编辑.selectionEnd);
-      if (!文) { 报("剪切：没有选中文本（选区 0 字符）", false); return; }
+      const 文本 = 编辑.value.slice(编辑.selectionStart, 编辑.selectionEnd);
+      if (!文本) { 报状态("剪切：没有选中文本（选区 0 字符）", false); return; }
       编辑.setRangeText("", 编辑.selectionStart, 编辑.selectionEnd, "start");
       编辑.dispatchEvent(new Event("input"));
-      进剪贴板(文, "剪切");
+      进剪贴板(文本, "剪切");
     },
     复制() {
       const 编辑 = 钩子.编辑;
-      const 文 = 编辑.value.slice(编辑.selectionStart, 编辑.selectionEnd);
-      if (!文) { 报("复制：没有选中文本（选区 0 字符）", false); return; }
-      进剪贴板(文, "复制");
+      const 文本 = 编辑.value.slice(编辑.selectionStart, 编辑.selectionEnd);
+      if (!文本) { 报状态("复制：没有选中文本（选区 0 字符）", false); return; }
+      进剪贴板(文本, "复制");
     },
     async 粘贴() {
       const 编辑 = 钩子.编辑;
       try {
-        const 文 = await navigator.clipboard.readText();
-        编辑.setRangeText(文, 编辑.selectionStart, 编辑.selectionEnd, "end");
+        const 文本 = await navigator.clipboard.readText();
+        编辑.setRangeText(文本, 编辑.selectionStart, 编辑.selectionEnd, "end");
         编辑.dispatchEvent(new Event("input"));
-        报("粘贴：" + 文.length + " 字符已插入光标处", true);
-      } catch (错) {
-        报("粘贴：系统剪贴板不给读（" + 错.name + "）—— 页面不是安全上下文，或被权限挡了", false);
+        报状态("粘贴：" + 文本.length + " 字符已插入光标处", true);
+      } catch (错误) {
+        报状态("粘贴：系统剪贴板不给读（" + 错误.name + "）—— 页面不是安全上下文，或被权限挡了", false);
       }
     },
     撤销() {
       const 编辑 = 钩子.编辑;
       编辑.focus();
-      const 成 = document.execCommand("undo");
+      const 是否成功 = document.execCommand("undo");
       编辑.dispatchEvent(new Event("input"));
-      报("撤销：" + (成 ? "编辑区已回退一步（现在 " + 编辑.value.length + " 字符）"
-        : "浏览器不给撤销（execCommand 回了 false）"), 成);
+      报状态("撤销：" + (是否成功 ? "编辑区已回退一步（现在 " + 编辑.value.length + " 字符）"
+        : "浏览器不给撤销（execCommand 回了 false）"), 是否成功);
     },
     重做() {
       const 编辑 = 钩子.编辑;
       编辑.focus();
-      const 成 = document.execCommand("redo");
+      const 是否成功 = document.execCommand("redo");
       编辑.dispatchEvent(new Event("input"));
-      报("重做：" + (成 ? "编辑区已重做一步（现在 " + 编辑.value.length + " 字符）"
-        : "浏览器不给重做（execCommand 回了 false）"), 成);
+      报状态("重做：" + (是否成功 ? "编辑区已重做一步（现在 " + 编辑.value.length + " 字符）"
+        : "浏览器不给重做（execCommand 回了 false）"), 是否成功);
     },
     async 查找() {
       钩子.切页签("搜寻1");
-      报("查找：转到「搜寻1」并真调 GET /接口", true);
+      报状态("查找：转到「搜寻1」并真调 GET /接口", true);
       await 钩子.取清单();
     },
     async 编译() {
@@ -137,30 +137,30 @@ export function 装工具栏(取元素, 钩子) {
     },
     清空() {
       钩子.清空();
-      报("清空：编辑区已清空（0 字符）", true);
+      报状态("清空：编辑区已清空（0 字符）", true);
     },
     视图() {
       钩子.切视图();
     },
   };
 
-  for (const 项 of 钮表) {
-    if (!项) {
-      const 隔 = 建元素("span", "图标隔");
-      行.append(隔);
+  for (const 一项 of 钮表) {
+    if (!一项) {
+      const 分隔件 = 建元素("span", "图标隔");
+      源码行.append(分隔件);
       continue;
     }
-    const [图名, 提示, 名] = 项;
-    const 钮 = 建元素("button", "图标钮");
-    钮.type = "button";
-    钮.title = 提示;
-    钮.setAttribute("aria-label", 提示);
-    钮.append(画图标(图名));
-    钮.addEventListener("click", () => {
-      const 果 = 动作[名]();
-      if (果 && typeof 果.catch === "function") 果.catch((错误) => 报(名 + "：动作抛了 —— " + 错误.message, false));
+    const [图名, 提示, 名称] = 一项;
+    const 按钮 = 建元素("button", "图标钮");
+    按钮.type = "button";
+    按钮.title = 提示;
+    按钮.setAttribute("aria-label", 提示);
+    按钮.append(画图标(图名));
+    按钮.addEventListener("click", () => {
+      const 结果 = 动作[名称]();
+      if (结果 && typeof 结果.catch === "function") 结果.catch((错误) => 报状态(名称 + "：动作抛了 —— " + 错误.message, false));
     });
-    行.append(钮);
+    源码行.append(按钮);
   }
 
   return { 动作 };

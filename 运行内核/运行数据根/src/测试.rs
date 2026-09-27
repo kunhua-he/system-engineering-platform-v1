@@ -16,10 +16,10 @@ fn 只覆盖<'a>(覆盖: &'a str) -> 环境<'a> {
 
 #[test]
 fn 覆盖非空时原样用它_不再拼默认目录名() {
-    let 根 = 解析(&只覆盖("/临时/我的根"), 平台::MacOS).expect("覆盖非空必成功");
-    assert_eq!(根, std::path::PathBuf::from("/临时/我的根"));
+    let 根目录 = 解析(&只覆盖("/临时/我的根"), 平台::MacOS).expect("覆盖非空必成功");
+    assert_eq!(根目录, std::path::PathBuf::from("/临时/我的根"));
     assert!(
-        !根.to_string_lossy().contains(默认目录名),
+        !根目录.to_string_lossy().contains(默认目录名),
         "覆盖是**完整根**：不许再拼一层 {默认目录名}（拼了就与部署方说的不是同一个位置）"
     );
 }
@@ -31,8 +31,8 @@ fn 覆盖为空串等于没给() {
         家目录: Some("/家"),
         ..Default::default()
     };
-    let 根 = 解析(&环境, 平台::MacOS).expect("空覆盖 ⇒ 退回默认");
-    assert_eq!(根, std::path::PathBuf::from("/家/Library/Application Support").join(默认目录名));
+    let 根目录 = 解析(&环境, 平台::MacOS).expect("空覆盖 ⇒ 退回默认");
+    assert_eq!(根目录, std::path::PathBuf::from("/家/Library/Application Support").join(默认目录名));
 }
 
 // ── 二 三条平台规则 ───────────────────────────────────────────────────────
@@ -91,10 +91,10 @@ fn 视窗系统_用应用数据目录而不是家目录() {
 
 #[test]
 fn 全缺时结构化失败_不编一个路径() {
-    let 空 = 环境::default();
-    assert_eq!(解析(&空, 平台::MacOS), Err(解析失败::无位置));
-    assert_eq!(解析(&空, 平台::Linux), Err(解析失败::无位置));
-    assert_eq!(解析(&空, 平台::Windows), Err(解析失败::无位置));
+    let 空环境 = 环境::default();
+    assert_eq!(解析(&空环境, 平台::MacOS), Err(解析失败::无位置));
+    assert_eq!(解析(&空环境, 平台::Linux), Err(解析失败::无位置));
+    assert_eq!(解析(&空环境, 平台::Windows), Err(解析失败::无位置));
 }
 
 #[test]
@@ -145,11 +145,11 @@ fn 默认位置不在源码树内_三条规则都推不出当前目录() {
         ),
     ];
     for (平台, 环境) in 样本 {
-        let 根 = 解析(&环境, 平台).expect("该分支必推得出");
-        assert!(根.is_absolute(), "默认位置必须绝对：{根:?}");
+        let 根目录 = 解析(&环境, 平台).expect("该分支必推得出");
+        assert!(根目录.is_absolute(), "默认位置必须绝对：{根目录:?}");
         assert!(
-            !根.starts_with(&当前),
-            "默认位置不许落在当前目录（源码树）下：{根:?}"
+            !根目录.starts_with(&当前),
+            "默认位置不许落在当前目录（源码树）下：{根目录:?}"
         );
     }
 }
@@ -159,8 +159,8 @@ fn 默认位置不在源码树内_三条规则都推不出当前目录() {
 /// 反向样本：把两类写成同一个目录名（复制粘贴错），本用例当场红。
 #[test]
 fn 四类子目录_名字两两不同_次序与判别值一致() {
-    for (序, 类) in 子目录::全集.iter().enumerate() {
-        assert_eq!(*类 as usize, 序, "次序必须与判别值一致：{类:?}");
+    for (序号, 类别) in 子目录::全集.iter().enumerate() {
+        assert_eq!(*类别 as usize, 序号, "次序必须与判别值一致：{类别:?}");
     }
     for (前项序, 前项) in 子目录::全集.iter().enumerate() {
         for 后项 in &子目录::全集[前项序 + 1..] {
@@ -173,23 +173,23 @@ fn 四类子目录_名字两两不同_次序与判别值一致() {
 
 #[test]
 fn 确保子目录真建得出来() {
-    let 根 = std::env::temp_dir().join(format!(
+    let 根目录 = std::env::temp_dir().join(format!(
         "v1-运行数据根-测试-{}",
         std::process::id()
     ));
-    let _ = std::fs::remove_dir_all(&根);
-    for 类 in 子目录::全集 {
-        let 路 = 确保子目录(&根, 类).expect("建目录");
-        assert!(路.is_dir(), "必须真建出目录：{路:?}");
-        assert!(路.ends_with(类.取名称()));
+    let _ = std::fs::remove_dir_all(&根目录);
+    for 类别 in 子目录::全集 {
+        let 路径 = 确保子目录(&根目录, 类别).expect("建目录");
+        assert!(路径.is_dir(), "必须真建出目录：{路径:?}");
+        assert!(路径.ends_with(类别.取名称()));
     }
-    let _ = std::fs::remove_dir_all(&根);
+    let _ = std::fs::remove_dir_all(&根目录);
 }
 
 #[test]
 fn 子目录路径只拼不建() {
-    let 根 = std::env::temp_dir().join("v1-运行数据根-只拼-不存在");
-    let 路 = 子目录路径(&根, 子目录::日志);
-    assert_eq!(路, 根.join("日志"));
-    assert!(!路.exists(), "只拼路径不许有副作用（建目录是另一件事）");
+    let 根目录 = std::env::temp_dir().join("v1-运行数据根-只拼-不存在");
+    let 路径 = 子目录路径(&根目录, 子目录::日志);
+    assert_eq!(路径, 根目录.join("日志"));
+    assert!(!路径.exists(), "只拼路径不许有副作用（建目录是另一件事）");
 }

@@ -134,19 +134,19 @@ pub(super) fn 读JSON件(路径: &Path) -> Result<协议值, String> {
 
 /// 列一个目录下的**子目录名**，按名排序（顺序确定 ⇒ 读数可比）。
 pub(super) fn 列子目录(目录: &Path) -> Result<Vec<String>, String> {
-    let 读 = std::fs::read_dir(目录).map_err(|错| format!("读不到目录 {}：{错}", 目录.display()))?;
-    let mut 出 = Vec::new();
-    for 一 in 读 {
-        let 一 = 一.map_err(|错| format!("列目录 {} 失败：{错}", 目录.display()))?;
-        if !一.path().is_dir() {
+    let 读器 = std::fs::read_dir(目录).map_err(|错| format!("读不到目录 {}：{错}", 目录.display()))?;
+    let mut 输出缓冲 = Vec::new();
+    for 目录项 in 读器 {
+        let 目录项 = 目录项.map_err(|错| format!("列目录 {} 失败：{错}", 目录.display()))?;
+        if !目录项.path().is_dir() {
             continue;
         }
-        let 名 = 一.file_name().to_string_lossy().into_owned();
-        if 名.starts_with('.') {
+        let 名称 = 目录项.file_name().to_string_lossy().into_owned();
+        if 名称.starts_with('.') {
             continue;
         }
-        出.push(名);
+        输出缓冲.push(名称);
     }
-    出.sort();
-    Ok(出)
+    输出缓冲.sort();
+    Ok(输出缓冲)
 }

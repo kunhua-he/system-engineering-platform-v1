@@ -43,43 +43,43 @@ def 列目录JSON件(相对目录):
 
 
 def 取整(容器, 键, 来源, 下界=None, 上界=None):
-    值 = 容器.get(键)
-    if 值 is None:
+    待处理值 = 容器.get(键)
+    if 待处理值 is None:
         raise 生成失败("%s 缺字段「%s」" % (来源, 键))
-    if isinstance(值, bool) or not isinstance(值, int):
-        raise 生成失败("%s 的「%s」不是整数：%r" % (来源, 键, 值))
-    if 下界 is not None and 值 < 下界:
-        raise 生成失败("%s 的「%s」=%d 小于 %d" % (来源, 键, 值, 下界))
-    if 上界 is not None and 值 > 上界:
-        raise 生成失败("%s 的「%s」=%d 大于 %d" % (来源, 键, 值, 上界))
-    return 值
+    if isinstance(待处理值, bool) or not isinstance(待处理值, int):
+        raise 生成失败("%s 的「%s」不是整数：%r" % (来源, 键, 待处理值))
+    if 下界 is not None and 待处理值 < 下界:
+        raise 生成失败("%s 的「%s」=%d 小于 %d" % (来源, 键, 待处理值, 下界))
+    if 上界 is not None and 待处理值 > 上界:
+        raise 生成失败("%s 的「%s」=%d 大于 %d" % (来源, 键, 待处理值, 上界))
+    return 待处理值
 
 
 def 取串(容器, 键, 来源, 允许空=False):
-    值 = 容器.get(键)
-    if 值 is None:
+    待处理值 = 容器.get(键)
+    if 待处理值 is None:
         raise 生成失败("%s 缺字段「%s」" % (来源, 键))
-    if not isinstance(值, str):
-        raise 生成失败("%s 的「%s」不是字符串：%r" % (来源, 键, 值))
-    if not 允许空 and 值 == "":
+    if not isinstance(待处理值, str):
+        raise 生成失败("%s 的「%s」不是字符串：%r" % (来源, 键, 待处理值))
+    if not 允许空 and 待处理值 == "":
         raise 生成失败("%s 的「%s」是空串" % (来源, 键))
-    return 值
+    return 待处理值
 
 
 def 取表(容器, 键, 来源):
-    值 = 容器.get(键)
-    if 值 is None:
+    待处理值 = 容器.get(键)
+    if 待处理值 is None:
         raise 生成失败("%s 缺字段「%s」" % (来源, 键))
-    if not isinstance(值, list):
-        raise 生成失败("%s 的「%s」不是数组：%r" % (来源, 键, 值))
-    return 值
+    if not isinstance(待处理值, list):
+        raise 生成失败("%s 的「%s」不是数组：%r" % (来源, 键, 待处理值))
+    return 待处理值
 
 
 def 取逻辑(容器, 键, 来源):
-    值 = 容器.get(键)
-    if not isinstance(值, bool):
-        raise 生成失败("%s 的「%s」不是布尔：%r" % (来源, 键, 值))
-    return 值
+    待处理值 = 容器.get(键)
+    if not isinstance(待处理值, bool):
+        raise 生成失败("%s 的「%s」不是布尔：%r" % (来源, 键, 待处理值))
+    return 待处理值
 
 
 def 是标识符(名字):
@@ -89,33 +89,33 @@ def 是标识符(名字):
 
 def 转字符串字面量(文本):
     """把文本渲染成 Rust 字符串字面量（含引号）。控制字符走 \\u{..}。"""
-    出 = ['"']
+    输出缓冲 = ['"']
     for 字符 in 文本:
-        码 = ord(字符)
+        错误码 = ord(字符)
         if 字符 == "\\":
-            出.append("\\\\")
+            输出缓冲.append("\\\\")
         elif 字符 == '"':
-            出.append('\\"')
+            输出缓冲.append('\\"')
         elif 字符 == "\n":
-            出.append("\\n")
+            输出缓冲.append("\\n")
         elif 字符 == "\r":
-            出.append("\\r")
+            输出缓冲.append("\\r")
         elif 字符 == "\t":
-            出.append("\\t")
-        elif 码 == 0:
-            出.append("\\0")
-        elif 码 < 0x20 or 码 == 0x7F:
-            出.append("\\u{%X}" % 码)
+            输出缓冲.append("\\t")
+        elif 错误码 == 0:
+            输出缓冲.append("\\0")
+        elif 错误码 < 0x20 or 错误码 == 0x7F:
+            输出缓冲.append("\\u{%X}" % 错误码)
         else:
-            出.append(字符)
-    出.append('"')
-    return "".join(出)
+            输出缓冲.append(字符)
+    输出缓冲.append('"')
+    return "".join(输出缓冲)
 
 
 def 注释行(文本, 缩进=""):
     """单行注释；内部换行折成空格，保证产物行数确定。"""
-    平 = " ".join(文本.split())
-    return "%s// %s" % (缩进, 平) if 平 else "%s//" % 缩进
+    平整文本 = " ".join(文本.split())
+    return "%s// %s" % (缩进, 平整文本) if 平整文本 else "%s//" % 缩进
 
 
 def 版本三元组(容器, 来源):

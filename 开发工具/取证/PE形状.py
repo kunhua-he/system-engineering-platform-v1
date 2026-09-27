@@ -112,10 +112,10 @@ class PE:
         if rva is None:
             return None
         文偏移 = self.转偏移(rva)
-        尾 = self.原始字节.find(b"\0", 文偏移)
-        if 尾 < 0:
+        尾部 = self.原始字节.find(b"\0", 文偏移)
+        if 尾部 < 0:
             raise 解析错误("0x%x 处的字符串没有 NUL 结尾" % 绝对址)
-        return self.原始字节[文偏移:尾].decode("gbk", "replace")
+        return self.原始字节[文偏移:尾部].decode("gbk", "replace")
 
     def 导出(self):
         """读导出表 ⇒ `[(名, 序号, RVA)…]`；无导出目录就抛。"""
@@ -131,9 +131,9 @@ class PE:
             raise 解析错误("导出函数数为 0")
         函数表项 = struct.unpack_from("<%dI" % 函数数, self.原始字节, self.转偏移(函数表))
         结果 = []
-        for 序 in range(名字数):
-            串起 = self.转偏移(self.读四字节(self.转偏移(名字表) + 4 * 序))
-            名序 = struct.unpack_from("<H", self.原始字节, self.转偏移(序号表) + 2 * 序)[0]
+        for 序号 in range(名字数):
+            串起 = self.转偏移(self.读四字节(self.转偏移(名字表) + 4 * 序号))
+            名序 = struct.unpack_from("<H", self.原始字节, self.转偏移(序号表) + 2 * 序号)[0]
             if 名序 >= 函数数:
                 raise 解析错误("名字序号 %d 超出函数数 %d" % (名序, 函数数))
             名尾 = self.原始字节.find(b"\0", 串起)

@@ -55,14 +55,14 @@ impl JSON值 {
 }
 
 pub(crate) fn 解析(文本: &str) -> Option<JSON值> {
-    let mut 读 = 读器 { 字节: 文本.as_bytes(), 位: 0 };
-    读.跳空白();
-    let 值 = 读.读一个值()?;
-    读.跳空白();
-    if 读.位 != 读.字节.len() {
+    let mut 读器 = 读器 { 字节: 文本.as_bytes(), 位: 0 };
+    读器.跳空白();
+    let 待处理值 = 读器.读一个值()?;
+    读器.跳空白();
+    if 读器.位 != 读器.字节.len() {
         return None;
     }
-    Some(值)
+    Some(待处理值)
 }
 
 struct 读器<'a> {
@@ -113,14 +113,14 @@ impl<'a> 读器<'a> {
         }
         loop {
             self.跳空白();
-            let 键 = self.读字符串()?;
+            let 键名 = self.读字符串()?;
             self.跳空白();
             if self.取当前字节()? != b':' {
                 return None;
             }
             self.位 += 1;
-            let 值 = self.读一个值()?;
-            项s.push((键, 值));
+            let 待处理值 = self.读一个值()?;
+            项s.push((键名, 待处理值));
             self.跳空白();
             match self.取当前字节()? {
                 b',' => self.位 += 1,
@@ -142,8 +142,8 @@ impl<'a> 读器<'a> {
             return Some(JSON值::数组(项s));
         }
         loop {
-            let 值 = self.读一个值()?;
-            项s.push(值);
+            let 待处理值 = self.读一个值()?;
+            项s.push(待处理值);
             self.跳空白();
             match self.取当前字节()? {
                 b',' => self.位 += 1,
@@ -161,57 +161,57 @@ impl<'a> 读器<'a> {
             return None;
         }
         self.位 += 1;
-        let mut 出 = String::new();
+        let mut 输出缓冲 = String::new();
         loop {
             let 字节 = self.取当前字节()?;
             match 字节 {
                 b'"' => {
                     self.位 += 1;
-                    return Some(出);
+                    return Some(输出缓冲);
                 }
                 b'\\' => {
                     self.位 += 1;
-                    let 转 = self.取当前字节()?;
+                    let 转义符 = self.取当前字节()?;
                     self.位 += 1;
-                    match 转 {
-                        b'"' => 出.push('"'),
-                        b'\\' => 出.push('\\'),
-                        b'/' => 出.push('/'),
-                        b'n' => 出.push('\n'),
-                        b'r' => 出.push('\r'),
-                        b't' => 出.push('\t'),
+                    match 转义符 {
+                        b'"' => 输出缓冲.push('"'),
+                        b'\\' => 输出缓冲.push('\\'),
+                        b'/' => 输出缓冲.push('/'),
+                        b'n' => 输出缓冲.push('\n'),
+                        b'r' => 输出缓冲.push('\r'),
+                        b't' => 输出缓冲.push('\t'),
                         b'u' => {
-                            let 码 = u32::from_str_radix(
+                            let 码点 = u32::from_str_radix(
                                 std::str::from_utf8(self.字节.get(self.位..self.位 + 4)?)
                                     .ok()?,
                                 16,
                             )
                             .ok()?;
                             self.位 += 4;
-                            出.push(char::from_u32(码)?);
+                            输出缓冲.push(char::from_u32(码点)?);
                         }
                         _ => return None,
                     }
                 }
                 _ => {
                     // 多字节 UTF-8：整块拷贝。
-                    let 起 = self.位;
+                    let 区间起点 = self.位;
                     self.位 += UTF8字节长(字节);
-                    出.push_str(std::str::from_utf8(self.字节.get(起..self.位)?).ok()?);
+                    输出缓冲.push_str(std::str::from_utf8(self.字节.get(区间起点..self.位)?).ok()?);
                 }
             }
         }
     }
 
     fn 读数值(&mut self) -> Option<JSON值> {
-        let 起 = self.位;
+        let 区间起点 = self.位;
         while matches!(self.取当前字节(), Some(b'0'..=b'9' | b'-' | b'+' | b'.' | b'e' | b'E')) {
             self.位 += 1;
         }
-        if self.位 == 起 {
+        if self.位 == 区间起点 {
             return None;
         }
-        std::str::from_utf8(self.字节.get(起..self.位)?)
+        std::str::from_utf8(self.字节.get(区间起点..self.位)?)
             .ok()?
             .parse()
             .ok()

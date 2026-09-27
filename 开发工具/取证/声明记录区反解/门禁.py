@@ -42,7 +42,7 @@ def 带门禁跑(参数, 起始) -> int:
     `N=$(python3 … --建议分片数)` 这类取值（取回来的是「命令墙钟…」那一行，不是数）。
     """
     from .命令行 import 入口函数
-    码 = 入口函数(参数)
+    错误码 = 入口函数(参数)
     注入 = 注入人为慢()
     墙钟毫秒 = int((time.monotonic() - 起始) * 1000)
     print("─" * 78, file=sys.stderr)
@@ -56,4 +56,4 @@ def 带门禁跑(参数, 起始) -> int:
               file=sys.stderr)
         return 1
     print("✓ 在硬顶内", file=sys.stderr)
-    return 码
+    return 错误码

@@ -12,11 +12,11 @@ def 合法GBK(bs):
     if not bs or b"\x00" in bs:
         return False
     try:
-        串 = bs.decode("gbk")
+        字节串 = bs.decode("gbk")
     except Exception:
         return False
-    for 字 in 串:
-        码点 = ord(字)
+    for 字符表 in 字节串:
+        码点 = ord(字符表)
         if 码点 < 0x20 or 0x7F <= 码点 <= 0xA0:
             return False
     return True
@@ -71,13 +71,13 @@ def 试DLL命令记录(区字节, 起点位):
         return None
     if 保留 > 0xFFFF:                      # 既有件 8 个实测点全 ≤ 0xFF；>0xFFFF 判为误切（fail-closed）
         return None
-    参 = 区字节[游标 + 8:游标 + 8 + 参数个数 * 4]
-    if any(参[参位 + 3] != DLL令牌类别 for 参位 in range(0, len(参), 4)):
+    参数 = 区字节[游标 + 8:游标 + 8 + 参数个数 * 4]
+    if any(参数[参位 + 3] != DLL令牌类别 for 参位 in range(0, len(参数), 4)):
         return None
     结果 = {"种类": "DLL命令记录", "起": 起点位, "止": 游标 + 8 + 参数个数 * 4, "参数个数": 参数个数, "保留": 保留,
           "使用名": 名表[0], "库名": 名表[1], "命令名": 名表[2],
-          "号": [struct.unpack_from("<H", 参, 参位)[0] for 参位 in range(0, len(参), 4)],
-          "参中字节": sorted(set(参[参位 + 2] for 参位 in range(0, len(参), 4)))}
+          "号": [struct.unpack_from("<H", 参数, 参位)[0] for 参位 in range(0, len(参数), 4)],
+          "参中字节": sorted(set(参数[参位 + 2] for 参位 in range(0, len(参数), 4)))}
     return 结果, 游标 + 8 + 参数个数 * 4
 
 
@@ -102,8 +102,8 @@ def 走记录(区字节, 起点=0, 区间终点=None):
     区间终点 = len(区字节) if 区间终点 is None else 区间终点
     起点位, 记录, 未解 = 起点, [], 0
     while 起点位 < 区间终点:
-        for 法 in 试法:
-            试中 = 法(区字节, 起点位)
+        for 试函数 in 试法:
+            试中 = 试函数(区字节, 起点位)
             if 试中 is not None:
                 记录.append(试中[0])
                 未解 += 0

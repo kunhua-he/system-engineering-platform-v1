@@ -19,18 +19,18 @@ function 摆变量(容器, 应答体) {
     容器.append(建元素("p", "提示 坏", "应答顶层不是对象，摆不出「变量表」。"));
     return;
   }
-  for (const 键 of Object.keys(应答体)) {
-    const 值 = 应答体[键];
-    const 行 = 建元素("div", "行内");
-    行.append(建元素("span", "键", 键 + "："));
-    行.append(建元素("span", "文", Array.isArray(值) ? "表 " + 值.length + " 项"
-      : 值 !== null && typeof 值 === "object" ? "对象 " + Object.keys(值).length + " 键"
-        : String(值)));
-    容器.append(行);
-    if (Array.isArray(值)) {
-      const 盒 = 建元素("div", "果");
-      摆值(盒, 值);
-      容器.append(盒);
+  for (const 键名 of Object.keys(应答体)) {
+    const 待处理值 = 应答体[键名];
+    const 源码行 = 建元素("div", "行内");
+    源码行.append(建元素("span", "键", 键名 + "："));
+    源码行.append(建元素("span", "文", Array.isArray(待处理值) ? "表 " + 待处理值.length + " 项"
+      : 待处理值 !== null && typeof 待处理值 === "object" ? "对象 " + Object.keys(待处理值).length + " 键"
+        : String(待处理值)));
+    容器.append(源码行);
+    if (Array.isArray(待处理值)) {
+      const 容器盒 = 建元素("div", "果");
+      摆值(容器盒, 待处理值);
+      容器.append(容器盒);
     }
   }
 }
@@ -41,7 +41,7 @@ export function 装支持库(取元素) {
 
   async function 取清单() {
     const 状态 = 取元素("清单状态");
-    const 连 = 取元素("连接状态");
+    const 连接 = 取元素("连接状态");
     写状态(状态, "请求中…");
     try {
       const 应答 = await 取根();
@@ -52,29 +52,29 @@ export function 装支持库(取元素) {
       if (应答.状态 === 200) {
         写状态(状态, "已回", true);
         写状态(取元素("变量状态"), "已回（顶层 " + Object.keys(应答.体 || {}).length + " 个值）", true);
-        连.textContent = "网关已回";
-        连.className = "状态 好";
+        连接.textContent = "网关已回";
+        连接.className = "状态 好";
         取元素("条_连接").textContent = "已回";
         取元素("条_连接").className = "状态 好";
       } else {
         写状态(状态, "HTTP " + 应答.状态, false);
         写状态(取元素("变量状态"), "HTTP " + 应答.状态, false);
-        连.textContent = "网关连不上（HTTP " + 应答.状态 + "）";
-        连.className = "状态 坏";
+        连接.textContent = "网关连不上（HTTP " + 应答.状态 + "）";
+        连接.className = "状态 坏";
         取元素("条_连接").textContent = "HTTP " + 应答.状态;
         取元素("条_连接").className = "状态 坏";
       }
       return 应答;
-    } catch (错) {
+    } catch (错误) {
       摆消息(
         清单果,
-        "发不出去：" + 错.message +
+        "发不出去：" + 错误.message +
         "。本页用同源相对路径调 /接口，所以它必须由接口面同源托管（或由同源反代把 /接口 转给接口面）才调得通。"
       );
       写状态(状态, "失败", false);
       写状态(取元素("变量状态"), "发不出去", false);
-      连.textContent = "网关连不上";
-      连.className = "状态 坏";
+      连接.textContent = "网关连不上";
+      连接.className = "状态 坏";
       取元素("条_连接").textContent = "连不上";
       取元素("条_连接").className = "状态 坏";
       return null;
@@ -89,8 +89,8 @@ export function 装支持库(取元素) {
       摆应答(契约果, 应答);
       写状态(状态, 应答.状态 === 200 ? "已回" : "HTTP " + 应答.状态, 应答.状态 === 200);
       return 应答;
-    } catch (错) {
-      摆消息(契约果, "发不出去：" + 错.message);
+    } catch (错误) {
+      摆消息(契约果, "发不出去：" + 错误.message);
       写状态(状态, "失败", false);
       return null;
     }

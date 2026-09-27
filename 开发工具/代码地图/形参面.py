@@ -86,12 +86,12 @@ def 扫签名形参(行表: list) -> list:
     ★ **多行签名也认**：从签名行的首个 `(` 起，跨行（最多 40 行）读到**配平**的 `)`。
     实测（本仓）多行签名里有 12 处单字形参 —— 只扫单行签名会整批漏掉。
     """
-    出 = []
+    输出缓冲 = []
     for 序号, 行 in enumerate(行表):
-        首 = 行.strip()
-        if 首.startswith(注释头):
+        首字节 = 行.strip()
+        if 首字节.startswith(注释头):
             continue
-        匹配 = _函数头.match(首)
+        匹配 = _函数头.match(首字节)
         if not 匹配:
             continue
         函数名 = 匹配.group(1) or 匹配.group(2)
@@ -99,29 +99,29 @@ def 扫签名形参(行表: list) -> list:
         深度 = 0
         开了 = False
         for 偏移, 后续 in enumerate(行表[序号:序号 + 40]):
-            段 = 后续 if 偏移 == 0 else 后续.strip()
-            if 偏移 and 段.startswith(注释头):
+            号段 = 后续 if 偏移 == 0 else 后续.strip()
+            if 偏移 and 号段.startswith(注释头):
                 continue
-            for 字 in 段:
-                if 字 == "(":
+            for 字符表 in 号段:
+                if 字符表 == "(":
                     深度 += 1
                     开了 = True
                     continue
-                if 字 == ")":
+                if 字符表 == ")":
                     深度 -= 1
                     if 深度 == 0:
                         break
                     continue
                 if 开了:
-                    缓冲 += 字
+                    缓冲 += 字符表
             if 开了 and 深度 == 0:
                 break
             if 开了:
                 缓冲 += ","
         for 形参名 in _形参名.findall(缓冲):
             if 是单字形参(形参名):
-                出.append((序号 + 1, 函数名, 形参名))
-    return 出
+                输出缓冲.append((序号 + 1, 函数名, 形参名))
+    return 输出缓冲
 
 
 def 扫JS形参(行表: list) -> list:
@@ -129,20 +129,20 @@ def 扫JS形参(行表: list) -> list:
 
     这些形参是**函数内局部**的：改名字面替换即可，但**不许**把同名的外层变量一起改（按行判）。
     """
-    出 = []
+    输出缓冲 = []
     for 序号, 行 in enumerate(行表, 1):
         if 行.strip().startswith(注释头):
             continue
         for 匹配 in list(_箭头.finditer(行)) + list(_函数式.finditer(行)):
             形参段 = ""
-            for 组 in 匹配.groups():
-                if 组 is not None:
-                    形参段 = 组
+            for 匹配组 in 匹配.groups():
+                if 匹配组 is not None:
+                    形参段 = 匹配组
                     break
             for 形参名 in _JS名.findall(形参段):
                 if 是单字形参(形参名):
-                    出.append((序号, 形参名))
-    return 出
+                    输出缓冲.append((序号, 形参名))
+    return 输出缓冲
 
 
 def 扫文本(路径: str, 文本: str) -> list:
@@ -171,8 +171,8 @@ def 有函数头(路径: str, 文本: str) -> bool:
     行表 = 文本.splitlines()
     if 路径.endswith(JS后缀):
         return any(_箭头.search(行) or _函数式.search(行) for 行 in 行表)
-    return any(_函数头.match(行.strip()) and not 行.strip().startswith(注释头)
-               for 行 in 行表)
+    return any(_函数头.match(源码行.strip()) and not 源码行.strip().startswith(注释头)
+               for 源码行 in 行表)
 
 
 def 遍历命名件(根目录: str = None):
@@ -180,9 +180,9 @@ def 遍历命名件(根目录: str = None):
     起点 = str(根目录 or 仓根)
     for 目录, 子目录表, 件表 in os.walk(起点):
         子目录表[:] = [段 for 段 in 子目录表 if 段 not in 跳过目录]
-        for 件 in 件表:
-            if 件.endswith(命名后缀):
-                yield os.path.join(目录, 件)
+        for 节点件 in 件表:
+            if 节点件.endswith(命名后缀):
+                yield os.path.join(目录, 节点件)
 
 
 def 面读数(条表: list) -> dict:

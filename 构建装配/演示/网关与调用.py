@@ -36,25 +36,25 @@ def 起网关(暂存: Path) -> tuple:
     """起演示网关：`--端口 0` 让 OS 分配（绝不碰流量端口）；实际端口从
     `监听 127.0.0.1:<端口>` 那一行读（与 上线切换.py::等端口 同一读法）。"""
     日志 = 暂存 / "网关日志.txt"
-    流 = 日志.open("w", encoding="utf-8")
+    输出流 = 日志.open("w", encoding="utf-8")
     进程 = subprocess.Popen(
         [str(暂存 / "网关"), "--声明根", "扩展根声明.json", "--端口", "0",
          "--静态根", str(仓根 / "前端呈现" / "网页应用")],
-        cwd=str(暂存), stdout=流, stderr=subprocess.STDOUT,
+        cwd=str(暂存), stdout=输出流, stderr=subprocess.STDOUT,
         stdin=subprocess.DEVNULL, start_new_session=True,
     )
     截止 = time.time() + 健康超时秒
     while time.time() < 截止:
         if 进程.poll() is not None:
-            流.close()
+            输出流.close()
             raise RuntimeError("演示网关没起来就退了（退出码 {}）：\n{}".format(
                 进程.returncode, 日志.read_text(encoding="utf-8", errors="replace")))
-        文 = 日志.read_text(encoding="utf-8", errors="replace")
-        命 = re.search(r"监听 127\.0\.0\.1:(\d+)", 文)
-        if 命:
-            return 进程, 日志, int(命.group(1)), 文
+        文本 = 日志.read_text(encoding="utf-8", errors="replace")
+        匹配结果 = re.search(r"监听 127\.0\.0\.1:(\d+)", 文本)
+        if 匹配结果:
+            return 进程, 日志, int(匹配结果.group(1)), 文本
         time.sleep(0.05)
-    流.close()
+    输出流.close()
     raise RuntimeError("等 `监听 127.0.0.1:<端口>` 超时（{} 秒）：\n{}".format(
         健康超时秒, 日志.read_text(encoding="utf-8", errors="replace")))
 
@@ -65,51 +65,51 @@ def 启动读数(文本: str) -> dict:
     逐行按**行首词**认（启动入口打的「装上/剔除」行以落点开头），汇总行
     「扫到扩展 N 个（装上 N · 剔除 N）」里也有「装上」两个字 —— 按行首认就不会把它混进来。
     """
-    出 = {"扫到扩展": None, "装上": None, "剔除": None, "声明根份数": None, "能力清单条数": None,
+    输出缓冲 = {"扫到扩展": None, "装上": None, "剔除": None, "声明根份数": None, "能力清单条数": None,
           "装上行": [], "剔除行": []}
-    命 = re.search(r"扫到扩展 (\d+) 个（装上 (\d+) · 剔除 (\d+)）", 文本)
-    if 命:
-        出["扫到扩展"], 出["装上"], 出["剔除"] = (int(命.group(组序)) for 组序 in (1, 2, 3))
-    命 = re.search(r"声明根 (\d+) 份 · 能力清单 (\d+) 条", 文本)
-    if 命:
-        出["声明根份数"], 出["能力清单条数"] = int(命.group(1)), int(命.group(2))
-    for 行 in 文本.splitlines():
-        条 = 行.strip()
-        if 条.startswith("装上 /"):
-            出["装上行"].append(条[len("装上 "):])
-        elif 条.startswith("剔除 /"):
-            出["剔除行"].append(条[len("剔除 "):])
-    return 出
+    匹配结果 = re.search(r"扫到扩展 (\d+) 个（装上 (\d+) · 剔除 (\d+)）", 文本)
+    if 匹配结果:
+        输出缓冲["扫到扩展"], 输出缓冲["装上"], 输出缓冲["剔除"] = (int(匹配结果.group(组序)) for 组序 in (1, 2, 3))
+    匹配结果 = re.search(r"声明根 (\d+) 份 · 能力清单 (\d+) 条", 文本)
+    if 匹配结果:
+        输出缓冲["声明根份数"], 输出缓冲["能力清单条数"] = int(匹配结果.group(1)), int(匹配结果.group(2))
+    for 源码行 in 文本.splitlines():
+        一条 = 源码行.strip()
+        if 一条.startswith("装上 /"):
+            输出缓冲["装上行"].append(一条[len("装上 "):])
+        elif 一条.startswith("剔除 /"):
+            输出缓冲["剔除行"].append(一条[len("剔除 "):])
+    return 输出缓冲
 
 
 def 真调(端口: int, 被调号: int, 程序文本: str) -> dict:
-    体 = json.dumps({"编号": 被调号, "值": [{"类型标签": 4, "值": 程序文本}]},
+    应答体 = json.dumps({"编号": 被调号, "值": [{"类型标签": 4, "值": 程序文本}]},
                     ensure_ascii=False).encode("utf-8")
-    求 = urllib.request.Request(
+    请求对象 = urllib.request.Request(
         "http://127.0.0.1:{}{}".format(端口, urllib.parse.quote("/接口/调用")),
-        data=体, headers={"Content-Type": "application/json"}, method="POST",
+        data=应答体, headers={"Content-Type": "application/json"}, method="POST",
     )
     状态, 应体 = 0, ""
     try:
-        with urllib.request.urlopen(求, timeout=HTTP超时秒) as 应:
+        with urllib.request.urlopen(请求对象, timeout=HTTP超时秒) as 应:
             状态, 应体 = 应.status, 应.read().decode("utf-8")
     except urllib.error.HTTPError as 错:
         状态, 应体 = 错.code, 错.read().decode("utf-8", errors="replace")
-    出 = {"HTTP状态": 状态, "成功": None, "返回字节数": None, "耗时微秒": None}
+    输出缓冲 = {"HTTP状态": 状态, "成功": None, "返回字节数": None, "耗时微秒": None}
     try:
-        果 = json.loads(应体)
+        结果 = json.loads(应体)
     except ValueError:
-        出["说明"] = "返回不是 JSON：{}".format(应体[:200])
-        return 出
-    出["成功"] = 果.get("成功")
-    出["耗时微秒"] = 果.get("耗时微秒")
-    值 = 果.get("值") or []
-    if 值 and isinstance(值[0].get("值"), str):
+        输出缓冲["说明"] = "返回不是 JSON：{}".format(应体[:200])
+        return 输出缓冲
+    输出缓冲["成功"] = 结果.get("成功")
+    输出缓冲["耗时微秒"] = 结果.get("耗时微秒")
+    待处理值 = 结果.get("值") or []
+    if 待处理值 and isinstance(待处理值[0].get("值"), str):
         # 返回槽是字节集（base64 串）⇒ 解码计字节数（那次实证读的是同一形状）。
-        出["返回字节数"] = len(base64.b64decode(值[0]["值"]))
-    if 果.get("错误"):
-        出["错误"] = 果["错误"]
-    return 出
+        输出缓冲["返回字节数"] = len(base64.b64decode(待处理值[0]["值"]))
+    if 结果.get("错误"):
+        输出缓冲["错误"] = 结果["错误"]
+    return 输出缓冲
 
 
 def 停网关(进程) -> dict:
@@ -193,18 +193,18 @@ def 跑主链(壳起表=None) -> int:
         # ── 第 1 步：编扩展 cdylib（转调 构建制品.py::扩展产物）──────────────
         死层 = "编扩展层"
         打印("① 编扩展 cdylib（转调 构建制品.py::扩展产物）")
-        模 = 载入构建制品()
-        库 = 模.扩展产物({
+        制品模块 = 载入构建制品()
+        动态库 = 制品模块.扩展产物({
             "落点": 扩展落点, "种类": "支持库",
             "目录": "扩展根目录/原子支持库", "名": 扩展落点.name,
         })
-        符号 = 符号导出读数(库)
+        符号 = 符号导出读数(动态库)
         回执["层"]["编扩展"] = {
-            "成了": True, "dylib路径": str(库), "dylib字节数": 库.stat().st_size,
+            "成了": True, "dylib路径": str(动态库), "dylib字节数": 动态库.stat().st_size,
             "符号导出": 符号, "转调": "构建制品.py::扩展产物",
         }
         打印("   dylib {}（{} 字节）· 接缝符号在：{}".format(
-            库.name, 库.stat().st_size, 符号.get("接缝符号在")))
+            动态库.name, 动态库.stat().st_size, 符号.get("接缝符号在")))
         if not 符号.get("接缝符号在"):
             raise RuntimeError("编出来的库取不到接缝符号 GetPlatformInfo：{}".format(符号))
         打点("① 编扩展")
@@ -218,7 +218,7 @@ def 跑主链(壳起表=None) -> int:
         网关件 = 备网关产物()
         打印("   网关产物 {}（{} 字节{}）".format(
             网关件["路径"], 网关件["字节数"], "，现编" if 网关件["现编"] else ""))
-        暂存 = 搭暂存(库)
+        暂存 = 搭暂存(动态库)
         回执["层"]["装配"] = {
             "成了": True, "暂存目录": str(暂存), "网关产物": 网关件,
             "声明": str(暂存 / "扩展根声明.json"),
@@ -236,10 +236,10 @@ def 跑主链(壳起表=None) -> int:
         打印("   扫到扩展 {} 个（装上 {} · 剔除 {}）· 声明根 {} 份 · 能力清单 {} 条".format(
             读数["扫到扩展"], 读数["装上"], 读数["剔除"],
             读数["声明根份数"], 读数["能力清单条数"]))
-        for 行 in 读数["装上行"]:
-            打印("   装上 {}".format(行))
-        for 行 in 读数["剔除行"]:
-            打印("   剔除 {}".format(行))
+        for 源码行 in 读数["装上行"]:
+            打印("   装上 {}".format(源码行))
+        for 源码行 in 读数["剔除行"]:
+            打印("   剔除 {}".format(源码行))
         if not 读数["扫到扩展"] or not 读数["装上"]:
             raise RuntimeError(
                 "扩展没被扫到/装上（扫到 {} · 装上 {}）——检查暂存声明与扩展树".format(
@@ -252,18 +252,18 @@ def 跑主链(壳起表=None) -> int:
         打印("④ 经 HTTP 真调 {}（样本：测试验证/案例/真程序文本/输入.程序文本，{} 字节）".format(
             "/".join(str(号) for 号 in 被调号表), 程序文本源.stat().st_size))
         调用读数 = {}
-        for 号 in 被调号表:
-            果 = 真调(端口, 号, 程序文本)
-            调用读数[str(号)] = 果
+        for 号值 in 被调号表:
+            结果 = 真调(端口, 号值, 程序文本)
+            调用读数[str(号值)] = 结果
             打印("   {} → HTTP {} · 成功={} · 返回 {} 字节".format(
-                号, 果["HTTP状态"], 果["成功"],
-                "{} 字节".format(果["返回字节数"]) if 果["返回字节数"] is not None else "—"))
+                号值, 结果["HTTP状态"], 结果["成功"],
+                "{} 字节".format(结果["返回字节数"]) if 结果["返回字节数"] is not None else "—"))
         回执["层"]["调用"] = {"成了": True, "样本": str(程序文本源), "逐号": 调用读数}
-        for 号 in 被调号表:
-            果 = 调用读数[str(号)]
-            if 果["HTTP状态"] != 200 or 果["成功"] is not True:
+        for 号值 in 被调号表:
+            结果 = 调用读数[str(号值)]
+            if 结果["HTTP状态"] != 200 or 结果["成功"] is not True:
                 raise RuntimeError("能力 {} 真调不过：HTTP {} · 成功={} · {}".format(
-                    号, 果["HTTP状态"], 果["成功"], 果.get("错误", 果.get("说明", ""))))
+                    号值, 结果["HTTP状态"], 结果["成功"], 结果.get("错误", 结果.get("说明", ""))))
         打点("④ 真调")
 
         # ── 判定 ───────────────────────────────────────────────────────────
@@ -283,15 +283,15 @@ def 跑主链(壳起表=None) -> int:
         打印("⑤ 收工清理")
         清理 = {}
         if 进程 is not None:
-            停 = 停网关(进程)
-            清理["停网关"] = 停
+            停机结果 = 停网关(进程)
+            清理["停网关"] = 停机结果
             打印("   停网关 pid {} · {} · 停法 {} · 退出码 {}".format(
-                进程.pid, 停.get("结果"), 停.get("停法", "—"), 停.get("退出码", "—")))
+                进程.pid, 停机结果.get("结果"), 停机结果.get("停法", "—"), 停机结果.get("退出码", "—")))
             # 礼停已收 = SIGTERM 自身把它请走的。网关没有信号处理器 ⇒ 应恒为真。
             # 这条进判定，是因为它同时是**五秒硬顶的防回潮判据**：判活一旦被改回
             # `os.kill(pid, 0)`（僵尸恒判活），礼停就永远收不到、白等满 停等秒 逼近顶，
             # 而这里当场变假 —— 超顶与「读数与事实相反」两件事一起被顶住。
-            回执.setdefault("判据", {})["礼停已收"] = 停.get("停法") == "礼停（SIGTERM）"
+            回执.setdefault("判据", {})["礼停已收"] = 停机结果.get("停法") == "礼停（SIGTERM）"
         if 暂存 is not None and 暂存.is_dir():
             try:
                 shutil.rmtree(暂存)
@@ -325,10 +325,10 @@ def 跑主链(壳起表=None) -> int:
     回执["命令墙钟毫秒"] = 墙钟毫秒
     回执["命令墙钟来源"] = "完整壳（入口导入前起表）" if 完整壳 else "下界（本函数起表，壳未给起表点）"
     回执.setdefault("判据", {})["五秒内"] = 墙钟毫秒 <= 阈值毫秒
-    过 = isinstance(回执.get("判据"), dict) and 回执["判据"].get("到过判定", True) and all(
+    是否通过 = isinstance(回执.get("判据"), dict) and 回执["判据"].get("到过判定", True) and all(
         值 for 键, 值 in 回执["判据"].items() if 键 != "到过判定"
     ) and 回执.get("层", {}).get("清理", {}).get("暂存已删") is True
-    回执["结论"] = "通过" if 过 and "失败" not in 回执 else "不通过"
+    回执["结论"] = "通过" if 是否通过 and "失败" not in 回执 else "不通过"
     写回执(回执)
     打印("回执 → {}".format(回执落点))
     打印("命令墙钟（壳自量）{} ms · 阈值 {} ms（硬顶 {} − 尾巴余量 {}）· 人为慢注入 {} ms · 来源 {}".format(

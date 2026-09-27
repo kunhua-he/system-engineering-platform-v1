@@ -20,55 +20,55 @@ from .不覆盖 import 元记录
 
 
 def 读盘(仓根: str, 范围: list) -> dict:
-    根 = Path(仓根)
+    仓根路径 = Path(仓根)
     件表 = {}
-    坏 = []
+    坏件表 = []
 
     def 收文件(路径: Path):
-        键 = 相对(根, 路径)
+        键名 = 相对(仓根路径, 路径)
         try:
             if 路径.stat().st_size > 读上限字节:
-                坏.append((键, f"超过读上限 {读上限字节} 字节（不截断——截断会让解析腿拿到半个文件）"))
+                坏件表.append((键名, f"超过读上限 {读上限字节} 字节（不截断——截断会让解析腿拿到半个文件）"))
                 return
-            件表[键] = 路径.read_text(encoding="utf-8")
+            件表[键名] = 路径.read_text(encoding="utf-8")
         except (OSError, UnicodeDecodeError) as 错:
-            坏.append((键, f"读不动：{错}"))
+            坏件表.append((键名, f"读不动：{错}"))
 
     for 范围项 in 范围:
-        基 = 根 / 范围项
-        if not 基.is_dir():
+        范围根 = 仓根路径 / 范围项
+        if not 范围根.is_dir():
             continue
-        for 根目录, 目录表, 文件表 in os.walk(基):
+        for 根目录, 目录表, 文件表 in os.walk(范围根):
             目录表[:] = [目录 for 目录 in 目录表 if 目录 not in {".git", "__pycache__", "构建缓存", "target"}]
-            for 名 in 文件表:
-                if 名.endswith((".rs", ".json")) or 名 == "Cargo.toml":
-                    收文件(Path(根目录) / 名)
-    契约 = 根 / 契约目录名
+            for 名称 in 文件表:
+                if 名称.endswith((".rs", ".json")) or 名称 == "Cargo.toml":
+                    收文件(Path(根目录) / 名称)
+    契约 = 仓根路径 / 契约目录名
     if 契约.is_dir():
         for 根目录, 目录表, 文件表 in os.walk(契约):
             目录表[:] = [目录 for 目录 in 目录表 if 目录 not in {"__pycache__"}]
-            for 名 in 文件表:
+            for 名称 in 文件表:
                 # `.rs` 全收（含 `契约声明/src/` 子目录）——符号表的落点是符号不是文件，
                 # 写死文件名会让拆分后的子件静默丢出符号表。
-                if 名.endswith((".json", ".rs")):
-                    收文件(Path(根目录) / 名)
+                if 名称.endswith((".json", ".rs")):
+                    收文件(Path(根目录) / 名称)
     # ③h 处数判据的基线（不在 `范围` 内，故显式收）：判据读不到它就只能报未判（fail-closed）。
-    基线 = 根 / 处数基线相对
+    基线 = 仓根路径 / 处数基线相对
     if 基线.is_file():
         收文件(基线)
-    return {"件表": 件表, "坏": 坏}
+    return {"件表": 件表, "坏": 坏件表}
 
 
 def 常量表名集(件表: dict) -> set:
-    文 = 件表.get(常量表相对)
-    if not 文:
+    文本 = 件表.get(常量表相对)
+    if not 文本:
         return set()
     try:
-        数 = json.loads(文)
+        个数 = json.loads(文本)
     except json.JSONDecodeError:
         return set()
     常量名集 = set()
-    for 常量条 in 数.get("常量") or []:
+    for 常量条 in 个数.get("常量") or []:
         if isinstance(常量条, dict) and isinstance(常量条.get("名"), str):
             常量名集.add(常量条["名"])
     return 常量名集
@@ -116,16 +116,16 @@ def 扫实现(仓根: str, 范围: list) -> list:
         return 首遍读数
     次遍读数 = _扫一遍(仓根, 范围, 件表=r2["件表"], 坏件表=r2["坏"])
     次遍索引 = {条["项"]: 条 for 条 in 次遍读数}
-    for 条 in 首遍读数:
-        对条 = 次遍索引.get(条["项"])
-        if 对条 is None or 对条["判定"] != 条["判定"]:
-            条["红类"] = "疑似瞬时" if 条["判定"] == "失败" else 条["红类"]
-            if 条["判定"] == "失败":
-                条["缺什么"] = (
-                    "疑似瞬时（两遍读数不一致）：" + 条["缺什么"]
+    for 一条 in 首遍读数:
+        对条 = 次遍索引.get(一条["项"])
+        if 对条 is None or 对条["判定"] != 一条["判定"]:
+            一条["红类"] = "疑似瞬时" if 一条["判定"] == "失败" else 一条["红类"]
+            if 一条["判定"] == "失败":
+                一条["缺什么"] = (
+                    "疑似瞬时（两遍读数不一致）：" + 一条["缺什么"]
                     + f"｜第二遍的判定是「{对条['判定'] if 对条 else '缺'}」"
                 )
-                条["为什么不能自愈"] = (
+                一条["为什么不能自愈"] = (
                     "两遍读数不一致 ⇒ 多半是别的腿正在写文件（半成品），不是源码问题。"
                     "按 判据的可信性 §四.1：只红一次不当阻断，重跑一次仍红才算 ⇒ 只能等文件写完后重跑"
                 )
@@ -133,7 +133,7 @@ def 扫实现(仓根: str, 范围: list) -> list:
 
 
 def 找仓根() -> str:
-    for 起 in [Path.cwd(), Path(__file__).resolve().parent, *Path(__file__).resolve().parents]:
-        if (起 / 契约目录名).is_dir():
-            return str(起)
+    for 区间起点 in [Path.cwd(), Path(__file__).resolve().parent, *Path(__file__).resolve().parents]:
+        if (区间起点 / 契约目录名).is_dir():
+            return str(区间起点)
     return str(Path.cwd())

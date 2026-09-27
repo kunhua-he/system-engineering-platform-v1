@@ -26,8 +26,8 @@ from MCP服务 import 工具表, 派发, 服务  # noqa: E402
 
 
 def 入口函数(argv=None):
-    参 = list(sys.argv[1:] if argv is None else argv)
-    if "--自检" in 参:
+    参数 = list(sys.argv[1:] if argv is None else argv)
+    if "--自检" in 参数:
         # 协议层的身份证：自造三帧（initialize / tools/list / 一个不存在的方法），
         # 断言响应形状与工具表 —— 协议层坏了要当场看得出来，不许「连上了但什么也不回」。
         for 方法, 参数 in (("initialize", {"protocolVersion": "试"}),

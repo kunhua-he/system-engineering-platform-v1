@@ -21,21 +21,21 @@ def 可装载种类(声明: dict) -> list:
     `可装载件` 缺了 / 不是布尔 ⇒ fail-closed 指路（旧声明没有这个键；不给默认值，
     默认 true 就把旁路放回来了，默认 false 就把支持库静默漏掉）。
     """
-    出 = []
-    for 类 in 声明.get("种类", []):
-        标 = 类.get("可装载件")
-        if not isinstance(标, bool):
+    输出缓冲 = []
+    for 类别 in 声明.get("种类", []):
+        可装载标志 = 类别.get("可装载件")
+        if not isinstance(可装载标志, bool):
             raise SystemExit(
                 "扩展根声明的 种类[{}] 缺 `可装载件`（或不是布尔）：{}\n"
                 "  这个键决定「这一类的直接子目录要不要当可装载件候选」（裁决 9："
                 "支持库 true · 模块/技能 false）。不给默认值——默认 true 会把旁路放回来，"
                 "默认 false 会把支持库静默漏掉。见 扩展装载/扩展根声明.json".format(
-                    类.get("种类", "?"), 类
+                    类别.get("种类", "?"), 类别
                 )
             )
-        if 标:
-            出.append(类)
-    return 出
+        if 可装载标志:
+            输出缓冲.append(类别)
+    return 输出缓冲
 
 
 def 扫扩展(声明: dict) -> list:
@@ -47,15 +47,15 @@ def 扫扩展(声明: dict) -> list:
     `可装载件 = false` 的种类（模块 = 组装件 · 技能 = 声明/工作流）**不进候选** ——
     它们不编 cdylib、不 dlopen（裁决 9），交给它们编 cdylib 正是 7.1④ 要撤的旁路。
     """
-    出 = []
-    for 类 in 可装载种类(声明):
-        目录 = 仓根 / 类.get("目录", "")
+    输出缓冲 = []
+    for 类别 in 可装载种类(声明):
+        目录 = 仓根 / 类别.get("目录", "")
         if not 目录.is_dir():
             continue
-        for 子 in sorted(目录.iterdir()):
-            if 子.is_dir() and not 子.name.startswith("."):
-                出.append({"种类": 类.get("种类", ""), "目录": 类.get("目录", ""), "名": 子.name, "落点": 子})
-    return 出
+        for 子项 in sorted(目录.iterdir()):
+            if 子项.is_dir() and not 子项.name.startswith("."):
+                输出缓冲.append({"种类": 类别.get("种类", ""), "目录": 类别.get("目录", ""), "名": 子项.name, "落点": 子项})
+    return 输出缓冲
 
 
 def 扩展产物(扩展: dict) -> Path:
@@ -98,15 +98,15 @@ def 找扩展产物(扩展: dict) -> Path:
     """**只找不编** —— 命令本体用。找不到（没预构建 / 缓存被清）即 fail-closed 指路。"""
     清单 = 扩展["落点"] / "Cargo.toml"
     缓存 = 构建缓存 / "扩展"
-    库 = sorted((缓存 / "release" / "deps").glob("lib*.dylib")) + sorted((缓存 / "release" / "deps").glob("lib*.so"))
+    动态库 = sorted((缓存 / "release" / "deps").glob("lib*.dylib")) + sorted((缓存 / "release" / "deps").glob("lib*.so"))
     # 只认**编出来的那一个**：按 Cargo.toml 的 `[lib] name` 找（`[package] name` 不是库名）。
-    名 = 读库名(清单)
-    命中 = [库文件 for 库文件 in 库 if 名 and 库文件.name.startswith("lib{}".format(名))]
+    名称 = 读库名(清单)
+    命中 = [库文件 for 库文件 in 动态库 if 名称 and 库文件.name.startswith("lib{}".format(名称))]
     if len(命中) != 1:
         raise SystemExit(
             "找不到已编好的可装载库（按 [lib] name 找 {}，命中 {} 个）：{}\n"
             "  先跑环境步：python3 构建装配/上线切换/构建制品.py --预构建".format(
-                名, len(命中), 缓存 / "release" / "deps"
+                名称, len(命中), 缓存 / "release" / "deps"
             )
         )
     return 命中[0]
@@ -114,12 +114,12 @@ def 找扩展产物(扩展: dict) -> Path:
 
 def 读库名(清单: Path) -> str:
     """从 Cargo.toml 取 `[lib]` 段的 `name`（`[package]` 段的 name 是包名，不是库名）。"""
-    段 = None
-    for 行 in 清单.read_text(encoding="utf-8").splitlines():
-        文 = 行.split("#", 1)[0].strip()
-        if 文.startswith("["):
-            段 = 文
+    号段 = None
+    for 源码行 in 清单.read_text(encoding="utf-8").splitlines():
+        文本 = 源码行.split("#", 1)[0].strip()
+        if 文本.startswith("["):
+            号段 = 文本
             continue
-        if 段 == "[lib]" and 文.startswith("name"):
-            return 文.split("=", 1)[1].strip().strip('"')
+        if 号段 == "[lib]" and 文本.startswith("name"):
+            return 文本.split("=", 1)[1].strip().strip('"')
     raise SystemExit("Cargo.toml 里没有 [lib] name：{}".format(清单))

@@ -17,14 +17,14 @@ def 探物理槽数(pe, 字典):
     if 止 <= 起 or (止 - 起) % 命令项大小:
         return None, []
     槽数 = (止 - 起) // 命令项大小
-    多 = []
+    多余槽表 = []
     for 命令序 in range(字典["m_nCmdCount"], min(槽数, 字典["m_nCmdCount"] + 16)):
         try:
             字段表 = {字段项[2]: (字段项[4], 字段项[5]) for 字段项 in 读字段(pe, pe.转偏移(起 + 命令序 * 命令项大小), 命令字段)}
-            多.append((命令序, 字段表["m_szName"][0], 字段表["m_szName"][1]))
+            多余槽表.append((命令序, 字段表["m_szName"][0], 字段表["m_szName"][1]))
         except 解析错误:
-            多.append((命令序, 0, "<解不出命令项>"))
-    return 槽数, 多
+            多余槽表.append((命令序, 0, "<解不出命令项>"))
+    return 槽数, 多余槽表
 
 
 def 计数判定(读数):

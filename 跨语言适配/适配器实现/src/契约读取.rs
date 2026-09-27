@@ -22,19 +22,19 @@ pub(crate) unsafe fn 读契约串(指针: *const u8) -> String {
     if 指针.is_null() {
         return String::new();
     }
-    let mut 长 = 0usize;
-    while 长 < 契约串上限 {
+    let mut 长度 = 0usize;
+    while 长度 < 契约串上限 {
         // SAFETY: 由调用方保证 指针..指针+契约串上限 可读。
-        if unsafe { *指针.add(长) } == 0 {
+        if unsafe { *指针.add(长度) } == 0 {
             break;
         }
-        长 += 1;
+        长度 += 1;
     }
-    if 长 == 契约串上限 {
+    if 长度 == 契约串上限 {
         return String::new();
     }
     // SAFETY: 已扫到 NUL，前 长 字节可读且不再变动（静态数据）。
-    let 字节 = unsafe { core::slice::from_raw_parts(指针, 长) };
+    let 字节 = unsafe { core::slice::from_raw_parts(指针, 长度) };
     String::from_utf8_lossy(字节).into_owned()
 }
 
@@ -45,8 +45,8 @@ pub(crate) fn 读参数表(命令: &命令信息) -> Vec<参数摘要> {
     }
     // SAFETY: 契约保证 参数表 指向静态只读数组，长度 = 参数个数
     //（`注册表::建表` 已核过「项数 > 0 却给空项表」这一条）。
-    let 表 = unsafe { core::slice::from_raw_parts(命令.参数表, 命令.参数个数 as usize) };
-    表.iter()
+    let 项表 = unsafe { core::slice::from_raw_parts(命令.参数表, 命令.参数个数 as usize) };
+    项表.iter()
         .map(|参| 参数摘要 {
             // SAFETY: 契约保证一切串都是静态只读 NUL 结尾串。
             名称: unsafe { 读契约串(参.名称) },
@@ -71,8 +71,8 @@ pub(crate) fn 读错误码表(声明: &平台信息) -> Vec<错误码摘要> {
         return Vec::new();
     }
     // SAFETY: 契约保证 错误码表 指向静态只读数组。
-    let 表 = unsafe { core::slice::from_raw_parts(项表, 项数 as usize) };
-    表.iter()
+    let 项表 = unsafe { core::slice::from_raw_parts(项表, 项数 as usize) };
+    项表.iter()
         .map(|码| 错误码摘要 {
             码: 码.码,
             // SAFETY: 契约保证一切串都是静态只读 NUL 结尾串。
@@ -107,13 +107,13 @@ pub(crate) fn 读命令可抛错误码(声明: &平台信息, 命令: &命令信
     码号表
         .iter()
         .map(|码| {
-            let 号 = 码.取号值();
+            let 号值 = 码.取号值();
             全表
                 .iter()
-                .find(|项| 项.码 == 号)
+                .find(|项| 项.码 == 号值)
                 .cloned()
                 .unwrap_or(错误码摘要 {
-                    码: 号,
+                    码: 号值,
                     名称: String::new(),
                     说明: String::new(),
                     可重试: false,
@@ -137,11 +137,11 @@ impl 适配器 {
     /// **枚举按位、报号按声明**：`按位取命令` 走的是「表里有哪些」，编号一律报声明里的
     /// `命令信息.编号` —— 不把位置当编号（位置只在「编号 = 下标」的巧合下才等于编号）。
     pub fn 能力清单(&self) -> Vec<能力摘要> {
-        let mut 出 = Vec::new();
+        let mut 输出缓冲 = Vec::new();
         for 单元 in &self.装载单元s {
-            for 位 in 0..单元.注册表.命令数() {
-                if let 命令槽::已载入 { 声明, .. } = 单元.注册表.按位取命令(位) {
-                    出.push(能力摘要 {
+            for 位置 in 0..单元.注册表.命令数() {
+                if let 命令槽::已载入 { 声明, .. } = 单元.注册表.按位取命令(位置) {
+                    输出缓冲.push(能力摘要 {
                         编号: 声明.编号.取号值(),
                         // SAFETY: 契约保证一切串都是静态只读 NUL 结尾串。
                         名称: unsafe { 读契约串(声明.名称) },
@@ -151,7 +151,7 @@ impl 适配器 {
                 }
             }
         }
-        出
+        输出缓冲
     }
 
     /// 读侧「某条能力的完整契约」：参数表行序 · 返回 · **这条命令自身的**可抛错误码。
@@ -163,9 +163,9 @@ impl 适配器 {
     pub fn 能力契约(&self, 编号: u32) -> Option<能力契约> {
         // 号空间：本函数是**跨语言边界**（外面给的是裸 `u32`）⇒ 在这里包一次，往内一律走
         // `能力号`。公开签名不动 ⇒ 外部调用点不受影响（边界转换一次即够）。
-        let 号 = 能力号::新建(编号);
+        let 号值 = 能力号::新建(编号);
         for 单元 in &self.装载单元s {
-            if let 命令槽::已载入 { 声明, .. } = 单元.注册表.按号取命令(号) {
+            if let 命令槽::已载入 { 声明, .. } = 单元.注册表.按号取命令(号值) {
                 return Some(能力契约 {
                     编号,
                     // SAFETY: 契约保证一切串都是静态只读 NUL 结尾串。
@@ -191,9 +191,9 @@ impl 适配器 {
     /// 未命中的号交给**第一份**声明的全表（与 [`适配器::取注册表`] 同一口径：都不认时
     /// 照样给一份可查的表，不给空 —— 空表会把「码没登记」与「这里取不到」混成一件）。
     pub fn 声明错误码表(&self, 编号: u32) -> Vec<错误码摘要> {
-        let 号 = 能力号::新建(编号);   // 跨语言边界：包一次，往内走 `能力号`
+        let 号值 = 能力号::新建(编号);   // 跨语言边界：包一次，往内走 `能力号`
         for 单元 in &self.装载单元s {
-            if let 命令槽::已载入 { .. } = 单元.注册表.按号取命令(号) {
+            if let 命令槽::已载入 { .. } = 单元.注册表.按号取命令(号值) {
                 return 读错误码表(单元.声明);
             }
         }

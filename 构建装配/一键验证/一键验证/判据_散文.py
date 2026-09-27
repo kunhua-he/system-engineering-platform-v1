@@ -40,25 +40,25 @@ def 忽略条目(仓根) -> tuple:
 
     返回的是**全部**被忽略条目（未过滤 `.md`）—— 它同时是「对象数」（0 ⇒ 未判）。
     """
-    键 = str(仓根)
-    if 键 in _忽略条目缓存:
-        return _忽略条目缓存[键]
+    键名 = str(仓根)
+    if 键名 in _忽略条目缓存:
+        return _忽略条目缓存[键名]
     try:
-        果 = subprocess.run(
-            ["git", "-C", 键, "ls-files", "--others", "--ignored", "--exclude-standard"],
+        结果 = subprocess.run(
+            ["git", "-C", 键名, "ls-files", "--others", "--ignored", "--exclude-standard"],
             capture_output=True, text=True, timeout=5,
         )
     except (OSError, subprocess.SubprocessError) as 错:
-        值 = ([], f"跑不动 git（{type(错).__name__}：{错}）")
-        _忽略条目缓存[键] = 值
-        return 值
-    if 果.returncode != 0:
-        值 = ([], f"git ls-files 退出码 {果.returncode}：{果.stderr.strip()[:200]}")
-        _忽略条目缓存[键] = 值
-        return 值
-    值 = ([行 for 行 in 果.stdout.splitlines() if 行], None)
-    _忽略条目缓存[键] = 值
-    return 值
+        待处理值 = ([], f"跑不动 git（{type(错).__name__}：{错}）")
+        _忽略条目缓存[键名] = 待处理值
+        return 待处理值
+    if 结果.returncode != 0:
+        待处理值 = ([], f"git ls-files 退出码 {结果.returncode}：{结果.stderr.strip()[:200]}")
+        _忽略条目缓存[键名] = 待处理值
+        return 待处理值
+    待处理值 = ([行 for 行 in 结果.stdout.splitlines() if 行], None)
+    _忽略条目缓存[键名] = 待处理值
+    return 待处理值
 
 
 def 样本_忽略条目(上层读数: dict) -> int:
@@ -73,7 +73,7 @@ def 检查23_散文不落被忽略目录(上层读数: dict) -> list:
     三元读数：**通过** = 被忽略面非空且其中 0 个（非排除前缀的）`.md`；
     **失败** = 逐条报出那份散文；**未判** = 读不出被忽略面（非 git 仓 / git 不可用）。
     """
-    出 = []
+    输出缓冲 = []
     条目, 错 = 忽略条目(上层读数["仓根"])
     if 错:
         判不了(
@@ -84,7 +84,7 @@ def 检查23_散文不落被忽略目录(上层读数: dict) -> list:
             "那是第二个事实源）⇒ 读不出就判不了。读数命令是定死的（见文件头）⇒ "
             "只能由环境（git 可用）或判据作者确认",
         )
-        return 出
+        return 输出缓冲
     if not 条目:
         判不了(
             检查名[22],
@@ -93,22 +93,22 @@ def 检查23_散文不落被忽略目录(上层读数: dict) -> list:
             "判据的可信性.md 第二节：空集是**未判**，不是通过 —— 一条被忽略条目都没有的仓，"
             "本条判据什么都没验，算成通过就是假绿 ⇒ 只能由判据作者确认读数命令与仓状态",
         )
-        return 出
+        return 输出缓冲
 
     命中 = [
         键 for 键 in 条目
         if 键.endswith(".md") and not 键.startswith(被忽略散文排除前缀)
     ]
-    for 键 in sorted(命中):
-        出.append(
+    for 键名 in sorted(命中):
+        输出缓冲.append(
             违规(
                 检查名[22],
-                键,
-                f"散文 `{键}` 落在被 git 忽略的目录里 ⇒ 一次 `git clean -xdf` 就永久丢",
+                键名,
+                f"散文 `{键名}` 落在被 git 忽略的目录里 ⇒ 一次 `git clean -xdf` 就永久丢",
                 "`开发规范.md` §八.8：**散文不许住进被忽略的目录**。落点目录要被忽略时，"
                 "忽略必须写成「忽略内容 + 例外散文」（`构建装配/制品产物/*` + "
                 "`!构建装配/制品产物/说明.md`），否则任何一次 `git clean -xdf` 都会把文档清掉，"
                 "而散文不可复得（实测已丢过一份）⇒ 只能由把这份散文放进该目录的人挪出/加例外",
             )
         )
-    return 出
+    return 输出缓冲

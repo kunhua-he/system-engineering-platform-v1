@@ -17,15 +17,15 @@ def 是段头(容器字节, pos):
         return False
     if 段头字节[8:10] != 段头标记首字节 or 段头字节[10] != 0x00:
         return False
-    号 = 段头字节[11]
-    if 号 not in 段类型白名单:
+    号值 = 段头字节[11]
+    if 号值 not in 段类型白名单:
         return False
-    尾 = 段头字节[0x27:0x2C]
-    if 号 == 段类型_无名七:
-        return 尾 == b"\x00\x00\x00\x00\x00"
-    if 号 == 段类型_程序加固:
-        return 尾 == b"\x19\x73\x00\x03\x00"
-    return 尾 == b"\x19\x73\x00\x00\x00"
+    尾部 = 段头字节[0x27:0x2C]
+    if 号值 == 段类型_无名七:
+        return 尾部 == b"\x00\x00\x00\x00\x00"
+    if 号值 == 段类型_程序加固:
+        return 尾部 == b"\x19\x73\x00\x03\x00"
+    return 尾部 == b"\x19\x73\x00\x00\x00"
 
 
 def 找下一段头(容器字节, 起点):
@@ -45,10 +45,10 @@ def 反解容器(容器字节):
             raise 解析错误("段头截断 @0x%x（剩 %d 字节）" % (pos, len(容器字节) - pos))
         if not 是段头(容器字节, pos):
             raise 解析错误("段头标记/类型号不符 @0x%x" % pos)
-        号 = 容器字节[pos + 11]
+        号值 = 容器字节[pos + 11]
         下一 = 找下一段头(容器字节, pos + 段头长度)
-        尾 = 下一 if 下一 is not None else len(容器字节)
-        段.append((号, pos + 段头长度, 尾, pos))
+        尾部 = 下一 if 下一 is not None else len(容器字节)
+        段.append((号值, pos + 段头长度, 尾部, pos))
         if 下一 is None:
             break
         pos = 下一

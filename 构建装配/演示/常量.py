@@ -80,17 +80,17 @@ def 端口监听读数(端口: int) -> list:
     ⇒ **整条演示命令在清理步骤崩掉**，「一条可复跑的命令」当场不成立）。
     这里只取「有没有 LISTEN」这一件事，进程名解不干净不影响判读 ⇒ 用 `replace` 兜住。
     """
-    成 = subprocess.run(
+    运行结果 = subprocess.run(
         ["/usr/sbin/lsof", "-nP", "-iTCP:{}".format(端口), "-sTCP:LISTEN"],
         capture_output=True, text=True, errors="replace",
     )
-    行 = [行 for 行 in 成.stdout.splitlines() if "LISTEN" in 行]
-    return 行
+    源码行 = [源码行 for 源码行 in 运行结果.stdout.splitlines() if "LISTEN" in 源码行]
+    return 源码行
 
 
 def 写回执(回执: dict) -> None:
     """原子写回执（同 上线切换.py::写指针 的写法：临时件 + os.replace）。"""
     回执落点.parent.mkdir(parents=True, exist_ok=True)
-    临 = 回执落点.with_suffix(".json.临时")
-    临.write_text(json.dumps(回执, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    os.replace(临, 回执落点)
+    临时路径 = 回执落点.with_suffix(".json.临时")
+    临时路径.write_text(json.dumps(回执, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    os.replace(临时路径, 回执落点)

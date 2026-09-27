@@ -22,28 +22,28 @@ const 编译族 = new Set(["0x8053", "0x8090", "0x808f", "0x80d4",
 
 /** 助记字加下划线：`&` 只是标记，资源里真正显示的是「下一个字带下划线」。 */
 function 摆文字(一项) {
-  const 盒 = document.createElement("span");
+  const 容器盒 = document.createElement("span");
   if (一项.助记位 < 0) {
-    盒.textContent = 一项.文字;
-    return 盒;
+    容器盒.textContent = 一项.文字;
+    return 容器盒;
   }
-  盒.append(一项.文字.slice(0, 一项.助记位));
-  const 下 = document.createElement("u");
-  下.textContent = 一项.文字[一项.助记位];
-  盒.append(下, 一项.文字.slice(一项.助记位 + 1));
-  return 盒;
+  容器盒.append(一项.文字.slice(0, 一项.助记位));
+  const 下划线 = document.createElement("u");
+  下划线.textContent = 一项.文字[一项.助记位];
+  容器盒.append(下划线, 一项.文字.slice(一项.助记位 + 1));
+  return 容器盒;
 }
 
 export function 装菜单栏(取元素, 编辑, 依赖 = {}) {
-  const 栏 = 取元素("易菜单栏");
+  const 菜单栏 = 取元素("易菜单栏");
   // 菜单读数原来住「中带」，现在住最底下那条状态条（参考图 y=742..754 那一条）。
-  const 条 = 取元素("条_菜单");
+  const 一条 = 取元素("条_菜单");
   const 切页签 = 依赖.切页签;
   let 开着的 = null;
 
-  const 报 = (文本, 颜色) => {
-    条.textContent = 文本;
-    条.className = "格" + (颜色 === "好" ? " 好" : 颜色 === "坏" ? " 坏" : "");
+  const 报状态 = (文本, 颜色) => {
+    一条.textContent = 文本;
+    一条.className = "格" + (颜色 === "好" ? " 好" : 颜色 === "坏" ? " 坏" : "");
   };
 
   const 合上 = () => {
@@ -59,108 +59,108 @@ export function 装菜单栏(取元素, 编辑, 依赖 = {}) {
    */
   const 问后端 = async (一项, 头部) => {
     const 状态 = 取元素("菜单命令状态");
-    const 果 = 取元素("菜单命令果");
+    const 结果 = 取元素("菜单命令果");
     if (切页签) 切页签("提示");
-    if (!状态 || !果) {
-      报(头部 + " · 回执区不在页面上（缺 id：菜单命令状态 / 菜单命令果）", "坏");
+    if (!状态 || !结果) {
+      报状态(头部 + " · 回执区不在页面上（缺 id：菜单命令状态 / 菜单命令果）", "坏");
       return;
     }
-    清空(果);
+    清空(结果);
     写状态(状态, "问后端 " + 一项.编号 + " …");
     try {
       const 应答 = await 发菜单命令(一项.编号);
-      摆应答(果, 应答);
-      const 词 = 摘要(应答.体);
-      写状态(状态, "命令 " + 一项.编号 + " · HTTP " + 应答.状态 + " · " + 词.词,
-        词.类 === "好" ? true : 词.类 === "坏" ? false : undefined);
-      报(头部 + " · 已问后端（POST /接口/菜单命令）：HTTP " + 应答.状态 + " · " + 词.词
-        + " —— 结构化回执见「提示」栏", 词.类 === "好" ? "好" : "坏");
-      记流水("菜单", 头部 + " · HTTP " + 应答.状态 + " · " + 词.词);
-    } catch (错) {
-      摆消息(果, "发不出去：" + 错.message);
+      摆应答(结果, 应答);
+      const 摘要结果 = 摘要(应答.体);
+      写状态(状态, "命令 " + 一项.编号 + " · HTTP " + 应答.状态 + " · " + 摘要结果.词,
+        摘要结果.类 === "好" ? true : 摘要结果.类 === "坏" ? false : undefined);
+      报状态(头部 + " · 已问后端（POST /接口/菜单命令）：HTTP " + 应答.状态 + " · " + 摘要结果.词
+        + " —— 结构化回执见「提示」栏", 摘要结果.类 === "好" ? "好" : "坏");
+      记流水("菜单", 头部 + " · HTTP " + 应答.状态 + " · " + 摘要结果.词);
+    } catch (错误) {
+      摆消息(结果, "发不出去：" + 错误.message);
       写状态(状态, "发不出去", false);
-      报(头部 + " · 发不出去：" + 错.message, "坏");
+      报状态(头部 + " · 发不出去：" + 错误.message, "坏");
     }
   };
 
   const 点叶子 = (一项) => {
     合上();
-    const 头 = "命令 " + 一项.编号 + " · " + 一项.文字 + (一项.快捷键 ? " " + 一项.快捷键 : "");
+    const 头部 = "命令 " + 一项.编号 + " · " + 一项.文字 + (一项.快捷键 ? " " + 一项.快捷键 : "");
     if (编译族.has(一项.编号)) {
-      报(头 + " · 已接线：真调 `GET /接口` 实时给的编译链（逐级读数见「提示」栏）", "好");
+      报状态(头部 + " · 已接线：真调 `GET /接口` 实时给的编译链（逐级读数见「提示」栏）", "好");
       跑编译(取元素, 编辑);
       return;
     }
-    问后端(一项, 头);
+    问后端(一项, 头部);
   };
 
   const 摆层 = (项表, 深度) => {
-    const 盒 = document.createElement("div");
-    盒.className = "易弹出";
-    盒.hidden = true;
-    for (const 项 of 项表) {
-      if (项.分隔) {
-        const 隔 = document.createElement("div");
-        隔.className = "易分隔";
-        盒.append(隔);
+    const 容器盒 = document.createElement("div");
+    容器盒.className = "易弹出";
+    容器盒.hidden = true;
+    for (const 一项 of 项表) {
+      if (一项.分隔) {
+        const 分隔件 = document.createElement("div");
+        分隔件.className = "易分隔";
+        容器盒.append(分隔件);
         continue;
       }
-      const 行 = document.createElement("div");
-      行.className = "易项" + (项.灰化 ? " 灰" : "");
-      行.append(摆文字(项));
-      if (项.项) {
-        const 角 = document.createElement("span");
-        角.className = "角";
-        角.textContent = "▸";
-        const 子 = 摆层(项.项, 深度 + 1);
-        行.append(角, 子);
-        行.addEventListener("mouseenter", () => { 子.hidden = false; });
-        行.addEventListener("mouseleave", () => { 子.hidden = true; });
+      const 源码行 = document.createElement("div");
+      源码行.className = "易项" + (一项.灰化 ? " 灰" : "");
+      源码行.append(摆文字(一项));
+      if (一项.项) {
+        const 箭头 = document.createElement("span");
+        箭头.className = "角";
+        箭头.textContent = "▸";
+        const 子层 = 摆层(一项.项, 深度 + 1);
+        源码行.append(箭头, 子层);
+        源码行.addEventListener("mouseenter", () => { 子层.hidden = false; });
+        源码行.addEventListener("mouseleave", () => { 子层.hidden = true; });
       } else {
-        if (项.快捷键) {
-          const 键 = document.createElement("span");
-          键.className = "键";
-          键.textContent = 项.快捷键;
-          行.append(键);
+        if (一项.快捷键) {
+          const 键名 = document.createElement("span");
+          键名.className = "键";
+          键名.textContent = 一项.快捷键;
+          源码行.append(键名);
         }
-        if (项.灰化) {
+        if (一项.灰化) {
           // 资源里带 MF_GRAYED 位：照它的做派，灰化项点不动（不是「点了没反应」，是禁用项）。
-          行.setAttribute("aria-disabled", "true");
-          行.title = "资源里带 MF_GRAYED 位（实测 181 项里只有这一项）—— 在易语言里也是点不动的";
+          源码行.setAttribute("aria-disabled", "true");
+          源码行.title = "资源里带 MF_GRAYED 位（实测 181 项里只有这一项）—— 在易语言里也是点不动的";
         } else {
-          行.addEventListener("click", (事件) => { 事件.stopPropagation(); 点叶子(项); });
+          源码行.addEventListener("click", (事件) => { 事件.stopPropagation(); 点叶子(一项); });
         }
       }
-      盒.append(行);
+      容器盒.append(源码行);
     }
-    return 盒;
+    return 容器盒;
   };
 
   for (const 顶层 of 主菜单) {
-    const 钮 = document.createElement("button");
-    钮.type = "button";
-    钮.className = "易顶层";
-    钮.append(摆文字(顶层));
-    钮.setAttribute("aria-expanded", "false");
-    const 盒 = 摆层(顶层.项, 0);
-    钮.addEventListener("click", (事件) => {
+    const 按钮 = document.createElement("button");
+    按钮.type = "button";
+    按钮.className = "易顶层";
+    按钮.append(摆文字(顶层));
+    按钮.setAttribute("aria-expanded", "false");
+    const 容器盒 = 摆层(顶层.项, 0);
+    按钮.addEventListener("click", (事件) => {
       事件.stopPropagation();
-      if (开着的 && 开着的.钮 === 钮) { 合上(); return; }
+      if (开着的 && 开着的.钮 === 按钮) { 合上(); return; }
       合上();
-      盒.hidden = false;
-      钮.setAttribute("aria-expanded", "true");
-      开着的 = { 盒, 钮 };
+      容器盒.hidden = false;
+      按钮.setAttribute("aria-expanded", "true");
+      开着的 = { 盒: 容器盒, 钮: 按钮 };
     });
-    钮.addEventListener("mouseenter", () => { if (开着的 && 开着的.钮 !== 钮) 钮.click(); });
-    const 包 = document.createElement("div");
-    包.className = "易顶层包";
-    包.append(钮, 盒);
-    栏.append(包);
+    按钮.addEventListener("mouseenter", () => { if (开着的 && 开着的.钮 !== 按钮) 按钮.click(); });
+    const 顶层包 = document.createElement("div");
+    顶层包.className = "易顶层包";
+    顶层包.append(按钮, 容器盒);
+    菜单栏.append(顶层包);
   }
 
   document.addEventListener("click", 合上);
   document.addEventListener("keydown", (事件) => { if (事件.key === "Escape") 合上(); });
 
-  报("菜单结构 1:1 取自 e.exe 菜单资源 127（10 个顶层弹出 / 181 项）· 已接线 "
+  报状态("菜单结构 1:1 取自 e.exe 菜单资源 127（10 个顶层弹出 / 181 项）· 已接线 "
     + 编译族.size + " 项（编译族）· 其余点了问后端（POST /接口/菜单命令）取结构化回执");
 }

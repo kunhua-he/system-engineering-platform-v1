@@ -25,14 +25,14 @@ def 解析条件属性(掩码文本: str, 区间起点: int):
         return None
     括号位 = 匹配.end()
     全长 = len(掩码文本)
-    深 = 1
-    while 括号位 < 全长 and 深:
+    括号深度 = 1
+    while 括号位 < 全长 and 括号深度:
         if 掩码文本[括号位] == "(":
-            深 += 1
+            括号深度 += 1
         elif 掩码文本[括号位] == ")":
-            深 -= 1
+            括号深度 -= 1
         括号位 += 1
-    if 深:
+    if 括号深度:
         return None
     空白位 = 括号位
     while 空白位 < 全长 and 掩码文本[空白位] in " \t\r\n":
@@ -46,10 +46,10 @@ def 找条件属性(掩码文本: str) -> list:
     """返回 [(起, 止, 属性文本, 是否含 test)]，按位置序。"""
     结果 = []
     for 匹配 in 条件属性开头模式.finditer(掩码文本):
-        属 = 解析条件属性(掩码文本, 匹配.start())
-        if 属 is None:
+        属性解析 = 解析条件属性(掩码文本, 匹配.start())
+        if 属性解析 is None:
             continue
-        属性文本, 止 = 属
+        属性文本, 止 = 属性解析
         结果.append((匹配.start(), 止, 属性文本, bool(re.search(r"\btest\b", 属性文本))))
     return 结果
 
@@ -57,10 +57,10 @@ def 找条件属性(掩码文本: str) -> list:
 def _项头(掩码文本: str, 位置: int) -> tuple:
     """从 `位置` 起扫到第一个 `{` 或 `;`，返回 (头文本, 终止位)。"""
     全长 = len(掩码文本)
-    终 = 位置
-    while 终 < 全长 and 掩码文本[终] not in "{;":
-        终 += 1
-    return 掩码文本[位置:终], 终
+    终止位 = 位置
+    while 终止位 < 全长 and 掩码文本[终止位] not in "{;":
+        终止位 += 1
+    return 掩码文本[位置:终止位], 终止位
 
 
 def _属性窗起(掩码文本: str, 位置: int) -> int:
@@ -69,16 +69,16 @@ def _属性窗起(掩码文本: str, 位置: int) -> int:
     `#[path = "…"]` 写在 `#[cfg(test)]` **之前**也合法（属性顺序不影响语义）；
     只看 cfg 之后那一段会漏 ⇒ 那种夹具文件被当生产代码。
     """
-    起 = 位置
-    while 起 > 0 and 掩码文本[起 - 1] not in ";{}":
-        起 -= 1
-    return 起
+    区间起点 = 位置
+    while 区间起点 > 0 and 掩码文本[区间起点 - 1] not in ";{}":
+        区间起点 -= 1
+    return 区间起点
 
 
 def 找夹具项(掩码文本: str, 原文本: str) -> tuple:
     """返回 (块区间表[(起,止)], 外部夹具文件表[(名, 相对本文件的路径, 位)])。"""
-    块 = []
-    外 = []
+    数据块 = []
+    外部夹具 = []
     for 起, 属止, _属性文本, 含test in 找条件属性(掩码文本):
         if not 含test:
             continue
@@ -86,32 +86,32 @@ def 找夹具项(掩码文本: str, 原文本: str) -> tuple:
         if 终 >= len(掩码文本):
             continue
         if 掩码文本[终] == ";":
-            块.append((起, 终 + 1))
+            数据块.append((起, 终 + 1))
         else:
-            止 = 配对(掩码文本, 终)
-            if 止 < 0:
+            区间终点 = 配对(掩码文本, 终)
+            if 区间终点 < 0:
                 continue
-            块.append((起, 止 + 1))
+            数据块.append((起, 区间终点 + 1))
         名配 = re.search(r"\bmod\s+([^\s;{]+)", 头)
         if not 名配:
             continue
-        名 = 名配.group(1)
+        名称 = 名配.group(1)
         # `#[path = "…"]` 的字符串在掩码里是空格 ⇒ 回原文本取引号内的值。
         # 窗口取「本项起点 → 项尾」：`#[path]` 可以在 cfg 之前，也可以在 cfg 之后。
         窗起 = _属性窗起(掩码文本, 起)
-        路 = None
+        路径 = None
         for 路命 in re.finditer(r"#\[\s*path\b", 掩码文本[窗起:终]):
-            引 = 原文本.find('"', 窗起 + 路命.end(), 终)
-            if 引 >= 0:
-                终引 = 原文本.find('"', 引 + 1)
-                if 终引 > 引:
-                    路 = 原文本[引 + 1 : 终引]
+            引号位 = 原文本.find('"', 窗起 + 路命.end(), 终)
+            if 引号位 >= 0:
+                终引 = 原文本.find('"', 引号位 + 1)
+                if 终引 > 引号位:
+                    路径 = 原文本[引号位 + 1 : 终引]
                     break
-        if 路 is not None:
-            外.append((名, 路, 起))
+        if 路径 is not None:
+            外部夹具.append((名称, 路径, 起))
             continue
-        外.append((名, 名 + ".rs", 起))
-    return 块, 外
+        外部夹具.append((名称, 名称 + ".rs", 起))
+    return 数据块, 外部夹具
 
 
 def 建夹具集(件表: dict, 掩表: dict = None) -> dict:
@@ -138,7 +138,7 @@ def 建夹具集(件表: dict, 掩表: dict = None) -> dict:
     # 两趟：先按「父文件不是夹具文件」收集；父文件本身是夹具的，它的 mod 声明不算数。
     待定 = list(外部)
     for _ in range(2):
-        新 = set()
+        新内容 = set()
         for 父, 路, 位 in 待定:
             if 父 in 整份:
                 continue
@@ -146,17 +146,17 @@ def 建夹具集(件表: dict, 掩表: dict = None) -> dict:
             候选 = f"{父目录}/{路}" if 父目录 else 路
             候选 = os.path.normpath(候选).replace("\\", "/")
             if 候选 in 件表:
-                新.add(候选)
+                新内容.add(候选)
                 continue
             # `mod 名;` → 名.rs 或 名/mod.rs
-            备 = 候选
-            if 备.endswith(".rs") and 备 not in 件表:
-                备2 = 备[:-3] + "/mod.rs"
+            备选路径 = 候选
+            if 备选路径.endswith(".rs") and 备选路径 not in 件表:
+                备2 = 备选路径[:-3] + "/mod.rs"
                 if 备2 in 件表:
-                    新.add(备2)
-        if not 新 - 整份:
+                    新内容.add(备2)
+        if not 新内容 - 整份:
             break
-        整份 |= 新
+        整份 |= 新内容
     return {"块": 块表, "整份夹具": 整份, "其它cfg": 其它}
 
 

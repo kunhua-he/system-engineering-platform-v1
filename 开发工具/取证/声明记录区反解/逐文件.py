@@ -87,13 +87,13 @@ def 取缓存(缓存目录, 路径):
     if 缓存目录 is None:
         return None
     try:
-        装 = json.loads(缓存文件(缓存目录, 路径).read_text(encoding="utf-8"))
+        缓存内容 = json.loads(缓存文件(缓存目录, 路径).read_text(encoding="utf-8"))
     except (OSError, ValueError):
         return None
-    if 装.get("版本") != 缓存版本 or 装.get("键") != 取缓存键(路径):
+    if 缓存内容.get("版本") != 缓存版本 or 缓存内容.get("键") != 取缓存键(路径):
         return None
-    读数 = 装.get("读数")
-    return 读数 if isinstance(读数, dict) and 读数.get("键") == 装.get("键") else None
+    读数 = 缓存内容.get("读数")
+    return 读数 if isinstance(读数, dict) and 读数.get("键") == 缓存内容.get("键") else None
 
 
 def 存缓存(缓存目录, 路径, 读数) -> None:
@@ -102,13 +102,13 @@ def 存缓存(缓存目录, 路径, 读数) -> None:
         return
     try:
         缓存目录.mkdir(parents=True, exist_ok=True)
-        路 = 缓存文件(缓存目录, 路径)
-        临 = 路.with_suffix(".json.临时")
-        临.write_text(
+        路径 = 缓存文件(缓存目录, 路径)
+        临时路径 = 路径.with_suffix(".json.临时")
+        临时路径.write_text(
             json.dumps({"版本": 缓存版本, "键": 读数.get("键"), "读数": 读数}, ensure_ascii=False),
             encoding="utf-8",
         )
-        os.replace(临, 路)
+        os.replace(临时路径, 路径)
     except OSError:
         return  # 缓存写不进不是命令的失败面（算得出来才是）
 

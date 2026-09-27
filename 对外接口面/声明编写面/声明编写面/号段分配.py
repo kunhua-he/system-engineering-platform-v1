@@ -46,8 +46,8 @@ def _是整数(待处理值) -> bool:
 
 def 声明文件(声明根):
     """平台声明.json（扩展那份叫 包声明.json，同形状，二者取其一）。"""
-    for 名 in 声明文件名:
-        路径 = Path(声明根) / 名
+    for 名称 in 声明文件名:
+        路径 = Path(声明根) / 名称
         if 路径.is_file():
             return 路径
     return None
@@ -55,24 +55,24 @@ def 声明文件(声明根):
 
 def 该层号段(声明根, 类别):
     """→ (段表, 来源说明)。段表 = [(起, 止), …]；判不了时段表为 None、来源说明写缺什么。"""
-    声 = 声明文件(声明根)
-    if 声 is None:
+    声明路径 = 声明文件(声明根)
+    if 声明路径 is None:
         return None, "找不到 %s（该层占哪几段没有来源）" % " / ".join(声明文件名)
-    数据 = 读JSON件(声)
+    数据 = 读JSON件(声明路径)
     if not isinstance(数据, dict):
-        return None, "%s 读不动或不是对象" % 声.name
+        return None, "%s 读不动或不是对象" % 声明路径.name
 
     if 类别 == "错误码":
         # 段位 d ⇒ 码区间 d*1000+1 … d*1000+999（§五：码 = <段位 1 位><序 3 位>；码 0 不是合法码）
         段位表 = 数据.get("错误段位表")
         if not isinstance(段位表, list) or not 段位表:
-            return None, "%s 的 错误段位表 缺失或为空（错误码占哪几个段位没有来源）" % 声.name
-        段 = []
-        for 位 in 段位表:
-            if not _是整数(位) or not (0 <= 位 <= 9):
-                return None, "%s 的 错误段位表 里有非 0–9 的整数：%r" % (声.name, 位)
-            段.append((位 * 1000 + 1, 位 * 1000 + 999))
-        return sorted(段), "%s 的 错误段位表 %s（码 = <段位><序 3 位>，序 1–999）" % (声.name, 段位表)
+            return None, "%s 的 错误段位表 缺失或为空（错误码占哪几个段位没有来源）" % 声明路径.name
+        号段 = []
+        for 位置 in 段位表:
+            if not _是整数(位置) or not (0 <= 位置 <= 9):
+                return None, "%s 的 错误段位表 里有非 0–9 的整数：%r" % (声明路径.name, 位置)
+            号段.append((位置 * 1000 + 1, 位置 * 1000 + 999))
+        return sorted(号段), "%s 的 错误段位表 %s（码 = <段位><序 3 位>，序 1–999）" % (声明路径.name, 段位表)
 
     if 类别 == "类型":
         return None, (
@@ -81,36 +81,36 @@ def 该层号段(声明根, 类别):
             "面不猜一个起始值（猜出来的就是第二个事实源），请显式给 编号"
         )
 
-    键 = _类别到占用键.get(类别)
-    if 键 is None:
+    键名 = _类别到占用键.get(类别)
+    if 键名 is None:
         return None, "未知类别 %r" % (类别,)
-    占用 = 数据.get(键)
+    占用 = 数据.get(键名)
     if not isinstance(占用, list) or not 占用:
-        return None, "%s 的 %s 缺失或为空（该层占哪几段没有来源）" % (声.name, 键)
-    段 = []
-    for 条 in 占用:
-        if not isinstance(条, dict) or not (_是整数(条.get("起")) and _是整数(条.get("止"))):
-            return None, "%s 的 %s 形状不对（每段要 {起, 止}）" % (声.name, 键)
-        if 条["起"] > 条["止"]:
-            return None, "%s 的 %s 有一段 起 > 止：%r" % (声.name, 键, 条)
-        段.append((条["起"], 条["止"]))
-    return sorted(段), "%s 的 %s %s" % (声.name, 键, 占用)
+        return None, "%s 的 %s 缺失或为空（该层占哪几段没有来源）" % (声明路径.name, 键名)
+    号段 = []
+    for 一条 in 占用:
+        if not isinstance(一条, dict) or not (_是整数(一条.get("起")) and _是整数(一条.get("止"))):
+            return None, "%s 的 %s 形状不对（每段要 {起, 止}）" % (声明路径.name, 键名)
+        if 一条["起"] > 一条["止"]:
+            return None, "%s 的 %s 有一段 起 > 止：%r" % (声明路径.name, 键名, 一条)
+        号段.append((一条["起"], 一条["止"]))
+    return sorted(号段), "%s 的 %s %s" % (声明路径.name, 键名, 占用)
 
 
 def 已用号(声明根, 目录, 字段):
     """该目录下已用的号：文件名（= 编号）与 JSON 字段值，两者都收（判据 ① 要求二者一致）。"""
-    出 = set()
-    根 = Path(声明根) / 目录
-    if not 根.is_dir():
-        return 出
-    for 路径 in sorted(根.glob("*.json")):
-        杆 = 路径.name[: -len(".json")]
-        if 杆.isdigit():
-            出.add(int(杆))
+    已用号集 = set()
+    根目录 = Path(声明根) / 目录
+    if not 根目录.is_dir():
+        return 已用号集
+    for 路径 in sorted(根目录.glob("*.json")):
+        编号文本 = 路径.name[: -len(".json")]
+        if 编号文本.isdigit():
+            已用号集.add(int(编号文本))
         数据 = 读JSON件(路径)
         if isinstance(数据, dict) and _是整数(数据.get(字段)):
-            出.add(int(数据[字段]))
-    return 出
+            已用号集.add(int(数据[字段]))
+    return 已用号集
 
 
 def 作废号(声明根, 类别):
@@ -128,50 +128,50 @@ def 作废号(声明根, 类别):
         return set()
     数据 = 读JSON件(Path(声明根) / "作废号表.json")
     条目 = 数据.get("作废") if isinstance(数据, dict) else None
-    出 = set()
+    作废号集 = set()
     if isinstance(条目, list):
-        for 条 in 条目:
+        for 一条 in 条目:
             if (
-                isinstance(条, dict)
-                and 条.get("号空间") == 空间
-                and _是整数(条.get("编号"))
+                isinstance(一条, dict)
+                and 一条.get("号空间") == 空间
+                and _是整数(一条.get("编号"))
             ):
-                出.add(int(条["编号"]))
-    return 出
+                作废号集.add(int(一条["编号"]))
+    return 作废号集
 
 
 def 分配(段表, 已用, 作废):
     """该层号段内第一个空洞；占满 ⇒ None。**不是** 0 起顺排计数器。"""
     for 起, 止 in sorted(段表):
-        号 = 起
-        while 号 <= 止:
-            if 号 not in 已用 and 号 not in 作废:
-                return 号
-            号 += 1
+        号值 = 起
+        while 号值 <= 止:
+            if 号值 not in 已用 and 号值 not in 作废:
+                return 号值
+            号值 += 1
     return None
 
 
 def 层标签(声明根, 类别, 编号):
     """这个号落在 `号段图.json` 的哪一层（只做标注，不做归属裁决）。"""
-    图 = 读JSON件(Path(声明根) / "号段图.json")
-    if not isinstance(图, dict):
+    号段图 = 读JSON件(Path(声明根) / "号段图.json")
+    if not isinstance(号段图, dict):
         return ""
-    键 = _类别到布局键.get(类别)
-    if 键 is None:
+    键名 = _类别到布局键.get(类别)
+    if 键名 is None:
         return ""
-    表 = 图.get(键)
-    if not isinstance(表, list):
+    项表 = 号段图.get(键名)
+    if not isinstance(项表, list):
         return ""
     if 类别 == "错误码":
-        位 = 编号 // 1000
-        for 条 in 表:
-            if isinstance(条, dict) and 条.get("段位") == 位:
-                return str(条.get("归属", ""))
+        位置 = 编号 // 1000
+        for 一条 in 项表:
+            if isinstance(一条, dict) and 一条.get("段位") == 位置:
+                return str(一条.get("归属", ""))
         return ""
-    for 条 in 表:
-        if isinstance(条, dict) and _是整数(条.get("起")) and _是整数(条.get("止")):
-            if 条["起"] <= 编号 <= 条["止"]:
-                return str(条.get("归属", ""))
+    for 一条 in 项表:
+        if isinstance(一条, dict) and _是整数(一条.get("起")) and _是整数(一条.get("止")):
+            if 一条["起"] <= 编号 <= 一条["止"]:
+                return str(一条.get("归属", ""))
     return ""
 
 

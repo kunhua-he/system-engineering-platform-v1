@@ -36,12 +36,12 @@ pub struct 静态件 {
 /// 这里只认解码后的形态，不重复解一次（同一件事两处做，两处会分叉）。
 pub fn 取件(根目录: &Path, 路径: &str) -> Option<静态件> {
     let 相对 = 安全相对路径(路径)?;
-    let 全 = 根目录.join(&相对);
+    let 完整路径 = 根目录.join(&相对);
     // 目录与不存在的件一律 `None`（口径 4：不列表、不重写）。
-    if !std::fs::metadata(&全).ok()?.is_file() {
+    if !std::fs::metadata(&完整路径).ok()?.is_file() {
         return None;
     }
-    let 字节 = std::fs::read(&全).ok()?;
+    let 字节 = std::fs::read(&完整路径).ok()?;
     Some(静态件 {
         内容类型: 内容类型(&相对),
         字节,
@@ -57,21 +57,21 @@ fn 安全相对路径(路径: &str) -> Option<String> {
     if 路径.contains('\\') {
         return None;
     }
-    let 净 = 路径.trim_start_matches('/');
+    let 净文本 = 路径.trim_start_matches('/');
     // 目录请求（`/` 或空）⇒ 首页。前端的目录只有这一个，不做通用目录重写。
-    if 净.is_empty() {
+    if 净文本.is_empty() {
         return Some(目录首页.to_owned());
     }
-    let 净 = 净.trim_end_matches('/');
-    if 净.is_empty() {
+    let 净文本 = 净文本.trim_end_matches('/');
+    if 净文本.is_empty() {
         return None;
     }
-    for 段 in 净.split('/') {
-        if 段.is_empty() || 段 == "." || 段 == ".." {
+    for 路径段 in 净文本.split('/') {
+        if 路径段.is_empty() || 路径段 == "." || 路径段 == ".." {
             return None;
         }
     }
-    Some(净.to_owned())
+    Some(净文本.to_owned())
 }
 
 /// 扩展名 → 内容类型。**不认的扩展名一律 `application/octet-stream`**：
@@ -102,23 +102,23 @@ mod 静态件测试 {
 
     #[test]
     fn 根路径回首页且取得到前端自身的件() {
-        let 根 = 前端根();
-        let 首页 = 取件(&根, "/").expect("`/` 必须回 index.html");
+        let 根目录 = 前端根();
+        let 首页 = 取件(&根目录, "/").expect("`/` 必须回 index.html");
         assert_eq!(首页.内容类型, "text/html; charset=utf-8");
         assert!(首页.字节.starts_with(b"<!DOCTYPE html>"), "该是真 index.html");
 
-        let 样式 = 取件(&根, "/样式.css").expect("样式.css 在托管根下");
+        let 样式 = 取件(&根目录, "/样式.css").expect("样式.css 在托管根下");
         assert_eq!(样式.内容类型, "text/css; charset=utf-8");
         assert!(!样式.字节.is_empty());
 
-        let 脚本 = 取件(&根, "/取接口.js").expect("取接口.js 在托管根下");
+        let 脚本 = 取件(&根目录, "/取接口.js").expect("取接口.js 在托管根下");
         assert_eq!(脚本.内容类型, "text/javascript; charset=utf-8");
     }
 
     #[test]
     fn 只托管前端自身的件_仓内别处一律取不到() {
-        let 根 = 前端根();
-        for 路 in [
+        let 根目录 = 前端根();
+        for 路径 in [
             "/Cargo.toml",
             "/项目文档/设计文档/接口面形状.md",
             "/../Cargo.toml",
@@ -127,10 +127,10 @@ mod 静态件测试 {
             "//Cargo.toml",
             "/a\\b",
         ] {
-            assert!(取件(&根, 路).is_none(), "「{路}」不许取到（托管根之外）");
+            assert!(取件(&根目录, 路径).is_none(), "「{路径}」不许取到（托管根之外）");
         }
         // 不存在的件、目录请求（子目录）也不给件 —— 不列表、不重写。
-        assert!(取件(&根, "/没有这个件.txt").is_none());
-        assert!(取件(&根, "/项目文档/").is_none());
+        assert!(取件(&根目录, "/没有这个件.txt").is_none());
+        assert!(取件(&根目录, "/项目文档/").is_none());
     }
 }

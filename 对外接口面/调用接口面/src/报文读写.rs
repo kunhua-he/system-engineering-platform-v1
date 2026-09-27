@@ -43,14 +43,14 @@ pub(crate) fn 读报文(输出流: &mut TcpStream) -> Result<报文, String> {
         缓冲.extend_from_slice(&临时[..读到]);
     };
 
-    let 头 = core::str::from_utf8(&缓冲[..头尾])
+    let 头部 = core::str::from_utf8(&缓冲[..头尾])
         .map_err(|_| "请求头不是合法 UTF-8".to_owned())?
         .to_owned();
     let 体起 = 头尾 + 4;
     let 余料 = 缓冲.get(体起..).unwrap_or(&[]).to_vec();
 
-    let mut 行 = 头.split("\r\n");
-    let 首行 = 行.next().unwrap_or("");
+    let mut 行迭代器 = 头部.split("\r\n");
+    let 首行 = 行迭代器.next().unwrap_or("");
     let 部件: Vec<&str> = 首行.split(' ').filter(|段| !段.is_empty()).collect();
     if 部件.len() != 3 {
         return Err("请求行必须是「方法 目标 版本」三段".to_owned());
@@ -58,18 +58,18 @@ pub(crate) fn 读报文(输出流: &mut TcpStream) -> Result<报文, String> {
     let (方法, 目标) = (部件[0].to_owned(), 部件[1].to_owned());
 
     let mut 内容长度 = 0usize;
-    for 一行 in 行 {
+    for 一行 in 行迭代器 {
         let Some((名, 值)) = 一行.split_once(':') else {
             continue;
         };
-        let 名 = 名.trim().to_ascii_lowercase();
-        let 值 = 值.trim();
-        if 名 == "content-length" {
-            内容长度 = 值
+        let 名称 = 名.trim().to_ascii_lowercase();
+        let 待处理值 = 值.trim();
+        if 名称 == "content-length" {
+            内容长度 = 待处理值
                 .parse::<usize>()
                 .map_err(|_| "Content-Length 不是非负整数".to_owned())?;
         }
-        if 名 == "transfer-encoding" && !值.eq_ignore_ascii_case("identity") {
+        if 名称 == "transfer-encoding" && !待处理值.eq_ignore_ascii_case("identity") {
             // 分块传输要做流式状态机 = 连接管理，本面明确不做（文件头）。
             return Err("本面不支持 Transfer-Encoding：请用 Content-Length".to_owned());
         }
@@ -91,8 +91,8 @@ pub(crate) fn 读报文(输出流: &mut TcpStream) -> Result<报文, String> {
         }
         体字节.extend_from_slice(&临时[..读到]);
     }
-    let 体 = String::from_utf8(体字节).map_err(|_| "请求体不是合法 UTF-8".to_owned())?;
-    Ok(报文 { 方法, 目标, 体 })
+    let 请求体 = String::from_utf8(体字节).map_err(|_| "请求体不是合法 UTF-8".to_owned())?;
+    Ok(报文 { 方法, 目标, 体: 请求体 })
 }
 
 /// 找 `\r\n\r\n` 的起始偏移（请求头与体的分界）。
@@ -108,14 +108,14 @@ fn 找头尾(缓冲: &[u8]) -> Option<usize> {
 /// `text/html` / `text/css` / `text/javascript` —— 在这里假定 JSON 就会让前端整页挂掉
 /// （浏览器按 JSON 解 HTML 只得到一个下载或一段乱码）。
 pub(crate) fn 写响应(输出流: &mut TcpStream, 应答: &应答) -> std::io::Result<()> {
-    let 头 = format!(
+    let 头部 = format!(
         "HTTP/1.1 {} {}\r\nContent-Type: {}\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
         应答.状态,
         原因短语(应答.状态),
         应答.内容类型,
         应答.体.len()
     );
-    输出流.write_all(头.as_bytes())?;
+    输出流.write_all(头部.as_bytes())?;
     输出流.write_all(&应答.体)?;
     输出流.flush()
 }
