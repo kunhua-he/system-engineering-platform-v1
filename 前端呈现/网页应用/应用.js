@@ -83,13 +83,13 @@ function 切视图() {
 装对话框(取元素);
 
 // ── 左栏底部那三条页签（参考图 y=544..565 的「支持库 · 程序 · 属性」那一格）──
-for (const 钮 of 取元素("左页签带").querySelectorAll(".页签")) {
-  钮.addEventListener("click", () => {
+for (const 按钮 of 取元素("左页签带").querySelectorAll(".页签")) {
+  按钮.addEventListener("click", () => {
     // 设计视图下这三格被属性面板占着（参考图里那条页签也还在）—— 点它就切回代码视图再看那一格，
     // 否则点下去什么都不变，那就是个假按钮。
     if (视图 === "设计") 切视图();
-    for (const 他 of 取元素("左页签带").querySelectorAll(".页签")) 他.classList.toggle("选", 他 === 钮);
-    for (const 格 of document.querySelectorAll(".左格")) 格.classList.toggle("选", 格.id === 钮.dataset.左);
+    for (const 页签 of 取元素("左页签带").querySelectorAll(".页签")) 页签.classList.toggle("选", 页签 === 按钮);
+    for (const 左格 of document.querySelectorAll(".左格")) 左格.classList.toggle("选", 左格.id === 按钮.dataset.左);
   });
 }
 

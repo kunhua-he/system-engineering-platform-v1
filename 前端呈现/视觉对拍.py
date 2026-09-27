@@ -41,7 +41,7 @@ def 入口函数(参数):
         print(__doc__)
         return 1
     出图 = Path(参数[0])
-    宽, 高 = 参考尺寸
+    宽度, 高度 = 参考尺寸
     网关 = 声明根 = None
     只出图 = False
     序号 = 1
@@ -54,11 +54,11 @@ def 入口函数(参数):
         elif 本参 == "--只出图":
             只出图 = True; 序号 += 1
         else:
-            宽, 高 = int(参数[序号]), int(参数[序号 + 1]); 序号 += 2
+            宽度, 高度 = int(参数[序号]), int(参数[序号 + 1]); 序号 += 2
 
     if not (网关 and 声明根):
         print("没给 --网关 / --声明根 ⇒ 转调界面反解截图.py 的老路（只起静态服务 · 带错误文本污染）")
-        错误码 = subprocess.call([sys.executable, str(旧渲染件), str(出图), str(宽), str(高)])
+        错误码 = subprocess.call([sys.executable, str(旧渲染件), str(出图), str(宽度), str(高度)])
     else:
         错误码 = 0
         try:
@@ -85,7 +85,7 @@ def 入口函数(参数):
             with sync_playwright() as 驱动器:
                 浏览器 = 剧.chromium.launch()
                 try:
-                    页面 = 浏览器.new_page(viewport={"width": 宽, "height": 高})
+                    页面 = 浏览器.new_page(viewport={"width": 宽度, "height": 高度})
                     页面.goto(网址, wait_until="load", timeout=5000)
                     页面.wait_for_timeout(800)  # 让首帧布局与字体落定
                     页面.screenshot(path=str(出图))
@@ -100,7 +100,7 @@ def 入口函数(参数):
     if not 出图.is_file():
         print(f"渲染失败：没写出来 {出图}", file=sys.stderr)
         return 1
-    print(f"出图 {出图} · {宽}x{高} · {出图.stat().st_size} 字节")
+    print(f"出图 {出图} · {宽度}x{高度} · {出图.stat().st_size} 字节")
     if 只出图:
         return 0
     return subprocess.call([sys.executable, str(对拍件), str(参考图.relative_to(仓根)), str(出图)])

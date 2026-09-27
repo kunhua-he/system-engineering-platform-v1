@@ -60,14 +60,14 @@ export async function 拉扩展表() {
     return "GET /接口/扩展 没回出扩展清单（HTTP " + 应答.状态 + "）";
   }
   扩展表.length = 0;
-  for (const 类 of 应答.体.种类) {
-    for (const 扩 of 类.扩展 || []) {
-      for (const 段 of 扩.能力号段 || []) {
+  for (const 类别 of 应答.体.种类) {
+    for (const 扩展 of 类别.扩展 || []) {
+      for (const 号段 of 扩展.能力号段 || []) {
         扩展表.push({
-          名: String(扩.名称),
-          种类: String(类.种类),
-          起: Number(段.起),
-          止: Number(段.止),
+          名: String(扩展.名称),
+          种类: String(类别.种类),
+          起: Number(号段.起),
+          止: Number(号段.止),
         });
       }
     }
