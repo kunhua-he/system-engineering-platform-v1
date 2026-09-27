@@ -7,7 +7,7 @@ from concurrent.futures import ThreadPoolExecutor
 import re
 
 from .小工具 import 违规, 判不了
-from .常量 import 声明数据字段, 契约目录名, 平台信息所在目录, 并发度, 检查名, 生成器相对路径, 生成物头标要求, 生成物相对路径, 装载入口落点
+from .常量 import 声明数据字段, 契约目录名, 平台信息所在目录, 并发度, 检查名, 生成器相对路径, 生成物头标要求, 生成物相对路径, 是生成物, 装载入口落点
 from .构造点 import _抽字节串常量, _抽平台信息字段, _抽整数常量, _抽版本三元组, 找构造点, 跑生成器检查
 from .测试件 import 并行生产区
 
@@ -84,7 +84,7 @@ def 检查10_生成物与JSON一致(上: dict) -> list:
         for 键, 项 in 文件.items()
         if 键.endswith(".rs")
         and 项["文本"] is not None
-        and 键 != 生成物相对路径
+        and not 是生成物(键)
         and not 键.startswith("扩展根目录/")
     ]
     with ThreadPoolExecutor(max_workers=并发度) as 池:

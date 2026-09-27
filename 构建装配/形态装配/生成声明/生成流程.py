@@ -6,7 +6,7 @@ import os
 from .号段归属 import 号段归属表
 from .常量表 import 常量表落点, 读常量表
 from .推导比对 import 交叉比对, 推导号段类
-from .路径形状 import 仓根, 声明根, 生成失败
+from .路径形状 import 仓根, 声明根, 生成失败, 生成子件名
 from .小工具 import 列目录json, 源指纹
 from .读平台声明 import 判占用落在布局内, 读平台声明, 读号段图, 选声明文件
 from .读子表 import (
@@ -109,7 +109,8 @@ def 生成(根):
             "%s：「%s」的值是 null（未定数）⇒ 未生成常量，名字进生成物的 `未定数常量`"
             "（显式跳过，不是静默跳过）" % (根.常量表, " · ".join(未定))
         ]
-    return 文本.encode("utf-8"), {
+    件 = {相对路径: 文.encode("utf-8") for 相对路径, 文 in 文本.items()}
+    return 件, {
         "类型": len(类型表),
         "命令": len(命令表),
         "命令类别": len(命令类别表),
@@ -134,3 +135,8 @@ def 生成(根):
 
 def 落盘路径(根):
     return os.path.join(仓根, 根.落盘件)
+
+
+def 落盘件表(根):
+    """本份生成物的**全部落点**（仓内相对路径）：路由件 + 各子件。顺序固定。"""
+    return [根.落盘件] + [根.子件[名] for 名 in 生成子件名]

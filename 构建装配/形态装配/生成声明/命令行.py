@@ -7,7 +7,7 @@ import sys
 
 from .路径形状 import 仓根, 生成器相对路径, 生成失败, 默认声明根
 from .检查 import 报提醒, 检查
-from .生成流程 import 建声明根, 生成, 落盘路径
+from .生成流程 import 建声明根, 生成, 落盘件表
 from .渲染接缝 import 接缝路径, 渲染接缝, 读导出目标
 
 
@@ -107,14 +107,20 @@ def 主(参数):
             return 出接缝(根, 检查模式)
         if 检查模式:
             return 检查(根)
-        新字节, 计数, 提醒 = 生成(根)
-        with open(落盘路径(根), "wb") as 句柄:
-            句柄.write(新字节)
+        新件, 计数, 提醒 = 生成(根)
+        总字节 = 0
+        for 相对 in 落盘件表(根):
+            新字节 = 新件[相对]
+            总字节 += len(新字节)
+            with open(os.path.join(仓根, 相对), "wb") as 句柄:
+                句柄.write(新字节)
+            print(
+                "已生成 %s（%d 字节 · sha256 %s）"
+                % (相对, len(新字节), hashlib.sha256(新字节).hexdigest())
+            )
         报提醒(提醒)
-        print(
-            "已生成 %s（%d 字节 · sha256 %s）"
-            % (根.落盘件, len(新字节), hashlib.sha256(新字节).hexdigest())
-        )
+        print("共 %d 件（路由件 %s · 子件 %d 件 · 合计 %d 字节）"
+              % (len(落盘件表(根)), 根.落盘件, len(落盘件表(根)) - 1, 总字节))
         print("  声明根：%s" % 根.根)
         print(
             "  覆盖：类型 %d · 命令 %d · 命令类别 %d · 错误码 %d · 通知号 %d · 作废号 %d · 能力号段 %d · 通知号段 %d · 错误段位 %d"
