@@ -59,7 +59,7 @@ def 起网关(暂存: Path) -> tuple:
         健康超时秒, 日志.read_text(encoding="utf-8", errors="replace")))
 
 
-def 启动读数(文: str) -> dict:
+def 启动读数(文本: str) -> dict:
     """从启动输出抠三样：扫到/装上/剔除 · 声明根份数与能力清单条数 · 扫描逐行（装上/剔除）。
 
     逐行按**行首词**认（启动入口打的「装上/剔除」行以落点开头），汇总行
@@ -67,13 +67,13 @@ def 启动读数(文: str) -> dict:
     """
     出 = {"扫到扩展": None, "装上": None, "剔除": None, "声明根份数": None, "能力清单条数": None,
           "装上行": [], "剔除行": []}
-    命 = re.search(r"扫到扩展 (\d+) 个（装上 (\d+) · 剔除 (\d+)）", 文)
+    命 = re.search(r"扫到扩展 (\d+) 个（装上 (\d+) · 剔除 (\d+)）", 文本)
     if 命:
         出["扫到扩展"], 出["装上"], 出["剔除"] = (int(命.group(组序)) for 组序 in (1, 2, 3))
-    命 = re.search(r"声明根 (\d+) 份 · 能力清单 (\d+) 条", 文)
+    命 = re.search(r"声明根 (\d+) 份 · 能力清单 (\d+) 条", 文本)
     if 命:
         出["声明根份数"], 出["能力清单条数"] = int(命.group(1)), int(命.group(2))
-    for 行 in 文.splitlines():
+    for 行 in 文本.splitlines():
         条 = 行.strip()
         if 条.startswith("装上 /"):
             出["装上行"].append(条[len("装上 "):])
@@ -181,8 +181,8 @@ def 跑主链(壳起表=None) -> int:
     阶段 = {}
     打点起 = [time.time()]
 
-    def 打点(名: str) -> None:
-        阶段[名] = round(time.time() - 打点起[0], 2)
+    def 打点(名称: str) -> None:
+        阶段[名称] = round(time.time() - 打点起[0], 2)
         打点起[0] = time.time()
 
     try:

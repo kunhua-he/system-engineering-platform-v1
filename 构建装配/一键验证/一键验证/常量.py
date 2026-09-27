@@ -86,9 +86,9 @@ from 构建装配.门禁 import 硬顶毫秒  # noqa: E402
 生成物后缀 = "数据.rs"
 
 
-def 是生成物(键):
+def 是生成物(键名):
     """键是不是生成物（路由件或子件）。判据凡要「读生成物 / 排除生成物」一律走这里。"""
-    return 键.startswith(生成物目录 + "/") and 键.endswith(生成物后缀)
+    return 键名.startswith(生成物目录 + "/") and 键名.endswith(生成物后缀)
 
 
 生成器相对路径 = "构建装配/形态装配/生成声明.py"

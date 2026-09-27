@@ -15,9 +15,9 @@ def 走源文件(目录: Path):
                 yield Path(根) / 名
 
 
-def 相对(路: Path) -> str:
-    return 路.relative_to(仓根).as_posix()
+def 相对(路径: Path) -> str:
+    return 路径.relative_to(仓根).as_posix()
 
 
-def 文件指纹(路: Path) -> str:
-    return hashlib.sha256(路.read_bytes()).hexdigest()
+def 文件指纹(路径: Path) -> str:
+    return hashlib.sha256(路径.read_bytes()).hexdigest()

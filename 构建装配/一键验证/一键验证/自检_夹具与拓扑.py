@@ -53,12 +53,12 @@ def 自检_整份夹具跳过() -> list:
     # 对照：挂 vs 不挂 —— 只差父文件里那一行挂载声明
     import tempfile
 
-    def 跑自检(挂: bool) -> dict:
+    def 跑自检(是否挂: bool) -> dict:
         with tempfile.TemporaryDirectory(prefix="一键验证夹具对照-") as 临时:
             临根 = Path(临时) / "仓"
             造干净仓(临根)
             for 相对, 内容 in 件.items():
-                if not 挂 and 相对 == 键父:
+                if not 是否挂 and 相对 == 键父:
                     continue
                 路径 = 临根 / 相对
                 路径.parent.mkdir(parents=True, exist_ok=True)
@@ -90,8 +90,8 @@ def 自检_拓扑判据收窄() -> list:
     """
     出 = []
 
-    def 断言(名, 好, 说明):
-        出.append((名, 好, 说明))
+    def 断言(名称, 合格样本, 说明):
+        出.append((名称, 合格样本, 说明))
 
     # ── ⑪-3：`载入` 的调用点 ──
     真调用 = "let 表 = v1_loader::载入(声明, &台账).map_err(装载失败::载入)?;\n"

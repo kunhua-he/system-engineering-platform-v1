@@ -30,61 +30,61 @@ from .小工具 import 读JSON件
 接缝钩子路径 = "crate::" + 接缝钩子名
 
 
-def 接缝路径(根):
+def 接缝路径(根目录):
     """接缝文件的仓内相对路径（= 根 + 固定名，与「落盘件」并列）。"""
-    return 根.接缝件
+    return 根目录.接缝件
 
 
-def 是合法符号名(值):
+def 是合法符号名(待处理值):
     """导出的 ABI 符号一律 ASCII（外部协议边界，`跨语言适配/边界协议/边界协议.md` §二）。"""
-    if not 值 or not (值[0].isascii() and (值[0].isalpha() or 值[0] == "_")):
+    if not 待处理值 or not (待处理值[0].isascii() and (待处理值[0].isalpha() or 待处理值[0] == "_")):
         return False
-    return all(字.isascii() and (字.isalnum() or 字 == "_") for 字 in 值)
+    return all(字.isascii() and (字.isalnum() or 字 == "_") for 字 in 待处理值)
 
 
-def 校验导出目标(值, 源, 是底座):
+def 校验导出目标(待处理值, 来源, 是底座):
     """**唯一的**导出目标校验处（整份生成与 `--接缝` 共用，一处口径）。返回 值 or None。
 
     底座（`平台声明.json`）：`null` / 缺 = 不导出；是字符串 ⇒ fail-closed（底座不是可装载件，裁决 6）。
     扩展（`包声明.json`）：必须是合法符号名串；`null` / 缺 ⇒ fail-closed（可装载件必须导出接缝）。
     """
-    if 值 is None:
+    if 待处理值 is None:
         if 是底座:
             return None
         raise 生成失败(
             "%s 缺 `导出目标`（或为 null）：扩展是可装载件，必须声明它导出的接缝符号名"
             "（每个扩展恰好 1 个，`跨语言适配/边界协议/边界协议.md` §二）；"
-            "缺了就没有导出符号、底座载不进来 ⇒ fail-closed" % 源
+            "缺了就没有导出符号、底座载不进来 ⇒ fail-closed" % 来源
         )
-    if not isinstance(值, str) or not 是合法符号名(值):
+    if not isinstance(待处理值, str) or not 是合法符号名(待处理值):
         raise 生成失败(
             "%s 的 `导出目标` 不是合法符号名：%r（导出的 ABI 符号一律 ASCII）⇒ fail-closed"
-            % (源, 值)
+            % (来源, 待处理值)
         )
     if 是底座:
         raise 生成失败(
             "%s 的 `导出目标` 是 %r，但**底座不是可装载件**（没人 dlopen 它；"
             "`项目文档/决策记录/2026-09-27_接缝反解与1对1的边界.md` §二 裁决 6）："
-            "底座声明里 `导出目标` 只能是 null（不导出）⇒ fail-closed" % (源, 值)
+            "底座声明里 `导出目标` 只能是 null（不导出）⇒ fail-closed" % (来源, 待处理值)
         )
-    return 值
+    return 待处理值
 
 
-def 读导出目标(根):
+def 读导出目标(根目录):
     """只读声明文件里的 `导出目标`；返回 (值 or None, 源相对路径)。**不读别的源**。"""
-    源 = 根.声明文件
+    源 = 根目录.声明文件
     文档 = 读JSON件(源)
     if not isinstance(文档, dict):
         raise 生成失败("%s 顶层不是对象" % 源)
-    return 校验导出目标(文档.get("导出目标"), 源, 根.声明文件 == 根.平台声明), 源
+    return 校验导出目标(文档.get("导出目标"), 源, 根目录.声明文件 == 根目录.平台声明), 源
 
 
-def 渲染接缝(根, 导出目标):
+def 渲染接缝(根目录, 导出目标):
     """渲染接缝文件文本。`导出目标 = None` ⇒ 只有一段「不导出」的说明（不出函数）。"""
     头 = [
         "// 生成物，禁手改。要改请改源并重跑生成器。",
         "// 源：%s（导出目标 = %s）"
-        % (根.声明文件, "null" if 导出目标 is None else '"%s"' % 导出目标),
+        % (根目录.声明文件, "null" if 导出目标 is None else '"%s"' % 导出目标),
         "// 生成器：%s" % 生成器相对路径,
     ]
     if 导出目标 is None:

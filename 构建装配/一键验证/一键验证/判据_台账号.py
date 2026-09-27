@@ -87,45 +87,45 @@ def 去行内代码(文本: str) -> str:
     return _行内代码.sub(lambda 命: " " * len(命.group(0)), 文本)
 
 
-def 是制品产物(键: str) -> bool:
+def 是制品产物(键名: str) -> bool:
     """路径里有 `制品产物` 这一段 ⇒ 被 git 忽略的生成物（裁决 §二：面里排除）。"""
-    return 制品产物段 in str(键).split("/")
+    return 制品产物段 in str(键名).split("/")
 
 
 # 扫描面在一次运行里不变（判定与对象数各取一次）⇒ 按仓根缓存（同 判据 ㊲ 的先例）。
 _面缓存: dict = {}
 
 
-def 台账号面(上: dict) -> dict:
+def 台账号面(上层读数: dict) -> dict:
     """扫描面：全仓**非生成物**件 ⇒ `{键: 文本}`。"""
-    键 = str(上["仓根"])
+    键 = str(上层读数["仓根"])
     if 键 in _面缓存:
         return _面缓存[键]
     面 = {
         路: 项["文本"]
-        for 路, 项 in 上["文件"].items()
+        for 路, 项 in 上层读数["文件"].items()
         if 项.get("文本") is not None and not 是制品产物(路)
     }
     _面缓存[键] = 面
     return 面
 
 
-def 样本_台账号面(上: dict) -> int:
+def 样本_台账号面(上层读数: dict) -> int:
     """对象数：扫描面下的件数（0 ⇒ 未判）。"""
-    return len(台账号面(上))
+    return len(台账号面(上层读数))
 
 
-def 扫台账号(面: dict) -> list:
+def 扫台账号(扫描面: dict) -> list:
     """扫一遍 ⇒ `[(路径, 行号, 形式, 原文)]`。
 
     形①②③ 在**原文**上跑（含围栏块，宁可多抓）；形④ 只在 `.md` 的**散文**上跑
     （去围栏块 + 去行内代码），并排掉紧跟引号的半角字面量。
     """
     出 = []
-    for 路 in sorted(面):
+    for 路 in sorted(扫描面):
         if 是制品产物(路):
             continue  # 被忽略的生成物（裁决 §二）；与 台账号面 同一条规则（都调 是制品产物）
-        文本 = 面[路] or ""
+        文本 = 扫描面[路] or ""
         if not 文本:
             continue
         for 号, 行 in enumerate(文本.split("\n"), 1):
@@ -142,13 +142,13 @@ def 扫台账号(面: dict) -> list:
     return 出
 
 
-def 检查38_台账号不悬空(上: dict) -> list:
+def 检查38_台账号不悬空(上层读数: dict) -> list:
     """源码树里 0 处台账引用（三元：通过 / 失败 / 未判）。
 
     **失败** = 逐条报出命中（件 · 行 · 形式 · 原文）；**未判** = 扫描面 0 件（空集不算通过）。
     """
     出 = []
-    面 = 台账号面(上)
+    面 = 台账号面(上层读数)
     if not 面:
         判不了(
             检查名[37],
@@ -197,8 +197,8 @@ def 自检_台账号扫描() -> list:
     命 = 扫台账号(样本)
     说 = " | ".join("%s:%d %s" % (条[0], 条[1], 条[2]) for 条 in 命)
 
-    def 那件(路: str, 形式前缀: str = "") -> list:
-        return [条 for 条 in 命 if 条[0] == 路 and 条[2].startswith(形式前缀)]
+    def 那件(路径: str, 形式前缀: str = "") -> list:
+        return [条 for 条 in 命 if 条[0] == 路径 and 条[2].startswith(形式前缀)]
 
     return [
         ("反向样本：形①②③ 带前缀的两种写法各抓得住（同一散文里两处）",

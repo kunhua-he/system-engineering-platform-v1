@@ -11,8 +11,8 @@ def 就绪() -> None:
         (运行根 / 子).mkdir(parents=True, exist_ok=True)
 
 
-def 读指针(名: str) -> dict:
-    路 = 运行根 / "{}.json".format(名)
+def 读指针(名称: str) -> dict:
+    路 = 运行根 / "{}.json".format(名称)
     if not 路.is_file():
         return {}
     try:
@@ -21,16 +21,16 @@ def 读指针(名: str) -> dict:
         return {}
 
 
-def 写指针(名: str, 值: dict) -> None:
+def 写指针(名称: str, 待处理值: dict) -> None:
     """原子写：先写同目录临时件再 `os.replace`（换指针必须是**一步**，不许读到半个）。"""
-    路 = 运行根 / "{}.json".format(名)
+    路 = 运行根 / "{}.json".format(名称)
     临 = 路.with_suffix(".json.临时")
-    临.write_text(json.dumps(值, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    临.write_text(json.dumps(待处理值, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     os.replace(临, 路)
 
 
-def 清指针(名: str) -> None:
-    路 = 运行根 / "{}.json".format(名)
+def 清指针(名称: str) -> None:
+    路 = 运行根 / "{}.json".format(名称)
     if 路.is_file():
         路.unlink()
 
