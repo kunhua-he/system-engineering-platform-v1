@@ -54,23 +54,60 @@ _Python引号 = re.compile(r'[rRbBuUfF]{0,3}("|\')')
 # `.vue`：只取 `<script …>…</script>` 块（模板散文里有中文，但它不是标识符面）。
 _Vue脚本块 = re.compile(r"<script[^>]*>(.*?)</script>", re.S | re.I)
 
-# ── 局部绑定（判据 ㉒ 第四档的面）—— **保守**：只收把握大的形状。
-# 漏一个只是**少报存量**（读数偏小），多收一个就是**假红** —— 两者相权，宁漏不假红。
-_局部形 = {
+# ── 局部绑定（判据 ㉒ 第四档的面）—— 分**单名形**与**多名形**两类：
+#   单名形：一个匹配 = 一个名字（`let 名` · `for 名 in` · `catch (名)`）。
+#   多名形：一个匹配 = 一段**绑定列表**，要拆（元组 `let (a, b)` · 闭包参 `|a, b|` ·
+#           `Ok(名)` 模式 · Python 元组解包 · `with … as 名` · `lambda 名` · JS 解构）。
+# ★ 口径仍是**宁漏不假红**：只收「长得像绑定」的形状，凡要先猜的一律不收（残余见 `扫局部绑定`）。
+_名式 = r"[A-Za-z_\u4e00-\u9fff][\w\u4e00-\u9fff]*"
+
+_单名形 = {
     ".rs": (
-        re.compile(r"\blet\s+(?:mut\s+)?(?P<名>[A-Za-z_\u4e00-\u9fff][\w\u4e00-\u9fff]*)\s*(?::|=)"),
-        re.compile(r"\bfor\s+(?P<名>[A-Za-z_\u4e00-\u9fff][\w\u4e00-\u9fff]*)\s+in\b"),
+        re.compile(rf"\blet\s+(?:mut\s+)?({_名式})\s*(?::|=)"),
+        re.compile(rf"\bfor\s+({_名式})\s+in\b"),
     ),
     ".py": (
-        # 语句首的**纯赋值**（`名 = …`）；`名 += …` / `名 <= …` / `名, 别 = …` 都不算。
-        re.compile(r"^[ \t]*(?P<名>[A-Za-z_\u4e00-\u9fff][\w\u4e00-\u9fff]*)\s*(?::[^=\n]+)?=(?!=)", re.M),
-        re.compile(r"^[ \t]*for\s+(?P<名>[A-Za-z_\u4e00-\u9fff][\w\u4e00-\u9fff]*)\s+in\b", re.M),
+        # 语句首的**纯赋值**（`名 = …`）；`名 += …` / `名 <= …` 不算（`名, 别 = …` 归多名形）。
+        re.compile(rf"^[ \t]*({_名式})\s*(?::[^=\n]+)?=(?!=)", re.M),
     ),
     ".js": (
-        re.compile(r"\b(?:let|const|var)\s+(?P<名>[A-Za-z_\u4e00-\u9fff][\w\u4e00-\u9fff]*)\s*(?:=|;|,)"),
-        re.compile(r"\bcatch\s*\(\s*(?P<名>[A-Za-z_\u4e00-\u9fff][\w\u4e00-\u9fff]*)\s*\)"),
+        re.compile(rf"\b(?:let|const|var)\s+({_名式})\s*(?:=|;|,)"),
+        re.compile(rf"\bcatch\s*\(\s*({_名式})\s*\)"),
     ),
 }
+
+_多名形 = {
+    ".rs": (
+        re.compile(rf"\blet\s+(?:mut\s+)?\((?P<段>[^()\n]*)\)\s*(?::[^=\n]+)?="),
+        re.compile(rf"\bfor\s+\((?P<段>[^()\n]*)\)\s+in\b"),
+        re.compile(rf"\b(?:let|if\s+let|while\s+let)\s+(?:Some|Ok|Err)\s*\(\s*(?:mut\s+)?(?P<段>{_名式})\s*\)"),
+        re.compile(rf"(?:^|[{{,;])\s*(?:Some|Ok|Err)\s*\(\s*(?:mut\s+)?(?P<段>{_名式})\s*\)\s*(?:=>|\{{)"),
+        re.compile(r"(?:^|[=(,{;:])\s*\|(?P<段>[^|\n]{0,80})\|"),
+    ),
+    ".py": (
+        re.compile(rf"^[ \t]*\(?(?P<段>{_名式}(?:\s*,\s*\(?{_名式}\)?)+)\)?\s*(?::[^=\n]+)?=(?!=)", re.M),
+        re.compile(rf"\bfor\s+(?P<段>[^:\n]+?)\s+in\b"),
+        re.compile(rf"^[ \t]*(?:async\s+)?(?:with|except)\b[^\n]*?\bas\s+(?P<段>{_名式})", re.M),
+        re.compile(r"\blambda\s+(?P<段>[^:\n]*):"),
+    ),
+    ".js": (
+        re.compile(r"\b(?:let|const|var)\s*[\{\[]\s*(?P<段>[^\}\]]*)[\}\]]"),
+        re.compile(rf"\bfor\s*\(\s*(?:let|const|var)?\s*(?P<段>{_名式})\s+(?:of|in)\b"),
+    ),
+}
+
+
+def 拆绑定名(绑定段: str) -> list:
+    """把一段绑定列表（`a, (b, c), _`）拆成名字表 —— 括号抹平 · `mut`/`&`/类型标注剥掉 · `_` 丢弃。"""
+    绑定段 = re.sub(r"[()\[\]{}]", " ", 绑定段)
+    名字表 = []
+    for 一片 in 绑定段.split(","):
+        一片 = re.sub(r"^(?:mut|ref|const|let)\s+", "", 一片.strip())
+        一片 = re.sub(r"\s*:\s*[^,]+$", "", 一片).strip()
+        一片 = 一片.strip("&* \t")
+        if re.fullmatch(_名式, 一片 or ""):
+            名字表.append(一片)
+    return 名字表
 
 # ★ `/` 是「正则起始」还是「除号」的启发式 —— **只有一份**，在 `剥字面量._前是表达式头`
 # （本件与 `剥字面量._剥` 都引它）。早先本件自带一份 `_正则前缀` / `_正则前缀词`，
@@ -274,20 +311,29 @@ def 抽标识符(净文本: str) -> list:
 def 有局部绑定(后缀: str, 文本: str) -> bool:
     """这段文本里有没有局部绑定（**判空集用**：面下一个绑定都没有 ⇒ 未判，不是通过）。
 
-    走**与 `扫局部绑定` 同一套形状**（`_局部形`）—— 这样「扫描器坏了」与「真的没有单字局部名」
-    分得开：形状表一坏，空集那一关当场报未判，而不是静默报 0（假绿）。
+    走**与 `扫局部绑定` 同一套形状**（`_单名形` + `_多名形`）—— 这样「扫描器坏了」与
+    「真的没有单字局部名」分得开：形状表一坏，空集那一关当场报未判，而不是静默报 0（假绿）。
     """
     净文本 = 剥后缀(后缀, 文本)
-    return any(形状.search(净文本) for 形状 in _局部形表(后缀))
+    return any(形状.search(净文本) for 形状 in _单名形表(后缀) + _多名形表(后缀))
 
 
-def _局部形表(后缀: str) -> tuple:
-    """按后缀选形状表：`.rs` 与 `.py` 各一套，其余（`.js`/`.ts`/`.vue` 脚本块）共用 JS 那套。"""
+def _单名形表(后缀: str) -> tuple:
+    """按后缀选**单名形**表：`.rs` / `.py` 各一套，其余（`.js`/`.ts`/`.vue` 脚本块）共用 JS 那套。"""
     if 后缀 == ".rs":
-        return _局部形[".rs"]
+        return _单名形[".rs"]
     if 后缀 == ".py":
-        return _局部形[".py"]
-    return _局部形[".js"]
+        return _单名形[".py"]
+    return _单名形[".js"]
+
+
+def _多名形表(后缀: str) -> tuple:
+    """按后缀选**多名形**表（选法与 `_单名形表` 同）。"""
+    if 后缀 == ".rs":
+        return _多名形[".rs"]
+    if 后缀 == ".py":
+        return _多名形[".py"]
+    return _多名形[".js"]
 
 
 def 扫局部绑定(后缀: str, 文本: str) -> list:
@@ -297,20 +343,30 @@ def 扫局部绑定(后缀: str, 文本: str) -> list:
     `let` 局部），形参面只扫签名 ⇒ 在 `.rs` 里新写 `let i = 1;`，两处都看不见（静默回潮）。
     面与判据 ㉒ 的第四档**共用这一份**（不另写一套）。
 
-    **收哪些**（保守 —— 只收把握大的）：
-      · `.rs`：`let` / `let mut` · `for … in`
-      · `.py`：语句首的**纯赋值**（`名 = …`）· `for … in`
-      · `.js` / `.ts` / `.vue`（脚本块）：`let` / `const` / `var` · `catch (名)`
+    **收哪些**（分两类，形状表见 `_单名形` / `_多名形` 的表头）：
+      · `.rs`：`let` / `let mut` · `for … in` · 元组 `let (a, b)` / `for (a, b) in` ·
+        `if let Some(名)` / `let Some(名) … else` · `match` 臂 `Ok(名) =>` · 闭包参 `|a, b|`
+      · `.py`：语句首纯赋值 · 元组解包 `a, b = …` · 任何 `for X in`（含推导式；X 可为元组）·
+        `with` / `except … as 名` · `lambda a, b:`
+      · `.js` / `.ts` / `.vue`（脚本块）：`let` / `const` / `var` · 解构 `{a, b}` / `[a, b]` ·
+        `catch (名)` · `for (const 名 of …)`
 
-    **残余（如实登记；都是「收了就要猜」的形状，故不收）**：Rust 闭包参数 `|名|` ·
-    `if let Some(名) =` 的模式绑定 · Python 元组解包 · JS 解构 · 各语言的 `with`/`as`。
+    **残余（如实登记；都是「收了就要猜」的形状，故不收）**：`.js` 模板串 `${…}` 里的表达式 ·
+    Rust 宏体内的绑定 · f-string 内嵌表达式里的推导式目标（整段随字符串被抹）·
+    `match` 的**裸标识符臂**（`名 => …`，可能是常量模式，收了会假红）。
     漏掉它们只会让读数**偏小**（少报存量），不会造假红 —— 这是本面选的口径。
     """
     净文本 = 剥后缀(后缀, 文本)
     绑定表 = []
-    for 形状 in _局部形表(后缀):
+    for 形状 in _单名形表(后缀):
         for 匹配 in 形状.finditer(净文本):
-            绑定名 = 匹配.group("名")
+            绑定名 = 匹配.group(1)
             if len(绑定名) == 1 and 绑定名 != "_":
-                绑定表.append((净文本.count("\n", 0, 匹配.start("名")) + 1, 绑定名))
+                绑定表.append((净文本.count("\n", 0, 匹配.start(1)) + 1, 绑定名))
+    for 形状 in _多名形表(后缀):
+        for 匹配 in 形状.finditer(净文本):
+            行号 = 净文本.count("\n", 0, 匹配.start()) + 1
+            for 绑定名 in 拆绑定名(匹配.group("段")):
+                if len(绑定名) == 1 and 绑定名 != "_":
+                    绑定表.append((行号, 绑定名))
     return sorted(绑定表)

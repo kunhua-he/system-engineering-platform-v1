@@ -107,7 +107,7 @@ def 准入夹具() -> dict:
         ),
         "对外接口面/调用接口面/src/网关.rs": (
             "pub fn 跑并发() {\n"
-            "    std::thread::scope(|域| { let _ = 域; });\n"
+            "    std::thread::scope(|作用域| { let _ = 作用域; });\n"
             "}\n"
         ),
     }
