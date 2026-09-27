@@ -54,9 +54,9 @@ function 种类说明(种类) {
   return "技能：一份用法说明，不含实现（8xxx）";
 }
 
-export function 装支持库树(取, 钩子) {
-  const 容器 = 取("支持库树");
-  const 状态 = 取("树状态");
+export function 装支持库树(取元素, 钩子) {
+  const 容器 = 取元素("支持库树");
+  const 状态 = 取元素("树状态");
   let 选中行 = null;
 
   /** 一行：缩进 + 折标 + 小图 + 文字 +（可选）条数。 */
@@ -113,7 +113,7 @@ export function 装支持库树(取, 钩子) {
     if (选中行) 选中行.classList.remove("选");
     选中行 = 行;
     行.classList.add("选");
-    取("契约编号").value = String(编号);
+    取元素("契约编号").value = String(编号);
     钩子.切页签("搜寻2");
     await 钩子.取契约(String(编号));
   }

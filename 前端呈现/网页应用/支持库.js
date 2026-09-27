@@ -35,34 +35,34 @@ function 摆变量(容器, 体) {
   }
 }
 
-export function 装支持库(取) {
-  const 清单果 = 取("清单果");
-  const 契约果 = 取("契约果");
+export function 装支持库(取元素) {
+  const 清单果 = 取元素("清单果");
+  const 契约果 = 取元素("契约果");
 
   async function 取清单() {
-    const 状态 = 取("清单状态");
-    const 连 = 取("连接状态");
+    const 状态 = 取元素("清单状态");
+    const 连 = 取元素("连接状态");
     写状态(状态, "请求中…");
     try {
       const 应答 = await 取根();
       摆应答(清单果, 应答);
-      摆变量(取("变量体"), 应答.体);
+      摆变量(取元素("变量体"), 应答.体);
       // HTTP 状态只表达「请求本身合不合法」：非 200 说明请求没走到端点（业务失败一律 200）。
       // 所以这里按状态码判「连上了没有」是传输层的事，不是对契约的解释。
       if (应答.状态 === 200) {
         写状态(状态, "已回", true);
-        写状态(取("变量状态"), "已回（顶层 " + Object.keys(应答.体 || {}).length + " 个值）", true);
+        写状态(取元素("变量状态"), "已回（顶层 " + Object.keys(应答.体 || {}).length + " 个值）", true);
         连.textContent = "网关已回";
         连.className = "状态 好";
-        取("条_连接").textContent = "已回";
-        取("条_连接").className = "状态 好";
+        取元素("条_连接").textContent = "已回";
+        取元素("条_连接").className = "状态 好";
       } else {
         写状态(状态, "HTTP " + 应答.状态, false);
-        写状态(取("变量状态"), "HTTP " + 应答.状态, false);
+        写状态(取元素("变量状态"), "HTTP " + 应答.状态, false);
         连.textContent = "网关连不上（HTTP " + 应答.状态 + "）";
         连.className = "状态 坏";
-        取("条_连接").textContent = "HTTP " + 应答.状态;
-        取("条_连接").className = "状态 坏";
+        取元素("条_连接").textContent = "HTTP " + 应答.状态;
+        取元素("条_连接").className = "状态 坏";
       }
       return 应答;
     } catch (错) {
@@ -72,17 +72,17 @@ export function 装支持库(取) {
         "。本页用同源相对路径调 /接口，所以它必须由接口面同源托管（或由同源反代把 /接口 转给接口面）才调得通。"
       );
       写状态(状态, "失败", false);
-      写状态(取("变量状态"), "发不出去", false);
+      写状态(取元素("变量状态"), "发不出去", false);
       连.textContent = "网关连不上";
       连.className = "状态 坏";
-      取("条_连接").textContent = "连不上";
-      取("条_连接").className = "状态 坏";
+      取元素("条_连接").textContent = "连不上";
+      取元素("条_连接").className = "状态 坏";
       return null;
     }
   }
 
   async function 取契约(编号) {
-    const 状态 = 取("契约状态");
+    const 状态 = 取元素("契约状态");
     写状态(状态, "请求中…");
     try {
       const 应答 = await 取能力(编号);
@@ -96,8 +96,8 @@ export function 装支持库(取) {
     }
   }
 
-  取("清单按钮").addEventListener("click", 取清单);
-  取("契约按钮").addEventListener("click", () => 取契约(取("契约编号").value.trim()));
+  取元素("清单按钮").addEventListener("click", 取清单);
+  取元素("契约按钮").addEventListener("click", () => 取契约(取元素("契约编号").value.trim()));
 
   return { 取清单, 取契约 };
 }

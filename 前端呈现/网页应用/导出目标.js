@@ -70,15 +70,15 @@ export const 出口表 = [
 ];
 
 /** 当前选中的那一条（下拉的 value 是表内位次，不是名字）。 */
-function 选中(取) {
-  const 位 = Number(取("出口选").value || 0);
+function 选中(取元素) {
+  const 位 = Number(取元素("出口选").value || 0);
   return 出口表[位] || 出口表[0];
 }
 
 /** 摆当前选择的那张卡：文档定了什么就摆什么，本页不添一个字段。 */
-function 摆卡(取) {
-  const 盒 = 取("出口卡");
-  const 项 = 选中(取);
+function 摆卡(取元素) {
+  const 盒 = 取元素("出口卡");
+  const 项 = 选中(取元素);
   清空(盒);
   const 行 = (键, 值, 类名) => {
     const 节 = 建("div", "键值行");
@@ -101,10 +101,10 @@ function 摆卡(取) {
  * 只报一个读数 —— 导出要的正是这个前提（先把声明与最小代码编成产物），所以碰到第一个坏步就停。
  * 判定仍全在后端：本页只把 `false` 认成坏、把值原样摆出来（`前端呈现/说明.md` §四 第 1 条）。
  */
-async function 探一次(取, 编辑) {
-  const 状态 = 取("出口状态");
-  const 果 = 取("出口探果");
-  const 项 = 选中(取);
+async function 探一次(取元素, 编辑) {
+  const 状态 = 取元素("出口状态");
+  const 果 = 取元素("出口探果");
+  const 项 = 选中(取元素);
   const 文本 = 编辑.value;
   清空(果);
   写状态(状态, "真调编译链中…");
@@ -166,11 +166,11 @@ async function 探一次(取, 编辑) {
  * 判定全在后端：非法目标回 `9004`、导出动作失败 / 出口无落点回 `9005`。回执里的
  * `程序` · `参数` · `退出码` · `标准输出` · `标准错误` 与真错误码一律原样摆出来，**不吞错**。
  */
-async function 触发导出(取) {
-  const 状态 = 取("导出状态");
-  const 果 = 取("导出果");
-  const 项 = 选中(取);
-  const 标识 = 取("导出标识").value.trim();
+async function 触发导出(取元素) {
+  const 状态 = 取元素("导出状态");
+  const 果 = 取元素("导出果");
+  const 项 = 选中(取元素);
+  const 标识 = 取元素("导出标识").value.trim();
   清空(果);
   写状态(状态, "导出「" + 项.名 + "」中…");
   try {
@@ -187,17 +187,17 @@ async function 触发导出(取) {
 }
 
 /** 装好导出目标这一区：下拉五个选项 + 一个真调按钮。 */
-export function 装导出目标(取, 编辑) {
-  const 选 = 取("出口选");
+export function 装导出目标(取元素, 编辑) {
+  const 选 = 取元素("出口选");
   出口表.forEach((项, 位) => {
     const 项节 = document.createElement("option");
     项节.value = String(位);
     项节.textContent = 项.名 + " · " + 项.号段;
     选.append(项节);
   });
-  选.addEventListener("change", () => 摆卡(取));
-  取("探出口按钮").addEventListener("click", () => 探一次(取, 编辑));
-  取("导出按钮").addEventListener("click", () => 触发导出(取));
-  摆卡(取);
+  选.addEventListener("change", () => 摆卡(取元素));
+  取元素("探出口按钮").addEventListener("click", () => 探一次(取元素, 编辑));
+  取元素("导出按钮").addEventListener("click", () => 触发导出(取元素));
+  摆卡(取元素);
   return { 摆卡 };
 }
