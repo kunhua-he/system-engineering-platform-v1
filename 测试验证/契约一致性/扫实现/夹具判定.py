@@ -10,17 +10,17 @@ from .掩码 import 掩码
 
 # `#[cfg(…)]` 属性：**括号配对**解析（`#[cfg(any(test, feature = "x"))]` 有两层括号，
 # 早先用 `#\[\s*cfg\s*\([^)]*\btest\b[^)]*\)\s*\]` 会**漏**这一形状 ⇒ 那种文件被当生产代码。
-CFG开头模式 = re.compile(r"#\[\s*cfg\s*\(")
+条件属性开头模式 = re.compile(r"#\[\s*cfg\s*\(")
 
 
-def _cfg属性(掩: str, 起: int):
+def 解析条件属性(掩: str, 起: int):
     """从 `起`（指向 `#`）解析一个 `#[cfg(…)]` 属性，返回 (属性文本, 结束位) 或 None。
 
     为什么不用一条正则：cfg 的条件里可以有嵌套括号（`any(test, feature = "x")`），
     `[^)]*` 这类正则在第一个 `)` 就断，漏判 ⇒ 扫描面不覆盖它声称的范围
     （判据的可信性.md §三.2）。
     """
-    匹配 = CFG开头模式.match(掩, 起)
+    匹配 = 条件属性开头模式.match(掩, 起)
     if not 匹配:
         return None
     括号位 = 匹配.end()
@@ -42,11 +42,11 @@ def _cfg属性(掩: str, 起: int):
     return 掩[起 : 空白位 + 1], 空白位 + 1
 
 
-def 找cfg属性(掩: str) -> list:
+def 找条件属性(掩: str) -> list:
     """返回 [(起, 止, 属性文本, 是否含 test)]，按位置序。"""
     结果 = []
-    for 匹配 in CFG开头模式.finditer(掩):
-        属 = _cfg属性(掩, 匹配.start())
+    for 匹配 in 条件属性开头模式.finditer(掩):
+        属 = 解析条件属性(掩, 匹配.start())
         if 属 is None:
             continue
         属性文本, 止 = 属
@@ -79,7 +79,7 @@ def 找夹具项(掩: str, 原文本: str) -> tuple:
     """返回 (块区间表[(起,止)], 外部夹具文件表[(名, 相对本文件的路径, 位)])。"""
     块 = []
     外 = []
-    for 起, 属止, _属性文本, 含test in 找cfg属性(掩):
+    for 起, 属止, _属性文本, 含test in 找条件属性(掩):
         if not 含test:
             continue
         头, 终 = _项头(掩, 属止)
@@ -131,7 +131,7 @@ def 建夹具集(件表: dict, 掩表: dict = None) -> dict:
         块表[键] = 块
         for 名, 路, 位 in 外:
             外部.append((键, 路, 位))
-        for 起, _止, _属性文本, 含test in 找cfg属性(掩):
+        for 起, _止, _属性文本, 含test in 找条件属性(掩):
             if not 含test:
                 其它.append((键, 起))
     整份 = set()
