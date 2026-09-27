@@ -82,7 +82,7 @@ def 记账(仓根, 开工号: str, 生成器: str, 参数) -> tuple:
             return 2, "`生成器` 只认仓内相对 `.py` 路径（不许绝对路径 / 不许 `..`）：%r" % 相对
         if not (工作树 / 相对).is_file():
             return 1, "生成器不在工作树里：%s" % 相对
-        参数 = ([str(项) for 项 in 参数] if isinstance(参数, (list, tuple))
+        参数 = ([str(一项) for 一项 in 参数] if isinstance(参数, (list, tuple))
             else ([] if not 参数 else [str(参数)]))
 
         跑前 = 脏件指纹(工作树)
@@ -118,7 +118,7 @@ def 记账(仓根, 开工号: str, 生成器: str, 参数) -> tuple:
         else:
             输出行表.append("  （生成器没写出任何变化 —— 产出已是最新，无需记账）")
         越界表 = sorted(路径 for 路径 in 跑后
-                     if 路径 not in 改过表 and 路径 not in {件 for 件, _, _ in 写过表})
+                     if 路径 not in 改过表 and 路径 not in {节点件 for 节点件, _, _ in 写过表})
         if 越界表:
             输出行表.append("★ 另有这些件脏、且不在改动表（**不是这次生成器写的**）⇒ 释放仍会拒：%s"
                         % " · ".join(越界表))

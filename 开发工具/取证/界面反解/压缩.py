@@ -35,8 +35,8 @@ def 压缩判定(数据字节):
     全长 = len(数据字节)
     熵值 = -sum(频次 / 全长 * math.log2(频次 / 全长) for 频次 in Counter(数据字节).values())
     容器 = 容器识别(数据字节)
-    头部 = [名 for 签, 名 in 压缩签名 if 数据字节.startswith(签)]
-    中段 = [名 for 签, 名 in 压缩签名 if not 数据字节.startswith(签) and 数据字节.find(签) >= 0]
+    头部 = [名称 for 签名, 名称 in 压缩签名 if 数据字节.startswith(签名)]
+    中段 = [名称 for 签名, 名称 in 压缩签名 if not 数据字节.startswith(签名) and 数据字节.find(签名) >= 0]
     if 头部:
         判定 = "已压缩（头部签名命中 %s）" % "/".join(头部)
     elif 容器:

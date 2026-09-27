@@ -56,8 +56,8 @@ def 入口函数(参数):
         return 1
     try:
         from playwright.sync_api import sync_playwright
-    except ImportError as 错:
-        print(f"起不来：没有 playwright 模块（{错}）", file=sys.stderr)
+    except ImportError as 错误:
+        print(f"起不来：没有 playwright 模块（{错误}）", file=sys.stderr)
         print("  装法：pip install playwright 然后 playwright install chromium", file=sys.stderr)
         return 1
 
@@ -68,18 +68,18 @@ def 入口函数(参数):
     处理 = functools.partial(http.server.SimpleHTTPRequestHandler, directory=str(前端目录))
     try:
         服务 = socketserver.TCPServer(("127.0.0.1", 0), 处理)
-    except OSError as 错:
-        print(f"起不来：静态服务开不了（{错}）", file=sys.stderr)
+    except OSError as 错误:
+        print(f"起不来：静态服务开不了（{错误}）", file=sys.stderr)
         return 1
     端口 = 服务.server_address[1]
     服务.allow_reuse_address = True
     threading.Thread(target=服务.serve_forever, daemon=True).start()
     try:
-        with sync_playwright() as 剧:
+        with sync_playwright() as 浏览器驱动:
             try:
-                浏览器 = 剧.chromium.launch()
-            except Exception as 错:  # playwright 的错误类型随版本变，按「起不来」一类处理
-                print(f"起不来：chromium 启动失败（{错}）", file=sys.stderr)
+                浏览器 = 浏览器驱动.chromium.launch()
+            except Exception as 错误:  # playwright 的错误类型随版本变，按「起不来」一类处理
+                print(f"起不来：chromium 启动失败（{错误}）", file=sys.stderr)
                 print("  装法：playwright install chromium", file=sys.stderr)
                 return 1
             try:

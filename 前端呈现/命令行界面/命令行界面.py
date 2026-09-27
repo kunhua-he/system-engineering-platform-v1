@@ -72,8 +72,8 @@ if __name__ == "__main__":
     退出码 = 0
     try:
         跑命令行(sys.argv[1:])
-    except SystemExit as 退:
-        退出码 = 退.code if isinstance(退.code, int) else 1
+    except SystemExit as 退出异常:
+        退出码 = 退出异常.code if isinstance(退出异常.code, int) else 1
     sys.exit(
         自门禁(
             起始时刻, 退出码, 尾巴余量毫秒=200,

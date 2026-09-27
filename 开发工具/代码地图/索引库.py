@@ -270,10 +270,10 @@ def 出现位(键名: str, 上限: int = 0, 库路径=None) -> dict:
             位置表 = []
             for 标识, 名字, 件路径, 行号, 起始列 in 节点行表:
                 位置表.append((件路径, 行号, 名字列(件路径, 行号, 名字, 起始列)))
-                for 源, 边行, 边列 in 动态库.execute(
+                for 来源, 边行, 边列 in 动态库.execute(
                         "select source, line, col from edges "
                         "where target=? and kind<>'contains' and line is not null", (标识,)):
-                    源件 = _源件路径(动态库, 源)
+                    源件 = _源件路径(动态库, 来源)
                     if 源件:
                         位置表.append((源件, 边行, 边列))
             去重表 = sorted(set(位置表))

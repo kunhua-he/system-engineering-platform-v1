@@ -10,18 +10,18 @@ from PE形状 import 解析错误
 def 读字段(pe, 基偏移, 项表):
     """返回 [(偏移, 宽, 名, 类, 值, 可读串)]。"""
     out = []
-    for 偏移, 宽, 名, 类 in 项表:
+    for 偏移, 宽度, 名称, 类别 in 项表:
         值起 = 基偏移 + 偏移
-        if 值起 + 宽 > len(pe.原始字节):
-            raise 解析错误("字段 %s @+0x%x 越界" % (名, 偏移))
-        if 类 in 数值格式:
-            待处理值 = struct.unpack_from(数值格式[类], pe.原始字节, 值起)[0]
-            读器 = "%r" % 待处理值 if 类 == "f64" else "%d" % 待处理值
+        if 值起 + 宽度 > len(pe.原始字节):
+            raise 解析错误("字段 %s @+0x%x 越界" % (名称, 偏移))
+        if 类别 in 数值格式:
+            待处理值 = struct.unpack_from(数值格式[类别], pe.原始字节, 值起)[0]
+            读器 = "%r" % 待处理值 if 类别 == "f64" else "%d" % 待处理值
         else:                                                # ptr / str
             待处理值 = pe.读四字节(值起); 读器 = "0x%08x" % 待处理值
-            if 类 == "str" and 待处理值:
+            if 类别 == "str" and 待处理值:
                 读器 += " → %r" % pe.读串(待处理值)     # 指向不合法即抛错：fail-closed，不编串
-        out.append((偏移, 宽, 名, 类, 待处理值, 读器))
+        out.append((偏移, 宽度, 名称, 类别, 待处理值, 读器))
     return out
 
 

@@ -56,7 +56,7 @@ impl 注册表 {
     ///
     /// 形参名与型同名会撞（E0530）⇒ 型写全路径 `v1_contract::常量号`，形参用词表名 `常量号`。
     pub fn 按号取常量(&self, 常量号: v1_contract::常量号) -> 常量槽<'_> {
-        match self.常量表.binary_search_by_key(&常量号, |项| 项.常量号) {
+        match self.常量表.binary_search_by_key(&常量号, |一项| 一项.常量号) {
             Ok(位) => 常量槽::已载入(&self.常量表[位]),
             Err(_) => 常量槽::占位 { 常量号: 常量号 },
         }
