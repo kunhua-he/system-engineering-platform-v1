@@ -56,7 +56,7 @@ impl 登记 {
         }
     }
 
-    pub fn 到JSON(&self) -> String {
+    pub fn 转JSON文本(&self) -> String {
         let mut 文本缓冲 = String::from("{");
         文本缓冲.push_str(&format!("\"码\":{},\"段位\":{}", self.码, self.段位));
         文本缓冲.push_str(",\"名称\":");
@@ -78,7 +78,7 @@ pub struct 登记表 {
 
 impl 登记表 {
     /// 从**生成物**与**适配器当场取到的契约**建表。两处都不新增一份表。
-    pub fn 建(适配器: &适配器) -> Self {
+    pub fn 建登记表(适配器: &适配器) -> Self {
         let mut 表 = Self::从生成物();
         // ② 适配器当场取：被载入声明自身的错误码表（扩展段位）。**清单与契约同一个入口。**
         for 摘要 in 适配器.能力清单() {
@@ -86,7 +86,7 @@ impl 登记表 {
                 continue;
             };
             for 码 in 契.可抛错误码 {
-                表.记(登记 {
+                表.追加一条(登记 {
                     码: 码.码,
                     段位: 码.码 / 号段类宽度,
                     名称: 码.名称,
@@ -105,7 +105,7 @@ impl 登记表 {
     pub fn 从生成物() -> Self {
         let mut 表 = Self::default();
         for 码 in v1_contract::声明数据::错误码信息表.iter() {
-            表.记(登记 {
+            表.追加一条(登记 {
                 码: 码.码,
                 段位: 码.段位,
                 // SAFETY: 契约保证一切串都是静态只读 NUL 结尾串。
@@ -119,7 +119,7 @@ impl 登记表 {
         表
     }
 
-    fn 记(&mut self, 一: 登记) {
+    fn 追加一条(&mut self, 一: 登记) {
         // 同一码在两处登记：**不许互相盖**。只在「后到的已登记、先到的未登记」时补上。
         match self.项.get(&一.码) {
             Some(旧) if 旧.已登记 => {}

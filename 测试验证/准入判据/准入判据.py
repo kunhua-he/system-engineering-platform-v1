@@ -49,19 +49,19 @@ import sys
 import time
 from pathlib import Path
 
-起 = time.monotonic()  # 壳起表点：必须在 import 业务包**之前**（见 构建装配/门禁/壳.py）
+起始时刻 = time.monotonic()  # 壳起表点：必须在 import 业务包**之前**（见 构建装配/门禁/壳.py）
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))  # 仓根：取共享门禁
 from 构建装配.门禁 import 自门禁  # noqa: E402
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from 准入判据.报告 import 单条, 扫, 打印, 清单  # noqa: E402
+from 准入判据.报告 import 单条, 扫一遍, 打印, 清单  # noqa: E402
 from 准入判据.样本 import 自测  # noqa: E402
 from 准入判据.世界 import 世界, 找仓根  # noqa: E402
 
 
-def main(参数) -> int:
+def 入口函数(参数) -> int:
     根 = 找仓根()
     if "--自测" in 参数:
         return 自测()
@@ -76,7 +76,7 @@ def main(参数) -> int:
             return 1
         return 单条(世, 参数[判位 + 1])
     起 = time.perf_counter()
-    结果 = 扫(世)
+    结果 = 扫一遍(世)
     毫秒 = int((time.perf_counter() - 起) * 1000)
     打印(结果, 毫秒, 读数="--读数" in 参数)
     失败 = sum(1 for _, _, _, 项 in 结果 if 项[0] == "失败")
@@ -87,5 +87,5 @@ def main(参数) -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(自门禁(起, main(sys.argv[1:]), 尾巴余量毫秒=200,
+    sys.exit(自门禁(起始时刻, 入口函数(sys.argv[1:]), 尾巴余量毫秒=200,
                    修法="准入判据按范围扫；范围调小或把重活移出命令路（裁决 §三.3）"))

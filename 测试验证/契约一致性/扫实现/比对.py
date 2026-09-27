@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from .常量 import 判据名表, 契约源目录, 底座声明根, 底座实现落点
 from .小工具 import 是整数
-from .判据工具 import 记
+from .判据工具 import 记判据
 from .判据声明实现 import 比一声明根
 from .判据类型标签 import 比类型标签
 from .判据落点 import 比落点
@@ -89,7 +89,7 @@ def 比对(实现面: dict, 声明根表: dict, 符号表: dict, 常量表名: s
         单元集 = 根到单元.get(根) or []
         if not 单元集:
             结果[判据名表[0]]["明细"].append(
-                记(判据名表[0], "未判", f"{根}/",
+                记判据(判据名表[0], "未判", f"{根}/",
                    f"判不了：声明根 {根} 找不到对应的实现单元（实测单元："
                    f"{[登记单元['目录'] for 登记单元 in 单元表]}）⇒ 声明没有实现面可比",
                    "声明与实现必须成对；找不到实现单元可能是缺件（还没写）或落点变了。"

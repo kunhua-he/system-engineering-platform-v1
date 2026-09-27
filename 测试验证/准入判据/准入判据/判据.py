@@ -8,7 +8,7 @@ import subprocess
 import sys
 
 from .登记 import 有意不判
-from .世界 import 世界, 读JSON
+from .世界 import 世界, 读JSON件
 
 
 def 判有意不判(世: 世界, 编号: str):
@@ -270,7 +270,7 @@ def 判_10(世: 世界):
         return "未判", "契约声明/命令类别/ 为空（机制在、值域未裁 —— 空集不算通过）", 0
     坏 = []
     for 路 in 世.命令类别:
-        条 = 读JSON(路)
+        条 = 读JSON件(路)
         if not isinstance(条, dict):
             坏.append(f"{路.name} 不是合法 JSON")
             continue
@@ -349,7 +349,7 @@ def 判_13(世: 世界):
 
 def 判_14(世: 世界):
     """⑭ 扩展 指纹.json 有一条**可跑的**重跑命令，且跑得出「一致」。"""
-    命 = (读JSON(世.指纹件()) or {}).get("生成命令", "")
+    命 = (读JSON件(世.指纹件()) or {}).get("生成命令", "")
     脚本 = 世.指纹脚本()
     if not 命 or not 脚本.exists():
         return "未判", f"生成命令不可跑（命令={命!r} · 脚本在={脚本.exists()}）", 1

@@ -21,7 +21,7 @@ def 读文本(路: Path) -> str:
         return ""
 
 
-def 读JSON(路: Path):
+def 读JSON件(路: Path):
     try:
         return json.loads(路.read_text(encoding="utf-8"))
     except (OSError, ValueError):
@@ -64,7 +64,7 @@ def 读目录全部源文件(目录: Path) -> str:
 
 def _码文(根: Path, 号: str) -> str:
     """一条错误码的 `名称` + `说明`（锚点两条都要能命中），读不到给空串。"""
-    条 = 读JSON(根 / f"契约声明/错误码表/{号}.json") or {}
+    条 = 读JSON件(根 / f"契约声明/错误码表/{号}.json") or {}
     if not isinstance(条, dict):
         return ""
     return f"{条.get('名称', '')} {条.get('说明', '')}"
@@ -90,16 +90,16 @@ class 世界:
         根 = Path(根)
         self.仓根 = 根
         self.边界协议 = 读文本(根 / "跨语言适配/边界协议/边界协议.md")
-        self.扩展根声明 = 读JSON(根 / "扩展装载/扩展根声明.json") or {}
+        self.扩展根声明 = 读JSON件(根 / "扩展装载/扩展根声明.json") or {}
         self.包声明表 = sorted(
-            (声明件, 读JSON(声明件)) for 声明件 in (根 / 扩展根目录名).rglob("包声明.json")
+            (声明件, 读JSON件(声明件)) for 声明件 in (根 / 扩展根目录名).rglob("包声明.json")
         )
         self.扩展Cargo表 = sorted(
             (声明件, 读文本(声明件)) for 声明件 in (根 / 扩展根目录名).rglob("Cargo.toml")
         )
-        self.必备件 = 读JSON(根 / "扩展装载/开发标准/必备件.json") or {}
+        self.必备件 = 读JSON件(根 / "扩展装载/开发标准/必备件.json") or {}
         self.构建制品 = 读装配器源码(根)
-        self.载入判定 = 读JSON(根 / "扩展装载/载入约定/载入判定.json") or {}
+        self.载入判定 = 读JSON件(根 / "扩展装载/载入约定/载入判定.json") or {}
         self.载入判定文 = 读文本(根 / "扩展装载/载入约定/载入判定.json")
         self.判定rs = 读文本(根 / "运行内核/装载入口/src/判定.rs")
         self.通知口 = 读文本(根 / "跨语言适配/适配器实现/src/通知口.rs")
@@ -118,7 +118,7 @@ class 世界:
         self.工具响应扩展 = 读文本(根 / "对外接口面/调用接口面/src/工具响应_扩展.rs")
         # ⑥⑫ 判据要的东西：**机制件** + **代跑读数**（本脚本不许跑 cargo / 起网关，
         # 故真跑读数读**已登记**的那一行 —— `外部支持库准入判据.md` §五，不是空等）。
-        self.通知号段2015 = 读JSON(根 / "契约声明/通知号段/2015.json")
+        self.通知号段2015 = 读JSON件(根 / "契约声明/通知号段/2015.json")
         self.生命周期测试 = 读文本(根 / "跨语言适配/适配器实现/src/生命周期协商测试.rs")
         self.决策记录准入 = 读文本(根 / "项目文档/决策记录/2026-09-27_外部支持库准入判据.md")
         # 「有意不判」各条的**依据锚点**要读的面。锚点是**机器可判**的：依据件一缺，
@@ -151,7 +151,7 @@ class 世界:
         return self.扩展目录() / "指纹.json"
 
     def 指纹脚本(self) -> Path:
-        命 = (读JSON(self.指纹件()) or {}).get("生成命令", "")
+        命 = (读JSON件(self.指纹件()) or {}).get("生成命令", "")
         # 生成命令形如 "python3 扩展根目录/…/重跑指纹.py"（仓库根相对）
         分 = 命.split()
         参 = [参项 for 参项 in 分 if 参项.endswith(".py")]
