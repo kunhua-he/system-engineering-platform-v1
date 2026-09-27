@@ -4,7 +4,7 @@ import re
 from collections import Counter, defaultdict
 
 from .规格词表 import is_remark_field
-from .切记号 import tokenize
+from .按规格切 import tokenize
 
 def analyse(rows):
     """rows = [(样本名, 真文本原文(GBK bytes), 层级)]"""
