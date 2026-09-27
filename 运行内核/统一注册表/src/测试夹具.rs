@@ -121,15 +121,15 @@ pub(crate) fn 造类型(
     }
 }
 
-pub(crate) fn 造常量(常量号: u32, 排布: u16, 文本: *const u8, 数值: f64) -> 常量信息 {
+pub(crate) fn 造常量(常量号: v1_contract::常量号, 排布: u16, 文本: *const u8, 数值: f64) -> 常量信息 {
     常量信息 {
         名称: 字节("常量甲"),
         说明: 字节("常量甲"),
         排布,
-        类型标签: 1,
+        类型标签: v1_contract::类型标签::新(1),
         文本,
         数值,
-        常量号: 常量号.into(),
+        常量号,
     }
 }
 
@@ -181,7 +181,7 @@ pub(crate) fn 正常声明() -> &'static 平台信息 {
         let 事件: &'static [事件信息] = Box::leak(Box::new([造事件(参数)]));
         let 类型: &'static [数据类型信息] = Box::leak(Box::new([造类型(1, 命令号, 事件)]));
         let 常量: &'static [常量信息] =
-            Box::leak(Box::new([造常量(0, 常量排布::数值, core::ptr::null(), 3.5)]));
+            Box::leak(Box::new([造常量(v1_contract::常量号::新(0), 常量排布::数值, core::ptr::null(), 3.5)]));
 
         声明.类型表 = 表段::新(类型.as_ptr(), 类型.len() as u32);
         声明.命令表 = 表段::新(命令.as_ptr(), 命令.len() as u32);
