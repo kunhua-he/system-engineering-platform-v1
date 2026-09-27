@@ -6,7 +6,7 @@ pub(crate) const 语料根目录: &str = "/tmp/易语言源码";
 
 // 段数据里的库中文名是 **GBK** 字节（不是 UTF-8），字节串字面量放不下非 ASCII 字符，
 // 故这里直接写出实测得到的 GBK 字节（与容器层测试同一串）。
-pub(crate) const 系统核心支持库_GBK: &[u8] =
+pub(crate) const GBK系统核心支持库: &[u8] =
     &[0xCF, 0xB5, 0xCD, 0xB3, 0xBA, 0xCB, 0xD0, 0xC4, 0xD6, 0xA7, 0xB3, 0xD6, 0xBF, 0xE2];
 
 pub(crate) fn 首个不一致(原文: &[u8], 产物: &[u8]) -> u64 {
@@ -66,7 +66,7 @@ pub(crate) fn 样例流() -> 记录流 {
                 b"d09f2340818511d396f6aaf844c7e325".to_vec(),
                 b"4".to_vec(),
                 b"2".to_vec(),
-                系统核心支持库_GBK.to_vec(),
+                GBK系统核心支持库.to_vec(),
             ])],
         },
         其余载荷: vec![0x01, 0x00, 0x01, 0x52],

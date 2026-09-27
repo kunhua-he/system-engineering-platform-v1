@@ -59,22 +59,22 @@ pub fn 编码(说明: &接口说明) -> Vec<u8> {
 /// [`注册表::解码`](crate::语义::注册表::解码) 的口径）。
 pub fn 解码(字节: &[u8]) -> Option<接口说明> {
     let mut 读 = 读器 { 字节, 位: 0 };
-    let 编号 = 读.u32()?;
+    let 编号 = 读.读四字节()?;
     let 名称 = 读.文本()?;
     let 说明文本 = 读.文本()?;
-    let 参数个数 = 读.u32()? as usize;
+    let 参数个数 = 读.读四字节()? as usize;
     // 每项至少 4 字节名长 + 4 类型标签 + 2 状态位 + 24 槽 = 34 字节。
-    if 参数个数 > 读.剩() / 34 {
+    if 参数个数 > 读.取剩余长度() / 34 {
         return None;
     }
     let mut 参数表 = Vec::with_capacity(参数个数);
     for _ in 0..参数个数 {
         参数表.push(读参数项(&mut 读)?);
     }
-    let 返回类型 = 读.u32()?;
-    let 错误个数 = 读.u32()? as usize;
+    let 返回类型 = 读.读四字节()?;
+    let 错误个数 = 读.读四字节()? as usize;
     // 每项至少 4 码 + 4 段位 + 4 名长 + 4 布尔 = 16 字节。
-    if 错误个数 > 读.剩() / 16 {
+    if 错误个数 > 读.取剩余长度() / 16 {
         return None;
     }
     let mut 可抛错误码 = Vec::with_capacity(错误个数);
@@ -123,16 +123,16 @@ fn 写槽(出: &mut Vec<u8>, 槽: &v1_contract::数据槽) {
 
 fn 读参数项(读: &mut 读器) -> Option<接口参数项> {
     let 名称 = 读.文本()?;
-    let 类型标签 = 读.u32()?;
-    let 状态位 = 读.u16()?;
-    let 默认值 = 读.槽()?;
+    let 类型标签 = 读.读四字节()?;
+    let 状态位 = 读.读双字节()?;
+    let 默认值 = 读.读数据槽()?;
     Some(接口参数项 { 名称, 类型标签, 状态位, 默认值 })
 }
 
 fn 读错误项(读: &mut 读器) -> Option<接口错误项> {
     Some(接口错误项 {
-        码: 读.u32()?,
-        段位: 读.u32()?,
+        码: 读.读四字节()?,
+        段位: 读.读四字节()?,
         名称: 读.文本()?,
         可重试: 读.布尔()?,
         可自愈: 读.布尔()?,
@@ -148,7 +148,7 @@ struct 读器<'a> {
 }
 
 impl<'a> 读器<'a> {
-    fn 剩(&self) -> usize {
+    fn 取剩余长度(&self) -> usize {
         self.字节.len().saturating_sub(self.位)
     }
 
@@ -162,20 +162,20 @@ impl<'a> 读器<'a> {
         Some(片)
     }
 
-    fn u16(&mut self) -> Option<u16> {
+    fn 读双字节(&mut self) -> Option<u16> {
         Some(u16::from_le_bytes(self.取字节(2)?.try_into().ok()?))
     }
 
-    fn u32(&mut self) -> Option<u32> {
+    fn 读四字节(&mut self) -> Option<u32> {
         Some(u32::from_le_bytes(self.取字节(4)?.try_into().ok()?))
     }
 
-    fn u64(&mut self) -> Option<u64> {
+    fn 读八字节(&mut self) -> Option<u64> {
         Some(u64::from_le_bytes(self.取字节(8)?.try_into().ok()?))
     }
 
     fn 文本(&mut self) -> Option<String> {
-        let 长 = self.u32()? as usize;
+        let 长 = self.读四字节()? as usize;
         let 片 = self.取字节(长)?;
         Some(core::str::from_utf8(片).ok()?.to_owned())
     }
@@ -188,12 +188,12 @@ impl<'a> 读器<'a> {
         })
     }
 
-    fn 槽(&mut self) -> Option<v1_contract::数据槽> {
-        let 类型标签 = self.u32()?;
-        let 标志 = self.u16()?;
-        let 保留 = self.u16()?;
-        let 长度 = self.u64()?;
-        let 值 = self.u64()?;
+    fn 读数据槽(&mut self) -> Option<v1_contract::数据槽> {
+        let 类型标签 = self.读四字节()?;
+        let 标志 = self.读双字节()?;
+        let 保留 = self.读双字节()?;
+        let 长度 = self.读八字节()?;
+        let 值 = self.读八字节()?;
         Some(v1_contract::数据槽 {
             类型标签: v1_contract::类型标签::新(类型标签),
             标志,

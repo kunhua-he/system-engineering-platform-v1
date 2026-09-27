@@ -16,7 +16,7 @@ pub(crate) fn 声明目录() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).to_path_buf()
 }
 
-pub(crate) fn 读JSON(相对: &str) -> 最小JSON::值 {
+pub(crate) fn 读JSON件(相对: &str) -> 最小JSON::JSON值 {
     let 路 = 声明目录().join(相对);
     let 文本 = std::fs::read_to_string(&路)
         .unwrap_or_else(|错| panic!("读不到 {}：{错}", 路.display()));
@@ -25,15 +25,15 @@ pub(crate) fn 读JSON(相对: &str) -> 最小JSON::值 {
 
 /// 造一条**类型 2（系统信息）**的合法容器：段名用实测 GBK 字节。
 pub(crate) fn 样例容器() -> 容器::容器 {
-    const 系统信息段_GBK: &[u8] =
+    const GBK系统信息段: &[u8] =
         &[0xCF, 0xB5, 0xCD, 0xB3, 0xD0, 0xC5, 0xCF, 0xA2, 0xB6, 0xCE];
     容器::容器 {
-        段表: vec![容器::段 {
+        段表: vec![容器::容器段 {
             头: 容器::段头 {
                 校验和: 0x0A06CD88,
-                段类型: 容器::段类型::系统信息.号(),
+                段类型: 容器::段类型::系统信息.取号值(),
                 名称区: [0; 27],
-                段名: 系统信息段_GBK.to_vec(),
+                段名: GBK系统信息段.to_vec(),
             },
             数据: vec![1, 0, 0, 0],
         }],

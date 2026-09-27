@@ -13,17 +13,17 @@ struct 读器<'a> {
 }
 
 impl<'a> 读器<'a> {
-    fn u8(&mut self) -> u8 {
+    fn 读单字节(&mut self) -> u8 {
         let 值 = self.字节[self.位];
         self.位 += 1;
         值
     }
-    fn u16(&mut self) -> u16 {
+    fn 读双字节(&mut self) -> u16 {
         let 片: [u8; 2] = self.字节[self.位..self.位 + 2].try_into().unwrap();
         self.位 += 2;
         u16::from_le_bytes(片)
     }
-    fn u32(&mut self) -> u32 {
+    fn 读四字节(&mut self) -> u32 {
         let 片: [u8; 4] = self.字节[self.位..self.位 + 4].try_into().unwrap();
         self.位 += 4;
         u32::from_le_bytes(片)
@@ -37,15 +37,15 @@ impl<'a> 读器<'a> {
 
 /// 从当前位置读一份记号流编码。
 fn 解记号流在(读: &mut 读器<'_>) -> 记号流 {
-    let 原文长 = 读.u32() as usize;
+    let 原文长 = 读.读四字节() as usize;
     let 原文 = 读.取字节(原文长).to_vec();
-    let 记号数 = 读.u32();
+    let 记号数 = 读.读四字节();
     let mut 记号表 = Vec::with_capacity(记号数 as usize);
     for _ in 0..记号数 {
-        let 号 = 读.u8();
-        let 起 = 读.u32();
-        let 止 = 读.u32();
-        记号表.push(记号::新(
+        let 号 = 读.读单字节();
+        let 起 = 读.读四字节();
+        let 止 = 读.读四字节();
+        记号表.push(记号::新建(
             记号种类::自号(号).expect("种类号该认得出来"),
             起,
             止,
@@ -66,21 +66,21 @@ pub(crate) fn 解记号流(字节: &[u8]) -> 记号流 {
 pub(crate) fn 解语法树(字节: &[u8]) -> 语法树 {
     let mut 读 = 读器 { 字节, 位: 0 };
     let 流 = 解记号流在(&mut 读);
-    let 节点数 = 读.u32();
+    let 节点数 = 读.读四字节();
     let mut 节点表 = Vec::with_capacity(节点数 as usize);
     for _ in 0..节点数 {
-        let 号 = 读.u16();
-        let 起 = 读.u32();
-        let 止 = 读.u32();
-        let 子起 = 读.u32();
-        let 子止 = 读.u32();
-        节点表.push(节点::新(
+        let 号 = 读.读双字节();
+        let 起 = 读.读四字节();
+        let 止 = 读.读四字节();
+        let 子起 = 读.读四字节();
+        let 子止 = 读.读四字节();
+        节点表.push(节点::新建(
             节点种类::自号(号).expect("节点种类号该认得出来"),
             (起, 止),
             (子起, 子止),
         ));
     }
-    let 根 = 读.u32();
+    let 根 = 读.读四字节();
     assert_eq!(读.位, 字节.len(), "语法树编码尾部不该有多余字节");
     语法树::新建(流, 节点表, 根).expect("解出来的语法树该过构造口")
 }
@@ -96,20 +96,20 @@ pub(crate) enum 诊断解 {
 /// 读与写两面（同 `解记号流` / `解语法树` 的口径：编码没丢字段当场可断言，不是第二套实现）。
 pub(crate) fn 解诊断(字节: &[u8]) -> 诊断解 {
     let mut 读 = 读器 { 字节, 位: 0 };
-    match 读.u8() {
+    match 读.读单字节() {
         0 => {
             assert_eq!(读.位, 字节.len(), "全过标记该是 1 字节，尾部不该有多余字节");
             诊断解::全过
         }
         1 => {
-            let 阶段 = 读.u32();
-            let 码 = 读.u32();
-            let 位置 = match 读.u32() {
-                1 => Some((读.u32(), 读.u32())),
+            let 阶段 = 读.读四字节();
+            let 码 = 读.读四字节();
+            let 位置 = match 读.读四字节() {
+                1 => Some((读.读四字节(), 读.读四字节())),
                 0 => None,
                 其余 => panic!("位置标志只认 0 / 1，实得 {其余}"),
             };
-            let 读数长 = 读.u32() as usize;
+            let 读数长 = 读.读四字节() as usize;
             let 读数 = std::str::from_utf8(读.取字节(读数长))
                 .expect("读数该是合法 UTF-8")
                 .to_owned();

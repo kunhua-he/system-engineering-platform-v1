@@ -27,7 +27,7 @@ pub fn 编码记号流(流: &记号流) -> Vec<u8> {
     出.extend_from_slice(&流.原文);
     出.extend_from_slice(&(流.记号表.len() as u32).to_le_bytes());
     for 枚 in &流.记号表 {
-        出.push(枚.种类.号());
+        出.push(枚.种类.取号值());
         出.extend_from_slice(&枚.起.to_le_bytes());
         出.extend_from_slice(&枚.止.to_le_bytes());
     }
@@ -39,7 +39,7 @@ pub fn 编码语法树(树: &语法树) -> Vec<u8> {
     let mut 出 = 编码记号流(&树.记号流);
     出.extend_from_slice(&(树.节点表.len() as u32).to_le_bytes());
     for 节 in &树.节点表 {
-        出.extend_from_slice(&节.种类.号().to_le_bytes());
+        出.extend_from_slice(&节.种类.取号值().to_le_bytes());
         出.extend_from_slice(&节.原文区间.0.to_le_bytes());
         出.extend_from_slice(&节.原文区间.1.to_le_bytes());
         出.extend_from_slice(&节.子区间.0.to_le_bytes());

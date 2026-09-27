@@ -22,7 +22,7 @@ pub fn 编码带号结构(构: &带号结构) -> Vec<u8> {
     let mut 出 = Vec::new();
     出.extend_from_slice(&(构.号表.len() as u32).to_le_bytes());
     for 项 in &构.号表 {
-        出.push(项.类.号());
+        出.push(项.类.取号值());
         出.push(项.作用域 as u8);
         出.extend_from_slice(&项.号.to_le_bytes());
         出.extend_from_slice(&(项.名.len() as u32).to_le_bytes());
@@ -31,8 +31,8 @@ pub fn 编码带号结构(构: &带号结构) -> Vec<u8> {
     出.extend_from_slice(&(构.引用表.len() as u32).to_le_bytes());
     for 项 in &构.引用表 {
         出.extend_from_slice(&项.节点.to_le_bytes());
-        出.push(项.类.号());
-        出.push(项.来源.号());
+        出.push(项.类.取号值());
+        出.push(项.来源.取号值());
         出.extend_from_slice(&项.号.to_le_bytes());
         出.push(项.作用域 as u8);
     }

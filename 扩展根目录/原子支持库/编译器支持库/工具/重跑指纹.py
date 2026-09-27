@@ -29,7 +29,7 @@ import sys
 import time
 from pathlib import Path
 
-起 = time.monotonic()  # 壳起表点：必须在 import 业务包**之前**（见 构建装配/门禁/壳.py）
+起始时刻 = time.monotonic()  # 壳起表点：必须在 import 业务包**之前**（见 构建装配/门禁/壳.py）
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[4]))  # 仓根：取共享门禁
 try:
@@ -42,14 +42,14 @@ except ModuleNotFoundError as 错:
     if 错.name != "构建装配":
         raise
 
-    def 自门禁(起, 码, 尾巴余量毫秒, 修法, 流=None):  # noqa: N802
+    def 自门禁(起始时刻, 码, 尾巴余量毫秒, 修法, 流=None):  # noqa: N802
         return 码
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))  # 同名字包所在的 <工具>/
 
 from 重跑指纹 import *  # noqa: E402,F401,F403 —— 再导出公开面（`重跑指纹/__init__.py::__all__`）
-from 重跑指纹 import main  # noqa: E402
+from 重跑指纹 import 入口函数  # noqa: E402
 
 if __name__ == "__main__":
-    sys.exit(自门禁(起, main(), 尾巴余量毫秒=200,
+    sys.exit(自门禁(起始时刻, 入口函数(), 尾巴余量毫秒=200,
                    修法="本件重算全部声明与实现文件；把重活移出命令路（裁决 §三.3）"))

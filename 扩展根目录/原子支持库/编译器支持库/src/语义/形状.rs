@@ -65,7 +65,7 @@ impl 号类 {
         })
     }
 
-    pub fn 号(&self) -> u8 {
+    pub fn 取号值(&self) -> u8 {
         *self as u8
     }
 }
@@ -119,7 +119,7 @@ pub enum 号来源 {
 }
 
 impl 号来源 {
-    pub fn 号(&self) -> u8 {
+    pub fn 取号值(&self) -> u8 {
         *self as u8
     }
 }

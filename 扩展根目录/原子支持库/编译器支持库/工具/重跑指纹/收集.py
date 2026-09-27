@@ -36,7 +36,7 @@ def 收集():
     return sorted(相对路径(路) for 路 in 文件)
 
 
-def sha256(路):
+def 算指纹(路):
     摘要 = hashlib.sha256()
     with open(路, "rb") as 句柄:
         for 块 in iter(lambda: 句柄.read(1 << 20), b""):
@@ -45,7 +45,7 @@ def sha256(路):
 
 
 def 算表():
-    return {相: sha256(os.path.join(扩展根, 相)) for 相 in 收集()}
+    return {相: 算指纹(os.path.join(扩展根, 相)) for 相 in 收集()}
 
 
 def 读旧表():

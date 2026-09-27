@@ -37,7 +37,7 @@ pub fn 编码(段们: &[(u8, &[u8])]) -> Vec<u8> {
     出.extend_from_slice(&(段们.len() as u32).to_le_bytes());
     for (号, 数据) in 段们 {
         出.push(*号);
-        出.extend_from_slice(&sha256(数据));
+        出.extend_from_slice(&算指纹(数据));
     }
     出
 }
@@ -87,7 +87,7 @@ const 初始值: [u32; 8] = [
 ];
 
 /// SHA-256。
-pub fn sha256(数据: &[u8]) -> [u8; 指纹宽度] {
+pub fn 算指纹(数据: &[u8]) -> [u8; 指纹宽度] {
     let mut 状态 = 初始值;
     let mut 块 = Vec::with_capacity(数据.len() + 72);
     块.extend_from_slice(数据);

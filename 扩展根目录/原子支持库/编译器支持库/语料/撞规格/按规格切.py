@@ -3,7 +3,7 @@
 import re
 
 from .规格词表 import (
-    数字字符, 标识符字符, SPEC_DELIM, SPEC_KEYWORD_BARE, SPEC_OP, _字段序,
+    数字字符, 标识符字符, 规格界符, 规格裸关键字, 规格运算符, _字段序,
 )
 
 def 切记号(text):
@@ -97,11 +97,11 @@ def 切记号(text):
                 toks.append(("数值字面量", li, 游标, 匹配.group(0), fi, line_kind))
                 游标 += len(匹配.group(0))
                 continue
-            if 字符 in SPEC_OP:
+            if 字符 in 规格运算符:
                 toks.append(("运算符", li, 游标, 字符, fi, line_kind))
                 游标 += 1
                 continue
-            if 字符 in SPEC_DELIM:
+            if 字符 in 规格界符:
                 toks.append(("界符", li, 游标, 字符, fi, line_kind))
                 游标 += 1
                 continue
@@ -110,7 +110,7 @@ def 切记号(text):
                 while 列尾 < code_end and 标识符字符.match(line[列尾]):
                     列尾 += 1
                 word = line[游标:列尾]
-                if 游标 == line_start and word in SPEC_KEYWORD_BARE:
+                if 游标 == line_start and word in 规格裸关键字:
                     toks.append(("关键字", li, 游标, word, fi, line_kind))
                 else:
                     toks.append(("标识符", li, 游标, word, fi, line_kind))

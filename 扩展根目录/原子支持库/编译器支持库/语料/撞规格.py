@@ -22,7 +22,7 @@ import time
 from collections import Counter, defaultdict
 from pathlib import Path
 
-起 = time.monotonic()  # 壳起表点：必须在 import 业务包**之前**（见 构建装配/门禁/壳.py）
+起始时刻 = time.monotonic()  # 壳起表点：必须在 import 业务包**之前**（见 构建装配/门禁/壳.py）
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[4]))  # 仓根：取共享门禁
 from 构建装配.门禁 import 自门禁  # noqa: E402
@@ -34,7 +34,7 @@ from 撞规格 import 报表, 统计
 from 撞规格.读样本 import 读样本
 
 
-def main():
+def 入口函数():
     rows = 读样本(真文本目录)
     读数 = 统计.统计读数(rows)
     tier_bytes = 统计.分层字节(rows)
@@ -47,7 +47,7 @@ if __name__ == "__main__":
     # `main()` 不返回码（它只打印）⇒ 码恒 0，壳只负责「超顶即红」。
     sys.exit(
         自门禁(
-            起, main() or 0, 尾巴余量毫秒=200,
+            起始时刻, 入口函数() or 0, 尾巴余量毫秒=200,
             修法="本件逐条撞真文本（实测约 1.1 秒）—— 样本会长，超顶就按样本分片，别减判据条数。",
         )
     )

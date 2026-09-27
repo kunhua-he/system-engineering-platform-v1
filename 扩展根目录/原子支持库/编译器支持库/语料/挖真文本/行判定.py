@@ -4,7 +4,7 @@ from .常量 import 控制字符, 声明行正则, 最大行长, 版本锚
 
 
 # ── 行工具 ────────────────────────────────────────────────────────────────
-def gbk_ok(原文):
+def GBK合规(原文):
     try:
         原文.decode("gbk")
         return True
@@ -22,7 +22,7 @@ def 检查取值(val):
             probs.append(f"行{序号} 超长 {len(ln)}")
         elif any(字符 in ln for 字符 in 控制字符):
             probs.append(f"行{序号} 含控制字符")
-        elif not gbk_ok(ln):
+        elif not GBK合规(ln):
             probs.append(f"行{序号} 非 GBK")
         elif ln.strip():
             nb += 1
@@ -36,7 +36,7 @@ def 声明行数(val):
     for ln in val.split(b"\n"):
         if ln.endswith(b"\r"):
             ln = ln[:-1]
-        if not gbk_ok(ln):
+        if not GBK合规(ln):
             continue
         匹配 = 声明行正则.match(ln.decode("gbk"))
         if 匹配:
@@ -50,7 +50,7 @@ def 行分类(raw):
         return "OTHER"
     if not raw.strip():
         return "BLANK"
-    if any(字符 in raw for 字符 in 控制字符) or not gbk_ok(raw):
+    if any(字符 in raw for 字符 in 控制字符) or not GBK合规(raw):
         return "OTHER"
     行文 = raw.decode("gbk")
     st = 行文.lstrip(" ")

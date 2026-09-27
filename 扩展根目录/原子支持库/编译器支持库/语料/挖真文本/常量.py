@@ -7,7 +7,7 @@ import re
 语料根 = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 源码根 = "/tmp/易语言源码"
 真文本目录 = os.path.join(语料根, "真文本")
-OUTJSON = os.path.join(语料根, "_挖出.json")
+挖出JSON路径 = os.path.join(语料根, "_挖出.json")
 
 最大行长 = 512
 最少声明行数 = 2

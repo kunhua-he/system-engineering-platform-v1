@@ -273,8 +273,8 @@ fn 切分_手写小样例_逐枚记号对上() {
     // 12 种记号**逐种**都在这组样例里出现过（漏一种就是自检没覆盖面）。
     let 见过: std::collections::BTreeSet<u8> = 例
         .iter()
-        .flat_map(|(_, 片)| 片.iter().map(|(种, _)| 种.号()))
-        .chain(std::iter::once(记号种类::文件结束.号()))
+        .flat_map(|(_, 片)| 片.iter().map(|(种, _)| 种.取号值()))
+        .chain(std::iter::once(记号种类::文件结束.取号值()))
         .collect();
     assert_eq!(
         见过.len(),
