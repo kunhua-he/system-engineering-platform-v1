@@ -28,20 +28,20 @@ def 建解析器():
 
 
 def 主(参数):
-    a = 建解析器().parse_args(参数)
-    if a.自测:
-        return 自测(a.样本)
-    if a.建议分片数:
+    选项 = 建解析器().parse_args(参数)
+    if 选项.自测:
+        return 自测(选项.样本)
+    if 选项.建议分片数:
         from .分片 import 建议分片数
         from .运行数据根 import 缓存目录
-        n, 依据 = 建议分片数(a.目录, 缓存目录())
+        片数, 依据 = 建议分片数(选项.目录, 缓存目录())
         print(依据, file=sys.stderr)
-        print(n)
-        return 0 if n > 0 else 1
-    if a.分片:
+        print(片数)
+        return 0 if 片数 > 0 else 1
+    if 选项.分片:
         from .分片 import 解析分片形
-        i, n = 解析分片形(a.分片)
-        return 扫一片(a.目录, i, n)
-    if a.全部:
-        return 扫全部(a.目录, a.进程数)
-    return 出报告(a.样本, a.转储)
+        序号, 片数 = 解析分片形(选项.分片)
+        return 扫一片(选项.目录, 序号, 片数)
+    if 选项.全部:
+        return 扫全部(选项.目录, 选项.进程数)
+    return 出报告(选项.样本, 选项.转储)

@@ -60,26 +60,26 @@ def 单件读数(路径) -> dict:
         读数["坏"] = "读盘失败：{}".format(ex)
         读数["毫秒"] = int((time.monotonic() - t0) * 1000)
         return 读数
-    for _, _, _, q, _ in 区表:
+    for _, _, _, 段体, _ in 区表:
         读数["段数"] += 1
-        读数["区长"].append(len(q))
-        if len(q) >= 4 and q[:4] == b"\x00\x00\x00\x00":
+        读数["区长"].append(len(段体))
+        if len(段体) >= 4 and 段体[:4] == b"\x00\x00\x00\x00":
             读数["首4零"] += 1
-        if not any(q):
+        if not any(段体):
             读数["全零"] += 1
-        记录, 未解 = 走记录(q)
-        for x in 记录:
-            读数["计"][x["种类"]] = 读数["计"].get(x["种类"], 0) + 1
+        记录, 未解 = 走记录(段体)
+        for 一条 in 记录:
+            读数["计"][一条["种类"]] = 读数["计"].get(一条["种类"], 0) + 1
         读数["未解"] += 未解
-        读数["字节"] += len(q)
+        读数["字节"] += len(段体)
     读数["毫秒"] = int((time.monotonic() - t0) * 1000)
     return 读数
 
 
 def 缓存文件(缓存目录, 路径):
     """一个文件一个缓存件（按路径哈希命名）⇒ 多进程各写各的，**没有读改写争用**。"""
-    h = hashlib.sha256(str(路径).encode("utf-8")).hexdigest()[:24]
-    return 缓存目录 / "{}.json".format(h)
+    摘要 = hashlib.sha256(str(路径).encode("utf-8")).hexdigest()[:24]
+    return 缓存目录 / "{}.json".format(摘要)
 
 
 def 取缓存(缓存目录, 路径):
@@ -125,4 +125,4 @@ def 带缓存(缓存目录, 路径) -> dict:
 
 def 缓存覆盖数(缓存目录, 文件表) -> int:
     """有多少件的缓存键与当前盘面相符（`--全部` 用它报「缓存命中/需算」）。"""
-    return sum(1 for p in 文件表 if 取缓存(缓存目录, p) is not None)
+    return sum(1 for 件 in 文件表 if 取缓存(缓存目录, 件) is not None)

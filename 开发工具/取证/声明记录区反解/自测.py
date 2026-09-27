@@ -51,13 +51,13 @@ def _缓存与分片(样本, 失败: list) -> None:
     临时语料 = Path(tempfile.mkdtemp(prefix="声明记录区反解_自测_分片_"))
     try:
         表 = []
-        for k in range(4):
-            路 = 临时语料 / "样本{}.e".format(k)
+        for 序号 in range(4):
+            路 = 临时语料 / "样本{}.e".format(序号)
             shutil.copy2(样本, 路)
             表.append(str(路))
         表 = sorted(表)
         片 = 切分(表, 2)
-        覆盖 = sorted(p for x in 片 for p in x)
+        覆盖 = sorted(件 for 一片 in 片 for 件 in 一片)
         if 覆盖 == 表 and len(覆盖) == len(set(覆盖)):
             print("  ✓ 分片不重不漏：切 2 片覆盖全部件且无重复")
         else:
@@ -67,20 +67,20 @@ def _缓存与分片(样本, 失败: list) -> None:
         # 而变，先跑的第 i 片与后跑的第 j 片会切在不同位置（有的件算两遍、有的没算），两边都不报错。
         临时刀 = Path(tempfile.mkdtemp(prefix="声明记录区反解_自测_切分_"))
         try:
-            刀甲 = 切分(表, 3)
-            for p in 表:
-                带缓存(临时刀, p)  # 把缓存填满（含实测耗时）
-            刀乙 = 切分(表, 3)
-            if 刀甲 == 刀乙:
+            片一 = 切分(表, 3)
+            for 件 in 表:
+                带缓存(临时刀, 件)  # 把缓存填满（含实测耗时）
+            片二 = 切分(表, 3)
+            if 片一 == 片二:
                 print("  ✓ 切分确定性：缓存从空到满，同一 (文件表, n) 得同一刀（分片可复现）")
             else:
                 print("  ✗ 切分随缓存状态漂移 —— 分片会漏算/重算")
                 失败.append("切分确定性")
         finally:
             shutil.rmtree(临时刀, ignore_errors=True)
-        全 = 归并([单件读数(p) for p in 表])
-        并 = 归并([带缓存(None, p) for p in 表])
-        扫片 = 归并汇总([扫分片(临时语料, i, 2, None)[0] for i in range(2)])
+        全 = 归并([单件读数(件) for 件 in 表])
+        并 = 归并([带缓存(None, 件) for 件 in 表])
+        扫片 = 归并汇总([扫分片(临时语料, 下标, 2, None)[0] for 下标 in range(2)])
         if 全 == 并 == 扫片:
             print("  ✓ 归并等价：串行逐件 == 缓存逐件 == 两片各扫再并（读数逐字相同）")
         else:
@@ -104,7 +104,7 @@ def 自测(样本="/tmp/易语言源码/lib/krnln/samples/第一个程序.e"):
     with open(样本, "rb") as fh:
         好 = fh.read()
     段 = 反解容器(好)
-    段号, 段起, 段止, 头起 = [x for x in 段 if x[0] == 段类型_程序][0]
+    段号, 段起, 段止, 头起 = [一片 for 一片 in 段 if 一片[0] == 段类型_程序][0]
     r = 解段数据(好[段起:段止])
     区起 = r["声明记录区起点"]
 

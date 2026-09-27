@@ -47,14 +47,14 @@ def 解析分片形(文) -> tuple:
         raise ValueError("分片形必须是 `i/n`（例：0/8），实得 %r" % (文,))
     左, _, 右 = 文.partition("/")
     try:
-        i, n = int(左), int(右)
+        序号, 片数 = int(左), int(右)
     except ValueError:
         raise ValueError("分片形必须是整数 `i/n`（例：0/8），实得 %r" % (文,))
-    if n < 1:
-        raise ValueError("分片总数必须 ≥ 1，实得 %d" % n)
-    if not (0 <= i < n):
-        raise ValueError("分片序号越界：i=%d 不在 [0, %d)" % (i, n))
-    return i, n
+    if 片数 < 1:
+        raise ValueError("分片总数必须 ≥ 1，实得 %d" % 片数)
+    if not (0 <= 序号 < 片数):
+        raise ValueError("分片序号越界：i=%d 不在 [0, %d)" % (序号, 片数))
+    return 序号, 片数
 
 
 def 权重表(文件表) -> dict:
@@ -66,32 +66,32 @@ def 权重表(文件表) -> dict:
     ⇒ 权重必须是**只由盘面决定**的量（字节数就是），与缓存状态无关 ⇒ 同 `(目录, n)` 恒得同一刀。
     """
     出 = {}
-    for p in 文件表:
+    for 件 in 文件表:
         try:
-            出[p] = max(1, os.path.getsize(p))
+            出[件] = max(1, os.path.getsize(件))
         except OSError:
-            出[p] = 1
+            出[件] = 1
     return 出
 
 
-def 切分(文件表, n: int) -> list:
+def 切分(文件表, 片数: int) -> list:
     """贪心均衡切成 n 片（大件先落当前最空的一片）⇒ 各片权重和尽量相等。
 
     **确定性**：只看文件大小与路径 ⇒ 同 `(文件表, n)` 每次都得同一刀（多进程/多命令可复现）。
     n ≤ 1 时退化为「一片 = 全量」；空片照给，保持「第 i/n 片」编号稳定。
     """
-    if n < 1:
-        n = 1
-    if n == 1:
+    if 片数 < 1:
+        片数 = 1
+    if 片数 == 1:
         return [sorted(文件表)]
-    片 = [[] for _ in range(n)]
-    和 = [0] * n
+    片 = [[] for _ in range(片数)]
+    和 = [0] * 片数
     权重 = 权重表(文件表)
-    for p in sorted(文件表, key=lambda x: (-权重[x], x)):
-        k = min(range(n), key=lambda i: (和[i], i))
-        片[k].append(p)
-        和[k] += 权重[p]
-    return [sorted(x) for x in 片]
+    for 件 in sorted(文件表, key=lambda 件: (-权重[件], 件)):
+        片号 = min(range(片数), key=lambda 序号: (和[序号], 序号))
+        片[片号].append(件)
+        和[片号] += 权重[件]
+    return [sorted(件) for 件 in 片]
 
 
 def 归并(逐件表) -> dict:
@@ -105,8 +105,8 @@ def 归并(逐件表) -> dict:
         汇总["全零"] += 读数.get("全零", 0)
         汇总["未解"] += 读数.get("未解", 0)
         汇总["字节"] += 读数.get("字节", 0)
-        for k, v in (读数.get("计") or {}).items():
-            汇总["计"][k] = 汇总["计"].get(k, 0) + v
+        for 片号, 值 in (读数.get("计") or {}).items():
+            汇总["计"][片号] = 汇总["计"].get(片号, 0) + 值
         if 读数.get("坏"):
             汇总["坏"].append((读数["键"][0] if 读数.get("键") else "?", 读数["坏"]))
     汇总["区长"].sort()
@@ -129,8 +129,8 @@ def 归并汇总(汇总表) -> dict:
         出["全零"] += 汇总.get("全零", 0)
         出["未解"] += 汇总.get("未解", 0)
         出["字节"] += 汇总.get("字节", 0)
-        for k, v in (汇总.get("计") or {}).items():
-            出["计"][k] = 出["计"].get(k, 0) + v
+        for 片号, 值 in (汇总.get("计") or {}).items():
+            出["计"][片号] = 出["计"].get(片号, 0) + 值
         出["坏"].extend(汇总.get("坏", []))
     出["区长"].sort()
     return 出
@@ -156,31 +156,31 @@ def 建议分片数(目录, 缓存目录, 目标毫秒: int = 4000) -> tuple:
         return 0, "语料目录里没有语料件 ⇒ 无可算"
     字节 = 权重表(表)
     实测 = {}
-    for p in 表:
-        读数 = 取缓存(缓存目录, p)
+    for 件 in 表:
+        读数 = 取缓存(缓存目录, 件)
         if isinstance(读数, dict) and isinstance(读数.get("毫秒"), int):
-            实测[p] = 读数["毫秒"]
+            实测[件] = 读数["毫秒"]
     if not 实测:
         return 0, ("缓存冷：一件都没有实测毫秒 ⇒ 估不出片数（**不编数**）。"
                    "先跑一片把系数量出来，n 要取**大**（片小只会更慢、更安全；"
                    "门禁超顶会报红兜底）：`--分片 0/120`，再问一次。")
-    比 = sorted(实测[p] / max(1, 字节[p]) for p in 实测)
+    比 = sorted(实测[件] / max(1, 字节[件]) for 件 in 实测)
     系数 = 比[len(比) // 2]  # 中位数，抗单件离群（最大单件实测占比很小，见报告）
-    总估 = sum(实测.get(p, 字节[p] * 系数) for p in 表)
-    n = max(1, -(-int(总估) // max(1, 目标毫秒)))  # 上取整
+    总估 = sum(实测.get(件, 字节[件] * 系数) for 件 in 表)
+    片数 = max(1, -(-int(总估) // max(1, 目标毫秒)))  # 上取整
     依据 = ("实测 %d / %d 件（其余按字节推，系数 %.3f ms/MB）· 总估 %d ms · "
             "目标 %d ms/片 ⇒ n = %d" % (len(实测), len(表), 系数 * 1048576.0,
-                                        int(总估), 目标毫秒, n))
-    return n, 依据
+                                        int(总估), 目标毫秒, 片数))
+    return 片数, 依据
 
 
 def _跑片(参数) -> list:
     """进程池的工作体：算一片的逐件读数。**模块级函数** —— 池子按名字反序列化它，藏在闭包里就找不到。"""
     片, 缓存目录 = 参数
-    return [带缓存(缓存目录, p) for p in 片]
+    return [带缓存(缓存目录, 件) for 件 in 片]
 
 
-def 扫分片(目录, i: int, n: int, 缓存目录) -> tuple:
+def 扫分片(目录, 序号: int, 片数: int, 缓存目录) -> tuple:
     """跑**第 i 片（共 n 片）**：片内串行、逐件走缓存。返回 `(汇总, 本片文件数, 本片缓存命中数)`。
 
     **命中数在算之前数**（算完再数就恒等于本片文件数 —— 那是「刚写进去的」冒充「本来就在的」）。
@@ -188,12 +188,12 @@ def 扫分片(目录, i: int, n: int, 缓存目录) -> tuple:
     （n 片 × 每片 32 进程 ⇒ 超订）。要全量并发请走 `扫并发`。
     """
     表 = 文件表(目录)
-    片 = 切分(表, n)
-    if not (0 <= i < n):
-        raise ValueError("分片序号越界：i=%d 不在 [0, %d)" % (i, n))
-    本片 = 片[i]
+    片 = 切分(表, 片数)
+    if not (0 <= 序号 < 片数):
+        raise ValueError("分片序号越界：i=%d 不在 [0, %d)" % (序号, 片数))
+    本片 = 片[序号]
     命中 = 缓存覆盖数(缓存目录, 本片)
-    return 归并([带缓存(缓存目录, p) for p in 本片]), len(本片), 命中
+    return 归并([带缓存(缓存目录, 件) for 件 in 本片]), len(本片), 命中
 
 
 def 扫并发(目录, 缓存目录, 进程数=None) -> tuple:
@@ -209,7 +209,7 @@ def 扫并发(目录, 缓存目录, 进程数=None) -> tuple:
     if not 表:
         return 归并([]), 进程数
     if 进程数 == 1 or not 用进程池():
-        return 归并([带缓存(缓存目录, p) for p in 表]), 1
+        return 归并([带缓存(缓存目录, 件) for 件 in 表]), 1
     import multiprocessing
 
     片 = 切分(表, 进程数)
@@ -217,6 +217,6 @@ def 扫并发(目录, 缓存目录, 进程数=None) -> tuple:
         with multiprocessing.get_context("fork").Pool(processes=进程数) as 池:
             各片 = 池.map(_跑片, [(片, 缓存目录) for 片 in 片])
     except Exception:
-        return 归并([带缓存(缓存目录, p) for p in 表]), 1
+        return 归并([带缓存(缓存目录, 件) for 件 in 表]), 1
     逐件 = [读数 for 片读数 in 各片 for 读数 in 片读数]
     return 归并(逐件), 进程数
