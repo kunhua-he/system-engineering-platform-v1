@@ -17,7 +17,7 @@ fn 丙() -> *const u8 {
 
 /// 计数端点：把 `参数一` 当 `*const AtomicUsize`，被调一次加一，一律回成功。
 /// 这样每个测试用自己局部的计数器，不需要进程级全局。
-unsafe extern "C" fn 计数端点(_通知号: u32, 参数一: usize, 参数二: usize) -> isize {
+unsafe extern "C" fn 计数端点(_通知号: v1_contract::通知号, 参数一: usize, 参数二: usize) -> isize {
     let _ = 参数二;
     if 参数一 != 0 {
         // SAFETY: 调用方按约定把 `参数一` 传成有效的 `*const AtomicUsize`。
@@ -28,7 +28,7 @@ unsafe extern "C" fn 计数端点(_通知号: u32, 参数一: usize, 参数二: 
 }
 
 /// 收到卸载请求一律回「延迟释放」：模拟引用未清零时拒绝卸载。
-unsafe extern "C" fn 延迟释放端点(通知号: u32, _参数一: usize, _参数二: usize) -> isize {
+unsafe extern "C" fn 延迟释放端点(通知号: v1_contract::通知号, _参数一: usize, _参数二: usize) -> isize {
     if 通知号 == 生命周期通知::卸载 {
         通知返回::延迟释放
     } else {
@@ -37,7 +37,7 @@ unsafe extern "C" fn 延迟释放端点(通知号: u32, _参数一: usize, _参�
 }
 
 /// 收到卸载请求一律回「失败」：模拟卸载期出错。
-unsafe extern "C" fn 卸载失败端点(通知号: u32, _参数一: usize, _参数二: usize) -> isize {
+unsafe extern "C" fn 卸载失败端点(通知号: v1_contract::通知号, _参数一: usize, _参数二: usize) -> isize {
     if 通知号 == 生命周期通知::卸载 {
         通知返回::失败
     } else {
@@ -50,8 +50,8 @@ static 协商_引用清零: AtomicUsize = AtomicUsize::new(0);
 
 /// 引用清零前，对 `2001 卸载` 与 `2003 延迟释放` **都**回「延迟释放」；清零后回成功。
 /// 这是 ⑥ 的样本：区分「初次请求」与「引用清零后的复核」两个通知号。
-unsafe extern "C" fn 协商端点(通知号: u32, _参数一: usize, _参数二: usize) -> isize {
-    if matches!(通知号, 生命周期通知::卸载 | 生命周期通知::延迟释放)
+unsafe extern "C" fn 协商端点(通知号: v1_contract::通知号, _参数一: usize, _参数二: usize) -> isize {
+    if matches!(通知号.取(), 生命周期通知::卸载 | 生命周期通知::延迟释放)
         && 协商_引用清零.load(Ordering::SeqCst) == 0
     {
         通知返回::延迟释放

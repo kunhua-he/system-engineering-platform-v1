@@ -104,16 +104,16 @@ impl 配额账本 {
 
 impl 调用账本 for 配额账本 {
     /// 执行**前**问一次：配额够就 `true`（放行），不够就 `false`（**不许进执行函数**）。
-    fn 准调(&self, 能力号: u32) -> bool {
-        self.取用(能力号)
+    fn 准调(&self, 能力号: v1_contract::能力号) -> bool {
+        self.取用(能力号.取())
     }
 
     /// 执行**后**记一次。本账本的配额是**按次数**判的，不参与耗时——
     /// 但真实耗时仍然要收下（它是超时唯一口径的来源之一），所以不做 `_耗时毫秒` 丢弃。
     /// 现在只累加留痕；将来若要按耗时限速，改这里，不改契约。
-    fn 记账(&self, 能力号: u32, 耗时毫秒: u64) {
+    fn 记账(&self, 能力号: v1_contract::能力号, 耗时毫秒: u64) {
         let mut 记录 = self.耗时记录.lock().unwrap_or_else(|中毒| 中毒.into_inner());
-        let 项 = 记录.entry(能力号).or_insert(0);
+        let 项 = 记录.entry(能力号.取()).or_insert(0);
         *项 = 项.saturating_add(耗时毫秒);
     }
 }
