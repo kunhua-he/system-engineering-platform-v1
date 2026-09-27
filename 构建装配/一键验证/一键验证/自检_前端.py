@@ -129,7 +129,7 @@ def 自检_前端语义判据() -> list:
     正则字面量样本 = {
         "值位（赋给标识符）": "const 形 = /JSON\\.parse\\(/;\n",
         "裸形": "const 形 = /JSON.parse(/;\n",
-        "`||` 之后": "export function 判(s) { return 甲 || /JSON\\.parse\\(/; }\n",
+        "`||` 之后": "export function 判(s) { return 左值 || /JSON\\.parse\\(/; }\n",
         "作为实参": "export function 判(s) { return 查(s, /JSON\\.parse\\(/); }\n",
     }
     真解析样本 = (
