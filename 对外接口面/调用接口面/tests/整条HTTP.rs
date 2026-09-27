@@ -119,14 +119,14 @@ mod 整条HTTP {
 
     /// 发一条原始请求并收回应答（状态码 + 原始文本）。
     fn 发请求(服务: &服务, 请求: &str) -> (u16, String) {
-        let mut 流 = TcpStream::connect(("127.0.0.1", 服务.端口())).expect("必须连得上（监听已 bind）");
-        流.write_all(请求.as_bytes()).expect("写请求");
-        流.flush().expect("刷请求");
+        let mut 输出流 = TcpStream::connect(("127.0.0.1", 服务.端口())).expect("必须连得上（监听已 bind）");
+        输出流.write_all(请求.as_bytes()).expect("写请求");
+        输出流.flush().expect("刷请求");
         服务.处理一个连接().expect("服务必须处理一次");
         let mut 缓冲 = Vec::new();
-        流.read_to_end(&mut 缓冲).expect("读应答");
-        let 文 = String::from_utf8(缓冲).expect("应答必须是 UTF-8");
-        let (头, 体) = 文.split_once("\r\n\r\n").expect("应答必须有头体分界");
+        输出流.read_to_end(&mut 缓冲).expect("读应答");
+        let 文本 = String::from_utf8(缓冲).expect("应答必须是 UTF-8");
+        let (头, 体) = 文本.split_once("\r\n\r\n").expect("应答必须有头体分界");
         let 状态 = 头
             .lines()
             .next()
@@ -156,10 +156,10 @@ mod 整条HTTP {
     #[test]
     fn 整条HTTP_合成能力经调用端点返回特征值() {
         let 服务 = 起服务();
-        let 体 = format!("{{\"编号\":{合成编号},\"值\":[]}}");
+        let 请求体 = format!("{{\"编号\":{合成编号},\"值\":[]}}");
         let 请求 = format!(
-            "POST /接口/调用 HTTP/1.1\r\nHost: 127.0.0.1\r\nContent-Type: application/json; charset=utf-8\r\nContent-Length: {}\r\n\r\n{体}",
-            体.len()
+            "POST /接口/调用 HTTP/1.1\r\nHost: 127.0.0.1\r\nContent-Type: application/json; charset=utf-8\r\nContent-Length: {}\r\n\r\n{请求体}",
+            请求体.len()
         );
         let (状态, 应答) = 发请求(&服务, &请求);
         assert_eq!(状态, 200, "业务结果不许进 HTTP 状态码：\n{应答}");

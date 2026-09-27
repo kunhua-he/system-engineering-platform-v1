@@ -57,15 +57,15 @@ impl 读数 {
 /// 起不来的原因（件不存在 / 没有执行权限）**原样带回**，不吞：
 /// 「跑者不存在」与「跑者跑了但退出码非零」是两件事，调用方要能分开。
 pub fn 跑命令(程序: &Path, 参数: &[&str], 工作目录: &Path) -> Result<读数, String> {
-    let 出 = Command::new(程序)
+    let 命令输出 = Command::new(程序)
         .args(参数)
         .current_dir(工作目录)
         .output()
         .map_err(|错| format!("起不了 {}：{错}", 程序.display()))?;
     Ok(读数 {
-        退出码: 出.status.code().unwrap_or(-1),
-        标准输出: 转文本(&出.stdout),
-        标准错误: 转文本(&出.stderr),
+        退出码: 命令输出.status.code().unwrap_or(-1),
+        标准输出: 转文本(&命令输出.stdout),
+        标准错误: 转文本(&命令输出.stderr),
     })
 }
 

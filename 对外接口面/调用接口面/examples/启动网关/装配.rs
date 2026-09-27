@@ -30,8 +30,8 @@ fn 说清启动失败(错误: &启动失败) -> String {
 }
 
 fn 取值(名称: &str) -> Option<String> {
-    let 参: Vec<String> = env::args().collect();
-    参.iter().position(|项| 项 == 名称).and_then(|位| 参.get(位 + 1).cloned())
+    let 参数: Vec<String> = env::args().collect();
+    参数.iter().position(|项| 项 == 名称).and_then(|位| 参数.get(位 + 1).cloned())
 }
 
 /// 跑完整条链。命令行参数、端口与日志输出**逐字不变**（上线切换靠 `监听 127.0.0.1:<端口>` 一行拿端口）。
@@ -53,10 +53,10 @@ pub(crate) fn 跑网关() -> Result<(), String> {
     // ── 第一步：读扩展根声明 ────────────────────────────────────────────────
     let 文本 = fs::read_to_string(&声明根路径)
         .map_err(|错| format!("读不到扩展根声明 {}：{错}", 声明根路径.display()))?;
-    let 根 = 读器::新建(&文本)
+    let 根目录 = 读器::新建(&文本)
         .读一个值()
         .map_err(|错| format!("扩展根声明不是合法 JSON：{错}"))?;
-    let 种类 = 根
+    let 种类 = 根目录
         .取成员("种类")
         .and_then(|值| 值.取数组())
         .ok_or_else(|| "扩展根声明缺 `种类` 段".to_owned())?;
@@ -81,9 +81,9 @@ pub(crate) fn 跑网关() -> Result<(), String> {
     let mut 候选: Vec<&'static 平台信息> = vec![v1_adapter::底座声明()];
     let mut 装上的: Vec<String> = Vec::new();
     let mut 剔除的: Vec<(String, String)> = Vec::new();
-    for 类 in 种类 {
-        let 类名 = 类.取成员("种类").and_then(|值| 值.取字符串()).unwrap_or("?");
-        let Some(可装载) = 类.取成员("可装载件").and_then(|值| 值.布尔()) else {
+    for 类别 in 种类 {
+        let 类名 = 类别.取成员("种类").and_then(|值| 值.取字符串()).unwrap_or("?");
+        let Some(可装载) = 类别.取成员("可装载件").and_then(|值| 值.布尔()) else {
             return Err(format!(
                 "扩展根声明的 种类[{类名}] 缺 `可装载件`（或不是布尔）。\n  \
                  这个键决定「这一类的直接子目录要不要当可装载件候选」（支持库 true · \
@@ -94,7 +94,7 @@ pub(crate) fn 跑网关() -> Result<(), String> {
         if !可装载 {
             continue;
         }
-        let Some(目录) = 类.取成员("目录").and_then(|值| 值.取字符串()) else {
+        let Some(目录) = 类别.取成员("目录").and_then(|值| 值.取字符串()) else {
             continue;
         };
         let 目录 = PathBuf::from(目录);
@@ -102,16 +102,16 @@ pub(crate) fn 跑网关() -> Result<(), String> {
             println!("跳过 {}：目录不存在", 目录.display());
             continue;
         }
-        for 子 in 子目录(&目录) {
-            let 落点 = 子.display().to_string();
-            match 取扩展声明(&子) {
+        for 子目录项 in 子目录(&目录) {
+            let 落点 = 子目录项.display().to_string();
+            match 取扩展声明(&子目录项) {
                 Err(原因) => 剔除的.push((落点, 原因)),
                 Ok(声明) => {
                     // 试装：拿**同一个** `适配器::装载声明根` 走一遍（与 `服务::绑定` 内部
                     // 用的是同一条装载路，不另写一套）。装得上才算这份声明根的一份。
-                    let mut 试 = 候选.clone();
-                    试.push(声明);
-                    match 适配器::装载声明根(&试) {
+                    let mut 试装候选 = 候选.clone();
+                    试装候选.push(声明);
+                    match 适配器::装载声明根(&试装候选) {
                         Ok(_) => {
                             候选.push(声明);
                             装上的.push(落点);

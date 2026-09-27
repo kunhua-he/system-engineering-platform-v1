@@ -34,12 +34,12 @@ pub fn 解析(来源: &str) -> Result<协议值, 解析错误> {
         位: 0,
     };
     游标.跳空白();
-    let 值 = 游标.取值(0)?;
+    let 待处理值 = 游标.取值(0)?;
     游标.跳空白();
     if 游标.位 != 游标.字节.len() {
         return Err(游标.报错("尾部还有多余内容"));
     }
-    Ok(值)
+    Ok(待处理值)
 }
 
 /// 一个只进不退的读游标。
@@ -61,11 +61,11 @@ impl<'a> 游标<'a> {
     }
 
     fn 前进一字节(&mut self) -> Option<u8> {
-        let 字 = self.取当前字节();
-        if 字.is_some() {
+        let 字符表 = self.取当前字节();
+        if 字符表.is_some() {
             self.位 += 1;
         }
-        字
+        字符表
     }
 
     fn 跳空白(&mut self) {
@@ -112,8 +112,8 @@ impl<'a> 游标<'a> {
             if self.取当前字节() != Some(b'"') {
                 return Err(self.报错("对象的键必须是字符串"));
             }
-            let 键 = self.取文本()?;
-            if 成员.iter().any(|(名, _)| *名 == 键) {
+            let 键名 = self.取文本()?;
+            if 成员.iter().any(|(名, _)| *名 == 键名) {
                 // 重复键有两解。**不猜**：猜一个就是把语义改错。
                 return Err(self.报错("同一个键出现了两次"));
             }
@@ -122,8 +122,8 @@ impl<'a> 游标<'a> {
                 return Err(self.报错("键后面必须是冒号"));
             }
             self.跳空白();
-            let 值 = self.取值(深度 + 1)?;
-            成员.push((键, 值));
+            let 待处理值 = self.取值(深度 + 1)?;
+            成员.push((键名, 待处理值));
             self.跳空白();
             match self.前进一字节() {
                 Some(b',') => continue,
@@ -135,19 +135,19 @@ impl<'a> 游标<'a> {
 
     fn 取数组(&mut self, 深度: usize) -> Result<协议值, 解析错误> {
         self.位 += 1; // '['
-        let mut 项: Vec<协议值> = Vec::new();
+        let mut 一项: Vec<协议值> = Vec::new();
         self.跳空白();
         if self.取当前字节() == Some(b']') {
             self.位 += 1;
-            return Ok(协议值::数组(项));
+            return Ok(协议值::数组(一项));
         }
         loop {
             self.跳空白();
-            项.push(self.取值(深度 + 1)?);
+            一项.push(self.取值(深度 + 1)?);
             self.跳空白();
             match self.前进一字节() {
                 Some(b',') => continue,
-                Some(b']') => return Ok(协议值::数组(项)),
+                Some(b']') => return Ok(协议值::数组(一项)),
                 _ => return Err(self.报错("数组里缺少逗号或右方括号")),
             }
         }
@@ -155,23 +155,23 @@ impl<'a> 游标<'a> {
 
     fn 取文本(&mut self) -> Result<String, 解析错误> {
         self.位 += 1; // 开引号
-        let mut 出: Vec<u8> = Vec::new();
+        let mut 输出缓冲: Vec<u8> = Vec::new();
         loop {
             match self.前进一字节() {
                 None => return Err(self.报错("字符串没写完就到头了")),
                 Some(b'"') => break,
-                Some(b'\\') => self.取转义(&mut 出)?,
+                Some(b'\\') => self.取转义(&mut 输出缓冲)?,
                 // 未转义的控制字符在 JSON 里不合法（含裸换行）。
                 Some(字) if 字 < 0x20 => return Err(self.报错("字符串里有未转义的控制字符")),
-                Some(字) => 出.push(字),
+                Some(字) => 输出缓冲.push(字),
             }
         }
-        String::from_utf8(出).map_err(|_| self.报错("字符串不是合法 UTF-8"))
+        String::from_utf8(输出缓冲).map_err(|_| self.报错("字符串不是合法 UTF-8"))
     }
 
     fn 取转义(&mut self, 输出缓冲: &mut Vec<u8>) -> Result<(), 解析错误> {
-        let 字 = self.前进一字节().ok_or_else(|| self.报错("转义没写完"))?;
-        match 字 {
+        let 字符表 = self.前进一字节().ok_or_else(|| self.报错("转义没写完"))?;
+        match 字符表 {
             b'"' => 输出缓冲.push(b'"'),
             b'\\' => 输出缓冲.push(b'\\'),
             b'/' => 输出缓冲.push(b'/'),
@@ -181,25 +181,25 @@ impl<'a> 游标<'a> {
             b'r' => 输出缓冲.push(b'\r'),
             b't' => 输出缓冲.push(b'\t'),
             b'u' => {
-                let 码 = self.取四位十六进制()?;
+                let 码元 = self.取四位十六进制()?;
                 // 代理对：高代理必须紧跟一个低代理，合起来才是一个码点。
-                let 码点 = if (0xD800..0xDC00).contains(&码) {
+                let 码点 = if (0xD800..0xDC00).contains(&码元) {
                     if self.前进一字节() != Some(b'\\') || self.前进一字节() != Some(b'u') {
                         return Err(self.报错("高代理后面必须紧跟一个 \\u 低代理"));
                     }
-                    let 低 = self.取四位十六进制()?;
-                    if !(0xDC00..0xE000).contains(&低) {
+                    let 低码元 = self.取四位十六进制()?;
+                    if !(0xDC00..0xE000).contains(&低码元) {
                         return Err(self.报错("代理对的后半不是低代理"));
                     }
-                    0x1_0000 + ((u32::from(码) - 0xD800) << 10) + (u32::from(低) - 0xDC00)
-                } else if (0xDC00..0xE000).contains(&码) {
+                    0x1_0000 + ((u32::from(码元) - 0xD800) << 10) + (u32::from(低码元) - 0xDC00)
+                } else if (0xDC00..0xE000).contains(&码元) {
                     return Err(self.报错("单个低代理不构成码点"));
                 } else {
-                    u32::from(码)
+                    u32::from(码元)
                 };
-                let 字 = char::from_u32(码点).ok_or_else(|| self.报错("码点不合法"))?;
-                let mut 缓 = [0u8; 4];
-                输出缓冲.extend_from_slice(字.encode_utf8(&mut 缓).as_bytes());
+                let 字符表 = char::from_u32(码点).ok_or_else(|| self.报错("码点不合法"))?;
+                let mut 编码缓冲 = [0u8; 4];
+                输出缓冲.extend_from_slice(字符表.encode_utf8(&mut 编码缓冲).as_bytes());
             }
             _ => return Err(self.报错("不认识的转义")),
         }
@@ -207,19 +207,19 @@ impl<'a> 游标<'a> {
     }
 
     fn 取四位十六进制(&mut self) -> Result<u16, 解析错误> {
-        let mut 值: u16 = 0;
+        let mut 待处理值: u16 = 0;
         for _ in 0..4 {
-            let 字 = self.前进一字节().ok_or_else(|| self.报错("\\u 后面要跟四位十六进制"))?;
-            let 数 = (字 as char)
+            let 字符表 = self.前进一字节().ok_or_else(|| self.报错("\\u 后面要跟四位十六进制"))?;
+            let 十六进制值 = (字符表 as char)
                 .to_digit(16)
                 .ok_or_else(|| self.报错("\\u 后面要跟四位十六进制"))?;
-            值 = 值 * 16 + 数 as u16;
+            待处理值 = 待处理值 * 16 + 十六进制值 as u16;
         }
-        Ok(值)
+        Ok(待处理值)
     }
 
     fn 取数(&mut self) -> Result<协议值, 解析错误> {
-        let 起 = self.位;
+        let 区间起点 = self.位;
         if self.取当前字节() == Some(b'-') {
             self.位 += 1;
         }
@@ -254,7 +254,7 @@ impl<'a> 游标<'a> {
                 self.位 += 1;
             }
         }
-        let 文本 = core::str::from_utf8(&self.字节[起..self.位])
+        let 文本 = core::str::from_utf8(&self.字节[区间起点..self.位])
             .map_err(|_| self.报错("数字不是合法 UTF-8"))?;
         if 是小数 {
             return 文本
@@ -294,19 +294,19 @@ mod 解析测试 {
 
     #[test]
     fn 对象与数组_键序原样保留() {
-        let 值 = 解析(r#"{"次项":2,"首项":[1,{"末项":null}]}"#).expect("合法");
-        let 成员 = match &值 {
+        let 待处理值 = 解析(r#"{"次项":2,"首项":[1,{"末项":null}]}"#).expect("合法");
+        let 成员 = match &待处理值 {
             协议值::对象(成员) => 成员,
             _ => panic!("应当是对象"),
         };
         assert_eq!(成员[0].0, "次项", "键序 = 插入序");
         assert_eq!(成员[1].0, "首项");
-        assert_eq!(值.取成员("首项").and_then(协议值::取数组).map(<[_]>::len), Some(2));
+        assert_eq!(待处理值.取成员("首项").and_then(协议值::取数组).map(<[_]>::len), Some(2));
     }
 
     #[test]
     fn 坏输入_一律报错不崩溃() {
-        for 坏 in [
+        for 坏件表 in [
             "",
             "{",
             "}",
@@ -324,20 +324,20 @@ mod 解析测试 {
             r#""\ud800""#,
             r#""\q""#,
         ] {
-            assert!(解析(坏).is_err(), "「{坏}」必须被判不合法");
+            assert!(解析(坏件表).is_err(), "「{坏件表}」必须被判不合法");
         }
     }
 
     #[test]
     fn 深度上限_超了就报错不爆栈() {
-        let 深 = "[".repeat(最大深度 + 5);
-        assert!(解析(&深).is_err(), "超深必须报错（爆栈是崩溃，不是 400）");
+        let 超深文本 = "[".repeat(最大深度 + 5);
+        assert!(解析(&超深文本).is_err(), "超深必须报错（爆栈是崩溃，不是 400）");
     }
 
     #[test]
     fn 错误带位置() {
-        let 错 = 解析("{\"a\":1,}").expect_err("尾部逗号不合法");
-        assert!(错.位置 > 0, "错误必须报出位置");
-        assert!(!错.说明.is_empty(), "错误必须说清哪一处");
+        let 错误 = 解析("{\"a\":1,}").expect_err("尾部逗号不合法");
+        assert!(错误.位置 > 0, "错误必须报出位置");
+        assert!(!错误.说明.is_empty(), "错误必须说清哪一处");
     }
 }

@@ -39,37 +39,37 @@ def 解析请求(请求):
 
     形状错非空时后面几项可能为 None；调用方按「有错就不落盘」处理。
     """
-    错 = []
+    错误表 = []
     if not isinstance(请求, dict):
         return None, None, None, None, None, False, ["请求不是 JSON 对象（形状：{类别,编号,正文,确认}）"]
     类别 = 请求.get("类别")
     if 类别 not in 类别表:
-        错.append(
+        错误表.append(
             "类别 必须是 %s 之一（收到 %r）；它是落哪个目录 · 编号字段叫什么 的唯一依据"
             % (" · ".join(类别表), 类别)
         )
-        return 类别, None, None, None, None, False, 错
+        return 类别, None, None, None, None, False, 错误表
     目录, 字段 = 类别表[类别]
 
     编号 = 请求.get("编号")
     if 编号 is not None and not _是整数(编号):
-        错.append("编号 必须是整数或 null（收到 %r）；null 表示由面自动分配" % (编号,))
+        错误表.append("编号 必须是整数或 null（收到 %r）；null 表示由面自动分配" % (编号,))
     if 类别 == 作废类别 and 编号 is None:
-        错.append(
+        错误表.append(
             "作废 的 编号 不许留空：作废登记指向一个**已存在**的号（号只增不复用），"
             "面不为它找空洞、不猜起始值 ⇒ 请显式给 编号"
         )
 
     正文 = 请求.get("正文")
     if not isinstance(正文, dict):
-        错.append(
+        错误表.append(
             "正文 必须是 JSON 对象，形状 = 契约声明/格式说明.md 里那一类 JSON，逐字一致"
             "（面不改名 · 不重排 · 不加壳）"
         )
 
     确认 = 请求.get("确认") is True
-    if 错:
-        return 类别, 目录, 字段, None, None, 确认, 错
+    if 错误表:
+        return 类别, 目录, 字段, None, None, 确认, 错误表
     return 类别, 目录, 字段, 编号, 正文, 确认, []
 
 
@@ -89,7 +89,7 @@ def 合成正文(正文, 字段, 编号):
                 % (字段, 现有, 编号)
             )
         return dict(正文), None
-    出 = {字段: 编号}
+    输出正文 = {字段: 编号}
     for 键, 值 in 正文.items():
-        出[键] = 值
-    return 出, None
+        输出正文[键] = 值
+    return 输出正文, None
