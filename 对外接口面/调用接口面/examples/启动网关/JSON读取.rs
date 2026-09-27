@@ -25,6 +25,16 @@ impl 值 {
     pub(crate) fn 串(&self) -> Option<&str> {
         if let 值::串(文) = self { Some(文) } else { None }
     }
+    /// JSON 布尔 → `Some(true)` / `Some(false)`；**其余一律 `None`**
+    /// （缺键、数、串、表、列都算「不是布尔」）。读方据此 fail-closed：
+    /// 声明里 `可装载件` 缺键 / 非布尔时**不给默认值**（见 `装配.rs` 的那条口径）。
+    pub(crate) fn 布尔(&self) -> Option<bool> {
+        match self {
+            值::真 => Some(true),
+            值::假 => Some(false),
+            _ => None,
+        }
+    }
     pub(crate) fn 列(&self) -> Option<&[值]> {
         if let 值::列(项) = self { Some(项) } else { None }
     }
