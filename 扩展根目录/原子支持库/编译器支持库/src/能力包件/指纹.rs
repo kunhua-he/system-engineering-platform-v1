@@ -33,13 +33,13 @@ pub struct 段指纹 {
 
 /// 算一份指纹段数据：逐段哈希后按下表拼起。
 pub fn 编码(段们: &[(u8, &[u8])]) -> Vec<u8> {
-    let mut 出 = Vec::new();
-    出.extend_from_slice(&(段们.len() as u32).to_le_bytes());
+    let mut 输出缓冲 = Vec::new();
+    输出缓冲.extend_from_slice(&(段们.len() as u32).to_le_bytes());
     for (号, 数据) in 段们 {
-        出.push(*号);
-        出.extend_from_slice(&算指纹(数据));
+        输出缓冲.push(*号);
+        输出缓冲.extend_from_slice(&算指纹(数据));
     }
-    出
+    输出缓冲
 }
 
 /// 指纹段数据 → 项表。`None` = 截断 / 尾部多余字节。
@@ -55,14 +55,14 @@ pub fn 解码(字节: &[u8]) -> Option<Vec<段指纹>> {
     if 字节.len() - 4 != 条数 * 每项 {
         return None;
     }
-    let mut 出 = Vec::with_capacity(条数);
-    for 序 in 0..条数 {
-        let 起 = 4 + 序 * 每项;
+    let mut 输出缓冲 = Vec::with_capacity(条数);
+    for 序号 in 0..条数 {
+        let 区间起点 = 4 + 序号 * 每项;
         let mut 哈希 = [0u8; 指纹宽度];
-        哈希.copy_from_slice(&字节[起 + 1..起 + 每项]);
-        出.push(段指纹 { 段类型号: 字节[起], 哈希 });
+        哈希.copy_from_slice(&字节[区间起点 + 1..区间起点 + 每项]);
+        输出缓冲.push(段指纹 { 段类型号: 字节[区间起点], 哈希 });
     }
-    Some(出)
+    Some(输出缓冲)
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -89,78 +89,78 @@ const 初始值: [u32; 8] = [
 /// SHA-256。
 pub fn 算指纹(数据: &[u8]) -> [u8; 指纹宽度] {
     let mut 状态 = 初始值;
-    let mut 块 = Vec::with_capacity(数据.len() + 72);
-    块.extend_from_slice(数据);
-    块.push(0x80);
+    let mut 数据块 = Vec::with_capacity(数据.len() + 72);
+    数据块.extend_from_slice(数据);
+    数据块.push(0x80);
     // 补零至长度 ≡ 56 (mod 64)。
-    while 块.len() % 64 != 56 {
-        块.push(0);
+    while 数据块.len() % 64 != 56 {
+        数据块.push(0);
     }
     // 末 8 字节：原数据的**位数**，大端。
-    块.extend_from_slice(&(数据.len() as u64 * 8).to_be_bytes());
+    数据块.extend_from_slice(&(数据.len() as u64 * 8).to_be_bytes());
 
-    for 片 in 块.chunks_exact(64) {
-        压缩(&mut 状态, 片);
+    for 片段 in 数据块.chunks_exact(64) {
+        压缩(&mut 状态, 片段);
     }
 
-    let mut 出 = [0u8; 指纹宽度];
+    let mut 输出缓冲 = [0u8; 指纹宽度];
     for (序, 字) in 状态.iter().enumerate() {
-        出[序 * 4..序 * 4 + 4].copy_from_slice(&字.to_be_bytes());
+        输出缓冲[序 * 4..序 * 4 + 4].copy_from_slice(&字.to_be_bytes());
     }
-    出
+    输出缓冲
 }
 
 fn 压缩(状态: &mut [u32; 8], 数据块: &[u8]) {
-    let mut 字 = [0u32; 64];
-    for 序 in 0..16 {
-        字[序] = u32::from_be_bytes(数据块[序 * 4..序 * 4 + 4].try_into().unwrap());
+    let mut 字符表 = [0u32; 64];
+    for 序号 in 0..16 {
+        字符表[序号] = u32::from_be_bytes(数据块[序号 * 4..序号 * 4 + 4].try_into().unwrap());
     }
-    for 序 in 16..64 {
-        let s0 = 字[序 - 15].rotate_right(7) ^ 字[序 - 15].rotate_right(18) ^ (字[序 - 15] >> 3);
-        let s1 = 字[序 - 2].rotate_right(17) ^ 字[序 - 2].rotate_right(19) ^ (字[序 - 2] >> 10);
-        字[序] = 字[序 - 16]
+    for 序号 in 16..64 {
+        let s0 = 字符表[序号 - 15].rotate_right(7) ^ 字符表[序号 - 15].rotate_right(18) ^ (字符表[序号 - 15] >> 3);
+        let s1 = 字符表[序号 - 2].rotate_right(17) ^ 字符表[序号 - 2].rotate_right(19) ^ (字符表[序号 - 2] >> 10);
+        字符表[序号] = 字符表[序号 - 16]
             .wrapping_add(s0)
-            .wrapping_add(字[序 - 7])
+            .wrapping_add(字符表[序号 - 7])
             .wrapping_add(s1);
     }
 
-    let mut a = 状态[0];
-    let mut b = 状态[1];
-    let mut c = 状态[2];
-    let mut d = 状态[3];
-    let mut e = 状态[4];
-    let mut f = 状态[5];
-    let mut g = 状态[6];
-    let mut h = 状态[7];
+    let mut 状态字0 = 状态[0];
+    let mut 状态字1 = 状态[1];
+    let mut 状态字2 = 状态[2];
+    let mut 状态字3 = 状态[3];
+    let mut 状态字4 = 状态[4];
+    let mut 状态字5 = 状态[5];
+    let mut 状态字6 = 状态[6];
+    let mut 状态字7 = 状态[7];
 
-    for 序 in 0..64 {
-        let s1 = e.rotate_right(6) ^ e.rotate_right(11) ^ e.rotate_right(25);
-        let 择 = (e & f) ^ ((!e) & g);
-        let 临时1 = h
+    for 序号 in 0..64 {
+        let s1 = 状态字4.rotate_right(6) ^ 状态字4.rotate_right(11) ^ 状态字4.rotate_right(25);
+        let 选择值 = (状态字4 & 状态字5) ^ ((!状态字4) & 状态字6);
+        let 临时1 = 状态字7
             .wrapping_add(s1)
-            .wrapping_add(择)
-            .wrapping_add(轮常量[序])
-            .wrapping_add(字[序]);
-        let s0 = a.rotate_right(2) ^ a.rotate_right(13) ^ a.rotate_right(22);
-        let 多数 = (a & b) ^ (a & c) ^ (b & c);
+            .wrapping_add(选择值)
+            .wrapping_add(轮常量[序号])
+            .wrapping_add(字符表[序号]);
+        let s0 = 状态字0.rotate_right(2) ^ 状态字0.rotate_right(13) ^ 状态字0.rotate_right(22);
+        let 多数 = (状态字0 & 状态字1) ^ (状态字0 & 状态字2) ^ (状态字1 & 状态字2);
         let 临时2 = s0.wrapping_add(多数);
 
-        h = g;
-        g = f;
-        f = e;
-        e = d.wrapping_add(临时1);
-        d = c;
-        c = b;
-        b = a;
-        a = 临时1.wrapping_add(临时2);
+        状态字7 = 状态字6;
+        状态字6 = 状态字5;
+        状态字5 = 状态字4;
+        状态字4 = 状态字3.wrapping_add(临时1);
+        状态字3 = 状态字2;
+        状态字2 = 状态字1;
+        状态字1 = 状态字0;
+        状态字0 = 临时1.wrapping_add(临时2);
     }
 
-    状态[0] = 状态[0].wrapping_add(a);
-    状态[1] = 状态[1].wrapping_add(b);
-    状态[2] = 状态[2].wrapping_add(c);
-    状态[3] = 状态[3].wrapping_add(d);
-    状态[4] = 状态[4].wrapping_add(e);
-    状态[5] = 状态[5].wrapping_add(f);
-    状态[6] = 状态[6].wrapping_add(g);
-    状态[7] = 状态[7].wrapping_add(h);
+    状态[0] = 状态[0].wrapping_add(状态字0);
+    状态[1] = 状态[1].wrapping_add(状态字1);
+    状态[2] = 状态[2].wrapping_add(状态字2);
+    状态[3] = 状态[3].wrapping_add(状态字3);
+    状态[4] = 状态[4].wrapping_add(状态字4);
+    状态[5] = 状态[5].wrapping_add(状态字5);
+    状态[6] = 状态[6].wrapping_add(状态字6);
+    状态[7] = 状态[7].wrapping_add(状态字7);
 }

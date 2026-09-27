@@ -22,37 +22,37 @@ pub fn 生成段数据(输出流: &记录流) -> Result<Vec<u8>, 生成错误> {
     }
 
     let 体长 = 体长实算(输出流);
-    let mut 出 = Vec::with_capacity(段数据头长度 + 体长 as usize);
+    let mut 输出缓冲 = Vec::with_capacity(段数据头长度 + 体长 as usize);
 
-    出.extend_from_slice(&输出流.头.段序号.to_le_bytes());
-    出.extend_from_slice(&输出流.头.保留.to_le_bytes());
-    出.extend_from_slice(&输出流.头.校验值.to_le_bytes());
+    输出缓冲.extend_from_slice(&输出流.头.段序号.to_le_bytes());
+    输出缓冲.extend_from_slice(&输出流.头.保留.to_le_bytes());
+    输出缓冲.extend_from_slice(&输出流.头.校验值.to_le_bytes());
     // 体长由内容重算后写回，不读 `头.体长`（见模块注释「一处与容器层同源的口径」）。
-    出.extend_from_slice(&(体长 as u32).to_le_bytes());
-    出.extend_from_slice(&输出流.头.补零);
+    输出缓冲.extend_from_slice(&(体长 as u32).to_le_bytes());
+    输出缓冲.extend_from_slice(&输出流.头.补零);
 
-    出.extend_from_slice(&输出流.体头.首字段.to_le_bytes());
-    出.extend_from_slice(&段体魔数.to_le_bytes());
+    输出缓冲.extend_from_slice(&输出流.体头.首字段.to_le_bytes());
+    输出缓冲.extend_from_slice(&段体魔数.to_le_bytes());
 
-    出.extend_from_slice(&((4 * 首数组长) as u32).to_le_bytes());
-    for 值 in &输出流.支持库.首数组 {
-        出.extend_from_slice(&值.to_le_bytes());
+    输出缓冲.extend_from_slice(&((4 * 首数组长) as u32).to_le_bytes());
+    for 待处理值 in &输出流.支持库.首数组 {
+        输出缓冲.extend_from_slice(&待处理值.to_le_bytes());
     }
-    出.extend_from_slice(&((2 * 首数组长) as u32).to_le_bytes());
-    for 值 in &输出流.支持库.次数组 {
-        出.extend_from_slice(&值.to_le_bytes());
+    输出缓冲.extend_from_slice(&((2 * 首数组长) as u32).to_le_bytes());
+    for 待处理值 in &输出流.支持库.次数组 {
+        输出缓冲.extend_from_slice(&待处理值.to_le_bytes());
     }
-    出.extend_from_slice(&((2 * 首数组长) as u32).to_le_bytes());
-    for 值 in &输出流.支持库.末数组 {
-        出.extend_from_slice(&值.to_le_bytes());
+    输出缓冲.extend_from_slice(&((2 * 首数组长) as u32).to_le_bytes());
+    for 待处理值 in &输出流.支持库.末数组 {
+        输出缓冲.extend_from_slice(&待处理值.to_le_bytes());
     }
-    出.extend_from_slice(&(首数组长 as u16).to_le_bytes());
+    输出缓冲.extend_from_slice(&(首数组长 as u16).to_le_bytes());
 
     for 一条 in &输出流.支持库.引用表 {
-        出.extend_from_slice(&(一条.串长() as u32).to_le_bytes());
-        出.extend_from_slice(&一条.原文());
+        输出缓冲.extend_from_slice(&(一条.串长() as u32).to_le_bytes());
+        输出缓冲.extend_from_slice(&一条.原文());
     }
 
-    出.extend_from_slice(&输出流.其余载荷);
-    Ok(出)
+    输出缓冲.extend_from_slice(&输出流.其余载荷);
+    Ok(输出缓冲)
 }
