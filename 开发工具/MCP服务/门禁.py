@@ -35,7 +35,7 @@ def 派(参数表: dict, 仓根) -> tuple:
         判据词表 = [判据词表]
     词表 = [str(词).strip() for 词 in (判据词表 or []) if str(词).strip()]
 
-    查询根, 树名, 认领表 = Path(仓根), "主工作树", None
+    查询根, 树名, 认领表 = Path(仓根).resolve(), "主工作树", None
     if 开工号:
         连 = 账本.连账本()
         try:
