@@ -21,6 +21,42 @@ def run_cli(ledger, *args):
                           env=dict(os.environ, CLAIM_LEDGER=ledger))
 
 
+# 入口的**依赖闭包**（除同名包以外）：照仓内真实相对路径 —— 夹具仓必须是「真部署的样子」。
+# 为什么要有这一步：夹具跑的是**拷进去的**入口，它 `from 构建装配.门禁 import 自门禁`
+# （自门禁壳）与 `from 运行数据根 import …`（运行数据根的调用腿）。只拷入口与同名包 ⇒
+# 夹具里 `ModuleNotFoundError`，十条 J5 样本一起红，而根因（少拷了两个包）看不出来 ——
+# 实测撞到过两次（`认领机制.py` 加壳 · `账本.py` 加运行数据根调用腿），两次都是这十条一起红。
+依赖闭包 = ("构建装配/门禁", "开发工具/运行数据根", "开发工具/运行数据根.py")
+
+
+def _拷依赖(d):
+    """把 `依赖闭包` 逐条拷进夹具仓（目录 copytree · 单件 copyfile）。缺件 ⇒ 当场炸。"""
+    仓根 = os.path.dirname(os.path.dirname(HERE))
+    for 相对 in 依赖闭包:
+        源 = os.path.join(仓根, 相对)
+        的 = os.path.join(d, 相对)
+        if os.path.isdir(源):
+            shutil.copytree(源, 的, ignore=shutil.ignore_patterns("__pycache__"))
+        else:
+            shutil.copyfile(源, 的)
+
+
+def _冒烟(d):
+    """夹具的**身份证**：拷完先跑一次入口，只断言「能装载」⇒ 缺依赖当场报出来。
+
+    为什么要有它：少了它，缺依赖的表现是「十条样本一起红、每条只说不等于期望值」——
+    看起来像判据全坏，其实是夹具缺件。这里把根因顶到第一条错误信息里。
+    → 空串 = 好；非空 = 说明（夹具不合格，样本不该照跑）。
+    """
+    r = subprocess.run([sys.executable, os.path.join(d, "开发工具", "认领机制", "认领机制.py")],
+                       capture_output=True, text=True, cwd=d,
+                       env={k: v for k, v in os.environ.items() if k != "CLAIM_GATE"})
+    if "ModuleNotFoundError" in r.stderr or "ImportError" in r.stderr:
+        return "夹具缺依赖闭包（%s）⇒ 入口装载失败：%s" % (
+            " · ".join(依赖闭包), r.stderr.strip().splitlines()[-1])
+    return ""
+
+
 def git_repo(d, files):
     """在 d 里造一个**能跑真命令行**的仓：git 仓 + `rust-toolchain.toml` + 一份本件脚本。
 
@@ -52,11 +88,16 @@ def git_repo(d, files):
     shutil.copytree(os.path.join(HERE, "认领机制"),
                     os.path.join(d, "开发工具", "认领机制", "认领机制"),
                     ignore=shutil.ignore_patterns("__pycache__"))
+    _拷依赖(d)
     if run("add", "-A").returncode != 0:
         return None, None, "git add 失败"
     c = run("commit", "-qm", "init")
-    return (d, os.path.join(d, "开发工具", "认领机制", "认领机制.py"),
-            "git 仓就绪" if c.returncode == 0 else "git commit 失败")
+    if c.returncode != 0:
+        return None, None, "git commit 失败"
+    坏 = _冒烟(d)
+    if 坏:
+        return None, None, 坏
+    return d, os.path.join(d, "开发工具", "认领机制", "认领机制.py"), "git 仓就绪"
 
 
 def run_gate(d, script, *args, env=None):

@@ -1,29 +1,43 @@
 # -*- coding: utf-8 -*-
-"""跑 —— 逐条跑样本 · 报元判据 · 出三元总读数（`main`）。"""
+"""跑 —— 逐条跑样本 · 报元判据 · 出三元总读数（`main`）。
+
+**样本并发跑**：29 条彼此独立（每条自造一个临时仓，重活都在子进程里的 git / python），
+故用线程池。为什么必须并发：串行实测 **4.9 秒** ⇒ 超 `自门禁` 的 4800 ms 阈值，
+五秒硬顶当场判红。修法是**提速**，不是放宽上限、更不是砍样本
+（`项目文档/决策记录/2026-09-27_所有运行五秒硬顶.md` §一：五秒硬顶无例外）。
+"""
 
 import os
 import shutil
 import tempfile
+from concurrent.futures import ThreadPoolExecutor
 
 from .判据_元 import meta_check
 from .样本表 import CASES
+
+并发度 = 8
+
+
+def _跑一条(样例):
+    """跑一条样本 ⇒ `(ok, detail)`。自带临时仓 ⇒ 与别的样本无共享状态。"""
+    d = tempfile.mkdtemp(prefix="claim-selftest-")
+    try:
+        return 样例["跑"](os.path.join(d, "账本.json"))
+    except Exception as 错:                      # 判据自己崩了也要报，不许静默当通过
+        return False, "异常：%r" % (错,)
+    finally:
+        shutil.rmtree(d, ignore_errors=True)
 
 
 def main():
     print("认领机制 · 自检 —— 扫描面：账本的「租约」数组全部条目（每条判据都报它读到多少条）")
     print()
-    rows = []
-    for c in CASES:
-        d = tempfile.mkdtemp(prefix="claim-selftest-")
-        try:
-            ok, detail = c["跑"](os.path.join(d, "账本.json"))
-        except Exception as e:                       # 判据自己崩了也要报，不许静默当通过
-            ok, detail = False, "异常：%r" % (e,)
-        finally:
-            shutil.rmtree(d, ignore_errors=True)
-        rows.append((c, ok))
-        print("[%s] %s %s  %s" % ("通过" if ok else "失败", c["判据"], c["类型"], c["名"]))
-        print("        %s" % detail)
+    with ThreadPoolExecutor(max_workers=min(并发度, len(CASES))) as 池:
+        结果 = list(池.map(_跑一条, CASES))     # map 保序 ⇒ 打印顺序与 CASES 一致
+    rows = [(样例, ok) for 样例, (ok, _详情) in zip(CASES, 结果)]
+    for (样例, ok), (_ok, 详情) in zip(rows, 结果):
+        print("[%s] %s %s  %s" % ("通过" if ok else "失败", 样例["判据"], 样例["类型"], 样例["名"]))
+        print("        %s" % 详情)
 
     meta = meta_check(CASES)
     print()
