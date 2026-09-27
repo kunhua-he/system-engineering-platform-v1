@@ -101,7 +101,7 @@ def 造样本() -> dict:
         "    函数表: 底座函数表.as_ptr(),\n"
         "    错误码表: v1_contract::声明数据::错误码信息表段(),\n"
         "    类型表: v1_contract::声明数据::底座类型表段(),\n});\n"
-        "#[unsafe(export_name = \"GetPlatformInfo\")]\n"
+        # 底座**不导出**接缝符号（裁决 6：接缝只属于可装载件，底座取自己的声明走 Rust 路径）
         "pub extern \"C\" fn 取平台信息() -> *const 平台信息 { 底座存储.取() }\n"
     )
     件["运行内核/装载入口/src/测试夹具.rs"] = (
@@ -210,11 +210,18 @@ def 造样本() -> dict:
      lambda 件: 件.__setitem__("扩展根目录/原子支持库/样本库/src/lib.rs",
         件["扩展根目录/原子支持库/样本库/src/lib.rs"].replace(
             "const 命令表项数: usize = 1000;", "const 命令表项数: usize = 1001;"))),
-    ("③i", "给实现加第二个导出符号",
-     lambda 件: 件.__setitem__("扩展根目录/原子支持库/样本库/src/lib.rs",
-        件["扩展根目录/原子支持库/样本库/src/lib.rs"].replace(
-            "#[unsafe(export_name = \"GetPlatformInfo\")]",
-            "#[unsafe(export_name = \"SecondExport\")]\n#[unsafe(export_name = \"GetPlatformInfo\")]"))),
+    ("③i", "底座多一个导出（裁决 6：底座 0 个）+ 扩展多一个导出（每个扩展恰好 1 个）",
+     lambda 件: (
+        件.__setitem__("运行内核/装载入口/src/底座静态声明.rs",
+            件["运行内核/装载入口/src/底座静态声明.rs"].replace(
+                "pub extern \"C\" fn 取平台信息() -> *const 平台信息 { 底座存储.取() }",
+                "#[unsafe(export_name = \"GetPlatformInfo\")]\n"
+                "pub extern \"C\" fn 取平台信息() -> *const 平台信息 { 底座存储.取() }")),
+        件.__setitem__("扩展根目录/原子支持库/样本库/src/lib.rs",
+            件["扩展根目录/原子支持库/样本库/src/lib.rs"].replace(
+                "#[unsafe(export_name = \"GetPlatformInfo\")]",
+                "#[unsafe(export_name = \"SecondExport\")]\n#[unsafe(export_name = \"GetPlatformInfo\")]")),
+     )),
     ("③j", "在实现侧再定义 常量表 里的常量名（硬编码值）",
      lambda 件: 件.__setitem__("扩展根目录/原子支持库/样本库/src/lib.rs",
         "const 号段类宽度: u32 = 1000;\n" + 件["扩展根目录/原子支持库/样本库/src/lib.rs"])),
