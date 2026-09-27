@@ -48,7 +48,7 @@ def 自检_前端语义判据() -> list:
     词袋 = re.compile(r"JSON\.parse|JSON\.stringify|校验|解析|生成|validate|parse\(")
 
     def 命中(文, 模式=None):
-        return [x.group(0) for x in (模式 or 常量.前端逻辑模式).finditer(生产区文本(文))]
+        return [匹配.group(0) for 匹配 in (模式 or 常量.前端逻辑模式).finditer(生产区文本(文))]
 
     断言(
         "反向样本：真 `JSON.parse` ⇒ 新模式报（解析 = 对内容作出判断）",
@@ -78,8 +78,8 @@ def 自检_前端语义判据() -> list:
     断言(
         "反向样本：正则**字面量在值位置**（赋给标识符 / 作实参 / `return` / 对象属性值 / 数组元素 / 三元分支 / 箭头体）⇒ 报",
         all(
-            命中(x)
-            for x in (
+            命中(样本)
+            for 样本 in (
                 "const 形 = /^[0-9]+$/;\n",
                 "export function 判(s) { return /^[0-9]+$/.test(s); }\n",
                 "export function 判(s, 另) { return 查(s, /^[0-9]+$/); }\n",
@@ -94,8 +94,8 @@ def 自检_前端语义判据() -> list:
     断言(
         "正向样本：**除法**与含 `//` 的字符串/注释 ⇒ 不报（值位置的口径不许误伤它们）",
         not any(
-            命中(x)
-            for x in (
+            命中(样本)
+            for 样本 in (
                 "export function 比(a, b) { return a / b; }\n",
                 "export function 比(a, b) { const 商 = a / b; return 商; }\n",
                 "export function 比(a, b, c) { return a ? b / c : c / b; }\n",
@@ -109,8 +109,8 @@ def 自检_前端语义判据() -> list:
     断言(
         "反向样本：`DOMParser` / `eval(` / 正则 `.test(` 这类真判断 ⇒ 报",
         all(
-            命中(x)
-            for x in (
+            命中(样本)
+            for 样本 in (
                 "const 解 = new DOMParser();\n",
                 "export function 跑(s) { return eval(s); }\n",
                 "export function 判(s) { return /^[0-9]+$/.test(s); }\n",

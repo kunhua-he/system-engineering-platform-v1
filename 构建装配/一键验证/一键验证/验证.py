@@ -288,14 +288,14 @@ def 验证(仓根: Path, 两遍=True, 元数据覆盖=None, 只跑=None) -> dict
         def 指纹(条):
             return (条["检查"], 条["位置"], 条["缺什么"])
 
-        第二指纹 = {指纹(c) for c in 第二表}
+        第二指纹 = {指纹(明细条) for 明细条 in 第二表}
         真红, 瞬时 = [], []
         for 条 in 违规表:
             if 指纹(条) in 第二指纹:
                 真红.append(条)
             else:
                 瞬时.append(条)
-        瞬时.extend(c for c in 第二表 if 指纹(c) not in {指纹(x) for x in 违规表})
+        瞬时.extend(后条 for 后条 in 第二表 if 指纹(后条) not in {指纹(前条) for 前条 in 违规表})
 
         对象数 = 对象数表.get(名)
         样本数 = 对象数 if 对象数 is not None else None

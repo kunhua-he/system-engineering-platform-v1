@@ -64,14 +64,14 @@ def 检查12_边界纪律(上: dict) -> list:
         )
     保串件 = 并行生产区(扫描件源, 上["测试文件集"], 保串=True)
     for 目录 in sorted(扩展目录表):
-        本目录件 = {k: v for k, v in 保串件.items() if k.startswith(目录 + "/")}
+        本目录件 = {件键: 值 for 件键, 值 in 保串件.items() if 件键.startswith(目录 + "/")}
         导出表 = 收集导出(本目录件)
         名表 = sorted(导出表)
         if 名表 != [接缝符号]:
             情形 = (
                 "一个导出都没有 ⇒ 接缝还没接上（扩展还没出 C ABI 面）"
                 if not 名表
-                else f"多出来的就是第二条接缝：{[n for n in 名表 if n != 接缝符号]}"
+                else f"多出来的就是第二条接缝：{[导出名 for 导出名 in 名表 if 导出名 != 接缝符号]}"
             )
             命中处表 = [处 for 名 in 名表 for 处 in 导出表.get(名, [])]
             出.append(
@@ -89,7 +89,7 @@ def 检查12_边界纪律(上: dict) -> list:
             )
 
     # ── 3 边界里 0 处业务判断 ──
-    边界件 = {k: v for k, v in 代码件.items() if k.startswith(边界目录前缀)}
+    边界件 = {件键: 值 for 件键, 值 in 代码件.items() if 件键.startswith(边界目录前缀)}
     if not 边界件:
         出.append(
         判不了(
@@ -206,7 +206,7 @@ def 检查13_常量表(上: dict) -> list:
                 )
             )
             continue
-        缺 = [k for k in ("名", "值", "类型", "依据") if k not in 条]
+        缺 = [键 for 键 in ("名", "值", "类型", "依据") if 键 not in 条]
         if 缺:
             出.append(
                 违规(
@@ -330,7 +330,7 @@ def 检查13_常量表(上: dict) -> list:
             continue
         名 = 条["名"]
         # 对应常量：生成物里以这个名字结尾的常量（生成器用 `底座…` 前缀命名）
-        命中 = sorted(c for c in 生成物常量 if c == 名 or c.endswith(名))
+        命中 = sorted(常量名 for 常量名 in 生成物常量 if 常量名 == 名 or 常量名.endswith(名))
         if 命中:
             continue
         未定 = 条.get("值") is None and "未定数" in str(条.get("依据", ""))

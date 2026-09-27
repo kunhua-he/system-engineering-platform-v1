@@ -10,18 +10,18 @@ from . import 常量
 
 def 打印(结果: dict, 流=None) -> None:
     流 = 流 or sys.stdout
-    失败项 = [x for x in 结果["失败"] if isinstance(x, str)]
+    失败项 = [明细条 for 明细条 in 结果["失败"] if isinstance(明细条, str)]
     # 未判按**判据**计（整条判据空集 + 判据内部的子判据空集都算这条判据有未判读数）。
     # 所以「通过 + 失败 + 未判」可能 > 判据总数：同一条判据可以既有真红、又有空集的子判据
     # （实测：⑪ 的判据 2a 真红、判据 6 的对象是空集）。
     未判项 = sorted(
-        {x for x in 结果["未判"] if isinstance(x, str)}
-        | {x["检查"] for x in 结果["未判"] if isinstance(x, dict)}
+        {明细条 for 明细条 in 结果["未判"] if isinstance(明细条, str)}
+        | {明细条["检查"] for 明细条 in 结果["未判"] if isinstance(明细条, dict)}
     )
-    失败条 = [x for x in 结果["失败"] if isinstance(x, dict)]
-    未判条 = [x for x in 结果["未判"] if isinstance(x, dict)]
-    整条空集 = {x for x in 结果["未判"] if isinstance(x, str)}
-    子空集 = [x for x in 未判条 if x["检查"] not in 整条空集]
+    失败条 = [明细条 for 明细条 in 结果["失败"] if isinstance(明细条, dict)]
+    未判条 = [明细条 for 明细条 in 结果["未判"] if isinstance(明细条, dict)]
+    整条空集 = {明细条 for 明细条 in 结果["未判"] if isinstance(明细条, str)}
+    子空集 = [明细条 for 明细条 in 未判条 if 明细条["检查"] not in 整条空集]
     print(
         f"通过 {len(结果['通过'])} 项 · 失败 {len(失败项)} 项 · "
         f"未判 {len(未判项)} 项 · 疑似瞬时 {len(结果['疑似瞬时'])} 项 · "

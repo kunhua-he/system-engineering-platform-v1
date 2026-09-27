@@ -67,7 +67,7 @@ def 自检_延迟判据承重() -> list:
                 if 关判据:
                     # 「判据关掉」= ⑱ 的判据函数换成空转（名字仍在 检查表 里 ⇒ 检查14 ④ 不受影响）
                     判据表.检查表 = tuple(
-                        (n, (lambda 上: []) if n == 名 else f) for n, f in 原表
+                        (判据名, (lambda 上: []) if 判据名 == 名 else 判据函数) for 判据名, 判据函数 in 原表
                     )
                 return 验证(临根, 两遍=False)
             finally:
@@ -77,9 +77,9 @@ def 自检_延迟判据承重() -> list:
 
     def 条(结果):
         return [
-            x
-            for x in (结果["失败"] + 结果["未判"])
-            if isinstance(x, dict) and x["检查"] == 名
+            明细条
+            for 明细条 in (结果["失败"] + 结果["未判"])
+            if isinstance(明细条, dict) and 明细条["检查"] == 名
         ]
 
     失效 = 跑(0)
@@ -90,8 +90,8 @@ def 自检_延迟判据承重() -> list:
     出.append(
         (
             "反向样本（真读数）：硬顶压到 0 ms ⇒ ⑱ 报红，读数带实际毫秒",
-            bool(失效条) and all("ms" in x["缺什么"] for x in 失效条),
-            f"⑱ 报 {len(失效条)} 条：{[x['缺什么'] for x in 失效条][:1]}",
+            bool(失效条) and all("ms" in 明细条["缺什么"] for 明细条 in 失效条),
+            f"⑱ 报 {len(失效条)} 条：{[明细条['缺什么'] for 明细条 in 失效条][:1]}",
         )
     )
     出.append(
@@ -203,7 +203,7 @@ def 自检_两遍复核收窄() -> list:
     # 那个注入件往入口 `lib.rs` 里写了实现而报出东西）。断言写成「两边集合相等」，
     # 与注入踩中几条无关，故它不会因为判据条数增加而失效。
     注报 = {条["检查"] for 条 in (注果["失败"] + 注果["未判"]) if isinstance(条, dict)}
-    二遍 = {k for k, v in 注计数.items() if v == 2}
+    二遍 = {判据名 for 判据名, 次数 in 注计数.items() if 次数 == 2}
     出.append(
         (
             "反向样本：注入真违规（常量重定义）⇒ **报出东西的判据**跑 2 次、其余仍 1 次",
@@ -228,11 +228,11 @@ def 自检_两遍复核收窄() -> list:
             and not 旧果["失败"]
             and not 旧果["未判"]
             and any(
-                isinstance(x, dict) and x["检查"] == 常量名 for x in 注果["失败"]
+                isinstance(明细条, dict) and 明细条["检查"] == 常量名 for 明细条 in 注果["失败"]
             ),
-            f"净 失败 {len([x for x in 净果['失败'] if isinstance(x, str)])} · "
-            f"旧 失败 {len([x for x in 旧果['失败'] if isinstance(x, str)])} · "
-            f"注入仓 ⑬ 在 失败 里={any(isinstance(x, dict) and x['检查'] == 常量名 for x in 注果['失败'])}",
+            f"净 失败 {len([明细条 for 明细条 in 净果['失败'] if isinstance(明细条, str)])} · "
+            f"旧 失败 {len([明细条 for 明细条 in 旧果['失败'] if isinstance(明细条, str)])} · "
+            f"注入仓 ⑬ 在 失败 里={any(isinstance(明细条, dict) and 明细条['检查'] == 常量名 for 明细条 in 注果['失败'])}",
         )
     )
     return 出

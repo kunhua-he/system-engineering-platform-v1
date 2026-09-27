@@ -21,9 +21,9 @@ def 扫源文件(仓根: Path) -> list:
     结果 = []
     for 根, 目录表, 文件表 in os.walk(仓根):
         目录表[:] = [
-            d
-            for d in 目录表
-            if d not in 跳过目录 and not d.startswith(常量.临时目录前缀)
+            目录名
+            for 目录名 in 目录表
+            if 目录名 not in 跳过目录 and not 目录名.startswith(常量.临时目录前缀)
         ]
         for 名 in 文件表:
             if 名.endswith(扫描后缀):
@@ -65,7 +65,7 @@ def 读一个文件(任务: tuple) -> tuple:
 
 
 def 并行读(仓根: Path, 路径表: list) -> dict:
-    任务 = [(仓根, p) for p in 路径表]
+    任务 = [(仓根, 路径) for 路径 in 路径表]
     with ThreadPoolExecutor(max_workers=并发度) as 池:
         return dict(池.map(读一个文件, 任务))
 
@@ -77,8 +77,8 @@ def 建上下文(仓根: Path) -> dict:
     契约件 = sorted(契约根.rglob("*.json")) if 契约根.is_dir() else []
     # `rglob` 不走 `跳过目录` / 临时件排除 ⇒ 这里按同一口径再筛一遍
     # （否则落进 `契约声明/` 的临时声明根仍会被读进来）。
-    契约件 = [p for p in 契约件 if not 是临时路径(相对(仓根, p))]
-    源件 = [p for p in 扫源文件(仓根) if p.suffix != ".json"]
+    契约件 = [声明件 for 声明件 in 契约件 if not 是临时路径(相对(仓根, 声明件))]
+    源件 = [源路径 for 源路径 in 扫源文件(仓根) if 源路径.suffix != ".json"]
     文件 = 并行读(仓根, 契约件 + 源件)
 
     平台 = 解析(文件, f"{契约目录名}/平台声明.json")

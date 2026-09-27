@@ -52,7 +52,7 @@ def 检查9_冻结登记(上: dict) -> list:
                     )
                 )
                 continue
-            缺 = [k for k in ("名称", "内容", "落点") if k not in 项]
+            缺 = [键 for 键 in ("名称", "内容", "落点") if 键 not in 项]
             if 缺:
                 出.append(
                     违规(
@@ -203,7 +203,7 @@ def 检查9_冻结登记(上: dict) -> list:
                     )
                 )
                 continue
-            缺 = [k for k in 必填 if k not in 条]
+            缺 = [键 for 键 in 必填 if 键 not in 条]
             if 缺:
                 出.append(
                     违规(
@@ -272,7 +272,7 @@ def 检查9_冻结登记(上: dict) -> list:
         if 形状文本:
             块 = re.search(r"pub enum 段类型\s*\{(.*?)\n\}", 形状文本, re.S)
             if 块:
-                可表示 = {int(m) for m in re.findall(r"=\s*(\d+)\s*,", 块.group(1))}
+                可表示 = {int(数字) for 数字 in re.findall(r"=\s*(\d+)\s*,", 块.group(1))}
         if not isinstance(新增, dict) or not 新增:
             出.append(
                 违规(

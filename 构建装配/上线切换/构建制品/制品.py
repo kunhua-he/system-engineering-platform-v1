@@ -11,7 +11,7 @@ from .源文件 import 文件指纹
 def 制品内文件清单(目录: Path) -> dict:
     出 = {}
     for 根, 目录表, 文件表 in os.walk(目录):
-        目录表[:] = [d for d in 目录表 if d not in 跳过目录]
+        目录表[:] = [目录名 for 目录名 in 目录表 if 目录名 not in 跳过目录]
         for 名 in 文件表:
             路 = Path(根) / 名
             if 路.name == "制品清单.json":

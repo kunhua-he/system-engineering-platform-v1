@@ -100,13 +100,13 @@ def 检查17_临时件不落源码树(上: dict) -> list:
     仓根 = 上["仓根"]
     命中 = []
     for 根, 目录表, 文件表 in os.walk(仓根):
-        目录表[:] = [d for d in 目录表 if d != ".git"]
-        临时目录 = [d for d in 目录表 if d.startswith(常量.临时目录前缀)]
-        临时文件 = [f for f in 文件表 if f.startswith(常量.临时目录前缀)]
-        命中 += [相对(仓根, Path(根) / d) for d in 临时目录]
-        命中 += [相对(仓根, Path(根) / f) for f in 临时文件]
+        目录表[:] = [目录名 for 目录名 in 目录表 if 目录名 != ".git"]
+        临时目录 = [目录名 for 目录名 in 目录表 if 目录名.startswith(常量.临时目录前缀)]
+        临时文件 = [文件名 for 文件名 in 文件表 if 文件名.startswith(常量.临时目录前缀)]
+        命中 += [相对(仓根, Path(根) / 目录名) for 目录名 in 临时目录]
+        命中 += [相对(仓根, Path(根) / 文件名) for 文件名 in 临时文件]
         # 不再往临时目录里钻（报最外层那一处就够，免得一个临时根报出几百条）
-        目录表[:] = [d for d in 目录表 if not d.startswith(常量.临时目录前缀)]
+        目录表[:] = [目录名 for 目录名 in 目录表 if not 目录名.startswith(常量.临时目录前缀)]
     for 键 in sorted(set(命中)):
         出.append(
             违规(
@@ -146,11 +146,11 @@ def 检查20_运行数据不落源码树(上: dict) -> list:
     仓根 = 上["仓根"]
     命中 = []
     for 根, 目录表, 文件表 in os.walk(仓根):
-        目录表[:] = [d for d in 目录表 if d != ".git"]
-        命中 += [相对(仓根, Path(根) / d) for d in 目录表 if d in 运行数据目录名]
-        命中 += [相对(仓根, Path(根) / f) for f in 文件表 if f in 运行数据目录名]
+        目录表[:] = [目录名 for 目录名 in 目录表 if 目录名 != ".git"]
+        命中 += [相对(仓根, Path(根) / 目录名) for 目录名 in 目录表 if 目录名 in 运行数据目录名]
+        命中 += [相对(仓根, Path(根) / 文件名) for 文件名 in 文件表 if 文件名 in 运行数据目录名]
         # 命中的目录不再下钻（报最外层那一处就够）
-        目录表[:] = [d for d in 目录表 if d not in 运行数据目录名]
+        目录表[:] = [目录名 for 目录名 in 目录表 if 目录名 not in 运行数据目录名]
     for 键 in sorted(set(命中)):
         出.append(
             违规(
