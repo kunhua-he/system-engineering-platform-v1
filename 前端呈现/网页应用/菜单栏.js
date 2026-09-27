@@ -128,7 +128,7 @@ export function 装菜单栏(取, 编辑, 依赖 = {}) {
           行.setAttribute("aria-disabled", "true");
           行.title = "资源里带 MF_GRAYED 位（实测 181 项里只有这一项）—— 在易语言里也是点不动的";
         } else {
-          行.addEventListener("click", (e) => { e.stopPropagation(); 点叶子(项); });
+          行.addEventListener("click", (事) => { 事.stopPropagation(); 点叶子(项); });
         }
       }
       盒.append(行);
@@ -143,8 +143,8 @@ export function 装菜单栏(取, 编辑, 依赖 = {}) {
     钮.append(摆文字(顶层));
     钮.setAttribute("aria-expanded", "false");
     const 盒 = 摆层(顶层.项, 0);
-    钮.addEventListener("click", (e) => {
-      e.stopPropagation();
+    钮.addEventListener("click", (事) => {
+      事.stopPropagation();
       if (开着的 && 开着的.钮 === 钮) { 合上(); return; }
       合上();
       盒.hidden = false;
@@ -159,7 +159,7 @@ export function 装菜单栏(取, 编辑, 依赖 = {}) {
   }
 
   document.addEventListener("click", 合上);
-  document.addEventListener("keydown", (e) => { if (e.key === "Escape") 合上(); });
+  document.addEventListener("keydown", (事) => { if (事.key === "Escape") 合上(); });
 
   报("菜单结构 1:1 取自 e.exe 菜单资源 127（10 个顶层弹出 / 181 项）· 已接线 "
     + 编译族.size + " 项（编译族）· 其余点了问后端（POST /接口/菜单命令）取结构化回执");
