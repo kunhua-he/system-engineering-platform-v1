@@ -3,7 +3,7 @@
 //! 公开面经 `lib.rs` 再导出 ⇒ `v1_contract::事件信息` / `v1_contract::属性信息` /
 //! `v1_contract::元素信息` / `v1_contract::数据类型信息` 逐字不变。
 
-use crate::参数信息;
+use crate::{参数信息, 类型标签};
 
 /// 事件信息（数据类型上的事件）。
 #[repr(C)]
@@ -19,7 +19,8 @@ pub struct 事件信息 {
 pub struct 属性信息 {
     pub 名称: *const u8,
     pub 说明: *const u8,
-    pub 类型标签: u32,
+    /// 类型标签（`类型标签` 号空间）—— 不是裸 `u32`：与能力号/资源号/错误码互不能赋值。
+    pub 类型标签: 类型标签,
     pub 状态位: u16,
 }
 
