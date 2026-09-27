@@ -198,7 +198,7 @@ def 判_14(世: 世界):
     try:
         果 = subprocess.run(
             [sys.executable, str(脚本), "--检查"],
-            cwd=str(世.仓根), capture_output=True, text=True, timeout=120,
+            cwd=str(世.仓根), capture_output=True, text=True, timeout=5,
         )
     except (OSError, subprocess.TimeoutExpired) as 错:
         return "未判", f"重跑命令跑不起来：{错}", 1

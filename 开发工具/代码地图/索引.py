@@ -101,6 +101,17 @@ def 读索引(路: Path, 仓根: Path) -> dict:
                 路 = 范围归属.get(段)
                 if 路 and 段点.get("start"):
                     定义.append((路, 段点["start"]["line"] + 1))
+        # **全部出现位置**（定义 + 引用）——符号级批量替换靠它：LSIF 的 `item` 边指向 `range`
+        # 顶点，range 带 `start` 的 line/character（**UTF-16** 列）。实测可用（校输入形状 3 处）。
+        出现 = []
+        for 标 in ("textDocument/definition", "textDocument/references"):
+            for 怪 in 出边.get((结果集, 标), []):
+                for 段 in 出边.get((怪, "item"), []):
+                    段点 = 单.get(段, {})
+                    路 = 范围归属.get(段)
+                    起 = 段点.get("start")
+                    if 路 and 起:
+                        出现.append((路, 起["line"] + 1, 起["character"]))
         引用数 = 0
         for 怪 in 出边.get((结果集, "textDocument/references"), []):
             引用数 += len(出边.get((怪, "item"), []))
@@ -108,6 +119,7 @@ def 读索引(路: Path, 仓根: Path) -> dict:
             "限定名": 限定名,
             "悬停": 悬停,
             "定义": 定义,
+            "出现": sorted(set(出现)),
             "引用数": 引用数,
         })
 

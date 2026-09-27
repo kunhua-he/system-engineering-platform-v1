@@ -46,7 +46,7 @@ def 忽略条目(仓根) -> tuple:
     try:
         果 = subprocess.run(
             ["git", "-C", 键, "ls-files", "--others", "--ignored", "--exclude-standard"],
-            capture_output=True, text=True, timeout=120,
+            capture_output=True, text=True, timeout=5,
         )
     except (OSError, subprocess.SubprocessError) as 错:
         值 = ([], f"跑不动 git（{type(错).__name__}：{错}）")

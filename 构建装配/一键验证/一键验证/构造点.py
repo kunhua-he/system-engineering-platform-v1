@@ -143,7 +143,7 @@ def 跑生成器检查(仓根: Path, 生成器: Path) -> tuple:
             cwd=str(仓根),
             capture_output=True,
             text=True,
-            timeout=120,
+            timeout=5,
         )
     except (OSError, subprocess.SubprocessError) as 错:
         return 127, f"起不动生成器：{错}"

@@ -124,7 +124,7 @@ def 自测() -> int:
     shutil.copytree(世.扩展目录(), 临时扩展)
     # 先刷新（去掉漂移），再判
     subprocess.run([sys.executable, str(临时扩展 / "工具/重跑指纹.py")],
-                   capture_output=True, text=True, timeout=120)
+                   capture_output=True, text=True, timeout=5)
     正 = _复制(世)
     正.仓根 = 临时根
     正.扩展目录 = lambda: 临时扩展  # 覆盖方法

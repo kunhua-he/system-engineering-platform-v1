@@ -85,7 +85,7 @@ def 主(参数):
             try:
                 页 = 浏览器.new_page(viewport={"width": 宽, "height": 高})
                 # `load` 而不是 `networkidle`：本页会周期性拉 `/接口`，networkidle 可能永远不达。
-                页.goto(f"http://127.0.0.1:{端口}/", wait_until="load", timeout=15000)
+                页.goto(f"http://127.0.0.1:{端口}/", wait_until="load", timeout=5000)
                 页.wait_for_timeout(800)  # 让首帧布局与字体落定
                 页.screenshot(path=str(出图))
             finally:
