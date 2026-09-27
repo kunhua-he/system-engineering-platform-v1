@@ -19,22 +19,22 @@ use crate::语义::带号结构;
 
 /// 带号结构 → 字节集。
 pub fn 编码带号结构(带号结构: &带号结构) -> Vec<u8> {
-    let mut 出 = Vec::new();
-    出.extend_from_slice(&(带号结构.号表.len() as u32).to_le_bytes());
-    for 项 in &带号结构.号表 {
-        出.push(项.类.取号值());
-        出.push(项.作用域 as u8);
-        出.extend_from_slice(&项.号.to_le_bytes());
-        出.extend_from_slice(&(项.名.len() as u32).to_le_bytes());
-        出.extend_from_slice(&项.名);
+    let mut 输出缓冲 = Vec::new();
+    输出缓冲.extend_from_slice(&(带号结构.号表.len() as u32).to_le_bytes());
+    for 一项 in &带号结构.号表 {
+        输出缓冲.push(一项.类.取号值());
+        输出缓冲.push(一项.作用域 as u8);
+        输出缓冲.extend_from_slice(&一项.号.to_le_bytes());
+        输出缓冲.extend_from_slice(&(一项.名.len() as u32).to_le_bytes());
+        输出缓冲.extend_from_slice(&一项.名);
     }
-    出.extend_from_slice(&(带号结构.引用表.len() as u32).to_le_bytes());
-    for 项 in &带号结构.引用表 {
-        出.extend_from_slice(&项.节点.to_le_bytes());
-        出.push(项.类.取号值());
-        出.push(项.来源.取号值());
-        出.extend_from_slice(&项.号.to_le_bytes());
-        出.push(项.作用域 as u8);
+    输出缓冲.extend_from_slice(&(带号结构.引用表.len() as u32).to_le_bytes());
+    for 一项 in &带号结构.引用表 {
+        输出缓冲.extend_from_slice(&一项.节点.to_le_bytes());
+        输出缓冲.push(一项.类.取号值());
+        输出缓冲.push(一项.来源.取号值());
+        输出缓冲.extend_from_slice(&一项.号.to_le_bytes());
+        输出缓冲.push(一项.作用域 as u8);
     }
-    出
+    输出缓冲
 }

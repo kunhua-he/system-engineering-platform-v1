@@ -61,9 +61,9 @@ impl 记号流 {
         if 原文.len() > u32::MAX as usize {
             return Err(形状错误::词法层输入非法);
         }
-        let 流 = Self { 原文, 记号表 };
-        流.校验()?;
-        Ok(流)
+        let 输出流 = Self { 原文, 记号表 };
+        输出流.校验()?;
+        Ok(输出流)
     }
 
     pub fn 全文长(&self) -> u32 {
@@ -82,13 +82,13 @@ impl 记号流 {
     /// 只是「区间 → 字节」的机械映射。若 [`记号流::校验`] 通过，本函数必然返回
     /// 与 `记号流::原文` **逐字节相同**的字节（见测试 `记号流_真实语料小样例_…`）。
     pub fn 还原(&self) -> Vec<u8> {
-        let mut 出 = Vec::with_capacity(self.原文.len());
+        let mut 输出缓冲 = Vec::with_capacity(self.原文.len());
         for 本记号 in &self.记号表 {
             if let Some(片) = self.原文.get(本记号.起 as usize..本记号.止 as usize) {
-                出.extend_from_slice(片);
+                输出缓冲.extend_from_slice(片);
             }
         }
-        出
+        输出缓冲
     }
 
     /// 校验全部记号层不变量。返回**第一条**违反，结构化，不 panic、不返回字符串。
@@ -128,15 +128,15 @@ impl 记号流 {
         }
 
         // 文件结束：只允许一个，且必须在末位、必须零宽、必须锚在全文末尾。
-        let 末 = self.记号表.len() - 1;
+        let 尾部 = self.记号表.len() - 1;
         for (记号位次, 本记号) in self.记号表.iter().enumerate() {
-            if 本记号.种类 == 记号种类::文件结束 && 记号位次 != 末 {
+            if 本记号.种类 == 记号种类::文件结束 && 记号位次 != 尾部 {
                 return Err(文件结束不在末位 { 第几个: 记号位次 as u32 });
             }
         }
-        let 末记号 = &self.记号表[末];
+        let 末记号 = &self.记号表[尾部];
         if 末记号.种类 != 记号种类::文件结束 {
-            return Err(末记号非文件结束 { 第几个: 末 as u32, 种类: 末记号.种类 });
+            return Err(末记号非文件结束 { 第几个: 尾部 as u32, 种类: 末记号.种类 });
         }
         if 末记号.起 != 末记号.止 {
             return Err(文件结束非零宽 { 起: 末记号.起, 止: 末记号.止 });

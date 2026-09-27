@@ -22,31 +22,31 @@ use crate::语言面::{记号流, 语法树, 形状错误};
 
 /// 记号流 → 字节集：全文原文 + 记号表（区间是字节区间，见 `语言面.rs` 文件头）。
 pub fn 编码记号流(输出流: &记号流) -> Vec<u8> {
-    let mut 出 = Vec::new();
-    出.extend_from_slice(&(输出流.原文.len() as u32).to_le_bytes());
-    出.extend_from_slice(&输出流.原文);
-    出.extend_from_slice(&(输出流.记号表.len() as u32).to_le_bytes());
-    for 枚 in &输出流.记号表 {
-        出.push(枚.种类.取号值());
-        出.extend_from_slice(&枚.起.to_le_bytes());
-        出.extend_from_slice(&枚.止.to_le_bytes());
+    let mut 输出缓冲 = Vec::new();
+    输出缓冲.extend_from_slice(&(输出流.原文.len() as u32).to_le_bytes());
+    输出缓冲.extend_from_slice(&输出流.原文);
+    输出缓冲.extend_from_slice(&(输出流.记号表.len() as u32).to_le_bytes());
+    for 一枚记号 in &输出流.记号表 {
+        输出缓冲.push(一枚记号.种类.取号值());
+        输出缓冲.extend_from_slice(&一枚记号.起.to_le_bytes());
+        输出缓冲.extend_from_slice(&一枚记号.止.to_le_bytes());
     }
-    出
+    输出缓冲
 }
 
 /// 语法树 → 字节集：它自带的记号流 + 先序节点表 + 根下标。
 pub fn 编码语法树(语法树: &语法树) -> Vec<u8> {
-    let mut 出 = 编码记号流(&语法树.记号流);
-    出.extend_from_slice(&(语法树.节点表.len() as u32).to_le_bytes());
-    for 节 in &语法树.节点表 {
-        出.extend_from_slice(&节.种类.取号值().to_le_bytes());
-        出.extend_from_slice(&节.原文区间.0.to_le_bytes());
-        出.extend_from_slice(&节.原文区间.1.to_le_bytes());
-        出.extend_from_slice(&节.子区间.0.to_le_bytes());
-        出.extend_from_slice(&节.子区间.1.to_le_bytes());
+    let mut 输出缓冲 = 编码记号流(&语法树.记号流);
+    输出缓冲.extend_from_slice(&(语法树.节点表.len() as u32).to_le_bytes());
+    for 元素 in &语法树.节点表 {
+        输出缓冲.extend_from_slice(&元素.种类.取号值().to_le_bytes());
+        输出缓冲.extend_from_slice(&元素.原文区间.0.to_le_bytes());
+        输出缓冲.extend_from_slice(&元素.原文区间.1.to_le_bytes());
+        输出缓冲.extend_from_slice(&元素.子区间.0.to_le_bytes());
+        输出缓冲.extend_from_slice(&元素.子区间.1.to_le_bytes());
     }
-    出.extend_from_slice(&语法树.根.to_le_bytes());
-    出
+    输出缓冲.extend_from_slice(&语法树.根.to_le_bytes());
+    输出缓冲
 }
 
 /// 诊断结果 → 字节集：**能力 1107 的返回**（返回类型 5，源 `能力声明/1107.json`）。
@@ -74,19 +74,19 @@ pub fn 编码诊断结果(结果: Option<&形状错误>) -> Vec<u8> {
         // None = 覆盖到的阶段全过：1 字节标签 0（**非**空字节集，见上）。
         return vec![0];
     };
-    let mut 出 = vec![1];
-    出.extend_from_slice(&crate::诊断::阶段号(错).to_le_bytes());
-    出.extend_from_slice(&crate::形状错误码(错).to_le_bytes());
+    let mut 输出缓冲 = vec![1];
+    输出缓冲.extend_from_slice(&crate::诊断::阶段号(错).to_le_bytes());
+    输出缓冲.extend_from_slice(&crate::形状错误码(错).to_le_bytes());
     match crate::诊断::字节位置(错) {
         Some((起, 止)) => {
-            出.extend_from_slice(&1u32.to_le_bytes());
-            出.extend_from_slice(&起.to_le_bytes());
-            出.extend_from_slice(&止.to_le_bytes());
+            输出缓冲.extend_from_slice(&1u32.to_le_bytes());
+            输出缓冲.extend_from_slice(&起.to_le_bytes());
+            输出缓冲.extend_from_slice(&止.to_le_bytes());
         }
-        None => 出.extend_from_slice(&0u32.to_le_bytes()),
+        None => 输出缓冲.extend_from_slice(&0u32.to_le_bytes()),
     }
     let 读数 = crate::诊断::读数(错);
-    出.extend_from_slice(&(读数.len() as u32).to_le_bytes());
-    出.extend_from_slice(读数.as_bytes());
-    出
+    输出缓冲.extend_from_slice(&(读数.len() as u32).to_le_bytes());
+    输出缓冲.extend_from_slice(读数.as_bytes());
+    输出缓冲
 }

@@ -58,14 +58,14 @@ impl 注册表 {
 
     /// 逐项编成字节集（本件是唯一的编码处）。
     pub fn 编码(&self) -> Vec<u8> {
-        let mut 出 = Vec::new();
-        出.extend_from_slice(&(self.项.len() as u32).to_le_bytes());
+        let mut 输出缓冲 = Vec::new();
+        输出缓冲.extend_from_slice(&(self.项.len() as u32).to_le_bytes());
         for (名, 号) in &self.项 {
-            出.extend_from_slice(&(名.len() as u32).to_le_bytes());
-            出.extend_from_slice(名);
-            出.extend_from_slice(&号.to_le_bytes());
+            输出缓冲.extend_from_slice(&(名.len() as u32).to_le_bytes());
+            输出缓冲.extend_from_slice(名);
+            输出缓冲.extend_from_slice(&号.to_le_bytes());
         }
-        出
+        输出缓冲
     }
 
     /// 字节集 → 表。`None` = 编码非法（截断 / 尾部有多余字节 / 项数或名长越界）。
@@ -75,25 +75,25 @@ impl 注册表 {
         if 字节.is_empty() {
             return Some(Self::空实例());
         }
-        let mut 读 = 读器 { 字节, 位: 0 };
-        let 项数 = 读.读四字节()? as usize;
+        let mut 读器 = 读器 { 字节, 位: 0 };
+        let 项数 = 读器.读四字节()? as usize;
         // 每项至少 4 字节名长 + 2 字节号 = 6 字节 ⇒ 项数不可能超过 字节.len()/6。
         // 先卡这一条，免得下面 `Vec::with_capacity` 被一个伪造的大项数撑爆内存。
         if 项数 > 字节.len() / 6 {
             return None;
         }
-        let mut 项 = Vec::with_capacity(项数);
+        let mut 一项 = Vec::with_capacity(项数);
         for _ in 0..项数 {
-            let 名长 = 读.读四字节()? as usize;
-            let 名 = 读.取字节(名长)?.to_vec();
-            let 号 = 读.读双字节()?;
-            项.push((名, 号));
+            let 名长 = 读器.读四字节()? as usize;
+            let 名称 = 读器.取字节(名长)?.to_vec();
+            let 号值 = 读器.读双字节()?;
+            一项.push((名称, 号值));
         }
         // 尾部有多余字节 ⇒ 非法（不许静默忽略）。
-        if 读.位 != 字节.len() {
+        if 读器.位 != 字节.len() {
             return None;
         }
-        Some(Self { 项 })
+        Some(Self { 项: 一项 })
     }
 }
 
@@ -105,13 +105,13 @@ struct 读器<'a> {
 
 impl<'a> 读器<'a> {
     fn 取字节(&mut self, 个数: usize) -> Option<&'a [u8]> {
-        let 尾 = self.位.checked_add(个数)?;
-        if 尾 > self.字节.len() {
+        let 尾部 = self.位.checked_add(个数)?;
+        if 尾部 > self.字节.len() {
             return None;
         }
-        let 片 = &self.字节[self.位..尾];
-        self.位 = 尾;
-        Some(片)
+        let 片段 = &self.字节[self.位..尾部];
+        self.位 = 尾部;
+        Some(片段)
     }
 
     fn 读双字节(&mut self) -> Option<u16> {
