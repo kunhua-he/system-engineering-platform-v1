@@ -19,7 +19,7 @@ def 判有意不判(测试世界: 世界, 编号: str):
     故这里把依据锚点也做成**机器可判**：`依据件` 里逐字找 `锚点`，少一条即红。
     """
     一条 = 有意不判[编号]
-    缺失表 = [f"依据件缺「{锚}」" for 面, 锚 in 一条["锚点"] if 锚 not in 测试世界.面文本(面)]
+    缺失表 = [f"依据件缺「{锚点}」" for 扫描面, 锚点 in 一条["锚点"] if 锚点 not in 测试世界.面文本(扫描面)]
     对象数 = len(一条["锚点"])
     if 缺失表:
         return "失败", "有意不判的依据不成立：" + "；".join(缺失表), 对象数
@@ -218,13 +218,13 @@ def 判_8(测试世界: 世界):
     if 对象数 == 0:
         return "未判", "扩展根目录下 0 份 包声明.json（空集不算通过）", 0
     坏件表 = []
-    for 路, 声 in 测试世界.包声明表:
-        if not isinstance(声, dict):
-            坏件表.append(f"{路.name} 不是合法 JSON")
+    for 路径, 声明值 in 测试世界.包声明表:
+        if not isinstance(声明值, dict):
+            坏件表.append(f"{路径.name} 不是合法 JSON")
             continue
         for 键名 in 死键:
-            if 键名 in 声:
-                坏件表.append(f"{路} 含死键 {键名}（平台信息无「提供*」字段，无消费者）")
+            if 键名 in 声明值:
+                坏件表.append(f"{路径} 含死键 {键名}（平台信息无「提供*」字段，无消费者）")
     if 坏件表:
         return "失败", "；".join(坏件表), 对象数
     return "通过", f"{对象数} 份扩展声明均无死键", 对象数
@@ -239,9 +239,9 @@ def 判_9(测试世界: 世界):
     if 对象数 == 0:
         return "未判", "扩展根目录下 0 份扩展 Cargo.toml（空集不算通过）", 0
     坏件表 = []
-    for 路, 文 in 测试世界.扩展Cargo表:
-        if 段含键(文, "lib", "crate-type"):
-            坏件表.append(f"{路} 的 [lib] 声明了 crate-type（只许装配侧编）")
+    for 路径, 文本 in 测试世界.扩展Cargo表:
+        if 段含键(文本, "lib", "crate-type"):
+            坏件表.append(f"{路径} 的 [lib] 声明了 crate-type（只许装配侧编）")
     if "--crate-type" not in 测试世界.构建制品 or "cdylib" not in 测试世界.构建制品:
         坏件表.append("构建制品.py 未见装配侧 cargo rustc --crate-type cdylib（唯一那条路不在）")
     if 坏件表:
@@ -358,8 +358,8 @@ def 判_14(测试世界: 世界):
             [sys.executable, str(脚本), "--检查"],
             cwd=str(测试世界.仓根), capture_output=True, text=True, timeout=5,
         )
-    except (OSError, subprocess.TimeoutExpired) as 错:
-        return "未判", f"重跑命令跑不起来：{错}", 1
+    except (OSError, subprocess.TimeoutExpired) as 错误:
+        return "未判", f"重跑命令跑不起来：{错误}", 1
     if 结果.returncode == 0:
         return "通过", "生成命令可跑 · --检查 退出码 0（指纹与盘面一致）", 1
     return "失败", f"生成命令可跑，但 --检查 退出码 {结果.returncode}（指纹与盘面不符=制品滞后）：{结果.stdout.strip() or 结果.stderr.strip()}", 1

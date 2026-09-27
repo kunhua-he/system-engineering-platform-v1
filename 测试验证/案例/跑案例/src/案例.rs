@@ -123,10 +123,10 @@ const 非案例目录: &[&str] = &["跑案例"];
 /// **fail-closed**：除 [`非案例目录`] 外，任何一个子目录缺 `案例.json` 或 `期望.json`
 /// 都是**工具错误**（不是「跳过这个案例」）——静默跳过就是假绿。
 pub fn 读全部(案例根: &Path) -> Result<Vec<案例>, String> {
-    let 目录迭代器 = std::fs::read_dir(案例根).map_err(|错| format!("读不到案例根 {}：{错}", 案例根.display()))?;
+    let 目录迭代器 = std::fs::read_dir(案例根).map_err(|错误| format!("读不到案例根 {}：{错误}", 案例根.display()))?;
     let mut 名表: Vec<String> = Vec::new();
     for 目录项 in 目录迭代器 {
-        let 目录项 = 目录项.map_err(|错| format!("列案例根失败：{错}"))?;
+        let 目录项 = 目录项.map_err(|错误| format!("列案例根失败：{错误}"))?;
         let 路径 = 目录项.path();
         if !路径.is_dir() {
             continue;
@@ -165,54 +165,54 @@ fn 读一个(目录: &Path) -> Result<案例, String> {
 fn 读步骤(清单: &JSON值, 目录: &Path) -> Result<Vec<步骤>, String> {
     let 项表 = 清单
         .取成员("步骤")
-        .and_then(|一| 一.取数组())
+        .and_then(|一项| 一项.取数组())
         .ok_or_else(|| format!("{}：`步骤` 缺失或不是数组", 目录.display()))?;
     let mut 累积表 = Vec::new();
     for (序号, 一项) in 项表.iter().enumerate() {
         let 名称 = 一项
             .取成员("名")
-            .and_then(|一| 一.取字符串())
+            .and_then(|一项| 一项.取字符串())
             .ok_or_else(|| format!("{}：步骤[{序号}] 缺 `名`", 目录.display()))?
             .to_owned();
         let 能力编号 = 一项
             .取成员("能力编号")
-            .and_then(|一| 一.整数())
-            .and_then(|数| u32::try_from(数).ok())
+            .and_then(|一项| 一项.整数())
+            .and_then(|个数| u32::try_from(个数).ok())
             .ok_or_else(|| format!("{}：步骤[{序号}] 的 `能力编号` 缺失或不是 32 位整数", 目录.display()))?;
         let 实参表 = 一项
             .取成员("实参")
-            .and_then(|一| 一.取数组())
+            .and_then(|一项| 一项.取数组())
             .ok_or_else(|| format!("{}：步骤[{序号}] 的 `实参` 缺失或不是数组", 目录.display()))?;
         let mut 实参 = Vec::new();
         for (位置, 实参项) in 实参表.iter().enumerate() {
             let 类型标签 = 实参项
                 .取成员("类型标签")
-                .and_then(|一| 一.整数())
-                .and_then(|数| u32::try_from(数).ok())
+                .and_then(|一项| 一项.整数())
+                .and_then(|个数| u32::try_from(个数).ok())
                 .ok_or_else(|| {
                     format!("{}：步骤[{序号}].实参[{位置}] 的 `类型标签` 缺失或不是 32 位整数", 目录.display())
                 })?;
             let 来源名 = 实参项
                 .取成员("来源")
-                .and_then(|一| 一.取字符串())
+                .and_then(|一项| 一项.取字符串())
                 .ok_or_else(|| format!("{}：步骤[{序号}].实参[{位置}] 缺 `来源`", 目录.display()))?;
             let 值项 = 实参项.取成员("值");
             let 来源 = match 来源名 {
                 "程序文本" => 实参来源::程序文本,
                 "文件" => 实参来源::文件(PathBuf::from(
                     值项
-                        .and_then(|一| 一.取字符串())
+                        .and_then(|一项| 一项.取字符串())
                         .ok_or_else(|| {
                             format!("{}：步骤[{序号}].实参[{位置}] 来源是 `文件`，缺 `值`（路径）", 目录.display())
                         })?
                         .to_owned(),
                 )),
                 "十六进制" => {
-                    let 文本 = 值项.and_then(|一| 一.取字符串()).ok_or_else(|| {
+                    let 文本 = 值项.and_then(|一项| 一项.取字符串()).ok_or_else(|| {
                         format!("{}：步骤[{序号}].实参[{位置}] 来源是 `十六进制`，缺 `值`", 目录.display())
                     })?;
-                    实参来源::十六进制(解十六进制(文本).map_err(|错| {
-                        format!("{}：步骤[{序号}].实参[{位置}] 的十六进制：{错}", 目录.display())
+                    实参来源::十六进制(解十六进制(文本).map_err(|错误| {
+                        format!("{}：步骤[{序号}].实参[{位置}] 的十六进制：{错误}", 目录.display())
                     })?)
                 }
                 "上一步返回" => 实参来源::上一步返回,
@@ -234,7 +234,7 @@ fn 读期望(路径: &Path, 步骤数: usize, 目录: &Path) -> Result<Vec<期�
     let 根目录 = 读JSON件(路径)?;
     let 项表 = 根目录
         .取成员("步骤")
-        .and_then(|一| 一.取数组())
+        .and_then(|一项| 一项.取数组())
         .ok_or_else(|| format!("{}：`步骤` 缺失或不是数组", 路径.display()))?;
     if 项表.len() != 步骤数 {
         return Err(format!(
@@ -247,14 +247,14 @@ fn 读期望(路径: &Path, 步骤数: usize, 目录: &Path) -> Result<Vec<期�
     for (序号, 一项) in 项表.iter().enumerate() {
         let 结果 = 一项
             .取成员("结果")
-            .and_then(|一| 一.取字符串())
+            .and_then(|一项| 一项.取字符串())
             .ok_or_else(|| format!("{}：步骤[{序号}] 缺 `结果`", 路径.display()))?;
         let 判定 = match 结果 {
             "成功" => 期望::成功 { 产物: 读产物(一项, 目录)? },
             "失败" => {
                 let 层级 = 一项
                     .取成员("死在哪一层")
-                    .and_then(|一| 一.取字符串())
+                    .and_then(|一项| 一项.取字符串())
                     .ok_or_else(|| format!("{}：步骤[{序号}] 结果=失败，必须有 `死在哪一层`", 路径.display()))?
                     .to_owned();
                 let 码项 = 一项
@@ -287,7 +287,7 @@ fn 读产物(一条: &JSON值, 目录: &Path) -> Result<产物判据, String> {
     };
     let 判定值 = 产物
         .取成员("判据")
-        .and_then(|一| 一.取字符串())
+        .and_then(|一项| 一项.取字符串())
         .ok_or_else(|| format!("{}：`产物` 缺 `判据`", 目录.display()))?;
     match 判定值 {
         "空槽" => Ok(产物判据::空槽),
@@ -296,13 +296,13 @@ fn 读产物(一条: &JSON值, 目录: &Path) -> Result<产物判据, String> {
         "错误槽" => Ok(产物判据::错误槽(
             产物
                 .取成员("码")
-                .and_then(|一| 一.取数值())
+                .and_then(|一项| 一项.取数值())
                 .ok_or_else(|| "`错误槽` 缺 `码`（要一个整数）".to_owned())? as u32,
         )),
         "逐字节等于文件" => Ok(产物判据::逐字节等于文件(PathBuf::from(
             产物
                 .取成员("文件")
-                .and_then(|一| 一.取字符串())
+                .and_then(|一项| 一项.取字符串())
                 .ok_or_else(|| "`逐字节等于文件` 缺 `文件`".to_owned())?
                 .to_owned(),
         ))),
@@ -320,7 +320,7 @@ pub fn 解路(目录: &Path, 路径: &Path) -> PathBuf {
 }
 
 pub fn 解十六进制(文本: &str) -> Result<Vec<u8>, String> {
-    let 净文本: Vec<u8> = 文本.bytes().filter(|字| !matches!(字, b' ' | b'\n' | b'\r' | b'\t')).collect();
+    let 净文本: Vec<u8> = 文本.bytes().filter(|字符表| !matches!(字符表, b' ' | b'\n' | b'\r' | b'\t')).collect();
     if !净文本.len().is_multiple_of(2) {
         return Err(format!("十六进制位数是奇数（{}）", 净文本.len()));
     }
@@ -334,23 +334,23 @@ pub fn 解十六进制(文本: &str) -> Result<Vec<u8>, String> {
 }
 
 fn 读JSON件(路径: &Path) -> Result<JSON值, String> {
-    let 文本 = std::fs::read_to_string(路径).map_err(|错| format!("读不到 {}：{错}", 路径.display()))?;
-    最小JSON::解析(&文本).map_err(|错| format!("{} 不是合法 JSON：{错}", 路径.display()))
+    let 文本 = std::fs::read_to_string(路径).map_err(|错误| format!("读不到 {}：{错误}", 路径.display()))?;
+    最小JSON::解析(&文本).map_err(|错误| format!("{} 不是合法 JSON：{错误}", 路径.display()))
 }
 
 fn 要串<'a>(一项: &'a JSON值, 键名: &str) -> Result<&'a str, String> {
-    一项.取成员(键名).and_then(|一| 一.取字符串()).ok_or_else(|| format!("缺 `{键名}`（或不是字符串）"))
+    一项.取成员(键名).and_then(|一项| 一项.取字符串()).ok_or_else(|| format!("缺 `{键名}`（或不是字符串）"))
 }
 
 fn 要整数(一项: &JSON值, 键名: &str, 路径: &Path) -> Result<u32, String> {
     一项.取成员(键名)
-        .and_then(|一| 一.整数())
-        .and_then(|数| u32::try_from(数).ok())
+        .and_then(|一项| 一项.整数())
+        .and_then(|个数| u32::try_from(个数).ok())
         .ok_or_else(|| format!("{}：`{键名}` 缺失或不是 32 位整数", 路径.display()))
 }
 
 fn 要真假(一项: &JSON值, 键名: &str) -> Result<bool, String> {
-    一项.取成员(键名).and_then(|一| 一.真假()).ok_or_else(|| format!("缺 `{键名}`（或不是 true/false）"))
+    一项.取成员(键名).and_then(|一项| 一项.真假()).ok_or_else(|| format!("缺 `{键名}`（或不是 true/false）"))
 }
 
 #[cfg(test)]

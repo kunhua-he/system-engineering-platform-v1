@@ -135,10 +135,10 @@ def 比一声明根(结果: dict, 根目录: str, 单元集: list, 声明根表:
                 )
                 continue
             # 逐位比类型标签（行序）
-            for 位次, 行 in enumerate(参数):
-                if not isinstance(行, dict):
+            for 位次, 源码行 in enumerate(参数):
+                if not isinstance(源码行, dict):
                     continue
-                声明标签 = 行.get("类型标签")
+                声明标签 = 源码行.get("类型标签")
                 if not 是整数(声明标签):
                     continue
                 参表名 = _参数表名(实现条)

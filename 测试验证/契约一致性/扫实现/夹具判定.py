@@ -79,26 +79,26 @@ def 找夹具项(掩码文本: str, 原文本: str) -> tuple:
     """返回 (块区间表[(起,止)], 外部夹具文件表[(名, 相对本文件的路径, 位)])。"""
     数据块 = []
     外部夹具 = []
-    for 起, 属止, _属性文本, 含test in 找条件属性(掩码文本):
+    for 区间起点, 属止, _属性文本, 含test in 找条件属性(掩码文本):
         if not 含test:
             continue
         头, 终 = _项头(掩码文本, 属止)
         if 终 >= len(掩码文本):
             continue
         if 掩码文本[终] == ";":
-            数据块.append((起, 终 + 1))
+            数据块.append((区间起点, 终 + 1))
         else:
             区间终点 = 配对(掩码文本, 终)
             if 区间终点 < 0:
                 continue
-            数据块.append((起, 区间终点 + 1))
+            数据块.append((区间起点, 区间终点 + 1))
         名配 = re.search(r"\bmod\s+([^\s;{]+)", 头)
         if not 名配:
             continue
         名称 = 名配.group(1)
         # `#[path = "…"]` 的字符串在掩码里是空格 ⇒ 回原文本取引号内的值。
         # 窗口取「本项起点 → 项尾」：`#[path]` 可以在 cfg 之前，也可以在 cfg 之后。
-        窗起 = _属性窗起(掩码文本, 起)
+        窗起 = _属性窗起(掩码文本, 区间起点)
         路径 = None
         for 路命 in re.finditer(r"#\[\s*path\b", 掩码文本[窗起:终]):
             引号位 = 原文本.find('"', 窗起 + 路命.end(), 终)
@@ -108,9 +108,9 @@ def 找夹具项(掩码文本: str, 原文本: str) -> tuple:
                     路径 = 原文本[引号位 + 1 : 终引]
                     break
         if 路径 is not None:
-            外部夹具.append((名称, 路径, 起))
+            外部夹具.append((名称, 路径, 区间起点))
             continue
-        外部夹具.append((名称, 名称 + ".rs", 起))
+        外部夹具.append((名称, 名称 + ".rs", 区间起点))
     return 数据块, 外部夹具
 
 
@@ -126,24 +126,24 @@ def 建夹具集(件表: dict, 掩表: dict = None) -> dict:
     块表 = {}
     外部 = []
     其它 = []
-    for 键, 掩 in 掩表.items():
-        块, 外 = 找夹具项(掩, Rs件[键])
-        块表[键] = 块
-        for 名, 路, 位 in 外:
-            外部.append((键, 路, 位))
-        for 起, _止, _属性文本, 含test in 找条件属性(掩):
+    for 键名, 掩码文本 in 掩表.items():
+        块, 外 = 找夹具项(掩码文本, Rs件[键名])
+        块表[键名] = 块
+        for 名称, 路径, 位置 in 外:
+            外部.append((键名, 路径, 位置))
+        for 区间起点, _止, _属性文本, 含test in 找条件属性(掩码文本):
             if not 含test:
-                其它.append((键, 起))
+                其它.append((键名, 区间起点))
     整份 = set()
     # 两趟：先按「父文件不是夹具文件」收集；父文件本身是夹具的，它的 mod 声明不算数。
     待定 = list(外部)
     for _ in range(2):
         新内容 = set()
-        for 父, 路, 位 in 待定:
-            if 父 in 整份:
+        for 父角色, 路径, 位置 in 待定:
+            if 父角色 in 整份:
                 continue
-            父目录 = 父.rsplit("/", 1)[0] if "/" in 父 else ""
-            候选 = f"{父目录}/{路}" if 父目录 else 路
+            父目录 = 父角色.rsplit("/", 1)[0] if "/" in 父角色 else ""
+            候选 = f"{父目录}/{路径}" if 父目录 else 路径
             候选 = os.path.normpath(候选).replace("\\", "/")
             if 候选 in 件表:
                 新内容.add(候选)
@@ -164,8 +164,8 @@ def 生产区(文本: str, 区间表: list) -> str:
     if not 区间表:
         return 文本
     结果 = list(文本)
-    for 起, 止 in 区间表:
-        for 位次 in range(起, min(止, len(结果))):
+    for 区间起点, 区间终点 in 区间表:
+        for 位次 in range(区间起点, min(区间终点, len(结果))):
             if 结果[位次] != "\n":
                 结果[位次] = " "
     return "".join(结果)

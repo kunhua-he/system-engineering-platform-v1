@@ -156,21 +156,21 @@ def 判定(根目录: Path) -> int:
             text=True,
             timeout=跑测超时毫秒 / 1000,
         )
-    except (OSError, subprocess.TimeoutExpired) as 错:
-        print(f"✗ 考题跑不起来：{错}")
+    except (OSError, subprocess.TimeoutExpired) as 错误:
+        print(f"✗ 考题跑不起来：{错误}")
         return 1
     测果 = 解测果(结果.stdout + 结果.stderr)
     行表 = []
     失败 = 0
-    for 测名, 号 in sorted(测名到判据.items(), key=lambda 项: 项[1]):
+    for 测名, 号值 in sorted(测名到判据.items(), key=lambda 一项: 一项[1]):
         过了 = 测果.get(测名)
         if 过了 is None:
-            行表.append((号, "未判", f"考题里没有这条测试：{测名}"))
+            行表.append((号值, "未判", f"考题里没有这条测试：{测名}"))
             失败 += 1
         elif 过了:
-            行表.append((号, "通过", 测名))
+            行表.append((号值, "通过", 测名))
         else:
-            行表.append((号, "失败", f"{测名} 红了"))
+            行表.append((号值, "失败", f"{测名} 红了"))
             失败 += 1
     命中 = 扫内核任务表(根目录)
     if 命中:
@@ -180,9 +180,9 @@ def 判定(根目录: Path) -> int:
         行表.append((10, "通过", "运行内核/ 下 0 处任务表（状态在扩展侧）"))
     print("─" * 78)
     print("边界协议 §四 判据 7–10 真读数（长活原语考题 runner · 真编真跑）")
-    for 号, 结论, 证据 in 行表:
+    for 号值, 结论, 证据 in 行表:
         标记 = {"通过": "✓", "失败": "✗", "未判": "○"}[结论]
-        print(f"  {标记} 判据 {号} ｜ {结论} ｜ {证据}")
+        print(f"  {标记} 判据 {号值} ｜ {结论} ｜ {证据}")
     过了数 = sum(1 for _, 结论, _ in 行表 if 结论 == "通过")
     print(f"考题真跑退出码 {结果.returncode} · 通过 {过了数} / {len(行表)}")
     return 0 if 失败 == 0 else 1

@@ -188,80 +188,80 @@ def 造样本() -> dict:
 反向样本 = (
     # (判据名, 说明, 变异函数)
     ("③a", "把实现的能力号 1001 改成 1002（声明 1001 就缺实现了）",
-     lambda 件: 件.__setitem__("扩展根目录/原子支持库/样本库/src/lib.rs",
-        件["扩展根目录/原子支持库/样本库/src/lib.rs"].replace("pub const 样本能力: u32 = 1001;", "pub const 样本能力: u32 = 1002;"))),
+     lambda 节点件: 节点件.__setitem__("扩展根目录/原子支持库/样本库/src/lib.rs",
+        节点件["扩展根目录/原子支持库/样本库/src/lib.rs"].replace("pub const 样本能力: u32 = 1001;", "pub const 样本能力: u32 = 1002;"))),
     ("③b", "给实现加一个未声明的能力号 1002（漏声明）",
-     lambda 件: 件.__setitem__("扩展根目录/原子支持库/样本库/src/lib.rs",
-        件["扩展根目录/原子支持库/样本库/src/lib.rs"].replace(
+     lambda 节点件: 节点件.__setitem__("扩展根目录/原子支持库/样本库/src/lib.rs",
+        节点件["扩展根目录/原子支持库/样本库/src/lib.rs"].replace(
             "pub mod 能力号 {\n    pub const 样本能力: u32 = 1001;\n}",
             "pub mod 能力号 {\n    pub const 样本能力: u32 = 1001;\n    pub const 次个能力: u32 = 1002;\n}"))),
     ("③c", "把声明的 参数表 加一行（个数不符）",
-     lambda 件: 件.__setitem__("扩展根目录/原子支持库/样本库/能力声明/1001.json",
-        json.dumps({**json.loads(件["扩展根目录/原子支持库/样本库/能力声明/1001.json"]),
-                    "参数表": json.loads(件["扩展根目录/原子支持库/样本库/能力声明/1001.json"])["参数表"] * 2},
+     lambda 节点件: 节点件.__setitem__("扩展根目录/原子支持库/样本库/能力声明/1001.json",
+        json.dumps({**json.loads(节点件["扩展根目录/原子支持库/样本库/能力声明/1001.json"]),
+                    "参数表": json.loads(节点件["扩展根目录/原子支持库/样本库/能力声明/1001.json"])["参数表"] * 2},
                    ensure_ascii=False))),
     ("③d1", "把声明的 返回类型 改成 4",
-     lambda 件: 件.__setitem__("扩展根目录/原子支持库/样本库/能力声明/1001.json",
-        json.dumps({**json.loads(件["扩展根目录/原子支持库/样本库/能力声明/1001.json"]), "返回类型": 4},
+     lambda 节点件: 节点件.__setitem__("扩展根目录/原子支持库/样本库/能力声明/1001.json",
+        json.dumps({**json.loads(节点件["扩展根目录/原子支持库/样本库/能力声明/1001.json"]), "返回类型": 4},
                    ensure_ascii=False))),
     ("③d1", "把实现的 返回类型 改成 newtype 构造器 v1_contract::类型标签::新建(9999)（认不出就是假绿）",
-     lambda 件: 件.__setitem__("运行内核/装载入口/src/底座静态声明.rs",
-        件["运行内核/装载入口/src/底座静态声明.rs"].replace(
+     lambda 节点件: 节点件.__setitem__("运行内核/装载入口/src/底座静态声明.rs",
+        节点件["运行内核/装载入口/src/底座静态声明.rs"].replace(
             "    返回类型: 0,", "    返回类型: v1_contract::类型标签::新建(9999),"))),
     ("③d2", "把声明的 可抛错误码 改成 [9999]（实现侧指向的码集是 [1001]）",
-     lambda 件: 件.__setitem__("扩展根目录/原子支持库/样本库/能力声明/1001.json",
-        json.dumps({**json.loads(件["扩展根目录/原子支持库/样本库/能力声明/1001.json"]),
+     lambda 节点件: 节点件.__setitem__("扩展根目录/原子支持库/样本库/能力声明/1001.json",
+        json.dumps({**json.loads(节点件["扩展根目录/原子支持库/样本库/能力声明/1001.json"]),
                     "可抛错误码": [9999]}, ensure_ascii=False))),
     ("③e", "把实现用的类型标签改成未登记的 9999",
-     lambda 件: 件.__setitem__("扩展根目录/原子支持库/样本库/src/lib.rs",
-        件["扩展根目录/原子支持库/样本库/src/lib.rs"].replace(
+     lambda 节点件: 节点件.__setitem__("扩展根目录/原子支持库/样本库/src/lib.rs",
+        节点件["扩展根目录/原子支持库/样本库/src/lib.rs"].replace(
             "    类型标签: 类型标签_0005,\n    状态位: 0,", "    类型标签: 类型标签_9999,\n    状态位: 0,"))),
     ("③f", "把实现的错误码改成未声明的 1002",
-     lambda 件: 件.__setitem__("扩展根目录/原子支持库/样本库/src/lib.rs",
-        件["扩展根目录/原子支持库/样本库/src/lib.rs"].replace(
+     lambda 节点件: 节点件.__setitem__("扩展根目录/原子支持库/样本库/src/lib.rs",
+        节点件["扩展根目录/原子支持库/样本库/src/lib.rs"].replace(
             "pub mod 错误码 {\n    pub const 样本错误码: u32 = 1001;\n}",
             "pub mod 错误码 {\n    pub const 样本能力: u32 = 1002;\n}"))),
     ("③g", "只把 命令表项数 落点改成 1001（函数表项数 仍 1000 ⇒ 两表不等长）",
-     lambda 件: 件.__setitem__("扩展根目录/原子支持库/样本库/src/lib.rs",
-        件["扩展根目录/原子支持库/样本库/src/lib.rs"].replace(
+     lambda 节点件: 节点件.__setitem__("扩展根目录/原子支持库/样本库/src/lib.rs",
+        节点件["扩展根目录/原子支持库/样本库/src/lib.rs"].replace(
             "const 命令表项数: usize = 1000;", "const 命令表项数: usize = 1001;"))),
     ("③h", "加一条命令只改了 命令表项数（1000 → 1001），已核条数 仍 1000 ⇒ 有命令没被核过",
-     lambda 件: 件.__setitem__("扩展根目录/原子支持库/样本库/src/lib.rs",
-        件["扩展根目录/原子支持库/样本库/src/lib.rs"].replace(
+     lambda 节点件: 节点件.__setitem__("扩展根目录/原子支持库/样本库/src/lib.rs",
+        节点件["扩展根目录/原子支持库/样本库/src/lib.rs"].replace(
             "const 命令表项数: usize = 1000;", "const 命令表项数: usize = 1001;"))),
     ("③h", "③h 处数判据：加一条命令，命令表项数/函数表项数/已核条数 **同批**改成 1001，"
             "但**逐条断言未加**（末条 `已核条数 == 表.len()` 拦不住）⇒ 已核条数 ≠ 处数基线登记 ⇒ 必红",
-     lambda 件: 件.__setitem__("扩展根目录/原子支持库/样本库/src/lib.rs",
-        件["扩展根目录/原子支持库/样本库/src/lib.rs"]
+     lambda 节点件: 节点件.__setitem__("扩展根目录/原子支持库/样本库/src/lib.rs",
+        节点件["扩展根目录/原子支持库/样本库/src/lib.rs"]
         .replace("const 命令表项数: usize = 1000;", "const 命令表项数: usize = 1001;")
         .replace("const 函数表项数: usize = 1000;", "const 函数表项数: usize = 1001;")
         .replace("const 参数个数已核条数: usize = 1000;", "const 参数个数已核条数: usize = 1001;"))),
     ("③h", "③h 处数判据（另一半）：多写一条逐条断言（断言行数 0 → 1）而处数基线未同批改 ⇒ 新增未登记 ⇒ 必红",
-     lambda 件: 件.__setitem__("扩展根目录/原子支持库/样本库/src/lib.rs",
-        件["扩展根目录/原子支持库/样本库/src/lib.rs"]
+     lambda 节点件: 节点件.__setitem__("扩展根目录/原子支持库/样本库/src/lib.rs",
+        节点件["扩展根目录/原子支持库/样本库/src/lib.rs"]
         + "const _: () = assert!(造命令表()[0].参数个数 as usize == 参数表_首.len(), \"③h：注入的逐条断言\");\n")),
     ("③i", "声明说 `导出目标` 是别的名字，而实现导出的还是 `GetPlatformInfo` ⇒ 名字不符必红",
-     lambda 件: 件.__setitem__("扩展根目录/原子支持库/样本库/包声明.json",
-        件["扩展根目录/原子支持库/样本库/包声明.json"].replace(
+     lambda 节点件: 节点件.__setitem__("扩展根目录/原子支持库/样本库/包声明.json",
+        节点件["扩展根目录/原子支持库/样本库/包声明.json"].replace(
             '"导出目标": "GetPlatformInfo"', '"导出目标": "另一个名字"'))),
     ("③i", "底座多一个导出（裁决 6：底座 0 个）+ 扩展多一个导出（每个扩展恰好 1 个）",
-     lambda 件: (
-        件.__setitem__("运行内核/装载入口/src/底座静态声明.rs",
-            件["运行内核/装载入口/src/底座静态声明.rs"].replace(
+     lambda 节点件: (
+        节点件.__setitem__("运行内核/装载入口/src/底座静态声明.rs",
+            节点件["运行内核/装载入口/src/底座静态声明.rs"].replace(
                 "pub extern \"C\" fn 取平台信息() -> *const 平台信息 { 底座存储.取号值() }",
                 "#[unsafe(export_name = \"GetPlatformInfo\")]\n"
                 "pub extern \"C\" fn 取平台信息() -> *const 平台信息 { 底座存储.取号值() }")),
-        件.__setitem__("扩展根目录/原子支持库/样本库/src/lib.rs",
-            件["扩展根目录/原子支持库/样本库/src/lib.rs"].replace(
+        节点件.__setitem__("扩展根目录/原子支持库/样本库/src/lib.rs",
+            节点件["扩展根目录/原子支持库/样本库/src/lib.rs"].replace(
                 "#[unsafe(export_name = \"GetPlatformInfo\")]",
                 "#[unsafe(export_name = \"SecondExport\")]\n#[unsafe(export_name = \"GetPlatformInfo\")]")),
      )),
     ("③j", "在实现侧再定义 常量表 里的常量名（硬编码值）",
-     lambda 件: 件.__setitem__("扩展根目录/原子支持库/样本库/src/lib.rs",
-        "const 号段类宽度: u32 = 1000;\n" + 件["扩展根目录/原子支持库/样本库/src/lib.rs"])),
+     lambda 节点件: 节点件.__setitem__("扩展根目录/原子支持库/样本库/src/lib.rs",
+        "const 号段类宽度: u32 = 1000;\n" + 节点件["扩展根目录/原子支持库/样本库/src/lib.rs"])),
     ("③k", "把能力声明 1001 的 可抛错误码 加一个未登记的 9999（本扩展错误码表里没有）",
-     lambda 件: 件.__setitem__("扩展根目录/原子支持库/样本库/能力声明/1001.json",
-        json.dumps({**json.loads(件["扩展根目录/原子支持库/样本库/能力声明/1001.json"]),
+     lambda 节点件: 节点件.__setitem__("扩展根目录/原子支持库/样本库/能力声明/1001.json",
+        json.dumps({**json.loads(节点件["扩展根目录/原子支持库/样本库/能力声明/1001.json"]),
                     "可抛错误码": [1001, 9999]}, ensure_ascii=False))),
     # ── 解析腿的两条身份证（2026-09-27 补 · 实测撞到的漏抽，`抽实现面._按构造器解字段`）──
     #
@@ -273,38 +273,38 @@ def 造样本() -> dict:
     # 反向样本的形状必须**逐字照真仓**（否则验的是样本自身的写法，不是真仓那条路）。
     ("③d1", "构造器字段写成 `v1_contract::类型标签::新建(返回类型实参)`（真仓形状）+ 声明 返回类型 4"
              " ⇒ 必红（旧读法不代形参会把这条静默跳过 ⇒ 报未判，那是假绿）",
-     lambda 件: (
-        件.__setitem__("扩展根目录/原子支持库/样本库/src/lib.rs",
-            件["扩展根目录/原子支持库/样本库/src/lib.rs"].replace(
+     lambda 节点件: (
+        节点件.__setitem__("扩展根目录/原子支持库/样本库/src/lib.rs",
+            节点件["扩展根目录/原子支持库/样本库/src/lib.rs"].replace(
                 "        返回类型: 类型标签_0005,\n",
                 "        返回类型: v1_contract::类型标签::新建(类型标签_0005),\n")),
-        件.__setitem__("扩展根目录/原子支持库/样本库/能力声明/1001.json",
-            json.dumps({**json.loads(件["扩展根目录/原子支持库/样本库/能力声明/1001.json"]),
+        节点件.__setitem__("扩展根目录/原子支持库/样本库/能力声明/1001.json",
+            json.dumps({**json.loads(节点件["扩展根目录/原子支持库/样本库/能力声明/1001.json"]),
                         "返回类型": 4}, ensure_ascii=False)),
      )),
     ("③d2", "构造器字段写成 `表段::新建(可抛错误码.项表 …, 可抛错误码.项数)`（真仓形状 · 整段透传）"
              "+ 声明 可抛错误码 换成实参指向的那张表以外的码 ⇒ 必红"
              "（旧读法把这段表达式原样留着 ⇒ 解不出 ⇒ 报未判）",
-     lambda 件: (
-        件.__setitem__("扩展根目录/原子支持库/样本库/src/lib.rs",
-            件["扩展根目录/原子支持库/样本库/src/lib.rs"].replace(
+     lambda 节点件: (
+        节点件.__setitem__("扩展根目录/原子支持库/样本库/src/lib.rs",
+            节点件["扩展根目录/原子支持库/样本库/src/lib.rs"].replace(
                 "        可抛错误码,\n",
                 "        可抛错误码: 表段::新建(可抛错误码.项表 as *const u32, 可抛错误码.项数),\n")),
-        件.__setitem__("扩展根目录/原子支持库/样本库/能力声明/1001.json",
-            json.dumps({**json.loads(件["扩展根目录/原子支持库/样本库/能力声明/1001.json"]),
+        节点件.__setitem__("扩展根目录/原子支持库/样本库/能力声明/1001.json",
+            json.dumps({**json.loads(节点件["扩展根目录/原子支持库/样本库/能力声明/1001.json"]),
                         "可抛错误码": [9999]}, ensure_ascii=False)),
      )),
     # 符号表的落点是**单元**不是文件：`能力号` 的 `pub mod` 挪出命令表所在件 ⇒ 仍要判得出。
     ("③a", "把 `pub mod 能力号` 从命令表所在件挪到同 crate 的另一个件（真仓的「形状与算法分家」）"
             "+ 声明编号 1001 改成 1002 ⇒ 必红（常量只查当前文件的旧读法会连编号都认不出）",
-     lambda 件: (
-        件.__setitem__("扩展根目录/原子支持库/样本库/src/编号.rs",
+     lambda 节点件: (
+        节点件.__setitem__("扩展根目录/原子支持库/样本库/src/编号.rs",
             "pub mod 能力号 {\n    pub const 样本能力: u32 = 1001;\n}\n"),
-        件.__setitem__("扩展根目录/原子支持库/样本库/src/lib.rs",
-            件["扩展根目录/原子支持库/样本库/src/lib.rs"].replace(
+        节点件.__setitem__("扩展根目录/原子支持库/样本库/src/lib.rs",
+            节点件["扩展根目录/原子支持库/样本库/src/lib.rs"].replace(
                 "pub mod 能力号 {\n    pub const 样本能力: u32 = 1001;\n}\n", "")),
-        件.__setitem__("扩展根目录/原子支持库/样本库/能力声明/1001.json",
-            json.dumps({**json.loads(件["扩展根目录/原子支持库/样本库/能力声明/1001.json"]),
+        节点件.__setitem__("扩展根目录/原子支持库/样本库/能力声明/1001.json",
+            json.dumps({**json.loads(节点件["扩展根目录/原子支持库/样本库/能力声明/1001.json"]),
                         "编号": 1002}, ensure_ascii=False)),
      )),
 )

@@ -51,12 +51,12 @@ def 拆顶层项(文本: str) -> list:
     结果 = []
     括号深度 = 0
     区间起点 = 0
-    for 位次, 字 in enumerate(文本):
-        if 字 in "([{":
+    for 位次, 字符表 in enumerate(文本):
+        if 字符表 in "([{":
             括号深度 += 1
-        elif 字 in ")]}":
+        elif 字符表 in ")]}":
             括号深度 -= 1
-        elif 字 == "," and 括号深度 == 0:
+        elif 字符表 == "," and 括号深度 == 0:
             结果.append(文本[区间起点:位次])
             区间起点 = 位次 + 1
     if 文本[区间起点:].strip():

@@ -102,9 +102,9 @@ def 抽实现面(件表: dict, 范围: list, 符号表: dict, 夹具: dict, 掩�
             for 常量条 in 抽模块常量(掩0, 单元件, "能力号") + 抽模块常量(掩0, 单元件, "错误码"):
                 if 常量条["值"] is not None:
                     单元常量.setdefault(单元目录, {}).setdefault(常量条["名"], 常量条["值"])
-            for 名, 值 in 抽本文件整数常量(掩0).items():
-                if 值 is not None:
-                    单元常量.setdefault(单元目录, {}).setdefault(名, 值)
+            for 名称, 待处理值 in 抽本文件整数常量(掩0).items():
+                if 待处理值 is not None:
+                    单元常量.setdefault(单元目录, {}).setdefault(名称, 待处理值)
     for 目录 in sorted(单元表):
         登记单元 = 索引[目录]
         for 键名 in sorted(单元表[目录]):
@@ -173,7 +173,7 @@ def 抽实现面(件表: dict, 范围: list, 符号表: dict, 夹具: dict, 掩�
                 else:
                     内层 = 项表["内文"] or ""
                     内起 = 项表["内文起"]
-                    for 序, 条目 in enumerate(拆顶层项(内层)):
+                    for 序号, 条目 in enumerate(拆顶层项(内层)):
                         if "{" not in 条目:
                             continue
                         字段 = {}
@@ -187,7 +187,7 @@ def 抽实现面(件表: dict, 范围: list, 符号表: dict, 夹具: dict, 掩�
                             else:
                                 名称 = 值 = 字段项.strip()
                             字段[名称] = {"原文": 值, "值": 解符号(值, 符号表, 本表)}
-                        编号, 编号原文 = _取编号(字段, lambda: (序, f"下标 {序}"))
+                        编号, 编号原文 = _取编号(字段, lambda: (序号, f"下标 {序号}"))
                         登记单元["命令"].append(
                             {
                                 "编号": 编号,
@@ -292,11 +292,11 @@ def _整段透传序(文本: str, 形参: list):
     if not 文本:
         return None
     命中 = set()
-    for 序, 名 in enumerate(形参):
-        if re.search(r"(?<![\w:])" + re.escape(名) + r"(?:\.\w+)+", 文本):
-            命中.add(序)
+    for 序号, 名称 in enumerate(形参):
+        if re.search(r"(?<![\w:])" + re.escape(名称) + r"(?:\.\w+)+", 文本):
+            命中.add(序号)
             # 这个形参的**全部**出现都必须是投影：有一处裸出现即不算透传。
-            if re.search(r"(?<![\w:])" + re.escape(名) + r"(?![\w:]|\.\w+)", 文本):
+            if re.search(r"(?<![\w:])" + re.escape(名称) + r"(?![\w:]|\.\w+)", 文本):
                 return None
     if len(命中) == 1:
         return next(iter(命中))

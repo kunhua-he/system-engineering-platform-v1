@@ -137,16 +137,16 @@ fn 写可选串(文本缓冲: &mut String, 待处理值: Option<&str>) {
 /// **追加**一行。追加不是覆盖：回执是历史，抹掉历史就没法判「回执是不是旧的」。
 pub fn 追加(路径: &Path, 源码行: &str) -> Result<(), String> {
     if let Some(父目录) = 路径.parent() {
-        std::fs::create_dir_all(父目录).map_err(|错| format!("建不了 {}：{错}", 父目录.display()))?;
+        std::fs::create_dir_all(父目录).map_err(|错误| format!("建不了 {}：{错误}", 父目录.display()))?;
     }
     let mut 节点件 = std::fs::OpenOptions::new()
         .create(true)
         .append(true)
         .open(路径)
-        .map_err(|错| format!("打不开 {}：{错}", 路径.display()))?;
+        .map_err(|错误| format!("打不开 {}：{错误}", 路径.display()))?;
     节点件.write_all(源码行.as_bytes())
         .and_then(|()| 节点件.write_all(b"\n"))
-        .map_err(|错| format!("写不进 {}：{错}", 路径.display()))
+        .map_err(|错误| format!("写不进 {}：{错误}", 路径.display()))
 }
 
 /// `git rev-parse HEAD` 的**完整**值。取不到就报错——**不许拿一个空串或短哈希顶上**。
@@ -156,7 +156,7 @@ pub fn 提交哈希(仓根: &Path) -> Result<String, String> {
         .arg(仓根)
         .args(["rev-parse", "HEAD"])
         .output()
-        .map_err(|错| format!("跑不了 git rev-parse：{错}"))?;
+        .map_err(|错误| format!("跑不了 git rev-parse：{错误}"))?;
     if !文本缓冲.status.success() {
         return Err(format!(
             "git rev-parse HEAD 失败：{}",
@@ -178,7 +178,7 @@ pub fn 工作区干净(仓根: &Path) -> Result<bool, String> {
         .args(["status", "--porcelain", "--"])
         .arg(format!(":(exclude){回执相对路}"))
         .output()
-        .map_err(|错| format!("跑不了 git status：{错}"))?;
+        .map_err(|错误| format!("跑不了 git status：{错误}"))?;
     if !文本缓冲.status.success() {
         return Err(format!(
             "git status 失败：{}",
@@ -192,7 +192,7 @@ pub fn 工作区干净(仓根: &Path) -> Result<bool, String> {
 pub fn 现在UTC() -> String {
     let 纪元秒数 = SystemTime::now()
         .duration_since(UNIX_EPOCH)
-        .map(|时| 时.as_secs() as i64)
+        .map(|时长| 时长.as_secs() as i64)
         .unwrap_or(0);
     let 天数 = 纪元秒数.div_euclid(86_400);
     let 日内 = 纪元秒数.rem_euclid(86_400);
@@ -282,8 +282,8 @@ mod 测试 {
         };
         let 源码行 = 回执值.到行();
         let 解析值 = crate::最小JSON::解析(&源码行).expect("回执必须是合法 JSON");
-        assert_eq!(解析值.取成员("案例名").and_then(|一| 一.取字符串()), Some("首项\"次项"));
-        assert_eq!(解析值.取成员("死在哪一层").and_then(|一| 一.取字符串()), Some("内核"));
-        assert!(matches!(解析值.取成员("步骤").and_then(|一| 一.取数组()).map(<[crate::最小JSON::JSON值]>::len), Some(1)));
+        assert_eq!(解析值.取成员("案例名").and_then(|一项| 一项.取字符串()), Some("首项\"次项"));
+        assert_eq!(解析值.取成员("死在哪一层").and_then(|一项| 一项.取字符串()), Some("内核"));
+        assert!(matches!(解析值.取成员("步骤").and_then(|一项| 一项.取数组()).map(<[crate::最小JSON::JSON值]>::len), Some(1)));
     }
 }

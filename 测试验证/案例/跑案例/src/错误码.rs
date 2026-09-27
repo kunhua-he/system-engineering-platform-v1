@@ -137,7 +137,7 @@ impl 登记表 {
     /// 那两套枚举的变体**不带码**，适配器也没有「段位 → 错误码」这个口（缺口，见回执说明）。
     /// 名字对不上 ⇒ `None` ⇒ 调用方如实记「未登记」，**不猜一个码**。
     pub fn 按名(&self, 名称: &str) -> Option<登记> {
-        self.项.values().find(|一| 一.名称 == 名称).cloned()
+        self.项.values().find(|一项| 一项.名称 == 名称).cloned()
     }
 
     pub fn 由调度错误(&self, 错误: 调度错误) -> 登记 {
@@ -290,7 +290,7 @@ mod 测试 {
             调度错误::超时 { 毫秒: 1 },
             调度错误::配额用尽,
         ] {
-            assert!(调度错误名(错误).chars().all(|字| !字.is_whitespace()));
+            assert!(调度错误名(错误).chars().all(|字符表| !字符表.is_whitespace()));
         }
     }
 }

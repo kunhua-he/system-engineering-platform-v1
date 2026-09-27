@@ -27,7 +27,7 @@ impl JSON值 {
     /// 按键取成员。**只对对象有意义**，其余一律 `None`（不猜、不转换）。
     pub fn 取成员(&self, 键名: &str) -> Option<&JSON值> {
         match self {
-            JSON值::对象(项表) => 项表.iter().find(|(名, _)| 名 == 键名).map(|(_, 值)| 值),
+            JSON值::对象(项表) => 项表.iter().find(|(名称, _)| 名称 == 键名).map(|(_, 待处理值)| 待处理值),
             _ => None,
         }
     }
@@ -229,7 +229,7 @@ impl 读器<'_> {
                     // 多字节 UTF-8：整字搬。源是 &str ⇒ 剩下的字节一定是合法 UTF-8，
                     // 取首字符再按它的字节长前进，天然落在字符边界上。
                     let 剩余文本 = std::str::from_utf8(&self.字节[区间起点..])
-                        .map_err(|错| format!("第 {区间起点} 字节：不是合法 UTF-8（{错}）"))?;
+                        .map_err(|错误| format!("第 {区间起点} 字节：不是合法 UTF-8（{错误}）"))?;
                     let 首字符 = 剩余文本
                         .chars()
                         .next()
@@ -310,22 +310,22 @@ mod 测试 {
     use super::*;
 
     fn 解析JSON(来源: &str) -> JSON值 {
-        解析(来源).unwrap_or_else(|错| panic!("{来源} 该能解析：{错}"))
+        解析(来源).unwrap_or_else(|错误| panic!("{来源} 该能解析：{错误}"))
     }
 
     /// 正向样本：干净输入必须通过，且读到的东西与写的一样。
     #[test]
     fn 干净输入逐字段读得对() {
         let 待处理值 = 解析JSON(r#"{"案例名":"反解","步骤":[{"能力编号":1105}],"结果":true,"无":null,"数":1568}"#);
-        assert_eq!(待处理值.取成员("案例名").and_then(|一| 一.取字符串()), Some("反解"));
-        assert_eq!(待处理值.取成员("步骤").and_then(|一| 一.取数组()).map(<[JSON值]>::len), Some(1));
+        assert_eq!(待处理值.取成员("案例名").and_then(|一项| 一项.取字符串()), Some("反解"));
+        assert_eq!(待处理值.取成员("步骤").and_then(|一项| 一项.取数组()).map(<[JSON值]>::len), Some(1));
         assert_eq!(
-            待处理值.取成员("步骤").and_then(|步| 步.取数组()).and_then(|步| 步.first()).and_then(|步| 步.取成员("能力编号")).and_then(|一| 一.整数()),
+            待处理值.取成员("步骤").and_then(|步骤值| 步骤值.取数组()).and_then(|步骤值| 步骤值.first()).and_then(|步骤值| 步骤值.取成员("能力编号")).and_then(|一项| 一项.整数()),
             Some(1105)
         );
-        assert_eq!(待处理值.取成员("结果").and_then(|一| 一.真假()), Some(true));
+        assert_eq!(待处理值.取成员("结果").and_then(|一项| 一项.真假()), Some(true));
         assert!(matches!(待处理值.取成员("无"), Some(JSON值::空值)));
-        assert_eq!(待处理值.取成员("数").and_then(|一| 一.整数()), Some(1568));
+        assert_eq!(待处理值.取成员("数").and_then(|一项| 一项.整数()), Some(1568));
     }
 
     /// 反向样本：坏输入必须报错（不是静默给一个空值）。
