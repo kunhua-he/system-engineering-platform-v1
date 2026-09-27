@@ -9,10 +9,10 @@ use crate::语言面::*;
 #[test]
 fn 种类号_自号与号往返且未知号不panic() {
     for 号 in 1u8..=11 {
-        let 种 = 记号种类::自号(号).expect("1..=11 都是已登记记号种类");
+        let 种 = 记号种类::自号(号).expect("1..=12 都是已登记记号种类");
         assert_eq!(种.号(), 号);
     }
-    assert_eq!(记号种类::自号(12), None);
+    assert_eq!(记号种类::自号(13), None);
     assert_eq!(记号种类::自号(0), None);
     assert_eq!(记号种类::自号(255), None);
 
