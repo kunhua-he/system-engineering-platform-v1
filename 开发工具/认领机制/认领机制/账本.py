@@ -5,13 +5,20 @@ import fcntl
 import hashlib
 import json
 import os
+import sys
 import tempfile
+from pathlib import Path
 
 from .常量 import FORMAT_VERSION
 
+# 锁文件落**运行数据根**的「临时件」类（锁文件属四类子目录的「临时件」）。
+# 唯一解析器 = `运行内核/运行数据根/`；Python 侧唯一入口 = `开发工具/运行数据根.py`。
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+from 运行数据根 import 解析当前, 确保子目录  # noqa: E402
+
 
 class Ledger:
-    """with Ledger(path) as led: 读改写全在锁内。锁文件落 /tmp（不进仓、不进版本库）。"""
+    """with Ledger(path) as led: 读改写全在锁内。锁文件落运行数据根的「临时件」（不进源码树）。"""
 
     def __init__(self, path):
         self.path = path
@@ -20,7 +27,7 @@ class Ledger:
 
     def _lockpath(self):
         h = hashlib.sha1(os.path.abspath(self.path).encode("utf-8")).hexdigest()[:16]
-        return os.path.join(tempfile.gettempdir(), "claim-ledger-%s.lock" % h)
+        return str(确保子目录(解析当前(), "临时件") / ("claim-ledger-%s.lock" % h))
 
     def _load(self):
         if not os.path.exists(self.path):
