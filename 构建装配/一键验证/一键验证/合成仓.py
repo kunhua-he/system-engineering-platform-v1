@@ -204,6 +204,8 @@ def 干净合成仓() -> dict:
             'pub extern "C" fn 调用() -> i32 { 0 }\n'
             '#[unsafe(export_name = "平台_释放值")]\n'
             'pub extern "C" fn 释放值() {}\n'
+            '#[unsafe(export_name = "平台_释放接口描述")]\n'
+            'pub extern "C" fn 释放接口描述() {}\n'
         ),
         "对外接口面/网关/Cargo.toml": '[package]\nname = "v1-gateway"\nversion = "0.1.0"\n',
         "对外接口面/网关/src/lib.rs": (
@@ -239,7 +241,7 @@ def 干净合成仓() -> dict:
                     {"路径": "契约声明/src/lib.rs", "处数": 1},
                     {"路径": "对外接口面/网关/src/lib.rs", "处数": 1},
                     {"路径": "扩展根目录/原子支持库/样例支持库/src/lib.rs", "处数": 1},
-                    {"路径": "跨语言适配/适配器实现/src/lib.rs", "处数": 4},
+                    {"路径": "跨语言适配/适配器实现/src/lib.rs", "处数": 5},
                     {"路径": "运行内核/装载入口/src/lib.rs", "处数": 5},
                     {"路径": "运行内核/资源网关口/src/lib.rs", "处数": 3},
                 ],
