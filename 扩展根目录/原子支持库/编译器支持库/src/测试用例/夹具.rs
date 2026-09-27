@@ -17,10 +17,10 @@ pub(crate) fn 声明目录() -> PathBuf {
 }
 
 pub(crate) fn 读JSON件(相对: &str) -> 最小JSON::JSON值 {
-    let 路 = 声明目录().join(相对);
-    let 文本 = std::fs::read_to_string(&路)
-        .unwrap_or_else(|错| panic!("读不到 {}：{错}", 路.display()));
-    最小JSON::解析(&文本).unwrap_or_else(|| panic!("{} 不是合法 JSON", 路.display()))
+    let 路径 = 声明目录().join(相对);
+    let 文本 = std::fs::read_to_string(&路径)
+        .unwrap_or_else(|错| panic!("读不到 {}：{错}", 路径.display()));
+    最小JSON::解析(&文本).unwrap_or_else(|| panic!("{} 不是合法 JSON", 路径.display()))
 }
 
 /// 造一条**类型 2（系统信息）**的合法容器：段名用实测 GBK 字节。
@@ -70,9 +70,9 @@ pub(crate) unsafe fn 取返回字节(数据槽: &数据槽) -> Vec<u8> {
 /// 数据槽必须来自本模块执行函数写出的字节集槽。
 pub(crate) unsafe fn 释放返回字节(数据槽: &数据槽) {
     if 数据槽.类型标签 == 类型标签_0005 && 数据槽.是否引用() && 数据槽.值 != 0 {
-        let 片 = core::ptr::slice_from_raw_parts_mut(数据槽.值 as *mut u8, 数据槽.长度 as usize);
+        let 片段 = core::ptr::slice_from_raw_parts_mut(数据槽.值 as *mut u8, 数据槽.长度 as usize);
         // SAFETY: 由调用方保证该指针来自 Box<[u8]>，且只释放一次。
-        drop(unsafe { Box::from_raw(片) });
+        drop(unsafe { Box::from_raw(片段) });
     }
 }
 
@@ -81,13 +81,13 @@ pub(crate) unsafe fn 释放返回字节(数据槽: &数据槽) {
 /// # Safety
 /// 指针必须指向静态只读的 NUL 结尾串。
 pub(crate) unsafe fn 读串(指针: *const u8) -> &'static [u8] {
-    let mut 长 = 0usize;
+    let mut 长度 = 0usize;
     // SAFETY: 由调用方保证 NUL 结尾。
-    while unsafe { *指针.add(长) } != 0 {
-        长 += 1;
+    while unsafe { *指针.add(长度) } != 0 {
+        长度 += 1;
     }
     // SAFETY: 前 长 字节可读且是静态数据。
-    unsafe { core::slice::from_raw_parts(指针, 长) }
+    unsafe { core::slice::from_raw_parts(指针, 长度) }
 }
 
 /// 取声明的错误段位表切片。

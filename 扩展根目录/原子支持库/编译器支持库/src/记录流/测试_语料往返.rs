@@ -6,14 +6,14 @@ use std::path::Path;
 /// **唯一硬判据**：对语料里容器文件的每条程序段，`生成(反解(段数据))` 必须与段数据逐字节相同。
 #[test]
 fn 语料往返_程序段数据逐字节一致() {
-    let 根 = Path::new(语料根目录);
-    if !根.exists() {
+    let 根目录 = Path::new(语料根目录);
+    if !根目录.exists() {
         println!("语料目录不存在，跳过往返测试：{语料根目录}");
         return;
     }
 
     let mut 文件表 = Vec::new();
-    收集语料(根, &mut 文件表);
+    收集语料(根目录, &mut 文件表);
     文件表.sort();
 
     let mut 通过: u64 = 0;
@@ -25,47 +25,47 @@ fn 语料往返_程序段数据逐字节一致() {
     let mut 五段引用: u64 = 0;
     let mut 失败: Vec<String> = Vec::new();
 
-    for 路 in &文件表 {
-        let 原文 = match std::fs::read(路) {
+    for 路径 in &文件表 {
+        let 原文 = match std::fs::read(路径) {
             Ok(字节) => 字节,
             Err(错) => {
-                失败.push(format!("{} 读入失败：{错}", 路.display()));
+                失败.push(format!("{} 读入失败：{错}", 路径.display()));
                 continue;
             }
         };
-        let 容 = match 容器::反解(&原文) {
-            Ok(容) => 容,
+        let 容器 = match 容器::反解(&原文) {
+            Ok(容器) => 容器,
             Err(错) => {
-                失败.push(format!("{} 容器反解失败：{错:?}", 路.display()));
+                失败.push(format!("{} 容器反解失败：{错:?}", 路径.display()));
                 continue;
             }
         };
-        for (序, 段) in 容.段表.iter().enumerate() {
+        for (序, 段) in 容器.段表.iter().enumerate() {
             if 段.头.段类型 != 容器::段类型::程序.取号值() {
                 continue;
             }
             段数 += 1;
-            let 流 = match 反解段数据(&段.数据) {
-                Ok(流) => 流,
+            let 输出流 = match 反解段数据(&段.数据) {
+                Ok(输出流) => 输出流,
                 Err(错) => {
-                    失败.push(format!("{} 第 {序} 段 段数据反解失败：{错:?}", 路.display()));
+                    失败.push(format!("{} 第 {序} 段 段数据反解失败：{错:?}", 路径.display()));
                     continue;
                 }
             };
-            记录数 += 流.记录条数();
-            结构化字节 += 流.结构化字节();
-            搬运字节 += 流.其余载荷.len() as u64;
-            引用条数 += 流.支持库.引用表.len() as u64;
-            五段引用 += 流
+            记录数 += 输出流.记录条数();
+            结构化字节 += 输出流.结构化字节();
+            搬运字节 += 输出流.其余载荷.len() as u64;
+            引用条数 += 输出流.支持库.引用表.len() as u64;
+            五段引用 += 输出流
                 .支持库
                 .引用表
                 .iter()
                 .filter(|一条| 一条.字段数() == 引用字段名.len())
                 .count() as u64;
 
-            match 生成段数据(&流) {
+            match 生成段数据(&输出流) {
                 Err(错) => {
-                    失败.push(format!("{} 第 {序} 段 段数据生成失败：{错:?}", 路.display()));
+                    失败.push(format!("{} 第 {序} 段 段数据生成失败：{错:?}", 路径.display()));
                 }
                 Ok(产物) => {
                     if 产物 == 段.数据 {
@@ -74,7 +74,7 @@ fn 语料往返_程序段数据逐字节一致() {
                         let 偏移 = 首个不一致(&段.数据, &产物);
                         失败.push(format!(
                             "{} 第 {序} 段 往返不一致：首个不一致字节偏移 {偏移}，原文 {} 字节，产物 {} 字节",
-                            路.display(),
+                            路径.display(),
                             段.数据.len(),
                             产物.len()
                         ));

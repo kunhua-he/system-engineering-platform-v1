@@ -16,22 +16,22 @@ pub(crate) unsafe fn 取字节集(参数个数: u32, 参数表: *const 数据槽
         return None;
     }
     // SAFETY: 由调用方保证 参数表 至少 参数个数 个槽可读，且 位置 < 参数个数。
-    let 槽 = unsafe { &*参数表.add(位置 as usize) };
-    if 槽.类型标签 != 类型标签_0005 {
+    let 数据槽 = unsafe { &*参数表.add(位置 as usize) };
+    if 数据槽.类型标签 != 类型标签_0005 {
         return None;
     }
-    if 槽.是否空() {
+    if 数据槽.是否空() {
         return Some(Vec::new());
     }
-    if !槽.是否引用() {
+    if !数据槽.是否引用() {
         return None;
     }
-    let 地址 = 槽.值 as *const u8;
+    let 地址 = 数据槽.值 as *const u8;
     if 地址.is_null() {
         return None;
     }
     // SAFETY: 契约保证「引用」槽的 值..值+长度 可读。
-    Some(unsafe { core::slice::from_raw_parts(地址, 槽.长度 as usize) }.to_vec())
+    Some(unsafe { core::slice::from_raw_parts(地址, 数据槽.长度 as usize) }.to_vec())
 }
 
 /// 把字节集写进返回槽：**所有权交出**（接收方负责释放）。类型标签 = 字节集。
@@ -73,22 +73,22 @@ pub(crate) unsafe fn 取文本(参数个数: u32, 参数表: *const 数据槽, �
         return None;
     }
     // SAFETY: 由调用方保证 参数表 至少 参数个数 个槽可读，且 位置 < 参数个数。
-    let 槽 = unsafe { &*参数表.add(位置 as usize) };
-    if 槽.类型标签 != 类型标签_0004 {
+    let 数据槽 = unsafe { &*参数表.add(位置 as usize) };
+    if 数据槽.类型标签 != 类型标签_0004 {
         return None;
     }
     // 空文本：空文件也必须切出一枚零宽的文件结束（`语言面.rs` J1）。
-    if 槽.是否空() {
+    if 数据槽.是否空() {
         return Some(String::new());
     }
-    if !槽.是否引用() {
+    if !数据槽.是否引用() {
         return None;
     }
-    let 地址 = 槽.值 as *const u8;
+    let 地址 = 数据槽.值 as *const u8;
     if 地址.is_null() {
         return None;
     }
     // SAFETY: 契约保证「引用」槽的 值..值+长度 可读。
-    let 字节 = unsafe { core::slice::from_raw_parts(地址, 槽.长度 as usize) };
+    let 字节 = unsafe { core::slice::from_raw_parts(地址, 数据槽.长度 as usize) };
     core::str::from_utf8(字节).ok().map(str::to_owned)
 }

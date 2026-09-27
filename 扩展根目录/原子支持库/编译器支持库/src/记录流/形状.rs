@@ -90,14 +90,14 @@ impl 支持库引用 {
 
     /// 按 `0x0D` 拼回盘面原文。与 [`支持库引用::字段`] 互为逆运算。
     pub fn 原文(&self) -> Vec<u8> {
-        let mut 出 = Vec::with_capacity(self.串长());
+        let mut 输出缓冲 = Vec::with_capacity(self.串长());
         for (序, 段) in self.字段.iter().enumerate() {
             if 序 > 0 {
-                出.push(引用分隔符);
+                输出缓冲.push(引用分隔符);
             }
-            出.extend_from_slice(段);
+            输出缓冲.extend_from_slice(段);
         }
-        出
+        输出缓冲
     }
 
     /// 5 段时取 `库文件名`。
