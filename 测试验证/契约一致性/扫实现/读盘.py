@@ -16,6 +16,7 @@ from .声明侧 import 读声明侧
 from .比对 import 比对
 from .判据工具 import 记
 from .组装 import _组装
+from .不覆盖 import 元记录
 
 
 def 读盘(仓根: str, 范围: list) -> dict:
@@ -47,7 +48,9 @@ def 读盘(仓根: str, 范围: list) -> dict:
         for 根目录, 目录表, 文件表 in os.walk(契约):
             目录表[:] = [d for d in 目录表 if d not in {"__pycache__"}]
             for 名 in 文件表:
-                if 名.endswith(".json") or (名 in ("lib.rs", "声明数据.rs") and "src" in 根目录):
+                # `.rs` 全收（含 `契约声明/src/` 子目录）——符号表的落点是符号不是文件，
+                # 写死文件名会让拆分后的子件静默丢出符号表（甲3）。
+                if 名.endswith((".json", ".rs")):
                     收(Path(根目录) / 名)
     return {"件表": 件表, "坏": 坏}
 
@@ -86,7 +89,10 @@ def _扫一遍(仓根: str, 范围: list, 件表=None, 坏=None) -> list:
                "读不动有两种：文件被别的腿写到一半（瞬时），或权限/编码问题（持久）。"
                "验证面不能替它猜内容 ⇒ 只能由该文件的作者确认")
         )
-    return _组装(比对结果)
+    结果 = _组装(比对结果)
+    # 「不覆盖登记表」自洽（fail-closed）：登记表长霉 ⇒ 追加一条**失败**元记录（不是未判）。
+    结果.extend(元记录(实现面["单元"]))
+    return 结果
 
 
 def 扫实现(仓根: str, 范围: list) -> list:
