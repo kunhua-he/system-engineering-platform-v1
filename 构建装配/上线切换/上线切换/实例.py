@@ -127,3 +127,18 @@ def 活着的实例() -> list:
     if not (运行根 / "已装载").is_dir():
         return []
     return [读指针("已装载/{}".format(路.stem)) for 路 in sorted((运行根 / "已装载").glob("*.json"))]
+
+
+def 端口空着(端口: int) -> bool:
+    """流量口是否**空着**（模式=停 的判据：「停下 + 流量口空着」）。
+
+    判法是**连一次**：连得上 ⇒ 还有东西在听（不空）；连接被拒 ⇒ 空。
+    **不是**看进程在不在（同 §二 判据 5 的口径：进程活着但答不了 ≠ 起得来，反过来也一样）。
+    """
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as 套:
+        套.settimeout(0.5)
+        try:
+            套.connect(("127.0.0.1", 端口))
+            return False
+        except OSError:
+            return True

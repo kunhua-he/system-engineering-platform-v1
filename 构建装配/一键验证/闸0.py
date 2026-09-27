@@ -1,0 +1,83 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""闸 0 —— 一条入口把**两条闸串起来跑**，两个读数并排报出。
+
+**为什么要这一条**（本条存在的全部理由）：
+`构建装配/一键验证/一键验证.py`（闸 1 · 声明侧）与
+`测试验证/契约一致性/扫实现.py`（闸 2 · 实现侧）此前**各跑各的** ——
+而闸 1 **不调用**闸 2。实测撞到过：`扫实现.py` 的改名提交只搬了文件夹
+（`扫实现模块/` → `扫实现/`），入口那行 `from 扫实现模块 import` 没跟着改
+（留在腿的脏工作区里没提交）⇒ 入口一跑就 `ModuleNotFoundError`，
+**在主干上坏了整段而没有任何门禁抓到**，直到收口方手跑才发现。
+（事发经过与纪律落点：`项目文档/开发规范/开发规范.md` §六.6「拆完必须真跑一遍入口，
+不是只 `py_compile`」。）
+
+⇒ 补这一条：**两条闸串起来跑**。任一失败即非零退出。
+
+**约束（不许违反）**：**不许让闸 1 去 import 闸 2**（那是层序问题 ——
+`测试验证/` 不在产品层序里，闸 1 反向依赖它会被判违规；见 `判据口径十一条.md` §十四）。
+所以本件用**子进程**调两条闸的**入口**，各按各的退出码与读数报，互不 import。
+
+用法（在仓库根）：
+
+    python3 构建装配/一键验证/闸0.py
+
+退出码：两条闸都 0 ⇒ 0；任一非 0 ⇒ 1。两条闸的读数逐行并排打印；失败的那条把明细透传。
+"""
+import re
+import subprocess
+import sys
+import time
+from pathlib import Path
+
+起 = time.monotonic()  # 壳起表点：必须在 import 业务包**之前**（见 构建装配/门禁/壳.py）
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))  # 仓根：取共享门禁
+from 构建装配.门禁 import 自门禁  # noqa: E402
+
+# 两条闸的**入口**（子进程调它们，不 import —— 层序问题，见文件头）。
+闸表 = (
+    ("闸 1 · 声明侧", "构建装配/一键验证/一键验证.py"),
+    ("闸 2 · 实现侧", "测试验证/契约一致性/扫实现.py"),
+)
+读数模式 = re.compile(r"^通过\s.*$", re.M)
+
+
+def main(参数: list) -> int:
+    仓根 = Path(__file__).resolve().parents[2]
+    全过 = True
+    明细 = []
+    print("闸 0：两条闸串起来跑（声明侧 + 实现侧；子进程调入口，互不 import）")
+    print("")
+    for 名, 相对 in 闸表:
+        果 = subprocess.run(
+            [sys.executable, str(仓根 / 相对)],
+            cwd=str(仓根), capture_output=True, text=True,
+        )
+        命 = 读数模式.search(果.stdout or "")
+        读数 = 命.group(0).strip() if 命 else "（没有读出「通过 …」那一行）"
+        全过 = 全过 and (果.returncode == 0)
+        print(f"  {名} ｜ {相对}")
+        print(f"    退出码 {果.returncode} ｜ {读数}")
+        if 果.returncode != 0:
+            明细.append((名, 相对, (果.stdout or "") + (果.stderr or "")))
+    print("")
+    if 全过:
+        print("闸 0：两条闸都过（退出码 0）")
+        return 0
+    for 名, 相对, 原始 in 明细:
+        print(f"── {名}（{相对}）失败明细 ──")
+        print(原始.rstrip())
+        print("")
+    print("闸 0：至少一条闸没过（退出码 1）")
+    return 1
+
+
+if __name__ == "__main__":
+    sys.exit(
+        自门禁(
+            起, main(sys.argv[1:]), 尾巴余量毫秒=200,
+            修法="两条闸各自提速（分片 / 缓存 / 把重活移出命令路，裁决 §三）；"
+                 "本件只串行调用它们，不替它们干活。",
+        )
+    )

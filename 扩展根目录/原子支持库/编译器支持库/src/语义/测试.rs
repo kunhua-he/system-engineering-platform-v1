@@ -9,7 +9,7 @@ use super::{分析, 带号结构};
 use crate::语言面::语法树;
 
 fn 树(文本: &str) -> 语法树 {
-    let 流 = crate::词法::切记号(文本).expect("切分是总函数");
+    let 流 = crate::词法::切记号(文本).expect("切分（本件只喂引号配对的合法文本）");
     crate::语法::建树(&流).expect("建树")
 }
 
