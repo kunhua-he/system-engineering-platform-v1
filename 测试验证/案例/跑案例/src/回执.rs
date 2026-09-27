@@ -251,7 +251,7 @@ mod 测试 {
         let 回 = 回执 {
             提交哈希: "a".repeat(40),
             工作区是否干净: false,
-            案例名: "甲\"乙".to_owned(),
+            案例名: "首项\"次项".to_owned(),
             结果: "失败".to_owned(),
             死在哪一层: Some("内核".to_owned()),
             死在哪一步: Some("调度".to_owned()),
@@ -268,7 +268,7 @@ mod 测试 {
             跑的时间: 现在UTC(),
             说明: "换行\n也要转义".to_owned(),
             步骤: vec![步骤读数 {
-                名: "甲".to_owned(),
+                名: "首项".to_owned(),
                 能力编号: 1105,
                 能力名: Some("反解容器".to_owned()),
                 调用结果: "成功".to_owned(),
@@ -282,7 +282,7 @@ mod 测试 {
         };
         let 行 = 回.到行();
         let 解 = crate::最小JSON::解析(&行).expect("回执必须是合法 JSON");
-        assert_eq!(解.取("案例名").and_then(|一| 一.串()), Some("甲\"乙"));
+        assert_eq!(解.取("案例名").and_then(|一| 一.串()), Some("首项\"次项"));
         assert_eq!(解.取("死在哪一层").and_then(|一| 一.串()), Some("内核"));
         assert!(matches!(解.取("步骤").and_then(|一| 一.表()).map(<[crate::最小JSON::值]>::len), Some(1)));
     }

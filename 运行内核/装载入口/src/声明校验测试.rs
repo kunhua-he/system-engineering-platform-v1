@@ -171,7 +171,7 @@ fn 类型标签_表内重复即拒() {
         元素表: core::ptr::null(),
         类型标签: 100,
     };
-    let 类型表 = Box::leak(vec![造类型("类型甲\0"), 造类型("类型乙\0")].into_boxed_slice());
+    let 类型表 = Box::leak(vec![造类型("类型首\0"), 造类型("类型次\0")].into_boxed_slice());
     let mut 样本 = 合样本();
     样本.类型表 = 表段::新(类型表.as_ptr(), 2);
     assert_eq!(

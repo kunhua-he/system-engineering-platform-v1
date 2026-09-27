@@ -147,10 +147,10 @@ def 自测():
                 柄.write(内容)
         造("超限.rs", "\n".join(f"// 第 {行序} 行" for 行序 in range(行数上限 + 1)) + "\n")
         造("入口超行数/lib.rs", "\n".join("// 占位" for _ in range(入口行数上限 + 1)) + "\n")
-        造("入口含实现/lib.rs", "pub mod 甲;\npub use 甲::乙;\n\nfn 实现() {}\n")
+        造("入口含实现/lib.rs", "pub mod 首个;\npub use 首个::次个;\n\nfn 实现() {}\n")
         造("入口含实现/__init__.py", '"""包。"""\n\n\ndef 实现():\n    pass\n')
         造("入口含实现/脚本.py", 'def 主():\n    pass\n\n\ndef 另一个():\n    pass\n\n\nif __name__ == "__main__":\n    主()\n')
-        造("合规/lib.rs", "//! 路由。\n\n#[path = \"甲.rs\"]\npub mod 甲;\npub use 甲::乙;\n")
+        造("合规/lib.rs", "//! 路由。\n\n#[path = \"首个.rs\"]\npub mod 首个;\npub use 首个::次个;\n")
         造("合规/脚本.py", 'if __name__ == "__main__":\n    print(1)\n')
 
         超行数, 入口超行数, 入口有实现 = 扫(临时)

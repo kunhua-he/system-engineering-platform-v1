@@ -367,14 +367,14 @@ mod 测试 {
 
     #[test]
     fn 相对路按案例目录解_绝对路原样() {
-        assert_eq!(解路(Path::new("/甲/乙"), Path::new("丙.txt")), PathBuf::from("/甲/乙/丙.txt"));
-        assert_eq!(解路(Path::new("/甲/乙"), Path::new("/丙/丁")), PathBuf::from("/丙/丁"));
+        assert_eq!(解路(Path::new("/首目录/次目录"), Path::new("末件.txt")), PathBuf::from("/首目录/次目录/末件.txt"));
+        assert_eq!(解路(Path::new("/首目录/次目录"), Path::new("/末目录/末子目录")), PathBuf::from("/末目录/末子目录"));
     }
 
     /// 反向样本：不认的 `来源` 必须报错，不许静默当成某个默认值。
     #[test]
     fn 不认的来源报错() {
-        let 清单 = 最小JSON::解析(r#"{"步骤":[{"名":"甲","能力编号":1,"实参":[{"类型标签":4,"来源":"猜"}]}]}"#).unwrap();
-        assert!(读步骤(&清单, Path::new("/甲")).is_err());
+        let 清单 = 最小JSON::解析(r#"{"步骤":[{"名":"首项","能力编号":1,"实参":[{"类型标签":4,"来源":"猜"}]}]}"#).unwrap();
+        assert!(读步骤(&清单, Path::new("/首案例")).is_err());
     }
 }
