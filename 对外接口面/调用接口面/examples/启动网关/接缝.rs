@@ -32,9 +32,9 @@ pub(crate) fn 取扩展声明(扩展目录: &Path) -> Result<&'static 平台信�
     if 库文件.len() != 1 {
         return Err(format!("可装载库文件 {} 个（要求恰好 1 个）", 库文件.len()));
     }
-    let 路 = &库文件[0];
+    let 路径 = &库文件[0];
     let 路径串 =
-        CString::new(路.as_os_str().as_encoded_bytes()).map_err(|_| "库路径含 NUL".to_owned())?;
+        CString::new(路径.as_os_str().as_encoded_bytes()).map_err(|_| "库路径含 NUL".to_owned())?;
     // SAFETY: 路径串是 NUL 结尾的合法 C 串；句柄只装载不释放（本进程活到服务停）。
     let 句柄 = unsafe { dlopen(路径串.as_ptr(), RTLD_NOW) };
     if 句柄.is_null() {

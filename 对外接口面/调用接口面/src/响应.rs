@@ -199,11 +199,11 @@ pub fn 能力契约(适配器: &适配器, 编号: u32) -> 协议值 {
 /// 这里只做两件形状翻译：入参 JSON → 槽（`请求.rs`），返回槽 → JSON（`槽编码.rs`）；
 /// 「成功没成功」的判定在 [`组装`]（那里要读返回槽，见它的文件注释）。
 pub fn 调用(适配器: &适配器, 请求: &调用请求) -> 协议值 {
-    let 槽: Vec<v1_adapter::数据槽> = 请求.值.iter().map(crate::槽编码::槽源::取槽).collect();
+    let 数据槽: Vec<v1_adapter::数据槽> = 请求.值.iter().map(crate::槽编码::槽源::取槽).collect();
     let mut 返回槽 = v1_adapter::数据槽::空槽();
-    let 起 = std::time::Instant::now();
-    let 结果 = 适配器.调用能力(请求.编号, &槽, &mut 返回槽);
-    let 耗时微秒 = 起.elapsed().as_micros().min(u128::from(u64::MAX)) as u64;
+    let 区间起点 = std::time::Instant::now();
+    let 结果 = 适配器.调用能力(请求.编号, &数据槽, &mut 返回槽);
+    let 耗时微秒 = 区间起点.elapsed().as_micros().min(u128::from(u64::MAX)) as u64;
     组装(适配器, 请求.编号, 结果, 耗时微秒)
 }
 

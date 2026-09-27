@@ -31,8 +31,8 @@ from 声明编写面 import 建解析器, 处理分配, 处理写入, 读请求,
 
 
 def 入口函数(参数: list) -> int:
-    解 = 建解析器()
-    选项 = 解.parse_args(参数)
+    解析器 = 建解析器()
+    选项 = 解析器.parse_args(参数)
     if (选项.请求 is None) == (选项.分配 is None):
         print("用法：%s（--请求 与 --分配 二选一）" % 用法, file=sys.stderr)
         return 2

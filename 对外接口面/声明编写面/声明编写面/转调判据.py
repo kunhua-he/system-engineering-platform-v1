@@ -28,20 +28,20 @@ def 加载(仓根):
     if not 路径.is_file():
         return None, "%s 不在（判据器是校验的唯一实现，它不在就无从转调）" % 判据器相对路径
     try:
-        规 = importlib.util.spec_from_file_location(_模块名, str(路径))
-        if 规 is None or 规.loader is None:
+        模块规格 = importlib.util.spec_from_file_location(_模块名, str(路径))
+        if 模块规格 is None or 模块规格.loader is None:
             return None, "%s 不是可加载的 Python 源（取不到 loader）" % 判据器相对路径
-        模 = importlib.util.module_from_spec(规)
-        规.loader.exec_module(模)
+        判据模块 = importlib.util.module_from_spec(模块规格)
+        模块规格.loader.exec_module(判据模块)
     except BaseException as 错:  # SyntaxError 也算：半成品期间读进来就是编译不过
         return None, "判据器 %s 加载失败（它可能正被改动）：%s: %s" % (
             判据器相对路径,
             type(错).__name__,
             错,
         )
-    if not hasattr(模, "验证"):
+    if not hasattr(判据模块, "验证"):
         return None, "判据器 %s 里没有 验证(仓根) 入口（入口形状变了，面不敢猜怎么调）" % 判据器相对路径
-    return 模, ""
+    return 判据模块, ""
 
 
 def 跑判据(判据器, 仓根):
@@ -68,35 +68,35 @@ def 逐条(结果):
 
     `项` = 判据器的检查名（`接口面形状.md` §四 的 `校验[].项` 就是它）。
     """
-    出 = []
-    for 条 in 结果.get("失败", []):
-        if not isinstance(条, dict):
+    条目表 = []
+    for 一条 in 结果.get("失败", []):
+        if not isinstance(一条, dict):
             continue
-        出.append(
+        条目表.append(
             {
-                "项": 条.get("检查", ""),
-                "缺什么": 条.get("缺什么", ""),
-                "为什么不能自愈": 条.get("不能自愈", ""),
-                "位置": 条.get("位置", ""),
-                "分类": 条.get("分类", ""),
+                "项": 一条.get("检查", ""),
+                "缺什么": 一条.get("缺什么", ""),
+                "为什么不能自愈": 一条.get("不能自愈", ""),
+                "位置": 一条.get("位置", ""),
+                "分类": 一条.get("分类", ""),
             }
         )
-    return 出
+    return 条目表
 
 
 def 指纹集(结果):
     """失败条的指纹集（检查 · 位置 · 缺什么），用来取写前/写后的差。"""
     return {
-        (条.get("检查"), 条.get("位置"), 条.get("缺什么"))
-        for 条 in 结果.get("失败", [])
-        if isinstance(条, dict)
+        (一条.get("检查"), 一条.get("位置"), 一条.get("缺什么"))
+        for 一条 in 结果.get("失败", [])
+        if isinstance(一条, dict)
     }
 
 
 def _退出码(文本):
     """从判据 ⑩ 的说明里取生成器 --检查 的退出码（判据器自身把它写在了 `缺什么` 里）。"""
-    命 = re.search(r"退出码\s*(\d+)", str(文本))
-    return int(命.group(1)) if 命 else None
+    匹配结果 = re.search(r"退出码\s*(\d+)", str(文本))
+    return int(匹配结果.group(1)) if 匹配结果 else None
 
 
 def 归类(条表, 相对路径, 基线指纹):
@@ -108,22 +108,22 @@ def 归类(条表, 相对路径, 基线指纹):
     - **面外**：基线里就有、或与本次写入无关的红 ⇒ 面不替别的节点改它们的红。
     """
     阻断, 待重跑, 面外 = [], [], []
-    for 条 in 条表:
-        文 = "%s%s" % (条.get("位置", ""), 条.get("缺什么", ""))
-        是本文件 = 相对路径 in 文
-        新出现 = (条.get("项"), 条.get("位置"), 条.get("缺什么")) not in 基线指纹
-        if str(条.get("项", "")).startswith(生成物检查前缀):
-            码 = _退出码(条.get("缺什么"))
-            if 码 == 1:
-                待重跑.append(条)
-            elif 码 == 2 and (是本文件 or 新出现):
-                阻断.append(条)
+    for 一条 in 条表:
+        文本 = "%s%s" % (一条.get("位置", ""), 一条.get("缺什么", ""))
+        是本文件 = 相对路径 in 文本
+        新出现 = (一条.get("项"), 一条.get("位置"), 一条.get("缺什么")) not in 基线指纹
+        if str(一条.get("项", "")).startswith(生成物检查前缀):
+            错误码 = _退出码(一条.get("缺什么"))
+            if 错误码 == 1:
+                待重跑.append(一条)
+            elif 错误码 == 2 and (是本文件 or 新出现):
+                阻断.append(一条)
             else:
-                面外.append(条)
+                面外.append(一条)
         elif 是本文件:
-            阻断.append(条)
+            阻断.append(一条)
         else:
-            面外.append(条)
+            面外.append(一条)
     return 阻断, 待重跑, 面外
 
 

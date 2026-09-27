@@ -12,17 +12,17 @@ pub(crate) const 库后缀: [&str; 3] = [".dylib", ".so", ".dll"];
 /// 取一个目录下的直接子目录，**按名字排序**（装载顺序即依赖序，不许随文件系统飘）。
 pub(crate) fn 子目录(目录: &Path) -> Vec<PathBuf> {
     let Ok(读) = fs::read_dir(目录) else { return Vec::new() };
-    let mut 出: Vec<PathBuf> = 读
+    let mut 输出缓冲: Vec<PathBuf> = 读
         .filter_map(|项| 项.ok())
         .map(|项| 项.path())
         .filter(|路| 路.is_dir())
         .collect();
-    出.sort();
-    出
+    输出缓冲.sort();
+    输出缓冲
 }
 
 /// 是不是可装载库文件（按后缀找，不按名字找）。
 pub(crate) fn 是可装载库(路径: &Path) -> bool {
-    let 名 = 路径.file_name().and_then(|名| 名.to_str());
-    路径.is_file() && 名.is_some_and(|名| 库后缀.iter().any(|尾| 名.ends_with(尾)))
+    let 名称 = 路径.file_name().and_then(|名| 名.to_str());
+    路径.is_file() && 名称.is_some_and(|名| 库后缀.iter().any(|尾| 名.ends_with(尾)))
 }

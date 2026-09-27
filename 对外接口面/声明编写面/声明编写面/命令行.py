@@ -13,16 +13,16 @@ from .编排 import 声明根默认
 
 
 def 建解析器() -> argparse.ArgumentParser:
-    解 = argparse.ArgumentParser(
+    解析器 = argparse.ArgumentParser(
         prog="声明编写面",
         description="声明编写面 —— 契约声明/ 的唯一写入口（校验转调 构建装配/一键验证/一键验证.py）",
         epilog=用法,
     )
-    解.add_argument("--请求", metavar="JSON|-", help="写入请求体（JSON 文本；`-` = 读标准输入）")
-    解.add_argument("--分配", metavar="类别", help="只算号不落盘：能力 · 类型 · 错误码 · 通知号")
-    解.add_argument("--声明根", default=声明根默认, help="声明根（仓内相对路径，默认 %(default)s）")
-    解.add_argument("--仓根", default=None, help="仓根（默认由本文件位置上溯三级）")
-    return 解
+    解析器.add_argument("--请求", metavar="JSON|-", help="写入请求体（JSON 文本；`-` = 读标准输入）")
+    解析器.add_argument("--分配", metavar="类别", help="只算号不落盘：能力 · 类型 · 错误码 · 通知号")
+    解析器.add_argument("--声明根", default=声明根默认, help="声明根（仓内相对路径，默认 %(default)s）")
+    解析器.add_argument("--仓根", default=None, help="仓根（默认由本文件位置上溯三级）")
+    return 解析器
 
 
 def 读请求(文本: str):
