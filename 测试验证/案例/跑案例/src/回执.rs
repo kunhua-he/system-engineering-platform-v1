@@ -282,8 +282,8 @@ mod 测试 {
         };
         let 行 = 回.到行();
         let 解 = crate::最小JSON::解析(&行).expect("回执必须是合法 JSON");
-        assert_eq!(解.取("案例名").and_then(|一| 一.串()), Some("首项\"次项"));
-        assert_eq!(解.取("死在哪一层").and_then(|一| 一.串()), Some("内核"));
-        assert!(matches!(解.取("步骤").and_then(|一| 一.表()).map(<[crate::最小JSON::值]>::len), Some(1)));
+        assert_eq!(解.取成员("案例名").and_then(|一| 一.串()), Some("首项\"次项"));
+        assert_eq!(解.取成员("死在哪一层").and_then(|一| 一.串()), Some("内核"));
+        assert!(matches!(解.取成员("步骤").and_then(|一| 一.表()).map(<[crate::最小JSON::值]>::len), Some(1)));
     }
 }

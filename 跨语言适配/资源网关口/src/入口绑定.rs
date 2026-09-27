@@ -87,8 +87,8 @@ impl 部署绑定 {
         self.项表.len()
     }
 
-    /// 按号取那一份。取不到给 `None`（**不是 panic**，也不是编一个空实现）。
-    pub(crate) fn 取(&self, 资源号: u32) -> Option<&dyn 黑盒体> {
+    /// 按资源号取那一份。取不到给 `None`（**不是 panic**，也不是编一个空实现）。
+    pub(crate) fn 按资源号取(&self, 资源号: u32) -> Option<&dyn 黑盒体> {
         self.项表
             .iter()
             .find(|格| 格.0 == 资源号)
