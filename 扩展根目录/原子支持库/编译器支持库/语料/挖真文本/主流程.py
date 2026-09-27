@@ -121,8 +121,8 @@ def 入口函数():
         if 文件名.endswith(".txt"):
             os.remove(os.path.join(真文本目录, 文件名))
 
-    def 简化文件名(串):
-        return re.sub(r"[^0-9A-Za-z_\u4e00-\u9fff]+", "_", 串)[:40]
+    def 简化文件名(字节串):
+        return re.sub(r"[^0-9A-Za-z_\u4e00-\u9fff]+", "_", 字节串)[:40]
 
     def 落盘(rows, tier):
         manifest = []

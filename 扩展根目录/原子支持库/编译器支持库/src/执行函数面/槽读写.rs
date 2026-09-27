@@ -6,17 +6,17 @@
 use v1_contract::数据槽;
 use v1_contract::声明数据::{类型标签_0004, 类型标签_0005, 类型标签_4294967295};
 
-/// 从参数表第 `位` 个槽取字节集。`None` = 槽形状不可用（类型标签不是字节集 / 引用地址为空）。
+/// 从参数表第 `位置` 个槽取字节集。`None` = 槽形状不可用（类型标签不是字节集 / 引用地址为空）。
 ///
 /// # Safety
 ///
 /// 调用方保证 `参数表` 指向 `参数个数` 个按契约填好的可读槽。
-pub(crate) unsafe fn 取字节集(参数个数: u32, 参数表: *const 数据槽, 位: u32) -> Option<Vec<u8>> {
-    if 位 >= 参数个数 || 参数表.is_null() {
+pub(crate) unsafe fn 取字节集(参数个数: u32, 参数表: *const 数据槽, 位置: u32) -> Option<Vec<u8>> {
+    if 位置 >= 参数个数 || 参数表.is_null() {
         return None;
     }
-    // SAFETY: 由调用方保证 参数表 至少 参数个数 个槽可读，且 位 < 参数个数。
-    let 槽 = unsafe { &*参数表.add(位 as usize) };
+    // SAFETY: 由调用方保证 参数表 至少 参数个数 个槽可读，且 位置 < 参数个数。
+    let 槽 = unsafe { &*参数表.add(位置 as usize) };
     if 槽.类型标签 != 类型标签_0005 {
         return None;
     }
@@ -52,12 +52,12 @@ pub(crate) unsafe fn 写字节集(返回槽: *mut 数据槽, 字节: Vec<u8>) {
 /// # Safety
 ///
 /// 调用方保证 `返回槽` 可写。
-pub(crate) unsafe fn 写错误码(返回槽: *mut 数据槽, 码: u32) {
+pub(crate) unsafe fn 写错误码(返回槽: *mut 数据槽, 错误码: u32) {
     // SAFETY: 由调用方保证 返回槽 可写。
-    unsafe { *返回槽 = 数据槽::内联(类型标签_4294967295.into(), 码 as u64, 0) };
+    unsafe { *返回槽 = 数据槽::内联(类型标签_4294967295.into(), 错误码 as u64, 0) };
 }
 
-/// 从参数表第 `位` 个槽取文本。`None` = 槽形状不可用。
+/// 从参数表第 `位置` 个槽取文本。`None` = 槽形状不可用。
 ///
 /// 三处判死（都算 `参数槽不符`）：类型标签不是文本（4）；是引用槽但地址为空；
 /// 引用字节不是合法 UTF-8（契约「文本 = UTF-8」，见 `接口面形状.md` §三）。
@@ -68,12 +68,12 @@ pub(crate) unsafe fn 写错误码(返回槽: *mut 数据槽, 码: u32) {
 /// # Safety
 ///
 /// 调用方保证 `参数表` 指向 `参数个数` 个按契约填好的可读槽。
-pub(crate) unsafe fn 取文本(参数个数: u32, 参数表: *const 数据槽, 位: u32) -> Option<String> {
-    if 位 >= 参数个数 || 参数表.is_null() {
+pub(crate) unsafe fn 取文本(参数个数: u32, 参数表: *const 数据槽, 位置: u32) -> Option<String> {
+    if 位置 >= 参数个数 || 参数表.is_null() {
         return None;
     }
-    // SAFETY: 由调用方保证 参数表 至少 参数个数 个槽可读，且 位 < 参数个数。
-    let 槽 = unsafe { &*参数表.add(位 as usize) };
+    // SAFETY: 由调用方保证 参数表 至少 参数个数 个槽可读，且 位置 < 参数个数。
+    let 槽 = unsafe { &*参数表.add(位置 as usize) };
     if 槽.类型标签 != 类型标签_0004 {
         return None;
     }

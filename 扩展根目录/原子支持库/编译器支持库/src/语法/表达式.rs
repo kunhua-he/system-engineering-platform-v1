@@ -72,9 +72,9 @@ impl<'a> 分析器<'a> {
         }
     }
 
-    pub(super) fn 是界符(&self, 文: &[u8]) -> bool {
+    pub(super) fn 是界符(&self, 文本: &[u8]) -> bool {
         match self.当前() {
-            Some(该记号) => 该记号.种类 == 记号种类::界符 && self.取记号原文(该记号) == 文,
+            Some(该记号) => 该记号.种类 == 记号种类::界符 && self.取记号原文(该记号) == 文本,
             None => false,
         }
     }
@@ -86,16 +86,16 @@ impl<'a> 分析器<'a> {
     }
 
     /// 从 `游标`（停在开界符上）找配对的闭界符下标。认不出返回 `None`。
-    pub(super) fn 配对(&self, 开: &[u8], 闭: &[u8]) -> Option<usize> {
+    pub(super) fn 配对(&self, 开符: &[u8], 闭符: &[u8]) -> Option<usize> {
         let mut 深 = 0i32;
         let mut 记号下标 = self.游标;
         while 记号下标 < self.止 {
             let 该记号 = self.记号表[记号下标];
             if 该记号.种类 == 记号种类::界符 {
                 let 文 = self.取记号原文(该记号);
-                if 文 == 开 {
+                if 文 == 开符 {
                     深 += 1;
-                } else if 文 == 闭 {
+                } else if 文 == 闭符 {
                     深 -= 1;
                     if 深 == 0 {
                         return Some(记号下标);
@@ -107,32 +107,32 @@ impl<'a> 分析器<'a> {
         None
     }
 
-    /// 把 `[游标, 止)` 里还没消费的记号包成一个兜底叶（有内容才包）。
-    pub(super) fn 兜底到(&mut self, 止: usize) -> Option<u32> {
-        if self.游标 >= 止 {
+    /// 把 `[游标, 区间终点)` 里还没消费的记号包成一个兜底叶（有内容才包）。
+    pub(super) fn 兜底到(&mut self, 区间终点: usize) -> Option<u32> {
+        if self.游标 >= 区间终点 {
             return None;
         }
         let 起 = self.记号表[self.游标].起;
-        let 终 = self.记号表[止 - 1].止;
-        self.游标 = 止;
+        let 终 = self.记号表[区间终点 - 1].止;
+        self.游标 = 区间终点;
         Some(self.草稿.追加叶节点(兜底种类, 起, 终))
     }
 
-    /// 公开口：在 `[起, 止)` 上解一个表达式（供行层调用）。
+    /// 公开口：在 `[区间起点, 区间终点)` 上解一个表达式（供行层调用）。
     ///
     /// `None` = 一个记号都没解出（此时草稿表**一个都没多**）。解出但有余下记号时，
     /// 余下的包一个兜底叶。
-    pub(crate) fn 解析区间(&mut self, 起: usize, 止: usize) -> Option<u32> {
+    pub(crate) fn 解析区间(&mut self, 区间起点: usize, 区间终点: usize) -> Option<u32> {
         let 保存游标 = self.游标;
         let 保存止 = self.止;
-        self.游标 = 起;
-        self.止 = 止;
+        self.游标 = 区间起点;
+        self.止 = 区间终点;
         let 果 = match self.二元() {
             Some(节点下标) => {
-                self.兜底到(止);
+                self.兜底到(区间终点);
                 Some(节点下标)
             }
-            None => self.兜底到(止),
+            None => self.兜底到(区间终点),
         };
         self.止 = 保存止;
         self.游标 = 保存游标;
@@ -296,18 +296,18 @@ impl<'a> 分析器<'a> {
         }
     }
 
-    /// 在 `[起, 止)` 上解一个表达式；解不出或有余下记号就补兜底叶。成功返回草稿下标。
-    pub(super) fn 子区间(&mut self, 起: usize, 止: usize) -> Option<u32> {
+    /// 在 `[区间起点, 区间终点)` 上解一个表达式；解不出或有余下记号就补兜底叶。成功返回草稿下标。
+    pub(super) fn 子区间(&mut self, 区间起点: usize, 区间终点: usize) -> Option<u32> {
         let 保存游标 = self.游标;
         let 保存止 = self.止;
-        self.游标 = 起;
-        self.止 = 止;
+        self.游标 = 区间起点;
+        self.止 = 区间终点;
         let 果 = match self.二元() {
             Some(节点下标) => {
-                self.兜底到(止);
+                self.兜底到(区间终点);
                 Some(节点下标)
             }
-            None => self.兜底到(止),
+            None => self.兜底到(区间终点),
         };
         self.止 = 保存止;
         self.游标 = 保存游标;

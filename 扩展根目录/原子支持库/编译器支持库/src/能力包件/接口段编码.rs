@@ -87,57 +87,57 @@ pub fn 解码(字节: &[u8]) -> Option<接口说明> {
     Some(接口说明 { 编号, 名称, 说明: 说明文本, 参数表, 返回类型, 可抛错误码 })
 }
 
-fn 写文本(出: &mut Vec<u8>, 文: &str) {
-    出.extend_from_slice(&(文.len() as u32).to_le_bytes());
-    出.extend_from_slice(文.as_bytes());
+fn 写文本(输出缓冲: &mut Vec<u8>, 文本: &str) {
+    输出缓冲.extend_from_slice(&(文本.len() as u32).to_le_bytes());
+    输出缓冲.extend_from_slice(文本.as_bytes());
 }
 
-fn 写参数项(出: &mut Vec<u8>, 参: &接口参数项) {
-    写文本(出, &参.名称);
-    出.extend_from_slice(&参.类型标签.to_le_bytes());
-    出.extend_from_slice(&参.状态位.to_le_bytes());
-    写槽(出, &参.默认值);
+fn 写参数项(输出缓冲: &mut Vec<u8>, 参数: &接口参数项) {
+    写文本(输出缓冲, &参数.名称);
+    输出缓冲.extend_from_slice(&参数.类型标签.to_le_bytes());
+    输出缓冲.extend_from_slice(&参数.状态位.to_le_bytes());
+    写槽(输出缓冲, &参数.默认值);
 }
 
-fn 写错误项(出: &mut Vec<u8>, 错: &接口错误项) {
-    出.extend_from_slice(&错.码.to_le_bytes());
-    出.extend_from_slice(&错.段位.to_le_bytes());
-    写文本(出, &错.名称);
-    出.push(bool::from(错.可重试) as u8);
-    出.push(bool::from(错.可自愈) as u8);
-    出.push(bool::from(错.需人工) as u8);
-    出.push(bool::from(错.已登记) as u8);
+fn 写错误项(输出缓冲: &mut Vec<u8>, 错误: &接口错误项) {
+    输出缓冲.extend_from_slice(&错误.码.to_le_bytes());
+    输出缓冲.extend_from_slice(&错误.段位.to_le_bytes());
+    写文本(输出缓冲, &错误.名称);
+    输出缓冲.push(bool::from(错误.可重试) as u8);
+    输出缓冲.push(bool::from(错误.可自愈) as u8);
+    输出缓冲.push(bool::from(错误.需人工) as u8);
+    输出缓冲.push(bool::from(错误.已登记) as u8);
 }
 
 /// 定长槽**原样** 24 字节（小端）。
 ///
 /// 不拆成五个字段写：槽形状是**冻结项**，拆写等于在本件里复刻一份槽布局，
 /// 将来槽加宽就会两处不同步。直接按冻结的那五个字段拼一遍是最少知识。
-fn 写槽(出: &mut Vec<u8>, 槽: &v1_contract::数据槽) {
-    出.extend_from_slice(&槽.类型标签.取号值().to_le_bytes());
-    出.extend_from_slice(&槽.标志.to_le_bytes());
-    出.extend_from_slice(&槽.保留.to_le_bytes());
-    出.extend_from_slice(&槽.长度.to_le_bytes());
-    出.extend_from_slice(&槽.值.to_le_bytes());
+fn 写槽(输出缓冲: &mut Vec<u8>, 数据槽: &v1_contract::数据槽) {
+    输出缓冲.extend_from_slice(&数据槽.类型标签.取号值().to_le_bytes());
+    输出缓冲.extend_from_slice(&数据槽.标志.to_le_bytes());
+    输出缓冲.extend_from_slice(&数据槽.保留.to_le_bytes());
+    输出缓冲.extend_from_slice(&数据槽.长度.to_le_bytes());
+    输出缓冲.extend_from_slice(&数据槽.值.to_le_bytes());
 }
 
-fn 读参数项(读: &mut 读器) -> Option<接口参数项> {
-    let 名称 = 读.文本()?;
-    let 类型标签 = 读.读四字节()?;
-    let 状态位 = 读.读双字节()?;
-    let 默认值 = 读.读数据槽()?;
+fn 读参数项(读器: &mut 读器) -> Option<接口参数项> {
+    let 名称 = 读器.文本()?;
+    let 类型标签 = 读器.读四字节()?;
+    let 状态位 = 读器.读双字节()?;
+    let 默认值 = 读器.读数据槽()?;
     Some(接口参数项 { 名称, 类型标签, 状态位, 默认值 })
 }
 
-fn 读错误项(读: &mut 读器) -> Option<接口错误项> {
+fn 读错误项(读器: &mut 读器) -> Option<接口错误项> {
     Some(接口错误项 {
-        码: 读.读四字节()?,
-        段位: 读.读四字节()?,
-        名称: 读.文本()?,
-        可重试: 读.布尔()?,
-        可自愈: 读.布尔()?,
-        需人工: 读.布尔()?,
-        已登记: 读.布尔()?,
+        码: 读器.读四字节()?,
+        段位: 读器.读四字节()?,
+        名称: 读器.文本()?,
+        可重试: 读器.布尔()?,
+        可自愈: 读器.布尔()?,
+        需人工: 读器.布尔()?,
+        已登记: 读器.布尔()?,
     })
 }
 
@@ -152,8 +152,8 @@ impl<'a> 读器<'a> {
         self.字节.len().saturating_sub(self.位)
     }
 
-    fn 取字节(&mut self, 数: usize) -> Option<&'a [u8]> {
-        let 尾 = self.位.checked_add(数)?;
+    fn 取字节(&mut self, 个数: usize) -> Option<&'a [u8]> {
+        let 尾 = self.位.checked_add(个数)?;
         if 尾 > self.字节.len() {
             return None;
         }

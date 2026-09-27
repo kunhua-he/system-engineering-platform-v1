@@ -32,8 +32,8 @@ pub(crate) struct 草稿表 {
 }
 
 impl 草稿表 {
-    pub(crate) fn 追加叶节点(&mut self, 种类: 节点种类, 起: u32, 止: u32) -> u32 {
-        self.表.push(草稿 { 种类, 区间: (起, 止), 子: Vec::new() });
+    pub(crate) fn 追加叶节点(&mut self, 种类: 节点种类, 区间起点: u32, 区间终点: u32) -> u32 {
+        self.表.push(草稿 { 种类, 区间: (区间起点, 区间终点), 子: Vec::new() });
         (self.表.len() - 1) as u32
     }
 
@@ -63,10 +63,10 @@ impl 草稿表 {
     /// 迭代实现，**不递归** —— 输入多长脊就多长，递归会爆栈。
     /// 展开顺序：本节点 → 各子节点（按序，各自的整棵子树紧接着排在后面）。
     /// `子区间` 一律由 [`语法树::先序子区间`] 落，不在这里另写一条布局规则。
-    pub(crate) fn 扁平化(&self, 根: u32) -> Vec<节点> {
-        let 大小 = self.子树大小表(根);
-        let mut 出: Vec<节点> = Vec::with_capacity(大小[根 as usize] as usize);
-        let mut 栈: Vec<u32> = vec![根];
+    pub(crate) fn 扁平化(&self, 根目录: u32) -> Vec<节点> {
+        let 大小 = self.子树大小表(根目录);
+        let mut 出: Vec<节点> = Vec::with_capacity(大小[根目录 as usize] as usize);
+        let mut 栈: Vec<u32> = vec![根目录];
         while let Some(节点位) = 栈.pop() {
             let 位置 = 出.len() as u32;
             let 草 = &self.表[节点位 as usize];
@@ -83,9 +83,9 @@ impl 草稿表 {
     /// 只算从 `根` 可达的那些 —— 表达式层解析失败时留下的草稿节点会成为垃圾
     /// （`表达式.rs` 明说「失败时一个草稿都没压进草稿表」，但链式扩展换掉基节点时
     /// 旧基会变垃圾），它们不参与扁平化，大小留 0 即可。
-    fn 子树大小表(&self, 根: u32) -> Vec<u32> {
+    fn 子树大小表(&self, 根目录: u32) -> Vec<u32> {
         let mut 大小 = vec![0u32; self.表.len()];
-        let mut 栈: Vec<(u32, usize)> = vec![(根, 0)];
+        let mut 栈: Vec<(u32, usize)> = vec![(根目录, 0)];
         while let Some((节点位, 子序)) = 栈.pop() {
             let 子 = &self.表[节点位 as usize].子;
             match 子.get(子序) {

@@ -29,8 +29,8 @@ fn 首个不一致(原文: &[u8], 产物: &[u8]) -> u64 {
 }
 
 /// 大小写不敏感地认 `.e` / `.ec`。
-fn 是语料文件(路: &Path) -> bool {
-    match 路.extension().and_then(|扩展| 扩展.to_str()) {
+fn 是语料文件(路径: &Path) -> bool {
+    match 路径.extension().and_then(|扩展| 扩展.to_str()) {
         Some(扩展) => {
             let 小写 = 扩展.to_ascii_lowercase();
             小写 == "e" || 小写 == "ec"
@@ -40,17 +40,17 @@ fn 是语料文件(路: &Path) -> bool {
 }
 
 /// 递归收集语料。用 `file_type()` 不追符号链接，避免环。
-fn 收集语料(根: &Path, 出: &mut Vec<PathBuf>) {
-    let Ok(项集) = std::fs::read_dir(根) else {
+fn 收集语料(根目录: &Path, 输出缓冲: &mut Vec<PathBuf>) {
+    let Ok(项集) = std::fs::read_dir(根目录) else {
         return;
     };
     for 项 in 项集.flatten() {
         let Ok(类型) = 项.file_type() else { continue };
         let 路 = 项.path();
         if 类型.is_dir() {
-            收集语料(&路, 出);
+            收集语料(&路, 输出缓冲);
         } else if 类型.is_file() && 是语料文件(&路) {
-            出.push(路);
+            输出缓冲.push(路);
         }
     }
 }

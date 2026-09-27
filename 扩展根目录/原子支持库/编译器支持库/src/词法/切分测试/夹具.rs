@@ -24,17 +24,17 @@ pub fn 切对(原文: &str) -> Vec<(记号种类, String)> {
 ///
 /// 每一份合法记号流都以它收尾（J1），逐例手写它是噪声 —— 但**它仍然被断言**（补出来的那枚
 /// 也要与实现产出的对上），所以不是放宽判据。
-pub fn 期望(片: &[(记号种类, &str)]) -> Vec<(记号种类, String)> {
+pub fn 期望(片段: &[(记号种类, &str)]) -> Vec<(记号种类, String)> {
     let mut 出: Vec<(记号种类, String)> =
-        片.iter().map(|(种, 文)| (*种, (*文).to_string())).collect();
+        片段.iter().map(|(种, 文)| (*种, (*文).to_string())).collect();
     出.push((记号种类::文件结束, String::new()));
     出
 }
 
 /// 逐条判 J1–J6。返回六元组（下标 0..5 = J1..J6），**逐条独立判**，不靠构造口代劳。
-pub fn 判六条(流: &记号流) -> [bool; 6] {
-    let 长 = 流.全文长();
-    let 表 = &流.记号表;
+pub fn 判六条(输出流: &记号流) -> [bool; 6] {
+    let 长 = 输出流.全文长();
+    let 表 = &输出流.记号表;
     if 表.is_empty() {
         return [false; 6];
     }
@@ -80,6 +80,6 @@ pub fn 语料文件() -> Vec<PathBuf> {
 }
 
 /// 读一份语料（UTF-8）。
-pub fn 读语料(路: &Path) -> String {
-    std::fs::read_to_string(路).unwrap_or_else(|错| panic!("{}：{错}", 路.display()))
+pub fn 读语料(路径: &Path) -> String {
+    std::fs::read_to_string(路径).unwrap_or_else(|错| panic!("{}：{错}", 路径.display()))
 }

@@ -79,9 +79,9 @@ pub enum 记号种类 {
 
 impl 记号种类 {
     /// 自号：未知号返回 `None`（**不 panic** —— 反解路径上不许 panic）。
-    pub fn 自号(号: u8) -> Option<Self> {
+    pub fn 自号(号值: u8) -> Option<Self> {
         use 记号种类::*;
-        Some(match 号 {
+        Some(match 号值 {
             1 => 关键字,
             2 => 标识符,
             3 => 文本字面量,
@@ -123,8 +123,8 @@ pub struct 记号 {
 }
 
 impl 记号 {
-    pub fn 新建(种类: 记号种类, 起: u32, 止: u32) -> Self {
-        Self { 种类, 起, 止 }
+    pub fn 新建(种类: 记号种类, 区间起点: u32, 区间终点: u32) -> Self {
+        Self { 种类, 起: 区间起点, 止: 区间终点 }
     }
 
     /// 区间宽度（字节）。

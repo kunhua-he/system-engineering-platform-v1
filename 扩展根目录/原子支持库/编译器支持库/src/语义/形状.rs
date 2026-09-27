@@ -52,9 +52,9 @@ pub enum 号类 {
 }
 
 impl 号类 {
-    pub fn 自号(号: u8) -> Option<Self> {
+    pub fn 自号(号值: u8) -> Option<Self> {
         use 号类::*;
-        Some(match 号 {
+        Some(match 号值 {
             1 => 变量,
             2 => 常量,
             3 => 资源,
@@ -161,8 +161,8 @@ pub struct 带号结构 {
 
 impl 带号结构 {
     /// 按名字找号表项（**按原始字节比**）。同名取**先登记的那一项**。
-    pub fn 按名找(&self, 名: &[u8]) -> Option<&号项> {
-        self.号表.iter().find(|项| 项.名 == 名)
+    pub fn 按名找(&self, 名称: &[u8]) -> Option<&号项> {
+        self.号表.iter().find(|项| 项.名 == 名称)
     }
 
     /// 某个引用节点解析出的那一项。
@@ -186,9 +186,9 @@ pub enum 语义错误 {
 }
 
 /// 本变体的 `节点种类` 是否为**声明类**（体里可以再出声明与语句）。
-pub(crate) fn 是声明类(种: 节点种类) -> bool {
+pub(crate) fn 是声明类(种类: 节点种类) -> bool {
     matches!(
-        种,
+        种类,
         节点种类::支持库声明
             | 节点种类::程序集
             | 节点种类::程序集变量声明

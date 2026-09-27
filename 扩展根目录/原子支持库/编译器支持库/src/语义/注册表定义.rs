@@ -36,8 +36,8 @@ impl 注册表 {
     }
 
     /// 直接给项（库内与测试构造用；顺序即盘面顺序，**不排序、不去重**）。
-    pub fn 从项(项: Vec<(Vec<u8>, u16)>) -> Self {
-        Self { 项 }
+    pub fn 从项(一项: Vec<(Vec<u8>, u16)>) -> Self {
+        Self { 项: 一项 }
     }
 
     pub fn 项数(&self) -> usize {
@@ -49,10 +49,10 @@ impl 注册表 {
     }
 
     /// 按名字（**原始字节**）找号。同名取**先出现的那一项**。
-    pub fn 按名取号(&self, 名: &[u8]) -> Option<u16> {
+    pub fn 按名取号(&self, 名称: &[u8]) -> Option<u16> {
         self.项
             .iter()
-            .find(|(表名, _)| 表名.as_slice() == 名)
+            .find(|(表名, _)| 表名.as_slice() == 名称)
             .map(|(_, 号)| *号)
     }
 
@@ -104,8 +104,8 @@ struct 读器<'a> {
 }
 
 impl<'a> 读器<'a> {
-    fn 取字节(&mut self, 数: usize) -> Option<&'a [u8]> {
-        let 尾 = self.位.checked_add(数)?;
+    fn 取字节(&mut self, 个数: usize) -> Option<&'a [u8]> {
+        let 尾 = self.位.checked_add(个数)?;
         if 尾 > self.字节.len() {
             return None;
         }

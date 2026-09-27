@@ -100,9 +100,9 @@ fn 取消(句柄: u64) -> u32 {
 }
 
 /// 按句柄取结果：**超时即失败**（不许挂死）。取消过的句柄当场给码。
-fn 按句柄取(句柄: u64, 等: Duration) -> Result<Vec<u8>, u32> {
+fn 按句柄取(句柄: u64, 待取项: Duration) -> Result<Vec<u8>, u32> {
     let 表 = 本扩展任务表();
-    let 截止 = Instant::now() + 等;
+    let 截止 = Instant::now() + 待取项;
     loop {
         {
             let 锁 = 表.表.lock().unwrap();

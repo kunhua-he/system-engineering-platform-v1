@@ -118,9 +118,9 @@ pub enum 节点种类 {
 }
 
 impl 节点种类 {
-    pub fn 自号(号: u16) -> Option<Self> {
+    pub fn 自号(号值: u16) -> Option<Self> {
         use 节点种类::*;
-        Some(match 号 {
+        Some(match 号值 {
             1 => 程序,
             2 => 源单元,
             3 => 支持库声明,

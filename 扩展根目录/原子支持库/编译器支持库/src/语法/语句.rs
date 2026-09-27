@@ -70,11 +70,11 @@ impl 建树器<'_> {
     // ── 块 ──────────────────────────────────────────────────────────────────
 
     /// 找配对块尾行与一级分支行（`.否则` / `.判断` / `.默认`）。
-    pub(super) fn 扫块(&self, 行表: &[源码行], 头: usize, 止: usize) -> (Option<usize>, Vec<usize>) {
+    pub(super) fn 扫块(&self, 行表: &[源码行], 头部: usize, 区间终点: usize) -> (Option<usize>, Vec<usize>) {
         let mut 深 = 1i32;
         let mut 分支行 = Vec::new();
-        let mut 行下标 = 头 + 1;
-        while 行下标 < 止 {
+        let mut 行下标 = 头部 + 1;
+        while 行下标 < 区间终点 {
             match 行表[行下标].类 {
                 行类::块首 => 深 += 1,
                 行类::块尾 => {
@@ -93,17 +93,17 @@ impl 建树器<'_> {
         (None, 分支行)
     }
 
-    /// 块末：配对块尾行的下标；没配对就取 `止`（**不报错** —— 缩进/配对不是不变量）。
-    pub(super) fn 块末(&self, 行表: &[源码行], 头: usize, 止: usize) -> usize {
-        match self.扫块(行表, 头, 止).0 {
+    /// 块末：配对块尾行的下标；没配对就取 `区间终点`（**不报错** —— 缩进/配对不是不变量）。
+    pub(super) fn 块末(&self, 行表: &[源码行], 头部: usize, 区间终点: usize) -> usize {
+        match self.扫块(行表, 头部, 区间终点).0 {
             Some(块尾下标) => 块尾下标 + 1,
-            None => 止,
+            None => 区间终点,
         }
     }
 
-    pub(super) fn 建块(&mut self, 行表: &[源码行], 头: usize, 止行: usize) -> u32 {
-        let (块尾行, 分支行) = self.扫块(行表, 头, 止行);
-        let 此行 = 行表[头];
+    pub(super) fn 建块(&mut self, 行表: &[源码行], 头部: usize, 止行: usize) -> u32 {
+        let (块尾行, 分支行) = self.扫块(行表, 头部, 止行);
+        let 此行 = 行表[头部];
         let 起 = 此行.关键字.map(|关键字对| 关键字对.0).unwrap_or(此行.内容起);
         let 体末 = 块尾行.unwrap_or(止行);
         let 止 = match 块尾行 {
@@ -114,7 +114,7 @@ impl 建树器<'_> {
         let mut 子 = self.括号实参(&此行);
         子.extend(self.尾叶(&此行));
 
-        let mut 段起 = 头 + 1;
+        let mut 段起 = 头部 + 1;
         for (分支号, &分支) in 分支行.iter().enumerate() {
             let 下一 = 分支行.get(分支号 + 1).copied().unwrap_or(体末);
             self.深度 += 1;
@@ -137,7 +137,7 @@ impl 建树器<'_> {
         }
         if 分支行.is_empty() {
             self.深度 += 1;
-            子.extend(self.建体(行表, 头 + 1, 体末));
+            子.extend(self.建体(行表, 头部 + 1, 体末));
             self.深度 -= 1;
         }
         if let Some(块尾下标) = 块尾行 {
@@ -156,9 +156,9 @@ impl 建树器<'_> {
 ///
 /// 一张表把「哪一类行是单行声明」集中在一处：`建单行` 与 `语义/建表.rs` 都按
 /// 「头字段铺成子节点」处理它们（`语言面形状.md` §3.1 的唯一规则）。
-fn 单行声明种类(类: 行类) -> Option<节点种类> {
+fn 单行声明种类(类别: 行类) -> Option<节点种类> {
     use 行类::*;
-    Some(match 类 {
+    Some(match 类别 {
         支持库 => 节点种类::支持库声明,
         程序集变量 => 节点种类::程序集变量声明,
         全局变量 => 节点种类::全局变量声明,

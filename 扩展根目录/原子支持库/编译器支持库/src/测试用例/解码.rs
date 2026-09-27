@@ -28,23 +28,23 @@ impl<'a> 读器<'a> {
         self.位 += 4;
         u32::from_le_bytes(片)
     }
-    fn 取字节(&mut self, 长: usize) -> &'a [u8] {
-        let 片 = &self.字节[self.位..self.位 + 长];
-        self.位 += 长;
+    fn 取字节(&mut self, 长度: usize) -> &'a [u8] {
+        let 片 = &self.字节[self.位..self.位 + 长度];
+        self.位 += 长度;
         片
     }
 }
 
 /// 从当前位置读一份记号流编码。
-fn 解记号流在(读: &mut 读器<'_>) -> 记号流 {
-    let 原文长 = 读.读四字节() as usize;
-    let 原文 = 读.取字节(原文长).to_vec();
-    let 记号数 = 读.读四字节();
+fn 解记号流在(读器: &mut 读器<'_>) -> 记号流 {
+    let 原文长 = 读器.读四字节() as usize;
+    let 原文 = 读器.取字节(原文长).to_vec();
+    let 记号数 = 读器.读四字节();
     let mut 记号表 = Vec::with_capacity(记号数 as usize);
     for _ in 0..记号数 {
-        let 号 = 读.读单字节();
-        let 起 = 读.读四字节();
-        let 止 = 读.读四字节();
+        let 号 = 读器.读单字节();
+        let 起 = 读器.读四字节();
+        let 止 = 读器.读四字节();
         记号表.push(记号::新建(
             记号种类::自号(号).expect("种类号该认得出来"),
             起,
