@@ -35,10 +35,10 @@ function 报状态(状态, 应答, 尾) {
   return 词;
 }
 
-export function 装案例库(取, 编辑) {
+export function 装案例库(取元素, 编辑) {
   // ── 案例族 ─────────────────────────────────────────────────────────────
-  const 状态 = 取("案例状态");
-  const 果 = 取("案例果");
+  const 状态 = 取元素("案例状态");
+  const 果 = 取元素("案例果");
 
   async function 列案例() {
     清空(果);
@@ -55,7 +55,7 @@ export function 装案例库(取, 编辑) {
   }
 
   async function 跑一个() {
-    const 标识 = 取("案例标识").value.trim();
+    const 标识 = 取元素("案例标识").value.trim();
     if (!标识) {
       写状态(状态, "先填一个案例标识（一个目录名，不含路径分隔符）", false);
       return;
@@ -73,25 +73,25 @@ export function 装案例库(取, 编辑) {
     }
   }
 
-  取("案例列按钮").addEventListener("click", 列案例);
-  取("案例跑按钮").addEventListener("click", 跑一个);
-  取("案例标识").addEventListener("keydown", (事) => {
+  取元素("案例列按钮").addEventListener("click", 列案例);
+  取元素("案例跑按钮").addEventListener("click", 跑一个);
+  取元素("案例标识").addEventListener("keydown", (事) => {
     if (事.key === "Enter") 跑一个();
   });
 
   // ── 通用同源只读口（静态件，不是端点）──────────────────────────────────
-  const 路框 = 取("读件路");
-  const 读果 = 取("读件果");
-  const 读状态 = 取("读件状态");
+  const 路框 = 取元素("读件路");
+  const 读果 = 取元素("读件果");
+  const 读状态 = 取元素("读件状态");
   let 上次文 = null;
 
-  取("读件按钮").addEventListener("click", async () => {
+  取元素("读件按钮").addEventListener("click", async () => {
     const 路 = 成路(路框.value);
     if (!路) {
       写状态(读状态, "先填一个仓内相对路径", false);
       return;
     }
-    写状态(读状态, "取 " + 路 + " …");
+    写状态(读状态, "读 " + 路 + " …");
     try {
       const 件 = await 取静态件(路);
       上次文 = 件.状态 === 200 ? 件.文 : null;
@@ -105,7 +105,7 @@ export function 装案例库(取, 编辑) {
     }
   });
 
-  取("载入读件").addEventListener("click", () => {
+  取元素("载入读件").addEventListener("click", () => {
     if (上次文 === null) {
       写状态(读状态, "还没取到东西 —— 先点「同源只读取回原文」", false);
       return;

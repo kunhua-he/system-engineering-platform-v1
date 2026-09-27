@@ -11,9 +11,9 @@ import { 发程序文本 } from "./取接口.js";
 import { 摆应答, 摆消息, 摘要, 写状态, 清空 } from "./呈现.js";
 import { 记 } from "./剪辑历史.js";
 
-export function 装程序文本(取) {
-  const 状态 = 取("程序文本状态");
-  const 果 = 取("程序文本果");
+export function 装程序文本(取元素) {
+  const 状态 = 取元素("程序文本状态");
+  const 果 = 取元素("程序文本果");
 
   async function 发(动作) {
     清空(果);
@@ -31,6 +31,6 @@ export function 装程序文本(取) {
     }
   }
 
-  取("程序文本读").addEventListener("click", () => 发("读"));
-  取("程序文本写").addEventListener("click", () => 发("写"));
+  取元素("程序文本读").addEventListener("click", () => 发("读"));
+  取元素("程序文本写").addEventListener("click", () => 发("写"));
 }

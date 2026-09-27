@@ -13,7 +13,7 @@
 import { 调用能力, 写声明 } from "./取接口.js";
 import { 建, 摆应答, 摆消息, 写状态 } from "./呈现.js";
 
-export function 装调试(取) {
+export function 装调试(取元素) {
   // ── 调用 ────────────────────────────────────────────────────────────────
   function 加值行(标签初值 = "0", 值初值 = "0") {
     const 行 = 建("div", "值行");
@@ -33,20 +33,20 @@ export function 装调试(取) {
       刷调用预览();
     });
     行.append(序, 标签, 值, 删);
-    取("值行容器").append(行);
+    取元素("值行容器").append(行);
     重排值行();
     刷调用预览();
   }
 
   function 重排值行() {
-    [...取("值行容器").querySelectorAll(".值行")].forEach((行, 位) => {
+    [...取元素("值行容器").querySelectorAll(".值行")].forEach((行, 位) => {
       行.querySelector(".序").textContent = String(位 + 1);
     });
   }
 
   function 取调用体文() {
-    const 编号 = 取("调用编号").value.trim();
-    const 项 = [...取("值行容器").querySelectorAll(".值行")].map((行) => {
+    const 编号 = 取元素("调用编号").value.trim();
+    const 项 = [...取元素("值行容器").querySelectorAll(".值行")].map((行) => {
       const 标签 = 行.querySelector(".标签").value.trim();
       const 值 = 行.querySelector(".值").value.trim();
       return '{"类型标签":' + 标签 + ',"值":' + 值 + "}";
@@ -55,61 +55,61 @@ export function 装调试(取) {
   }
 
   function 刷调用预览() {
-    取("调用体文").textContent = 取调用体文();
+    取元素("调用体文").textContent = 取调用体文();
   }
 
   async function 发调用() {
-    const 果 = 取("调用果");
+    const 果 = 取元素("调用果");
     const 体文 = 取调用体文();
     刷调用预览();
-    写状态(取("调用状态"), "请求中…");
+    写状态(取元素("调用状态"), "请求中…");
     try {
       const 应答 = await 调用能力(体文);
       摆应答(果, 应答);
-      写状态(取("调用状态"), 应答.状态 === 200 ? "已回" : "HTTP " + 应答.状态, 应答.状态 === 200);
+      写状态(取元素("调用状态"), 应答.状态 === 200 ? "已回" : "HTTP " + 应答.状态, 应答.状态 === 200);
     } catch (错) {
       摆消息(果, "发不出去：" + 错.message);
-      写状态(取("调用状态"), "失败", false);
+      写状态(取元素("调用状态"), "失败", false);
     }
   }
 
   // ── 声明 ────────────────────────────────────────────────────────────────
   function 取声明体文() {
     return (
-      '{"类别":' + 取("声明类别").value.trim() +
-      ',"编号":' + 取("声明编号").value.trim() +
-      ',"正文":' + 取("声明正文").value.trim() + "}"
+      '{"类别":' + 取元素("声明类别").value.trim() +
+      ',"编号":' + 取元素("声明编号").value.trim() +
+      ',"正文":' + 取元素("声明正文").value.trim() + "}"
     );
   }
 
   function 刷声明预览() {
-    取("声明体文").textContent = 取声明体文();
+    取元素("声明体文").textContent = 取声明体文();
   }
 
   async function 发声明() {
-    const 果 = 取("声明果");
+    const 果 = 取元素("声明果");
     const 体文 = 取声明体文();
     刷声明预览();
-    写状态(取("声明状态"), "请求中…");
+    写状态(取元素("声明状态"), "请求中…");
     try {
       const 应答 = await 写声明(体文);
       摆应答(果, 应答);
-      写状态(取("声明状态"), 应答.状态 === 200 ? "已回" : "HTTP " + 应答.状态, 应答.状态 === 200);
+      写状态(取元素("声明状态"), 应答.状态 === 200 ? "已回" : "HTTP " + 应答.状态, 应答.状态 === 200);
     } catch (错) {
       摆消息(果, "发不出去：" + 错.message);
-      写状态(取("声明状态"), "失败", false);
+      写状态(取元素("声明状态"), "失败", false);
     }
   }
 
   // ── 接线 ────────────────────────────────────────────────────────────────
-  取("调用按钮").addEventListener("click", 发调用);
-  取("声明按钮").addEventListener("click", 发声明);
-  取("加行按钮").addEventListener("click", () => 加值行());
+  取元素("调用按钮").addEventListener("click", 发调用);
+  取元素("声明按钮").addEventListener("click", 发声明);
+  取元素("加行按钮").addEventListener("click", () => 加值行());
 
-  取("调用编号").addEventListener("input", 刷调用预览);
-  取("值行容器").addEventListener("input", 刷调用预览);
+  取元素("调用编号").addEventListener("input", 刷调用预览);
+  取元素("值行容器").addEventListener("input", 刷调用预览);
   for (const 号 of ["声明类别", "声明编号", "声明正文"]) {
-    取(号).addEventListener("input", 刷声明预览);
+    取元素(号).addEventListener("input", 刷声明预览);
   }
 
   加值行();

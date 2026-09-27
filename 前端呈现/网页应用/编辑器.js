@@ -54,13 +54,13 @@ export function 置文本(编辑, 文) {
 
 /**
  * 装好编辑器。返回 `{ 编辑, 刷 }`。
- * `取` 是 `(id) => 节点`，由 `应用.js` 给（本文件不认 id 字符串之外的页面结构）。
+ * `取元素` 是 `(id) => 节点`，由 `应用.js` 给（本文件不认 id 字符串之外的页面结构）。
  */
-export function 装编辑器(取) {
-  const 编辑 = 取("编辑区");
-  const 号 = 取("行号");
-  const 行列 = 取("行列读数");
-  const 字数 = 取("字数读数");
+export function 装编辑器(取元素) {
+  const 编辑 = 取元素("编辑区");
+  const 号 = 取元素("行号");
+  const 行列 = 取元素("行列读数");
+  const 字数 = 取元素("字数读数");
 
   function 刷光标() {
     const 前 = 编辑.value.slice(0, 编辑.selectionStart);
@@ -97,7 +97,7 @@ export function 装编辑器(取) {
   });
 
   // 示例下拉与载入按钮
-  const 选 = 取("示例选");
+  const 选 = 取元素("示例选");
   示例表.forEach(([标签], 位) => {
     const 项 = document.createElement("option");
     项.value = String(位);
@@ -109,19 +109,19 @@ export function 装编辑器(取) {
   // 语料入口已撤：清单里只剩内置模板，本函数不取任何外部件。
   function 载入示例() {
     置文本(编辑, 模板);
-    写状态(取("工具状态"), "已载入内置模板", true);
+    写状态(取元素("工具状态"), "已载入内置模板", true);
     return "已载入内置模板（不是语料）";
   }
 
   // 工具条的「新建」「清空」都走这里。
   function 清空编辑() {
     置文本(编辑, "");
-    写状态(取("工具状态"), "已清空（0 字符）", true);
+    写状态(取元素("工具状态"), "已清空（0 字符）", true);
     return "已清空（0 字符）";
   }
 
-  取("载入按钮").addEventListener("click", 载入示例);
-  取("清空按钮").addEventListener("click", 清空编辑);
+  取元素("载入按钮").addEventListener("click", 载入示例);
+  取元素("清空按钮").addEventListener("click", 清空编辑);
 
   刷();
   return { 编辑, 刷, 载入示例, 清空: 清空编辑 };

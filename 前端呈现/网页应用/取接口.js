@@ -26,7 +26,7 @@ const 路径_菜单命令 = "/接口/菜单命令";
 
 /** `GET /接口` → 自描述根。 */
 export async function 取根() {
-  return 取(路径_根);
+  return 取应答(路径_根);
 }
 
 /**
@@ -38,12 +38,12 @@ export async function 取根() {
  * 本身就破硬边界 1 ⇒ 改走这个端点（判据 ⑯ 守着这条）。
  */
 export async function 取扩展() {
-  return 取(路径_扩展);
+  return 取应答(路径_扩展);
 }
 
 /** `GET /接口/能力/<编号>` → 单条能力的完整契约。 */
 export async function 取能力(编号) {
-  return 取(路径_能力 + 编号);
+  return 取应答(路径_能力 + 编号);
 }
 
 /** `POST /接口/调用`。`体文` 是调用方拼好的请求体原文，**原样发出**。 */
@@ -67,7 +67,7 @@ export async function 写声明(体文) {
 
 /** `GET /接口/案例` → 案例清单 + 每个案例的最新回执。 */
 export async function 取案例() {
-  return 取(路径_案例);
+  return 取应答(路径_案例);
 }
 
 /** `POST /接口/案例/跑`，体 `{"案例标识":"…"}`。 */
@@ -126,7 +126,7 @@ export async function 取静态件(路) {
   return { 状态: 应答.status, 文: await 应答.text() };
 }
 
-async function 取(路径) {
+async function 取应答(路径) {
   const 应答 = await fetch(路径, { headers: { Accept: "application/json" } });
   return 收(应答);
 }

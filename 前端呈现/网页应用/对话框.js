@@ -12,10 +12,10 @@ import { 对话框 } from "./对话框表.js";
 // 预定义控件序数已由取证脚本解成类名，这里只给每个类一个外观类。
 const 类样式 = { BUTTON: "钮", EDIT: "编", STATIC: "静", LISTBOX: "列", COMBOBOX: "组" };
 
-export function 装对话框(取) {
-  const 选 = 取("对话框选");
-  const 台 = 取("对话框台");
-  const 读 = 取("对话框读数");
+export function 装对话框(取元素) {
+  const 选 = 取元素("对话框选");
+  const 台 = 取元素("对话框台");
+  const 读 = 取元素("对话框读数");
 
   for (const 话 of 对话框) {
     const 项 = document.createElement("option");
