@@ -85,7 +85,7 @@ impl 分析器<'_> {
         self.游标 = 开符;
         self.止 = 区间终点;
         let 结果 = match self.配对(b"(", b")") {
-            Some(闭) => self.实参表在(开符, 闭),
+            Some(闭符) => self.实参表在(开符, 闭符),
             None => Vec::new(),
         };
         self.游标 = 保存游标;

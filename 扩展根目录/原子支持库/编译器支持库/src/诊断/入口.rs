@@ -59,8 +59,8 @@ pub(super) fn 逐级<中间值>(
     二级: impl FnOnce(中间值) -> Result<(), 形状错误>,
 ) -> Option<形状错误> {
     match 一级 {
-        Err(错) => Some(错),
-        Ok(中) => 二级(中).err(),
+        Err(错误) => Some(错误),
+        Ok(中间值) => 二级(中间值).err(),
     }
 }
 

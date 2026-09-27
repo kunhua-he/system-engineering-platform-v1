@@ -54,7 +54,7 @@ fn 去行注释(文本: &str) -> String {
     let mut 输出缓冲 = String::with_capacity(文本.len());
     for 源码行 in 文本.lines() {
         match 源码行.find("//") {
-            Some(位) => 输出缓冲.push_str(&源码行[..位]),
+            Some(位置) => 输出缓冲.push_str(&源码行[..位置]),
             None => 输出缓冲.push_str(源码行),
         }
         输出缓冲.push('\n');

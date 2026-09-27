@@ -213,8 +213,8 @@ impl 假分配器 {
 
     fn 释放(&mut self, 地址: u64) -> Result<(), &'static str> {
         match self.活块.iter().position(|块地址| *块地址 == 地址) {
-            Some(位) => {
-                self.活块.remove(位);
+            Some(位置) => {
+                self.活块.remove(位置);
                 Ok(())
             }
             None => Err("重复释放"),
