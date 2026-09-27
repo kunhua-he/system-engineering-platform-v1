@@ -67,11 +67,11 @@ impl 草稿表 {
         let 大小 = self.子树大小表(根);
         let mut 出: Vec<节点> = Vec::with_capacity(大小[根 as usize] as usize);
         let mut 栈: Vec<u32> = vec![根];
-        while let Some(i) = 栈.pop() {
+        while let Some(节点位) = 栈.pop() {
             let 位置 = 出.len() as u32;
-            let 草 = &self.表[i as usize];
+            let 草 = &self.表[节点位 as usize];
             出.push(节点::叶(草.种类, 草.区间));
-            出[位置 as usize].子区间 = 语法树::先序子区间(位置, 大小[i as usize] - 1);
+            出[位置 as usize].子区间 = 语法树::先序子区间(位置, 大小[节点位 as usize] - 1);
             // 逆序入栈 ⇒ 出栈即先序。
             栈.extend(草.子.iter().rev().copied());
         }
@@ -86,15 +86,15 @@ impl 草稿表 {
     fn 子树大小表(&self, 根: u32) -> Vec<u32> {
         let mut 大小 = vec![0u32; self.表.len()];
         let mut 栈: Vec<(u32, usize)> = vec![(根, 0)];
-        while let Some((i, k)) = 栈.pop() {
-            let 子 = &self.表[i as usize].子;
-            match 子.get(k) {
-                Some(&c) => {
-                    栈.push((i, k + 1));
-                    栈.push((c, 0));
+        while let Some((节点位, 子序)) = 栈.pop() {
+            let 子 = &self.表[节点位 as usize].子;
+            match 子.get(子序) {
+                Some(&子下标) => {
+                    栈.push((节点位, 子序 + 1));
+                    栈.push((子下标, 0));
                 }
                 None => {
-                    大小[i as usize] = 1 + 子.iter().map(|&c| 大小[c as usize]).sum::<u32>();
+                    大小[节点位 as usize] = 1 + 子.iter().map(|&子下标| 大小[子下标 as usize]).sum::<u32>();
                 }
             }
         }

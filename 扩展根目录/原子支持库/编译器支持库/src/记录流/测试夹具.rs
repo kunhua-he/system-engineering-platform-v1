@@ -9,10 +9,10 @@ pub(crate) const 语料根目录: &str = "/tmp/易语言源码";
 pub(crate) const 系统核心支持库_GBK: &[u8] =
     &[0xCF, 0xB5, 0xCD, 0xB3, 0xBA, 0xCB, 0xD0, 0xC4, 0xD6, 0xA7, 0xB3, 0xD6, 0xBF, 0xE2];
 
-pub(crate) fn 首个不一致(甲: &[u8], 乙: &[u8]) -> u64 {
-    let 上限 = 甲.len().min(乙.len());
+pub(crate) fn 首个不一致(原文: &[u8], 产物: &[u8]) -> u64 {
+    let 上限 = 原文.len().min(产物.len());
     for 位 in 0..上限 {
-        if 甲[位] != 乙[位] {
+        if 原文[位] != 产物[位] {
             return 位 as u64;
         }
     }
@@ -56,11 +56,11 @@ pub(crate) fn 样例流() -> 记录流 {
             体长: 0,
             补零: [0; 40],
         },
-        体头: 段体头 { 甲: 0x0001_0064 },
+        体头: 段体头 { 首字段: 0x0001_0064 },
         支持库: 支持库表 {
-            数组甲: vec![193],
-            数组乙: vec![5],
-            数组丙: vec![0],
+            首数组: vec![193],
+            次数组: vec![5],
+            末数组: vec![0],
             引用表: vec![支持库引用::由字段(vec![
                 b"KRNLN".to_vec(),
                 b"d09f2340818511d396f6aaf844c7e325".to_vec(),

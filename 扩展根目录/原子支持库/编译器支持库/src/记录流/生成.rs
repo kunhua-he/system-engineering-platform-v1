@@ -5,12 +5,12 @@ use super::错误::生成错误;
 
 /// 生成：记录流 → 段数据字节。**必须与 `反解段数据` 构成往返一致**。
 pub fn 生成段数据(流: &记录流) -> Result<Vec<u8>, 生成错误> {
-    let 甲 = 流.支持库.数组甲.len() as u64;
-    let 乙 = 流.支持库.数组乙.len() as u64;
-    let 丙 = 流.支持库.数组丙.len() as u64;
+    let 首数组长 = 流.支持库.首数组.len() as u64;
+    let 次数组长 = 流.支持库.次数组.len() as u64;
+    let 末数组长 = 流.支持库.末数组.len() as u64;
     let 引用 = 流.支持库.引用表.len() as u64;
-    if 甲 != 乙 || 甲 != 丙 || 甲 != 引用 {
-        return Err(生成错误::支持库数组长度不一致 { 甲, 乙, 丙, 引用表: 引用 });
+    if 首数组长 != 次数组长 || 首数组长 != 末数组长 || 首数组长 != 引用 {
+        return Err(生成错误::支持库数组长度不一致 { 首数组长, 次数组长, 末数组长, 引用表: 引用 });
     }
     for (序号, 一条) in 流.支持库.引用表.iter().enumerate() {
         if 一条.字段.is_empty() {
@@ -31,22 +31,22 @@ pub fn 生成段数据(流: &记录流) -> Result<Vec<u8>, 生成错误> {
     出.extend_from_slice(&(体长 as u32).to_le_bytes());
     出.extend_from_slice(&流.头.补零);
 
-    出.extend_from_slice(&流.体头.甲.to_le_bytes());
+    出.extend_from_slice(&流.体头.首数组长.to_le_bytes());
     出.extend_from_slice(&段体魔数.to_le_bytes());
 
-    出.extend_from_slice(&((4 * 甲) as u32).to_le_bytes());
-    for 值 in &流.支持库.数组甲 {
+    出.extend_from_slice(&((4 * 首数组长) as u32).to_le_bytes());
+    for 值 in &流.支持库.首数组 {
         出.extend_from_slice(&值.to_le_bytes());
     }
-    出.extend_from_slice(&((2 * 甲) as u32).to_le_bytes());
-    for 值 in &流.支持库.数组乙 {
+    出.extend_from_slice(&((2 * 首数组长) as u32).to_le_bytes());
+    for 值 in &流.支持库.次数组 {
         出.extend_from_slice(&值.to_le_bytes());
     }
-    出.extend_from_slice(&((2 * 甲) as u32).to_le_bytes());
-    for 值 in &流.支持库.数组丙 {
+    出.extend_from_slice(&((2 * 首数组长) as u32).to_le_bytes());
+    for 值 in &流.支持库.末数组 {
         出.extend_from_slice(&值.to_le_bytes());
     }
-    出.extend_from_slice(&(甲 as u16).to_le_bytes());
+    出.extend_from_slice(&(首数组长 as u16).to_le_bytes());
 
     for 一条 in &流.支持库.引用表 {
         出.extend_from_slice(&(一条.串长() as u32).to_le_bytes());

@@ -18,12 +18,12 @@ fn 段数据头逐字段布局() {
 
 /// 段体头：甲原样写回，魔数恒 0x030BEF3F。
 #[test]
-fn 段体头魔数与甲() {
+fn 段体头魔数与体首字段() {
     let 产物 = 样例字节();
     assert_eq!(读u32(&产物, 0x38), 0x0001_0064, "段体甲");
     assert_eq!(读u32(&产物, 0x3C), 段体魔数, "段体魔数");
     let 流 = 反解段数据(&产物).expect("反解应成功");
-    assert_eq!(流.体头.甲, 0x0001_0064);
+    assert_eq!(流.体头.体首字段, 0x0001_0064);
     assert_eq!(生成段数据(&流).expect("再生成"), 产物);
 }
 
@@ -37,9 +37,9 @@ fn 支持库表三数组与支持库数四处一致() {
     assert_eq!(读u16(&产物, 0x54), 1, "u16 支持库数 = N");
 
     let 流 = 反解段数据(&产物).expect("反解应成功");
-    assert_eq!(流.支持库.数组甲, vec![193]);
-    assert_eq!(流.支持库.数组乙, vec![5]);
-    assert_eq!(流.支持库.数组丙, vec![0]);
+    assert_eq!(流.支持库.首数组, vec![193]);
+    assert_eq!(流.支持库.次数组, vec![5]);
+    assert_eq!(流.支持库.末数组, vec![0]);
     assert_eq!(流.支持库.引用表.len(), 1);
     assert_eq!(流.其余载荷, vec![0x01, 0x00, 0x01, 0x52]);
 }
@@ -60,8 +60,8 @@ fn 支持库引用_按分隔符切段再拼回原文() {
     assert_eq!(一条.字段数(), 5);
     assert_eq!(一条.库文件名(), Some(b"KRNLN".as_slice()));
     assert_eq!(一条.GUID(), Some(b"d09f2340818511d396f6aaf844c7e325".as_slice()));
-    assert_eq!(一条.版本甲(), Some(b"4".as_slice()));
-    assert_eq!(一条.版本乙(), Some(b"2".as_slice()));
+    assert_eq!(一条.首版本(), Some(b"4".as_slice()));
+    assert_eq!(一条.次版本(), Some(b"2".as_slice()));
     assert_eq!(一条.中文名(), Some(系统核心支持库_GBK));
     assert_eq!(一条.串长(), 串.len());
     assert_eq!(一条.原文(), 串, "切段再拼回必须逐字节相同");
@@ -211,13 +211,13 @@ fn 反向_支持库引用越界被检出() {
 #[test]
 fn 反向_生成_数组长度不一致被检出() {
     let mut 流 = 样例流();
-    流.支持库.数组乙.clear();
+    流.支持库.次数组.clear();
     assert_eq!(
         生成段数据(&流),
         Err(生成错误::支持库数组长度不一致 {
-            甲: 1,
-            乙: 0,
-            丙: 1,
+            首数组长: 1,
+            次数组长: 0,
+            末数组长: 1,
             引用表: 1,
         })
     );

@@ -4,41 +4,41 @@ from .常量 import CONST_RE, HDR, HDR_END
 
 
 # ── 容器段表 ──────────────────────────────────────────────────────────────
-def seg_table(b):
-    out, i = [], 0
+def seg_table(字节流):
+    out, 扫描位 = [], 0
     while True:
-        j = b.find(HDR, i)
-        if j < 0:
+        头位 = 字节流.find(HDR, 扫描位)
+        if 头位 < 0:
             break
-        t = b[j + 0x0B]
-        if b[j + 8:j + 0x0B] == HDR_END and b[j + 0x27:j + 0x2A] == HDR_END and t:
-            nm = b[j + 0x0C:j + 0x27]
-            key = bytes([0x73, 0x00, t, 0x19])
-            dec = bytes(nm[k] ^ key[k % 4] for k in range(len(nm)))
+        段型 = 字节流[头位 + 0x0B]
+        if 字节流[头位 + 8:头位 + 0x0B] == HDR_END and 字节流[头位 + 0x27:头位 + 0x2A] == HDR_END and 段型:
+            nm = 字节流[头位 + 0x0C:头位 + 0x27]
+            key = bytes([0x73, 0x00, 段型, 0x19])
+            dec = bytes(nm[位次] ^ key[位次 % 4] for 位次 in range(len(nm)))
             try:
-                out.append((j, t, dec.split(b"\x00")[0].decode("gbk")))
+                out.append((头位, 段型, dec.split(b"\x00")[0].decode("gbk")))
             except UnicodeDecodeError:
                 pass
-        i = j + 1
+        扫描位 = 头位 + 1
     out.sort()
     return out
 
 
 def seg_of(tab, off):
     cur = None
-    for st, t, n in tab:
+    for st, 段型, 段名 in tab:
         if st <= off:
-            cur = (st, t, n)
+            cur = (st, 段型, 段名)
         else:
             break
     return cur
 
 
-def const_name(b, off, back=4096):
+def const_name(字节流, off, back=4096):
     best = None
-    for m in CONST_RE.finditer(b, max(0, off - back), off):
+    for 匹配 in CONST_RE.finditer(字节流, max(0, off - back), off):
         try:
-            best = (m.start(), m.group(1).decode("gbk"))
+            best = (匹配.start(), 匹配.group(1).decode("gbk"))
         except UnicodeDecodeError:
             continue
     return best

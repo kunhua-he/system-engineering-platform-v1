@@ -39,11 +39,11 @@ STMT_KW = {"如果", "否则", "如果结束", "如果真", "如果真结束", "
 
 
 def lead_kw(line):
-    s = line.lstrip()
-    if s.startswith("."):
-        m = re.match(r"\.([0-9A-Za-z_\u4e00-\u9fff]+)", s)
-        if m:
-            return m.group(1)
+    行文 = line.lstrip()
+    if 行文.startswith("."):
+        匹配 = re.match(r"\.([0-9A-Za-z_\u4e00-\u9fff]+)", 行文)
+        if 匹配:
+            return 匹配.group(1)
     return None
 
 
@@ -60,18 +60,18 @@ ASCII_PUNCT = set(r"!\"#$%'()*+,-./:;<=>?@[\]^_`{|}~")
 
 def _field_idx(line, col):
     """col 之前有几个「顶层半角逗号」（字面量内的不算）→ 就是字段序。"""
-    n = 0
-    j = 0
-    while j < col and j < len(line):
-        c = line[j]
-        if c in "“”\"":
-            close = "”" if c in "“”" else '"'
-            j += 1
-            while j < len(line) and line[j] != close:
-                j += 1
-            j += 1
+    字段数 = 0
+    扫描位 = 0
+    while 扫描位 < col and 扫描位 < len(line):
+        字符 = line[扫描位]
+        if 字符 in "“”\"":
+            close = "”" if 字符 in "“”" else '"'
+            扫描位 += 1
+            while 扫描位 < len(line) and line[扫描位] != close:
+                扫描位 += 1
+            扫描位 += 1
             continue
-        if c == ",":
-            n += 1
-        j += 1
-    return n
+        if 字符 == ",":
+            字段数 += 1
+        扫描位 += 1
+    return 字段数

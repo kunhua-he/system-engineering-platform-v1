@@ -18,11 +18,11 @@ const 系统信息段_GBK: &[u8] = &[0xCF, 0xB5, 0xCD, 0xB3, 0xD0, 0xC5, 0xCF, 0
 const 用户信息段_GBK: &[u8] = &[0xD3, 0xC3, 0xBB, 0xA7, 0xD0, 0xC5, 0xCF, 0xA2, 0xB6, 0xCE];
 const 程序加固段_GBK: &[u8] = &[0xB3, 0xCC, 0xD0, 0xF2, 0xBC, 0xD3, 0xB9, 0xCC, 0xB6, 0xCE];
 
-fn 首个不一致(甲: &[u8], 乙: &[u8]) -> u64 {
-    let 上限 = 甲.len().min(乙.len());
-    for i in 0..上限 {
-        if 甲[i] != 乙[i] {
-            return i as u64;
+fn 首个不一致(原文: &[u8], 产物: &[u8]) -> u64 {
+    let 上限 = 原文.len().min(产物.len());
+    for 位 in 0..上限 {
+        if 原文[位] != 产物[位] {
+            return 位 as u64;
         }
     }
     上限 as u64
