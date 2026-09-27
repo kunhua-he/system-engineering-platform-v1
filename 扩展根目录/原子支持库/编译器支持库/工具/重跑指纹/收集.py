@@ -33,7 +33,7 @@ def 收集():
         for 名称 in 名s:
             if 名称.endswith(".rs"):
                 文件.append(os.path.join(当前, 名称))
-    return sorted(相对路径(路) for 路 in 文件)
+    return sorted(相对路径(路径) for 路径 in 文件)
 
 
 def 算指纹(路径):
@@ -45,7 +45,7 @@ def 算指纹(路径):
 
 
 def 算表():
-    return {相: 算指纹(os.path.join(扩展根, 相)) for 相 in 收集()}
+    return {相对路径: 算指纹(os.path.join(扩展根, 相对路径)) for 相对路径 in 收集()}
 
 
 def 读旧表():

@@ -77,17 +77,17 @@ fn 语料往返逐字节一致() {
     for 路径 in &文件表 {
         let 原文 = match std::fs::read(路径) {
             Ok(字节) => 字节,
-            Err(错) => {
-                失败.push(format!("{} 读入失败：{错}", 路径.display()));
+            Err(错误) => {
+                失败.push(format!("{} 读入失败：{错误}", 路径.display()));
                 continue;
             }
         };
         match 反解(&原文) {
-            Err(错) => 失败.push(format!("{} 反解失败：{错:?}", 路径.display())),
-            Ok(容) => match 生成(&容) {
-                Err(错) => 失败.push(format!("{} 生成失败：{错:?}", 路径.display())),
+            Err(错误) => 失败.push(format!("{} 反解失败：{错误:?}", 路径.display())),
+            Ok(容器) => match 生成(&容器) {
+                Err(错误) => 失败.push(format!("{} 生成失败：{错误:?}", 路径.display())),
                 Ok(产物) => {
-                    段总数 += 容.段表.len() as u64;
+                    段总数 += 容器.段表.len() as u64;
                     if 产物 == 原文 {
                         通过数 += 1;
                     } else {

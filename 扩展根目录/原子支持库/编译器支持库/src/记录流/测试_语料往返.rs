@@ -28,15 +28,15 @@ fn 语料往返_程序段数据逐字节一致() {
     for 路径 in &文件表 {
         let 原文 = match std::fs::read(路径) {
             Ok(字节) => 字节,
-            Err(错) => {
-                失败.push(format!("{} 读入失败：{错}", 路径.display()));
+            Err(错误) => {
+                失败.push(format!("{} 读入失败：{错误}", 路径.display()));
                 continue;
             }
         };
         let 容器 = match 容器::反解(&原文) {
             Ok(容器) => 容器,
-            Err(错) => {
-                失败.push(format!("{} 容器反解失败：{错:?}", 路径.display()));
+            Err(错误) => {
+                失败.push(format!("{} 容器反解失败：{错误:?}", 路径.display()));
                 continue;
             }
         };
@@ -47,8 +47,8 @@ fn 语料往返_程序段数据逐字节一致() {
             段数 += 1;
             let 输出流 = match 反解段数据(&号段.数据) {
                 Ok(输出流) => 输出流,
-                Err(错) => {
-                    失败.push(format!("{} 第 {序号} 段 段数据反解失败：{错:?}", 路径.display()));
+                Err(错误) => {
+                    失败.push(format!("{} 第 {序号} 段 段数据反解失败：{错误:?}", 路径.display()));
                     continue;
                 }
             };
@@ -64,8 +64,8 @@ fn 语料往返_程序段数据逐字节一致() {
                 .count() as u64;
 
             match 生成段数据(&输出流) {
-                Err(错) => {
-                    失败.push(format!("{} 第 {序号} 段 段数据生成失败：{错:?}", 路径.display()));
+                Err(错误) => {
+                    失败.push(format!("{} 第 {序号} 段 段数据生成失败：{错误:?}", 路径.display()));
                 }
                 Ok(产物) => {
                     if 产物 == 号段.数据 {
