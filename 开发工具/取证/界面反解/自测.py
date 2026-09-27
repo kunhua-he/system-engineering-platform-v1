@@ -18,22 +18,22 @@ def 自测(样本="/tmp/易语言源码/e.exe"):
         pe = PE(好)
         叶 = 走资源树(pe)
         定位 = {}
-        for x in 叶:
-            定位.setdefault((x["类型"], x["id"]), x)
+        for 叶项 in 叶:
+            定位.setdefault((叶项["类型"], 叶项["id"]), 叶项)
         def 改(数据, 处, 值):
-            b = bytearray(数据)
-            b[处:处 + len(值)] = 值
-            return bytes(b)
-        e = pe.e
-        例.append(("可选头长度改 0", 改(好, e + 20, b"\0\0")))
-        例.append(("节数改 0xFFFF", 改(好, e + 6, b"\xff\xff")))
-        例.append(("资源目录 RVA 指到文件外", 改(好, e + 24 + 96 + 16, (0x700000).to_bytes(4, "little"))))
+            样本字节 = bytearray(数据)
+            样本字节[处:处 + len(值)] = 值
+            return bytes(样本字节)
+        PE头偏移 = pe.e
+        例.append(("可选头长度改 0", 改(好, PE头偏移 + 20, b"\0\0")))
+        例.append(("节数改 0xFFFF", 改(好, PE头偏移 + 6, b"\xff\xff")))
+        例.append(("资源目录 RVA 指到文件外", 改(好, PE头偏移 + 24 + 96 + 16, (0x700000).to_bytes(4, "little"))))
         例.append(("资源目录根项数改 0xFFFF", 改(好, pe.转偏移(pe.资源目录[0]) + 14, b"\xff\xff")))
         例.append(("资源目录项指到 .rsrc 外", 改(好, pe.转偏移(pe.资源目录[0]) + 16 + 4, (0x00000100).to_bytes(4, "little"))))
         节 = 定位[(4, 127)]
-        m = 节["数据偏移"]
-        例.append(("菜单版本号改成 1（MENUEX，本解不支持）", 改(好, m, b"\x01\x00")))
-        例.append(("菜单末项文字去掉 NUL", 改(好, m + 节["大小"] - 2, b"\x41\x00")))
+        菜单偏移 = 节["数据偏移"]
+        例.append(("菜单版本号改成 1（MENUEX，本解不支持）", 改(好, 菜单偏移, b"\x01\x00")))
+        例.append(("菜单末项文字去掉 NUL", 改(好, 菜单偏移 + 节["大小"] - 2, b"\x41\x00")))
         例.append(("菜单资源声明长度砍半", 改(好, 节["数据项偏移"] + 4, (节["大小"] // 2).to_bytes(4, "little"))))
         dl = 定位[(5, 303)]
         d0 = dl["数据偏移"]
@@ -41,8 +41,8 @@ def 自测(样本="/tmp/易语言源码/e.exe"):
         例.append(("对话框资源声明长度砍掉 4 字节", 改(好, dl["数据项偏移"] + 4, (dl["大小"] - 4).to_bytes(4, "little"))))
         串 = 定位[(6, 2049)]
         例.append(("字符串块首条长度改成 0xFFFF", 改(好, 串["数据偏移"], b"\xff\xff")))
-        加 = 定位[(9, 30997)]
-        例.append(("加速键长度改成 25（非 8 倍数）", 改(好, 加["数据项偏移"] + 4, (25).to_bytes(4, "little"))))
+        加速键叶 = 定位[(9, 30997)]
+        例.append(("加速键长度改成 25（非 8 倍数）", 改(好, 加速键叶["数据项偏移"] + 4, (25).to_bytes(4, "little"))))
         图 = 定位[(14, 126)]
         例.append(("图标组条数改成 9", 改(好, 图["数据偏移"] + 4, (9).to_bytes(2, "little"))))
         版 = 定位[(16, 1)]
@@ -54,8 +54,8 @@ def 自测(样本="/tmp/易语言源码/e.exe"):
     失败 = 0
     for 名, 数据 in 例:
         try:
-            r = 反解数据(数据, 名)
-            总 = sum(len(v) for v in r["菜单"].values()) + sum(len(v[1]["控件"]) for v in r["对话框"].values())
+            读数 = 反解数据(数据, 名)
+            总 = sum(len(表值) for 表值 in 读数["菜单"].values()) + sum(len(表值[1]["控件"]) for 表值 in 读数["对话框"].values())
             print("  ✗ %-34s 竟然解析成功（解出菜单/控件 %d 项）—— 假绿" % (名, 总))
             失败 += 1
         except 解析错误 as ex:
@@ -64,11 +64,11 @@ def 自测(样本="/tmp/易语言源码/e.exe"):
             print("  ✗ %-34s 抛了非解析错误（%s: %s）" % (名, type(ex).__name__, str(ex)[:40]))
             失败 += 1
     try:
-        r = 反解(样本)
+        读数 = 反解(样本)
         print("  ✓ 正向样本 %s 解析成功（菜单 %d 项 · 对话框 %d 个 · 控件 %d 个 · 字符串 %d 条）"
-              % (os.path.basename(样本), sum(len(v[1]) for v in r["菜单"].values()), len(r["对话框"]),
-                 sum(len(v[1]["控件"]) for v in r["对话框"].values()),
-                 sum(1 for v in r["字符串"].values() for s in v[1] if s)))
+              % (os.path.basename(样本), sum(len(表值[1]) for 表值 in 读数["菜单"].values()), len(读数["对话框"]),
+                 sum(len(表值[1]["控件"]) for 表值 in 读数["对话框"].values()),
+                 sum(1 for 表值 in 读数["字符串"].values() for 串条 in 表值[1] if 串条)))
     except 解析错误 as ex:
         print("  ✗ 正向样本反而失败：%s" % ex)
         失败 += 1

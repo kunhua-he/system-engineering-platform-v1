@@ -27,12 +27,12 @@ class PE:
             raise 解析错误("魔数 0x%x 不是 PE32；64 位资源目录布局未取证，拒绝猜" % self.魔数)
         self.基址 = struct.unpack_from("<I", 数据, self.e + 24 + 28)[0]
         self.节 = []
-        for i in range(self.节数):
-            b = self.e + 24 + self.可选头长 + i * 40
-            if b + 40 > len(数据):
-                raise 解析错误("节表第 %d 项越界" % i)
-            名 = 数据[b:b + 8].rstrip(b"\0").decode("latin1")
-            虚长, 虚址, 原长, 原址 = struct.unpack_from("<IIII", 数据, b + 8)
+        for 节序 in range(self.节数):
+            节表项偏移 = self.e + 24 + self.可选头长 + 节序 * 40
+            if 节表项偏移 + 40 > len(数据):
+                raise 解析错误("节表第 %d 项越界" % 节序)
+            名 = 数据[节表项偏移:节表项偏移 + 8].rstrip(b"\0").decode("latin1")
+            虚长, 虚址, 原长, 原址 = struct.unpack_from("<IIII", 数据, 节表项偏移 + 8)
             if 原址 + 原长 > len(数据):
                 raise 解析错误("节 %s 原始数据越界（%d+%d > %d）" % (名, 原址, 原长, len(数据)))
             self.节.append((名, 虚址, 虚长, 原址, 原长))
@@ -45,10 +45,10 @@ class PE:
     def 转偏移(self, rva):
         for 名, 虚址, 虚长, 原址, 原长 in self.节:
             if 虚址 <= rva < 虚址 + max(虚长, 原长):
-                o = 原址 + (rva - 虚址)
-                if o >= len(self.d):
-                    raise 解析错误("RVA 0x%x 映到文件外 0x%x" % (rva, o))
-                return o
+                文偏移 = 原址 + (rva - 虚址)
+                if 文偏移 >= len(self.d):
+                    raise 解析错误("RVA 0x%x 映到文件外 0x%x" % (rva, 文偏移))
+                return 文偏移
         raise 解析错误("RVA 0x%x 不在任何节里" % rva)
 
     def 读u16(self, 偏移):
@@ -62,7 +62,7 @@ class PE:
         return struct.unpack_from("<I", self.d, 偏移)[0]
 
     def 节区间(self, 名):
-        for n, 虚址, 虚长, 原址, 原长 in self.节:
-            if n == 名:
+        for 节名, 虚址, 虚长, 原址, 原长 in self.节:
+            if 节名 == 名:
                 return 原址, 原址 + 原长
         raise 解析错误("没有 %s 节" % 名)

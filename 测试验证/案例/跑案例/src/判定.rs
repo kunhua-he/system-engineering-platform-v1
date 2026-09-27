@@ -212,11 +212,11 @@ mod 测试 {
     #[test]
     fn 层错就报层() {
         let 实 = 观("失败", Some("内核"), Some(登记1()), 观测产物::空槽);
-        let 判 = 比对(&期失败("扩展", true), &实, Path::new("/甲"));
+        let 判定值 = 比对(&期失败("扩展", true), &实, Path::new("/甲"));
         assert!(
-            matches!(&判, Ok(判定::不符(错)) if 错.contains("期望死在 `扩展`")),
+            matches!(&判定值, Ok(判定::不符(错)) if 错.contains("期望死在 `扩展`")),
             "该报层不符，实到 {}",
-            描述(&判)
+            描述(&判定值)
         );
     }
 
@@ -224,11 +224,11 @@ mod 测试 {
     #[test]
     fn 业务判断错就报那一条() {
         let 实 = 观("失败", Some("内核"), Some(登记1()), 观测产物::空槽);
-        let 判 = 比对(&期失败("内核", true), &实, Path::new("/甲"));
+        let 判定值 = 比对(&期失败("内核", true), &实, Path::new("/甲"));
         assert!(
-            matches!(&判, Ok(判定::不符(错)) if 错.contains("需人工")),
+            matches!(&判定值, Ok(判定::不符(错)) if 错.contains("需人工")),
             "该报需人工不符，实到 {}",
-            描述(&判)
+            描述(&判定值)
         );
     }
 
@@ -236,23 +236,23 @@ mod 测试 {
     #[test]
     fn 期望失败实到成功要报红() {
         let 实 = 观("成功", None, None, 观测产物::空槽);
-        let 判 = 比对(&期失败("内核", false), &实, Path::new("/甲"));
-        assert!(matches!(判, Ok(判定::不符(_))), "该报不符，实到 {}", 描述(&判));
+        let 判定值 = 比对(&期失败("内核", false), &实, Path::new("/甲"));
+        assert!(matches!(判定值, Ok(判定::不符(_))), "该报不符，实到 {}", 描述(&判定值));
     }
 
     /// 正向/反向样本：逐字节比对必须报出**第一处差异的偏移**与长度差。
     #[test]
     fn 逐字节比对报偏移() {
-        let 甲 = 临时路("甲");
-        std::fs::write(&甲, b"abcd").unwrap();
-        let 期 = 期望::成功 { 产物: 产物判据::逐字节等于文件(甲.clone()) };
+        let 临时件路径 = 临时路("甲");
+        std::fs::write(&临时件路径, b"abcd").unwrap();
+        let 期 = 期望::成功 { 产物: 产物判据::逐字节等于文件(临时件路径.clone()) };
         let 同 = 比对(&期, &观("成功", None, None, 观测产物::字节集(b"abcd".to_vec())), Path::new("/"));
         assert!(matches!(同, Ok(判定::通过(_))), "该通过，实到 {}", 描述(&同));
         let 异 = 比对(&期, &观("成功", None, None, 观测产物::字节集(b"abXd".to_vec())), Path::new("/"));
         assert!(matches!(&异, Ok(判定::不符(错)) if 错.contains("偏移 2")), "实到 {}", 描述(&异));
         let 短 = 比对(&期, &观("成功", None, None, 观测产物::字节集(b"ab".to_vec())), Path::new("/"));
         assert!(matches!(&短, Ok(判定::不符(错)) if 错.contains("长度不同")), "实到 {}", 描述(&短));
-        let _ = std::fs::remove_file(&甲);
+        let _ = std::fs::remove_file(&临时件路径);
     }
 
     /// 工具错误：比对目标读不到 ⇒ `Err`（不写回执），**不许**当成案例失败。
@@ -267,13 +267,13 @@ mod 测试 {
     fn 期望空槽时返回了东西要报红() {
         let 期 = 期望::成功 { 产物: 产物判据::空槽 };
         let 实 = 观("成功", None, None, 观测产物::字节集(vec![1]));
-        let 判 = 比对(&期, &实, Path::new("/"));
-        assert!(matches!(判, Ok(判定::不符(_))), "该报不符，实到 {}", 描述(&判));
+        let 判定值 = 比对(&期, &实, Path::new("/"));
+        assert!(matches!(判定值, Ok(判定::不符(_))), "该报不符，实到 {}", 描述(&判定值));
     }
 
     /// 判定的可读描述（只为报错信息，不是判定逻辑）。
-    fn 描述(判: &Result<判定, String>) -> String {
-        match 判 {
+    fn 描述(判定值: &Result<判定, String>) -> String {
+        match 判定值 {
             Ok(判定::通过(读)) => format!("通过（{读}）"),
             Ok(判定::不符(差)) => format!("不符（{差}）"),
             Err(错) => format!("工具错误（{错}）"),

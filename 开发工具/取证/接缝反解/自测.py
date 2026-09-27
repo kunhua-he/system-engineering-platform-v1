@@ -22,10 +22,10 @@ def 自测(样本="/tmp/易语言源码/lib/shellEx.fne"):
                ("命令表指针清 0 而计数非 0", 0x68, b"\0\0\0\0"), ("GUID 指针指到镜像外", 0x04, b"\xff\xff\xff\xff"),
                ("命令表指针指向文件尾外", 0x68, (pe.基址 + 0x700000).to_bytes(4, "little"))]
         for 名, 处, 值 in 改例:
-            b = bytearray(好); b[结构偏移 + 处:结构偏移 + 处 + 4] = 值
-            例.append((名, bytes(b)))
-        b = bytearray(好); o = pe.转偏移(解接缝(pe)[1]); b[o:o + 6] = b"\x0f\x0b\x0f\x0b\x0f\x0b"
-        例.append(("GetNewInf 机器码换成 ud2", bytes(b)))
+            样本字节 = bytearray(好); 样本字节[结构偏移 + 处:结构偏移 + 处 + 4] = 值
+            例.append((名, bytes(样本字节)))
+        样本字节 = bytearray(好); 文偏移 = pe.转偏移(解接缝(pe)[1]); 样本字节[文偏移:文偏移 + 6] = b"\x0f\x0b\x0f\x0b\x0f\x0b"
+        例.append(("GetNewInf 机器码换成 ud2", bytes(样本字节)))
     except 解析错误 as ex:
         print("警告：好样本自己就解不动（%s），反向样本只跑通用那批" % ex)
     print("自测：喂 %d 个坏样本，断言「报错且不产出字段」" % len(例))
@@ -33,10 +33,10 @@ def 自测(样本="/tmp/易语言源码/lib/shellEx.fne"):
     for 名, 数据 in 例:
         try:
             pe = PE(数据, 名)
-            d = {f[2]: f[4] for f in 读字段(pe, pe.转偏移(解接缝(pe)[3]), 库信息字段)}
-            if d["m_dwLibFormatVer"] != 库格式号:
-                raise 解析错误("格式号不符 0x%08x" % d["m_dwLibFormatVer"])
-            解表(pe, d["m_nCmdCount"], d["m_pBeginCmdInfo"], 命令项大小, 命令字段)
+            字典 = {字段项[2]: 字段项[4] for 字段项 in 读字段(pe, pe.转偏移(解接缝(pe)[3]), 库信息字段)}
+            if 字典["m_dwLibFormatVer"] != 库格式号:
+                raise 解析错误("格式号不符 0x%08x" % 字典["m_dwLibFormatVer"])
+            解表(pe, 字典["m_nCmdCount"], 字典["m_pBeginCmdInfo"], 命令项大小, 命令字段)
             print("  ✗ %-26s 竟然解析成功 —— 假绿" % 名); 失败 += 1
         except 解析错误 as ex:
             print("  ✓ %-26s 报错：%s" % (名, ex))

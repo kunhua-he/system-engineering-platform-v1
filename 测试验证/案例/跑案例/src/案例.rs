@@ -143,11 +143,11 @@ pub fn 读全部(案例根: &Path) -> Result<Vec<案例>, String> {
             案例根.display()
         ));
     }
-    let mut 出 = Vec::new();
+    let mut 累积表 = Vec::new();
     for 名 in 名表 {
-        出.push(读一个(&案例根.join(&名))?);
+        累积表.push(读一个(&案例根.join(&名))?);
     }
-    Ok(出)
+    Ok(累积表)
 }
 
 fn 读一个(目录: &Path) -> Result<案例, String> {
@@ -167,7 +167,7 @@ fn 读步骤(清单: &值, 目录: &Path) -> Result<Vec<步骤>, String> {
         .取("步骤")
         .and_then(|一| 一.表())
         .ok_or_else(|| format!("{}：`步骤` 缺失或不是数组", 目录.display()))?;
-    let mut 出 = Vec::new();
+    let mut 累积表 = Vec::new();
     for (序, 一) in 表.iter().enumerate() {
         let 名 = 一
             .取("名")
@@ -225,9 +225,9 @@ fn 读步骤(清单: &值, 目录: &Path) -> Result<Vec<步骤>, String> {
             };
             实参.push(实参 { 类型标签, 来源 });
         }
-        出.push(步骤 { 名, 能力编号, 实参 });
+        累积表.push(步骤 { 名, 能力编号, 实参 });
     }
-    Ok(出)
+    Ok(累积表)
 }
 
 fn 读期望(路: &Path, 步骤数: usize, 目录: &Path) -> Result<Vec<期望>, String> {
@@ -243,7 +243,7 @@ fn 读期望(路: &Path, 步骤数: usize, 目录: &Path) -> Result<Vec<期望>,
             表.len()
         ));
     }
-    let mut 出 = Vec::new();
+    let mut 累积表 = Vec::new();
     for (序, 一) in 表.iter().enumerate() {
         let 结果 = 一
             .取("结果")
@@ -276,20 +276,20 @@ fn 读期望(路: &Path, 步骤数: usize, 目录: &Path) -> Result<Vec<期望>,
                 ));
             }
         };
-        出.push(定);
+        累积表.push(定);
     }
-    Ok(出)
+    Ok(累积表)
 }
 
 fn 读产物(一: &值, 目录: &Path) -> Result<产物判据, String> {
     let Some(产物) = 一.取("产物") else {
         return Ok(产物判据::不判);
     };
-    let 判 = 产物
+    let 判定值 = 产物
         .取("判据")
         .and_then(|一| 一.串())
         .ok_or_else(|| format!("{}：`产物` 缺 `判据`", 目录.display()))?;
-    match 判 {
+    match 判定值 {
         "空槽" => Ok(产物判据::空槽),
         "非空字节集" => Ok(产物判据::非空字节集),
         "不判" => Ok(产物判据::不判),
@@ -324,13 +324,13 @@ pub fn 解十六进制(文: &str) -> Result<Vec<u8>, String> {
     if !净.len().is_multiple_of(2) {
         return Err(format!("十六进制位数是奇数（{}）", 净.len()));
     }
-    let mut 出 = Vec::with_capacity(净.len() / 2);
+    let mut 累积表 = Vec::with_capacity(净.len() / 2);
     for 对 in 净.chunks(2) {
         let 文 = std::str::from_utf8(对).map_err(|_| "不是 ASCII".to_owned())?;
         let 数 = u8::from_str_radix(文, 16).map_err(|_| format!("`{文}` 不是十六进制字节"))?;
-        出.push(数);
+        累积表.push(数);
     }
-    Ok(出)
+    Ok(累积表)
 }
 
 fn 读JSON(路: &Path) -> Result<值, String> {

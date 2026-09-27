@@ -64,7 +64,7 @@ def 主(参数):
     # 本地静态服务：ES 模块要 http；端口取 0 = 让内核给一个空闲口（不写死端口，免得撞）。
     # 静音访问日志：静态服务是本脚本的内部件，它的 404 噪声（页面会拉 `/接口`）不该混进读数。
     # 用**赋值**而不是子类 —— 本文件是 py-script，判据「只许一个顶层 def/class」多一个就欠债。
-    http.server.SimpleHTTPRequestHandler.log_message = lambda *a, **k: None
+    http.server.SimpleHTTPRequestHandler.log_message = lambda *实参, **键参数: None
     处理 = functools.partial(http.server.SimpleHTTPRequestHandler, directory=str(前端目录))
     try:
         服务 = socketserver.TCPServer(("127.0.0.1", 0), 处理)

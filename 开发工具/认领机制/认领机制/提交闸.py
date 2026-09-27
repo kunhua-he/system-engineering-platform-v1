@@ -30,13 +30,13 @@ def git_toplevel(cwd=None):
     故这里显式取 cwd 的仓根，并与 ROOT 对不上时报「判不了」（见 op_gate）。
     """
     try:
-        p = subprocess.run(["git", "rev-parse", "--show-toplevel"],
+        进程 = subprocess.run(["git", "rev-parse", "--show-toplevel"],
                            capture_output=True, cwd=cwd)
     except OSError:
         return None
-    if p.returncode != 0:
+    if 进程.returncode != 0:
         return None
-    top = p.stdout.decode("utf-8", "surrogateescape").strip()
+    top = 进程.stdout.decode("utf-8", "surrogateescape").strip()
     return os.path.realpath(top) if top else None
 
 
@@ -49,14 +49,14 @@ def leg_from_branch(cwd=None):
     闸报「判不了」（**不许猜**：猜错腿名 = 拿别人的认领集去判，那是假绿）。
     """
     try:
-        p = subprocess.run(["git", "rev-parse", "--abbrev-ref", "HEAD"],
+        进程 = subprocess.run(["git", "rev-parse", "--abbrev-ref", "HEAD"],
                            capture_output=True, cwd=cwd)
     except OSError:
         return None
-    if p.returncode != 0:
+    if 进程.returncode != 0:
         return None
-    b = p.stdout.decode("utf-8", "surrogateescape").strip()
-    return b[len("腿/"):] if b.startswith("腿/") and len(b) > len("腿/") else None
+    腿标识 = 进程.stdout.decode("utf-8", "surrogateescape").strip()
+    return 腿标识[len("腿/"):] if 腿标识.startswith("腿/") and len(腿标识) > len("腿/") else None
 
 
 def git_staged_paths(root=ROOT):
@@ -72,14 +72,14 @@ def git_staged_paths(root=ROOT):
     cmd = ["git", "-C", root, "diff", "--cached", "--name-only", "-z",
            "--no-renames", "--diff-filter=ACMRDT"]
     try:
-        p = subprocess.run(cmd, capture_output=True)
-    except OSError as e:
-        return None, "调不起 git（%r）" % (e,), EXIT_USAGE
-    if p.returncode != 0:
+        进程 = subprocess.run(cmd, capture_output=True)
+    except OSError as 错:
+        return None, "调不起 git（%r）" % (错,), EXIT_USAGE
+    if 进程.returncode != 0:
         return None, "git 退出码 %d：%s" % (
-            p.returncode, p.stderr.decode("utf-8", "replace").strip()), EXIT_USAGE
-    raw = p.stdout.decode("utf-8", "surrogateescape")
-    return [f for f in raw.split("\0") if f], "git diff --cached --name-only", EXIT_OK
+            进程.returncode, 进程.stderr.decode("utf-8", "replace").strip()), EXIT_USAGE
+    raw = 进程.stdout.decode("utf-8", "surrogateescape")
+    return [路径项 for 路径项 in raw.split("\0") if 路径项], "git diff --cached --name-only", EXIT_OK
 
 
 def op_gate(led, leg, staged_raw, mode=GATE_WARN, now=None, root=ROOT):
@@ -116,8 +116,8 @@ def op_gate(led, leg, staged_raw, mode=GATE_WARN, now=None, root=ROOT):
 
     holders = {}
     for lease in led.data["租约"]:
-        for p in lease["路径集"]:
-            holders.setdefault(p, lease)
+        for 进程 in lease["路径集"]:
+            holders.setdefault(进程, lease)
 
     mine = None
     for lease in led.data["租约"]:
@@ -139,9 +139,9 @@ def op_gate(led, leg, staged_raw, mode=GATE_WARN, now=None, root=ROOT):
         out.update({"结果": "判不了", "缺什么": "本次没有要提交的路径（空集不算通过）"})
         return out
 
-    不在 = [p for p in paths if p not in claimed]
-    没人认领 = [p for p in 不在 if p not in holders]
-    被谁占 = {p: holders[p]["腿标识"] for p in 不在 if p in holders}
+    不在 = [进程 for 进程 in paths if 进程 not in claimed]
+    没人认领 = [进程 for 进程 in 不在 if 进程 not in holders]
+    被谁占 = {进程: holders[进程]["腿标识"] for 进程 in 不在 if 进程 in holders}
     out["不在认领集"] = 不在
     out["没人认领"] = 没人认领
     out["被别人占"] = 被谁占

@@ -28,9 +28,9 @@ from .分片 import 文件表, 切分, 归并, 归并汇总, 扫分片, 扫并�
 
 def _去耗时(读数: dict) -> dict:
     """比较读数时剔掉 `毫秒`：它是**实测耗时**，两次跑必然不同，不属于「读数是否相同」的面。"""
-    出 = dict(读数)
-    出.pop("毫秒", None)
-    return 出
+    结果 = dict(读数)
+    结果.pop("毫秒", None)
+    return 结果
 
 
 def _缓存与分片(样本, 失败: list) -> None:
@@ -105,8 +105,8 @@ def 自测(样本="/tmp/易语言源码/lib/krnln/samples/第一个程序.e"):
         好 = fh.read()
     段 = 反解容器(好)
     段号, 段起, 段止, 头起 = [一片 for 一片 in 段 if 一片[0] == 段类型_程序][0]
-    r = 解段数据(好[段起:段止])
-    区起 = r["声明记录区起点"]
+    段数据读数 = 解段数据(好[段起:段止])
+    区起 = 段数据读数["声明记录区起点"]
 
     例 = [
         ("空文件", b""),
@@ -117,38 +117,38 @@ def 自测(样本="/tmp/易语言源码/lib/krnln/samples/第一个程序.e"):
         ("魔数改坏", b"ZZ" + 好[2:]),
     ]
     # 段头级
-    b = bytearray(好); b[8:10] = b"\x00\x00"
-    例.append(("段头魔术甲改坏", bytes(b)))
-    b = bytearray(好); b[10:12] = b"\x00\x00"
-    例.append(("段头魔术乙改坏", bytes(b)))
-    b = bytearray(好); b[8 + 11] = 0x99
-    例.append(("段类型号越界 0x99", bytes(b)))
-    b = bytearray(好); b[8 + 0x2A] = 0x03
-    例.append(("段头尾标志改成 0x03（仅类型255合法）", bytes(b)))
+    坏样本字节 = bytearray(好); 坏样本字节[8:10] = b"\x00\x00"
+    例.append(("段头魔术甲改坏", bytes(坏样本字节)))
+    坏样本字节 = bytearray(好); 坏样本字节[10:12] = b"\x00\x00"
+    例.append(("段头魔术乙改坏", bytes(坏样本字节)))
+    坏样本字节 = bytearray(好); 坏样本字节[8 + 11] = 0x99
+    例.append(("段类型号越界 0x99", bytes(坏样本字节)))
+    坏样本字节 = bytearray(好); 坏样本字节[8 + 0x2A] = 0x03
+    例.append(("段头尾标志改成 0x03（仅类型255合法）", bytes(坏样本字节)))
     # 段数据级（段数据起 = 段起）
-    b = bytearray(好); b[段起 + 头偏移_保留:段起 + 头偏移_保留 + 4] = (1).to_bytes(4, "little")
-    例.append(("段数据头保留改成 1", bytes(b)))
-    b = bytearray(好); b[段起 + 头偏移_补零 + 5] = 0x7F
-    例.append(("段数据头补零区塞非零", bytes(b)))
-    b = bytearray(好); b[段起 + 头偏移_体长:段起 + 头偏移_体长 + 4] = (r["体长"] + 1).to_bytes(4, "little")
-    例.append(("体长字段 +1", bytes(b)))
-    b = bytearray(好); b[段起 + 头偏移_体魔数:段起 + 头偏移_体魔数 + 4] = (段体魔数 ^ 1).to_bytes(4, "little")
-    例.append(("段体魔数改坏", bytes(b)))
+    坏样本字节 = bytearray(好); 坏样本字节[段起 + 头偏移_保留:段起 + 头偏移_保留 + 4] = (1).to_bytes(4, "little")
+    例.append(("段数据头保留改成 1", bytes(坏样本字节)))
+    坏样本字节 = bytearray(好); 坏样本字节[段起 + 头偏移_补零 + 5] = 0x7F
+    例.append(("段数据头补零区塞非零", bytes(坏样本字节)))
+    坏样本字节 = bytearray(好); 坏样本字节[段起 + 头偏移_体长:段起 + 头偏移_体长 + 4] = (段数据读数["体长"] + 1).to_bytes(4, "little")
+    例.append(("体长字段 +1", bytes(坏样本字节)))
+    坏样本字节 = bytearray(好); 坏样本字节[段起 + 头偏移_体魔数:段起 + 头偏移_体魔数 + 4] = (段体魔数 ^ 1).to_bytes(4, "little")
+    例.append(("段体魔数改坏", bytes(坏样本字节)))
     # 支持库表级
-    甲前缀位 = 段起 + 段数据头长度 + 8
-    声明数位 = 甲前缀位 + 4 + 4 * len(r["数组甲"]) + 4 + 2 * len(r["数组乙"]) + 4 + 2 * len(r["数组丙"])
-    b = bytearray(好); b[甲前缀位:甲前缀位 + 4] = (6).to_bytes(4, "little")
-    例.append(("数组甲长度前缀改成 6（非 4 倍数）", bytes(b)))
-    b = bytearray(好); b[甲前缀位:甲前缀位 + 4] = (0x00FFFFFC).to_bytes(4, "little")
-    例.append(("数组甲长度前缀改成 0x00FFFFFC（越界）", bytes(b)))
-    b = bytearray(好); b[声明数位:声明数位 + 2] = (0).to_bytes(2, "little")
-    例.append(("支持库数 u16 改成 0（数组仍 1）", bytes(b)))
+    首数组前缀位 = 段起 + 段数据头长度 + 8
+    声明数位 = 首数组前缀位 + 4 + 4 * len(段数据读数["数组甲"]) + 4 + 2 * len(段数据读数["数组乙"]) + 4 + 2 * len(段数据读数["数组丙"])
+    坏样本字节 = bytearray(好); 坏样本字节[首数组前缀位:首数组前缀位 + 4] = (6).to_bytes(4, "little")
+    例.append(("数组甲长度前缀改成 6（非 4 倍数）", bytes(坏样本字节)))
+    坏样本字节 = bytearray(好); 坏样本字节[首数组前缀位:首数组前缀位 + 4] = (0x00FFFFFC).to_bytes(4, "little")
+    例.append(("数组甲长度前缀改成 0x00FFFFFC（越界）", bytes(坏样本字节)))
+    坏样本字节 = bytearray(好); 坏样本字节[声明数位:声明数位 + 2] = (0).to_bytes(2, "little")
+    例.append(("支持库数 u16 改成 0（数组仍 1）", bytes(坏样本字节)))
     引用位 = 声明数位 + 2
-    b = bytearray(好); b[引用位:引用位 + 4] = (0x00FFFFFF).to_bytes(4, "little")
-    例.append(("第一条引用串长改成 0x00FFFFFF（越界）", bytes(b)))
+    坏样本字节 = bytearray(好); 坏样本字节[引用位:引用位 + 4] = (0x00FFFFFF).to_bytes(4, "little")
+    例.append(("第一条引用串长改成 0x00FFFFFF（越界）", bytes(坏样本字节)))
     # 声明记录区级：整区截断（把段数据尾部砍掉，体长随之不符）
-    b = bytearray(好); del b[段止 - 40:段止]
-    例.append(("声明记录区被砍 40 字节", bytes(b)))
+    坏样本字节 = bytearray(好); del 坏样本字节[段止 - 40:段止]
+    例.append(("声明记录区被砍 40 字节", bytes(坏样本字节)))
     # 声明记录区全零（空程序）—— 这是**合法**输入，必须成功
     好零 = bytearray(好)
     好零[段起 + 区起:段止] = b"\x00" * (段止 - 段起 - 区起)

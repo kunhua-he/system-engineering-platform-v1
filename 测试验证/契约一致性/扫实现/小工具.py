@@ -35,45 +35,45 @@ def 配对(文: str, 起: int) -> int:
     if 闭 is None:
         return -1
     深 = 0
-    for i in range(起, len(文)):
-        c = 文[i]
-        if c == 开:
+    for 位次 in range(起, len(文)):
+        字 = 文[位次]
+        if 字 == 开:
             深 += 1
-        elif c == 闭:
+        elif 字 == 闭:
             深 -= 1
             if 深 == 0:
-                return i
+                return 位次
     return -1
 
 
 def 拆顶层项(文: str) -> list:
     """按顶层逗号拆（括号内不算）。用于数组字面量的项、函数的实参。"""
-    出 = []
+    结果 = []
     深 = 0
     起 = 0
-    for i, c in enumerate(文):
-        if c in "([{":
+    for 位次, 字 in enumerate(文):
+        if 字 in "([{":
             深 += 1
-        elif c in ")]}":
+        elif 字 in ")]}":
             深 -= 1
-        elif c == "," and 深 == 0:
-            出.append(文[起:i])
-            起 = i + 1
+        elif 字 == "," and 深 == 0:
+            结果.append(文[起:位次])
+            起 = 位次 + 1
     if 文[起:].strip():
-        出.append(文[起:])
-    return [x.strip() for x in 出 if x.strip()]
+        结果.append(文[起:])
+    return [片段.strip() for 片段 in 结果 if 片段.strip()]
 
 
 def 找顶层终止(文: str, 起: int, 终止=";") -> int:
     深 = 0
-    i = 起
-    while i < len(文):
-        c = 文[i]
-        if c in "([{":
+    位次 = 起
+    while 位次 < len(文):
+        字 = 文[位次]
+        if 字 in "([{":
             深 += 1
-        elif c in ")]}":
+        elif 字 in ")]}":
             深 -= 1
-        elif c == 终止 and 深 == 0:
-            return i
-        i += 1
+        elif 字 == 终止 and 深 == 0:
+            return 位次
+        位次 += 1
     return -1

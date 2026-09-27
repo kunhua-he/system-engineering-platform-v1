@@ -19,15 +19,15 @@ def 反解(路径):
     if so + 库信息大小 > len(pe.d):
         raise 解析错误("结构 @RVA 0x%x 越界（需 %d 字节）" % (结构rva, 库信息大小))
     字段 = 读字段(pe, so, 库信息字段)
-    d = {f[2]: f[4] for f in 字段}
-    if d["m_dwLibFormatVer"] != 库格式号:
+    字典 = {字段项[2]: 字段项[4] for 字段项 in 字段}
+    if 字典["m_dwLibFormatVer"] != 库格式号:
         raise 解析错误("格式号 0x%08x != 0x%08x —— 这不是易语言支持库的 LIB_INFO，拒绝解读"
-                    % (d["m_dwLibFormatVer"], 库格式号))
-    命令 = 解表(pe, d["m_nCmdCount"], d["m_pBeginCmdInfo"], 命令项大小, 命令字段)
+                    % (字典["m_dwLibFormatVer"], 库格式号))
+    命令 = 解表(pe, 字典["m_nCmdCount"], 字典["m_pBeginCmdInfo"], 命令项大小, 命令字段)
     函数 = []
-    if d["m_pCmdsFunc"] and d["m_nCmdCount"]:
-        fo = pe.转偏移(pe.取址(d["m_pCmdsFunc"]))
-        函数 = list(struct.unpack_from("<%dI" % d["m_nCmdCount"], pe.d, fo))
+    if 字典["m_pCmdsFunc"] and 字典["m_nCmdCount"]:
+        函数表偏移 = pe.转偏移(pe.取址(字典["m_pCmdsFunc"]))
+        函数 = list(struct.unpack_from("<%dI" % 字典["m_nCmdCount"], pe.d, 函数表偏移))
     return {"路径": 路径, "字节数": len(数据), "pe": pe, "序号": 序号, "导出rva": 导出rva, "机器码": 机器码,
-            "形式": 形式, "结构rva": 结构rva, "字段": 字段, "字典": d, "命令": 命令, "函数": 函数,
-            "物理槽": 探物理槽数(pe, d)}
+            "形式": 形式, "结构rva": 结构rva, "字段": 字段, "字典": 字典, "命令": 命令, "函数": 函数,
+            "物理槽": 探物理槽数(pe, 字典)}

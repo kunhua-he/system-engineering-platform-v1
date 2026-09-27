@@ -7,8 +7,8 @@ import re
 def _前面不是标识符(文本: str, 位: int) -> bool:
     if 位 == 0:
         return True
-    c = 文本[位 - 1]
-    return not (c.isalnum() or c == "_" or c == "：")
+    字 = 文本[位 - 1]
+    return not (字.isalnum() or 字 == "_" or 字 == "：")
 
 
 def 掩码(文本: str) -> str:
@@ -17,67 +17,67 @@ def 掩码(文本: str) -> str:
     为什么必须掩：范围里的注释大量写着 `本表[能力号::…]` · `命令项(…)` ·
     `命令状态::错误` 这些**示例文本**；不掩就会把它们当成真实现抽出来（假绿）。
     """
-    出 = list(文本)
-    n = len(文本)
-    i = 0
+    结果 = list(文本)
+    全长 = len(文本)
+    游标 = 0
 
     def 抹(起, 止):
-        for p in range(起, min(止, n)):
-            if 出[p] != "\n":
-                出[p] = " "
+        for 位次 in range(起, min(止, 全长)):
+            if 结果[位次] != "\n":
+                结果[位次] = " "
 
-    while i < n:
-        c = 文本[i]
-        if c == "/" and i + 1 < n and 文本[i + 1] == "/":
-            j = 文本.find("\n", i)
-            抹(i, n if j < 0 else j)
-            i = n if j < 0 else j
+    while 游标 < 全长:
+        字 = 文本[游标]
+        if 字 == "/" and 游标 + 1 < 全长 and 文本[游标 + 1] == "/":
+            行末 = 文本.find("\n", 游标)
+            抹(游标, 全长 if 行末 < 0 else 行末)
+            游标 = 全长 if 行末 < 0 else 行末
             continue
-        if c == "/" and i + 1 < n and 文本[i + 1] == "*":
+        if 字 == "/" and 游标 + 1 < 全长 and 文本[游标 + 1] == "*":
             深 = 1
-            k = i + 2
-            while k < n and 深:
-                if 文本[k] == "/" and k + 1 < n and 文本[k + 1] == "*":
+            扫描位 = 游标 + 2
+            while 扫描位 < 全长 and 深:
+                if 文本[扫描位] == "/" and 扫描位 + 1 < 全长 and 文本[扫描位 + 1] == "*":
                     深 += 1
-                    k += 2
-                elif 文本[k] == "*" and k + 1 < n and 文本[k + 1] == "/":
+                    扫描位 += 2
+                elif 文本[扫描位] == "*" and 扫描位 + 1 < 全长 and 文本[扫描位 + 1] == "/":
                     深 -= 1
-                    k += 2
+                    扫描位 += 2
                 else:
-                    k += 1
-            抹(i, k)
-            i = k
+                    扫描位 += 1
+            抹(游标, 扫描位)
+            游标 = 扫描位
             continue
-        m = re.match(r'(?:b|c)?r(#*)"', 文本[i:])
-        if m and _前面不是标识符(文本, i):
-            井 = m.group(1)
-            起 = i + m.end()
+        匹配 = re.match(r'(?:b|c)?r(#*)"', 文本[游标:])
+        if 匹配 and _前面不是标识符(文本, 游标):
+            井 = 匹配.group(1)
+            起 = 游标 + 匹配.end()
             终 = 文本.find('"' + 井, 起)
-            终 = n if 终 < 0 else 终 + len(井) + 1
-            抹(i, 终)
-            i = 终
+            终 = 全长 if 终 < 0 else 终 + len(井) + 1
+            抹(游标, 终)
+            游标 = 终
             continue
-        m = re.match(r'(?:b|c)?"', 文本[i:])
-        if m and _前面不是标识符(文本, i):
-            k = i + m.end()
-            while k < n:
-                if 文本[k] == "\\":
-                    k += 2
+        匹配 = re.match(r'(?:b|c)?"', 文本[游标:])
+        if 匹配 and _前面不是标识符(文本, 游标):
+            扫描位 = 游标 + 匹配.end()
+            while 扫描位 < 全长:
+                if 文本[扫描位] == "\\":
+                    扫描位 += 2
                     continue
-                if 文本[k] == '"':
-                    k += 1
+                if 文本[扫描位] == '"':
+                    扫描位 += 1
                     break
-                if 文本[k] == "\n":
+                if 文本[扫描位] == "\n":
                     break
-                k += 1
-            抹(i, k)
-            i = k
+                扫描位 += 1
+            抹(游标, 扫描位)
+            游标 = 扫描位
             continue
-        if c == "'":
-            m = re.match(r"'(?:\\.|[^\\'])'", 文本[i:])
-            if m:
-                抹(i, i + m.end())
-                i += m.end()
+        if 字 == "'":
+            匹配 = re.match(r"'(?:\\.|[^\\'])'", 文本[游标:])
+            if 匹配:
+                抹(游标, 游标 + 匹配.end())
+                游标 += 匹配.end()
                 continue
-        i += 1
-    return "".join(出)
+        游标 += 1
+    return "".join(结果)

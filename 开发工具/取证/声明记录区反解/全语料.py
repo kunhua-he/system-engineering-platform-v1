@@ -46,15 +46,15 @@ def 扫全部(目录, 进程数=None):
         print("✗ 语料目录里没有语料件（%s 下 *.e / *.ec / *.E / *.EC）⇒ 没有可归并的东西。" % 目录)
         return 1
     逐件, 缺 = [], []
-    for p in 表:
-        读数 = 取缓存(缓, p)
-        (逐件 if 读数 is not None else 缺).append(读数 if 读数 is not None else p)
+    for 样本路径 in 表:
+        读数 = 取缓存(缓, 样本路径)
+        (逐件 if 读数 is not None else 缺).append(读数 if 读数 is not None else 样本路径)
     if 缺:
         print("✗ 逐件缓存不齐：已算 %d / %d 件，缺 %d 件。" % (len(逐件), len(表), len(缺)))
         print("  为什么本命令不算：全量的总 CPU 时间远超单条命令的 5 秒预算 ⇒ 按裁决 §三.3"
               "把重活移出命令路，本命令只归并。")
-        for p in 缺[:5]:
-            print("    · 缺 %s" % p)
+        for 样本路径 in 缺[:5]:
+            print("    · 缺 %s" % 样本路径)
         if len(缺) > 5:
             print("    … 另 %d 件" % (len(缺) - 5))
         打补法(目录)

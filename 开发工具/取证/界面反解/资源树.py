@@ -15,13 +15,13 @@ def 走资源树(pe):
     叶子, 见过 = [], set()
 
     def 串(base, off):
-        o = base + off
-        if o + 2 > len(pe.d):
-            raise 解析错误("资源名字符串越界 @0x%x" % o)
-        n = pe.读u16(o)
-        if o + 2 + 2 * n > len(pe.d):
-            raise 解析错误("资源名字符串长度 %d 越界 @0x%x" % (n, o))
-        return pe.d[o + 2:o + 2 + 2 * n].decode("utf-16le", "replace")
+        串起 = base + off
+        if 串起 + 2 > len(pe.d):
+            raise 解析错误("资源名字符串越界 @0x%x" % 串起)
+        名长 = pe.读u16(串起)
+        if 串起 + 2 + 2 * 名长 > len(pe.d):
+            raise 解析错误("资源名字符串长度 %d 越界 @0x%x" % (名长, 串起))
+        return pe.d[串起 + 2:串起 + 2 + 2 * 名长].decode("utf-16le", "replace")
 
     def 走(偏移, 路径, 层):
         if 层 > 3:
@@ -35,11 +35,11 @@ def 走资源树(pe):
         项数 = 具名数 + ID数
         if 项数 == 0 or 项数 > 0x4000:
             raise 解析错误("资源目录项数 %d 不合理 @0x%x" % (项数, 偏移))
-        for i in range(项数):
-            e = 偏移 + 16 + i * 8
-            if e + 8 > 止:
-                raise 解析错误("资源目录项第 %d 条越界 @0x%x" % (i, e))
-            名域, 指域 = pe.读u32(e), pe.读u32(e + 4)
+        for 项序 in range(项数):
+            项起 = 偏移 + 16 + 项序 * 8
+            if 项起 + 8 > 止:
+                raise 解析错误("资源目录项第 %d 条越界 @0x%x" % (项序, 项起))
+            名域, 指域 = pe.读u32(项起), pe.读u32(项起 + 4)
             if 名域 & 0x80000000:
                 键 = 串(根, 名域 & 0x7FFFFFFF)
             else:

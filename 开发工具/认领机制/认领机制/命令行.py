@@ -33,22 +33,22 @@ BOOL_FLAGS = ("强制", "全部过期", "含过期", "json", "硬拦")
 
 def parse_args(args):
     pos, flags = [], {}
-    i = 0
-    while i < len(args):
-        a = args[i]
-        if a.startswith("--"):
-            key = a[2:]
+    游标 = 0
+    while 游标 < len(args):
+        实参 = args[游标]
+        if 实参.startswith("--"):
+            key = 实参[2:]
             if key in BOOL_FLAGS:
                 flags[key] = True
-                i += 1
+                游标 += 1
                 continue
-            if i + 1 >= len(args):
+            if 游标 + 1 >= len(args):
                 raise ValueError("旗标 --%s 缺值" % key)
-            flags[key] = args[i + 1]
-            i += 2
+            flags[key] = args[游标 + 1]
+            游标 += 2
             continue
-        pos.append(a)
-        i += 1
+        pos.append(实参)
+        游标 += 1
     return pos, flags
 
 
@@ -81,8 +81,8 @@ def main(argv):
     action, rest = argv[0], argv[1:]
     try:
         pos, flags = parse_args(rest)
-    except ValueError as e:
-        print("参数错：%s" % e, file=sys.stderr)
+    except ValueError as 错:
+        print("参数错：%s" % 错, file=sys.stderr)
         usage()
         return EXIT_USAGE
     want_json = bool(flags.get("json"))
@@ -109,11 +109,11 @@ def main(argv):
             with Ledger(ledger_path()) as led:
                 res = op_gate(led, leg, staged, mode=mode)
             res["基准"] = "git diff --cached（将要提交的路径）· %s" % how
-        except (ValueError, OSError, json.JSONDecodeError) as e:
+        except (ValueError, OSError, json.JSONDecodeError) as 错:
             # 读数「判不了」，**不是**「通过」——账本读不出时闸什么都没判。
             res = {"结果": "判不了", "腿标识": leg, "模式": mode,
                    "基准": "git diff --cached（将要提交的路径）· %s" % how,
-                   "缺什么": "账本或 git 读不出：%r" % (e,),
+                   "缺什么": "账本或 git 读不出：%r" % (错,),
                    "提示": "账本坏不是提交者的错 ⇒ 警告模式下不拦；修好账本再让它有牙"}
         # ★ 退出码按**模式**给，不按事实给 —— 模式的定义只此一处（gate_mode），
         #   于是调用方（pre-commit 钩子）只写 `exit $CODE` 就对了，不许自己再判模式：
@@ -166,6 +166,6 @@ def main(argv):
             print("未知动作：%s" % action, file=sys.stderr)
             usage()
             return EXIT_USAGE
-    except (ValueError, OSError, json.JSONDecodeError) as e:
-        print("账本读写出错：%r" % (e,), file=sys.stderr)
+    except (ValueError, OSError, json.JSONDecodeError) as 错:
+        print("账本读写出错：%r" % (错,), file=sys.stderr)
         return EXIT_USAGE
