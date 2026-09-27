@@ -26,7 +26,13 @@
 """
 
 import sys
+import time
 from pathlib import Path
+
+起 = time.monotonic()  # 壳起表点：必须在 import 业务包**之前**（见 构建装配/门禁/壳.py）
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))  # 仓根：取共享门禁
+from 构建装配.门禁 import 自门禁  # noqa: E402
 
 # 本件与同名包同目录 ⇒ 显式插一下路径：`from 认领机制 import ...` 装的是**同名包**
 #（同名字文件夹优先于同名 `.py`），于是 `python 本件.py` 之外的装载方式
@@ -77,4 +83,5 @@ from 认领机制 import (  # noqa: E402
 )
 
 if __name__ == "__main__":
-    sys.exit(main(sys.argv[1:]))
+    sys.exit(自门禁(起, main(sys.argv[1:]), 尾巴余量毫秒=200,
+                   修法="认领机制只读账本；账本变大时分片或把重活移出命令路（裁决 §三.3）"))

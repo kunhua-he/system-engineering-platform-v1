@@ -17,7 +17,13 @@
 
 import json
 import sys
+import time
 from pathlib import Path
+
+起 = time.monotonic()  # 壳起表点：必须在 import 业务包**之前**（见 构建装配/门禁/壳.py）
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))  # 仓根：取共享门禁
+from 构建装配.门禁 import 自门禁  # noqa: E402
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
@@ -47,4 +53,5 @@ def 主(参数: list) -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(主(sys.argv[1:]))
+    sys.exit(自门禁(起, 主(sys.argv[1:]), 尾巴余量毫秒=200,
+                   修法="本面转调闸1 校验；若闸1 变慢，先修闸1（裁决 §三.3）"))

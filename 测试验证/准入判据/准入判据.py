@@ -38,6 +38,11 @@ import sys
 import time
 from pathlib import Path
 
+起 = time.monotonic()  # 壳起表点：必须在 import 业务包**之前**（见 构建装配/门禁/壳.py）
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))  # 仓根：取共享门禁
+from 构建装配.门禁 import 自门禁  # noqa: E402
+
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from 准入判据.报告 import 单条, 扫, 打印, 清单  # noqa: E402
@@ -70,4 +75,5 @@ def main(参数) -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(main(sys.argv[1:]))
+    sys.exit(自门禁(起, main(sys.argv[1:]), 尾巴余量毫秒=200,
+                   修法="准入判据按范围扫；范围调小或把重活移出命令路（裁决 §三.3）"))

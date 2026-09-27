@@ -32,6 +32,12 @@
 
 import os
 import sys
+import time
+
+起 = time.monotonic()  # 壳起表点：必须在 import 业务包**之前**（见 构建装配/门禁/壳.py）
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))  # 仓根
+from 构建装配.门禁 import 自门禁  # noqa: E402
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
@@ -39,4 +45,5 @@ from 生成声明 import *  # noqa: E402,F401,F403 —— 再导出公开面（`
 from 生成声明 import 主  # noqa: E402 —— CLI 入口
 
 if __name__ == "__main__":
-    sys.exit(主(sys.argv[1:]))
+    sys.exit(自门禁(起, 主(sys.argv[1:]), 尾巴余量毫秒=200,
+                   修法="生成器读全部声明件；把重活移出命令路或分片（裁决 §三.3）"))
