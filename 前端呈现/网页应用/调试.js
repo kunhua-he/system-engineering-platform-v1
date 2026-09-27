@@ -16,24 +16,24 @@ import { 建元素, 摆应答, 摆消息, 写状态 } from "./呈现.js";
 export function 装调试(取元素) {
   // ── 调用 ────────────────────────────────────────────────────────────────
   function 加值行(标签初值 = "0", 值初值 = "0") {
-    const 行 = 建元素("div", "值行");
-    const 序 = 建元素("span", "序");
+    const 源码行 = 建元素("div", "值行");
+    const 序号 = 建元素("span", "序");
     const 标签 = 建元素("input", "标签");
     标签.type = "text";
     标签.inputMode = "numeric";
     标签.value = 标签初值;
-    const 值 = 建元素("input", "值");
-    值.type = "text";
-    值.value = 值初值;
-    值.placeholder = '值的原文：文本带引号如 "你好"；字节集填 base64 如 "aGk="；整数填 0';
-    const 删 = 建元素("button", "次 小", "删");
-    删.addEventListener("click", () => {
-      行.remove();
+    const 待处理值 = 建元素("input", "值");
+    待处理值.type = "text";
+    待处理值.value = 值初值;
+    待处理值.placeholder = '值的原文：文本带引号如 "你好"；字节集填 base64 如 "aGk="；整数填 0';
+    const 删除钮 = 建元素("button", "次 小", "删");
+    删除钮.addEventListener("click", () => {
+      源码行.remove();
       重排值行();
       刷调用预览();
     });
-    行.append(序, 标签, 值, 删);
-    取元素("值行容器").append(行);
+    源码行.append(序号, 标签, 待处理值, 删除钮);
+    取元素("值行容器").append(源码行);
     重排值行();
     刷调用预览();
   }
@@ -46,12 +46,12 @@ export function 装调试(取元素) {
 
   function 取调用体文() {
     const 编号 = 取元素("调用编号").value.trim();
-    const 项 = [...取元素("值行容器").querySelectorAll(".值行")].map((源码行) => {
+    const 一项 = [...取元素("值行容器").querySelectorAll(".值行")].map((源码行) => {
       const 标签 = 源码行.querySelector(".标签").value.trim();
-      const 值 = 源码行.querySelector(".值").value.trim();
-      return '{"类型标签":' + 标签 + ',"值":' + 值 + "}";
+      const 待处理值 = 源码行.querySelector(".值").value.trim();
+      return '{"类型标签":' + 标签 + ',"值":' + 待处理值 + "}";
     });
-    return '{"编号":' + 编号 + ',"值":[' + 项.join(",") + "]}";
+    return '{"编号":' + 编号 + ',"值":[' + 一项.join(",") + "]}";
   }
 
   function 刷调用预览() {
@@ -59,16 +59,16 @@ export function 装调试(取元素) {
   }
 
   async function 发调用() {
-    const 果 = 取元素("调用果");
+    const 结果 = 取元素("调用果");
     const 体文 = 取调用体文();
     刷调用预览();
     写状态(取元素("调用状态"), "请求中…");
     try {
       const 应答 = await 调用能力(体文);
-      摆应答(果, 应答);
+      摆应答(结果, 应答);
       写状态(取元素("调用状态"), 应答.状态 === 200 ? "已回" : "HTTP " + 应答.状态, 应答.状态 === 200);
-    } catch (错) {
-      摆消息(果, "发不出去：" + 错.message);
+    } catch (错误) {
+      摆消息(结果, "发不出去：" + 错误.message);
       写状态(取元素("调用状态"), "失败", false);
     }
   }
@@ -87,16 +87,16 @@ export function 装调试(取元素) {
   }
 
   async function 发声明() {
-    const 果 = 取元素("声明果");
+    const 结果 = 取元素("声明果");
     const 体文 = 取声明体文();
     刷声明预览();
     写状态(取元素("声明状态"), "请求中…");
     try {
       const 应答 = await 写声明(体文);
-      摆应答(果, 应答);
+      摆应答(结果, 应答);
       写状态(取元素("声明状态"), 应答.状态 === 200 ? "已回" : "HTTP " + 应答.状态, 应答.状态 === 200);
-    } catch (错) {
-      摆消息(果, "发不出去：" + 错.message);
+    } catch (错误) {
+      摆消息(结果, "发不出去：" + 错误.message);
       写状态(取元素("声明状态"), "失败", false);
     }
   }
@@ -108,8 +108,8 @@ export function 装调试(取元素) {
 
   取元素("调用编号").addEventListener("input", 刷调用预览);
   取元素("值行容器").addEventListener("input", 刷调用预览);
-  for (const 号 of ["声明类别", "声明编号", "声明正文"]) {
-    取元素(号).addEventListener("input", 刷声明预览);
+  for (const 号值 of ["声明类别", "声明编号", "声明正文"]) {
+    取元素(号值).addEventListener("input", 刷声明预览);
   }
 
   加值行();

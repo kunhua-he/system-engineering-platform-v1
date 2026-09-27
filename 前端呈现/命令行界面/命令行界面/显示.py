@@ -15,18 +15,18 @@ def 印应答(状态: int, 体文本: str) -> int:
     """打印一条应答。返回退出码。**只按后端给的判定分支**，不自行判成功失败。"""
     状态行 = "HTTP {}".format(状态)
     try:
-        体 = json.loads(体文本)
+        应答体 = json.loads(体文本)
     except ValueError:
         print(状态行 + " —— 应答不是合法 JSON，原样贴出：")
         print(体文本)
         return 3
-    if isinstance(体, dict) and 体.get("成功") is False:
-        return 印失败(状态行, 体)
+    if isinstance(应答体, dict) and 应答体.get("成功") is False:
+        return 印失败(状态行, 应答体)
     if 状态 >= 400:
         print(状态行 + " —— 请求本身不合法（协议层，不是业务失败）")
     else:
         print(状态行)
-    print(漂亮(体))
+    print(漂亮(应答体))
     return 0
 
 
@@ -47,10 +47,10 @@ def 印失败(状态行: str, 应答体: dict) -> int:
     elif isinstance(应答体.get("校验"), list):
         # `POST /接口/声明` 的失败形状（§四）：逐条「项 · 缺什么 · 为什么不能自愈」。
         print("  校验（{} 条）：".format(len(应答体["校验"])))
-        for 序号, 条 in enumerate(应答体["校验"], 1):
-            print("   {}. 项：{}".format(序号, 条.get("项")))
-            print("      缺什么：{}".format(条.get("缺什么")))
-            print("      为什么不能自愈：{}".format(条.get("为什么不能自愈")))
+        for 序号, 一条 in enumerate(应答体["校验"], 1):
+            print("   {}. 项：{}".format(序号, 一条.get("项")))
+            print("      缺什么：{}".format(一条.get("缺什么")))
+            print("      为什么不能自愈：{}".format(一条.get("为什么不能自愈")))
     elif "协议错误" in 应答体:
         print("  协议错误：{}".format(应答体["协议错误"]))
     else:
@@ -65,21 +65,21 @@ def 印调用成功(状态: int, 应答体: dict) -> int:
     """成功显示 —— `接口面形状.md` §三：`成功: true` + `值`（每项自带 `类型标签`）+ `耗时微秒`。
     槽里若还有旁路项（实测有 `引用` · `长度`），一并摆出来：**不吞后端给的事实**。"""
     print("HTTP {}  成功：是".format(状态))
-    for 序号, 槽 in enumerate(应答体.get("值") or []):
-        if not isinstance(槽, dict):
-            print("  值[{}]：{}".format(序号, 槽))
+    for 序号, 数据槽 in enumerate(应答体.get("值") or []):
+        if not isinstance(数据槽, dict):
+            print("  值[{}]：{}".format(序号, 数据槽))
             continue
-        原值 = 槽.get("值")
+        原值 = 数据槽.get("值")
         标注 = ""
-        if 槽.get("类型标签") == 5 and isinstance(原值, str):
+        if 数据槽.get("类型标签") == 5 and isinstance(原值, str):
             标注 = "（base64，{} 字符）".format(len(原值))
         旁路 = "".join(
-            "  {}={}".format(键, json.dumps(值, ensure_ascii=False))
-            for 键, 值 in 槽.items() if 键 not in ("类型标签", "值")
+            "  {}={}".format(键名, json.dumps(待处理值, ensure_ascii=False))
+            for 键名, 待处理值 in 数据槽.items() if 键名 not in ("类型标签", "值")
         )
-        print("  值[{}]  类型标签={}{}{}".format(序号, 槽.get("类型标签"), 标注, 旁路))
+        print("  值[{}]  类型标签={}{}{}".format(序号, 数据槽.get("类型标签"), 标注, 旁路))
         print("        {}".format(原值))
-    for 键 in 应答体:
-        if 键 not in ("成功", "值"):
-            print("  {}：{}".format(键, json.dumps(应答体[键], ensure_ascii=False)))
+    for 键名 in 应答体:
+        if 键名 not in ("成功", "值"):
+            print("  {}：{}".format(键名, json.dumps(应答体[键名], ensure_ascii=False)))
     return 0

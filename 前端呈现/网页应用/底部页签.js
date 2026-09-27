@@ -27,33 +27,33 @@ export const 页签表 = [
  * （少一张表就少一处会分叉的地方）。图形本身在 `图标.js`，是**替代图形，非抄件**。
  */
 export function 装底页签() {
-  const 带 = document.getElementById("底页签带");
-  const 体 = document.getElementById("页签体");
+  const 页签带 = document.getElementById("底页签带");
+  const 应答体 = document.getElementById("页签体");
   const 钮表 = new Map();
 
   function 切页签(名称) {
-    for (const [格名, 钮] of 钮表) {
-      const 选 = 格名 === 名称;
-      钮.classList.toggle("选", 选);
-      钮.setAttribute("aria-selected", 选 ? "true" : "false");
+    for (const [格名, 按钮] of 钮表) {
+      const 选中 = 格名 === 名称;
+      按钮.classList.toggle("选", 选中);
+      按钮.setAttribute("aria-selected", 选中 ? "true" : "false");
     }
     for (const [, id] of 页签表) {
-      const 格 = document.getElementById(id);
-      if (格) 格.classList.toggle("选", id === 页签表.find(([格名]) => 格名 === 名称)[1]);
+      const 底格 = document.getElementById(id);
+      if (底格) 底格.classList.toggle("选", id === 页签表.find(([格名]) => 格名 === 名称)[1]);
     }
-    体.scrollTop = 0;
+    应答体.scrollTop = 0;
   }
 
-  for (const [名, id] of 页签表) {
-    const 钮 = 建元素("button", "页签");
-    钮.type = "button";
+  for (const [名称, id] of 页签表) {
+    const 按钮 = 建元素("button", "页签");
+    按钮.type = "button";
     // 参考图那排页签每格前面都有一个小图，所以这里也摆一个（图形名与页签名同名）。
-    钮.append(画图标(名));
-    钮.append(建元素("span", null, 名));
-    钮.setAttribute("aria-selected", "false");
-    钮.addEventListener("click", () => 切页签(名));
-    带.append(钮);
-    钮表.set(名, 钮);
+    按钮.append(画图标(名称));
+    按钮.append(建元素("span", null, 名称));
+    按钮.setAttribute("aria-selected", "false");
+    按钮.addEventListener("click", () => 切页签(名称));
+    页签带.append(按钮);
+    钮表.set(名称, 按钮);
   }
 
   切页签("提示");

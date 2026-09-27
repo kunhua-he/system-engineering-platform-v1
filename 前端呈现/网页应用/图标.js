@@ -66,17 +66,17 @@ export const 图形 = {
 
 /** 建一个 SVG 节点。`名称` 不在表里就给一个空框（宁可空着，也不编一个形状出来）。 */
 export function 画图标(名称) {
-  const 图 = 图形[名称] || { 路径: "M1 1h14v14H1z" };
-  const 节 = document.createElementNS(命名空间, "svg");
-  节.setAttribute("viewBox", "0 0 16 16");
-  节.setAttribute("aria-hidden", "true");
-  const 路 = document.createElementNS(命名空间, "path");
-  路.setAttribute("d", 图.路径);
-  路.setAttribute("stroke", "currentColor");
-  路.setAttribute("stroke-width", "1");
-  路.setAttribute("stroke-linecap", "round");
-  路.setAttribute("stroke-linejoin", "round");
-  路.setAttribute("fill", 图.填 ? "currentColor" : "none");
-  节.append(路);
-  return 节;
+  const 图形项 = 图形[名称] || { 路径: "M1 1h14v14H1z" };
+  const 元素 = document.createElementNS(命名空间, "svg");
+  元素.setAttribute("viewBox", "0 0 16 16");
+  元素.setAttribute("aria-hidden", "true");
+  const 路径 = document.createElementNS(命名空间, "path");
+  路径.setAttribute("d", 图形项.路径);
+  路径.setAttribute("stroke", "currentColor");
+  路径.setAttribute("stroke-width", "1");
+  路径.setAttribute("stroke-linecap", "round");
+  路径.setAttribute("stroke-linejoin", "round");
+  路径.setAttribute("fill", 图形项.填 ? "currentColor" : "none");
+  元素.append(路径);
+  return 元素;
 }
