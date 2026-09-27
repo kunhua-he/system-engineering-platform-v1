@@ -43,7 +43,7 @@ pub(crate) unsafe fn 写字节集(返回槽: *mut 数据槽, 字节: Vec<u8>) {
     let 长度 = 字节.len() as u64;
     let 地址 = Box::into_raw(字节.into_boxed_slice()) as *const u8;
     // SAFETY: 由调用方保证 返回槽 可写。
-    unsafe { *返回槽 = 数据槽::指针(类型标签_0005, 地址 as u64, 长度, true) };
+    unsafe { *返回槽 = 数据槽::指针(类型标签_0005.into(), 地址 as u64, 长度, true) };
 }
 
 /// 把结构化错误码写进返回槽：类型标签 = 错误（`u32::MAX`），值 = 码。
@@ -54,7 +54,7 @@ pub(crate) unsafe fn 写字节集(返回槽: *mut 数据槽, 字节: Vec<u8>) {
 /// 调用方保证 `返回槽` 可写。
 pub(crate) unsafe fn 写错误码(返回槽: *mut 数据槽, 码: u32) {
     // SAFETY: 由调用方保证 返回槽 可写。
-    unsafe { *返回槽 = 数据槽::内联(类型标签_4294967295, 码 as u64, 0) };
+    unsafe { *返回槽 = 数据槽::内联(类型标签_4294967295.into(), 码 as u64, 0) };
 }
 
 /// 从参数表第 `位` 个槽取文本。`None` = 槽形状不可用。

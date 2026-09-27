@@ -31,9 +31,9 @@ static 在飞引用: AtomicUsize = AtomicUsize::new(0);
 static 收到通知: AtomicUsize = AtomicUsize::new(0);
 
 /// 「按指针」那条测试的通知函数：`2001 卸载` / `2003 延迟释放` 时，若还有在飞引用 ⇒ 回 `2015` 拒绝。
-unsafe extern "C" fn 扩展通知(通知号: u32, _参数一: usize, _参数二: usize) -> isize {
+unsafe extern "C" fn 扩展通知(通知号: v1_contract::通知号, _参数一: usize, _参数二: usize) -> isize {
     收到通知.fetch_add(1, Ordering::SeqCst);
-    if matches!(通知号, 生命周期通知::卸载 | 生命周期通知::延迟释放)
+    if matches!(通知号.取(), 生命周期通知::卸载 | 生命周期通知::延迟释放)
         && 在飞引用.load(Ordering::SeqCst) == 0
     {
         通知返回::延迟释放
@@ -46,7 +46,7 @@ unsafe extern "C" fn 扩展通知(通知号: u32, _参数一: usize, _参数二:
 ///
 /// 两条测试各用**自己的通知函数**（故各用自己的 static）⇒ 不共享可变全局，可并行跑。
 /// 此前两条共用一个 `static 在飞引用` ⇒ 并行时互相污染，谁先 store 谁说话，红在谁身上随机。
-unsafe extern "C" fn 扩展通知放行(_通知号: u32, _参数一: usize, _参数二: usize) -> isize {
+unsafe extern "C" fn 扩展通知放行(_通知号: v1_contract::通知号, _参数一: usize, _参数二: usize) -> isize {
     通知返回::成功
 }
 
@@ -54,17 +54,17 @@ unsafe extern "C" fn 扩展通知放行(_通知号: u32, _参数一: usize, _参
 unsafe extern "C" fn 演示执行(_返回槽: *mut 数据槽, _参数个数: u32, _参数表: *const 数据槽) {}
 
 /// 造一份演示扩展声明：能力 1xxx + **申报生命周期通知段 2000–2999** + 带给定的通知函数。
-fn 造生命周期扩展(通知: unsafe extern "C" fn(u32, usize, usize) -> isize) -> &'static 平台信息 {
+fn 造生命周期扩展(通知: unsafe extern "C" fn(v1_contract::通知号, usize, usize) -> isize) -> &'static 平台信息 {
     let 命令表: &'static [v1_registry::命令信息] = Box::leak(Box::new([v1_registry::命令信息 {
         名称: c"演示命令".as_ptr().cast::<u8>(),
         说明: c"演示扩展自用。".as_ptr().cast::<u8>(),
         类别: 0,
         状态位: 0,
-        返回类型: 0,
+        返回类型: v1_contract::类型标签::新(0),
         用户级别: 0,
         参数个数: 0,
         参数表: core::ptr::null(),
-        编号: 1000,
+        编号: v1_contract::能力号::新(1000),
         可抛错误码: 表段::空(),
     }]));
     let 函数表: &'static [执行函数] = Box::leak(Box::new([演示执行 as 执行函数]));

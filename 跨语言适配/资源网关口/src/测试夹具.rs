@@ -88,7 +88,7 @@ impl 夹具黑盒 {
 impl 黑盒体 for 夹具黑盒 {
     fn 调用(&self, 操作号: u32, 输入槽: 数据槽, 输出槽: &mut 数据槽) -> 黑盒结果 {
         self.跑过.fetch_add(1, Ordering::Relaxed);
-        self.收到的类型标签.store(输入槽.类型标签, Ordering::Relaxed);
+        self.收到的类型标签.store(输入槽.类型标签.取(), Ordering::Relaxed);
         if self.睡毫秒 > 0 {
             std::thread::sleep(Duration::from_millis(self.睡毫秒));
         }
@@ -99,7 +99,7 @@ impl 黑盒体 for 夹具黑盒 {
             });
         }
         let 标签 = if self.写错类型 { 整数 } else { self.输出类型 };
-        *输出槽 = 数据槽::内联(标签, 输入槽.值, 输入槽.长度);
+        *输出槽 = 数据槽::内联(标签.into(), 输入槽.值, 输入槽.长度);
         黑盒结果::成功
     }
 }
@@ -115,7 +115,7 @@ pub(crate) fn 参照实现关口() -> (资源网关口, Arc<AtomicU32>) {
 
 /// 一份「文本转容器」的入参：一个文本槽。
 pub(crate) fn 文本入参() -> [数据槽; 1] {
-    [数据槽::内联(文本, 0x1234_5678, 4)]
+    [数据槽::内联(文本.into(), 0x1234_5678, 4)]
 }
 
 /// 断言这次调用被拒，并取出结构化错误。
