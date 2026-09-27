@@ -22,9 +22,9 @@ pub fn 语料文件() -> Vec<PathBuf> {
         .join("语料")
         .join("真文本");
     let mut 路s: Vec<PathBuf> = std::fs::read_dir(&目录)
-        .unwrap_or_else(|错| panic!("读不到 {}：{错}", 目录.display()))
-        .filter_map(|项| 项.ok().map(|项| 项.path()))
-        .filter(|路| 路.to_str().is_some_and(|名| 名.ends_with(".txt")))
+        .unwrap_or_else(|错误| panic!("读不到 {}：{错误}", 目录.display()))
+        .filter_map(|一项| 一项.ok().map(|一项| 一项.path()))
+        .filter(|路径| 路径.to_str().is_some_and(|名称| 名称.ends_with(".txt")))
         .collect();
     路s.sort();
     路s
@@ -32,5 +32,5 @@ pub fn 语料文件() -> Vec<PathBuf> {
 
 /// 读一份语料（UTF-8）。
 pub fn 读语料(路径: &Path) -> String {
-    std::fs::read_to_string(路径).unwrap_or_else(|错| panic!("{}：{错}", 路径.display()))
+    std::fs::read_to_string(路径).unwrap_or_else(|错误| panic!("{}：{错误}", 路径.display()))
 }

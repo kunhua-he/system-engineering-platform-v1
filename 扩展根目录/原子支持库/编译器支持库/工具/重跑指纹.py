@@ -34,12 +34,12 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[4]))  # 仓根：取共享门禁
 try:
     from 构建装配.门禁 import 自门禁  # noqa: E402
-except ModuleNotFoundError as 错:
+except ModuleNotFoundError as 错误:
     # `测试验证/准入判据/准入判据/样本.py::⑭` 会把本扩展复制成**单扩展临时树**再跑本件 ——
     # 那棵树里没有 `构建装配/`（共享门禁不可得）。此时退化成**不带壳**（临时树的墙钟不由本件
     # 负责），行为与加壳前逐字一致 ⇒ ⑭ 的正向样本不因加壳而红。只吞「共享门禁包本身不在」，
     # 别的导入错照旧抛出（fail-closed：不静默）。
-    if 错.name != "构建装配":
+    if 错误.name != "构建装配":
         raise
 
     def 自门禁(起始时刻, 码, 尾巴余量毫秒, 修法, 输出流=None):  # noqa: N802

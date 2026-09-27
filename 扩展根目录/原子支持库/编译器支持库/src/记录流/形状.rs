@@ -91,11 +91,11 @@ impl 支持库引用 {
     /// 按 `0x0D` 拼回盘面原文。与 [`支持库引用::字段`] 互为逆运算。
     pub fn 原文(&self) -> Vec<u8> {
         let mut 输出缓冲 = Vec::with_capacity(self.串长());
-        for (序, 段) in self.字段.iter().enumerate() {
-            if 序 > 0 {
+        for (序号, 号段) in self.字段.iter().enumerate() {
+            if 序号 > 0 {
                 输出缓冲.push(引用分隔符);
             }
-            输出缓冲.extend_from_slice(段);
+            输出缓冲.extend_from_slice(号段);
         }
         输出缓冲
     }

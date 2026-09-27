@@ -27,11 +27,11 @@ fn 语料_53份_全部成功且六条不变量逐条过() {
     let mut 记号总数 = 0usize;
     for 路径 in &文件s {
         let 原文 = 读语料(路径);
-        let 输出流 = 切记号(&原文).unwrap_or_else(|错| panic!("{}：切不动，{错:?}", 路径.display()));
+        let 输出流 = 切记号(&原文).unwrap_or_else(|错误| panic!("{}：切不动，{错误:?}", 路径.display()));
         let 六条结果 = 判六条(&输出流);
-        for (序, 通) in 六条结果.iter().enumerate() {
-            assert!(通, "{}：J{} 没过", 路径.display(), 序 + 1);
-            通过计数[序] += usize::from(*通);
+        for (序号, 是否通过) in 六条结果.iter().enumerate() {
+            assert!(是否通过, "{}：J{} 没过", 路径.display(), 序号 + 1);
+            通过计数[序号] += usize::from(*是否通过);
         }
         记号总数 += 输出流.记号表.len();
     }
@@ -48,7 +48,7 @@ fn 语料_53份_逐字节还原原文() {
     let mut 总字节 = 0usize;
     for 路径 in &语料文件() {
         let 原文 = 读语料(路径);
-        let 输出流 = 切记号(&原文).unwrap_or_else(|错| panic!("{}：{错:?}", 路径.display()));
+        let 输出流 = 切记号(&原文).unwrap_or_else(|错误| panic!("{}：{错误:?}", 路径.display()));
         assert_eq!(
             输出流.还原(),
             原文.as_bytes(),
@@ -80,20 +80,20 @@ fn 语料_53份_兜底归类字节读数() {
         for 记号 in &输出流.记号表 {
             *记号种数.entry(记号.种类.取号值()).or_default() += 1;
         }
-        for (位, 字符) in 原文.char_indices() {
+        for (位置, 字符) in 原文.char_indices() {
             总字符 += 1;
             if !是否兜底(字符) {
                 continue;
             }
             兜底字节 += 字符.len_utf8();
-            let 行号 = 原文[..位].matches('\n').count() + 1;
-            let 本行 = 原文[位..]
+            let 行号 = 原文[..位置].matches('\n').count() + 1;
+            let 本行 = 原文[位置..]
                 .lines()
                 .next()
                 .unwrap_or("")
                 .trim_end()
                 .to_string();
-            let 位置 = 位 as u32;
+            let 位置 = 位置 as u32;
             let 落处 = 输出流
                 .记号表
                 .iter()
@@ -128,7 +128,7 @@ fn 语料_53份_兜底归类字节读数() {
         记号种数.values().sum::<usize>(),
         记号种数
             .iter()
-            .map(|(号, 次)| (format!("{:?}", 记号种类::自号(*号).unwrap()), *次))
+            .map(|(号值, 次版本)| (format!("{:?}", 记号种类::自号(*号值).unwrap()), *次版本))
             .collect::<Vec<_>>()
     );
     println!(

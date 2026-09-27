@@ -92,7 +92,7 @@ fn 切分_空实参位次在记号层可数() {
         (0..输出流.记号表.len())
             .filter(|记号位次| 输出流.记号表[*记号位次].种类 == 界符)
             .filter_map(|记号位次| 输出流.切片(记号位次))
-            .filter(|片| *片 == b",")
+            .filter(|片段| *片段 == b",")
             .count()
     };
     assert_eq!(
@@ -125,11 +125,11 @@ fn 切分_兜底字符只落在具名容器里() {
     ];
     for 原文 in 原文样例 {
         let 输出流 = 切记号(原文).expect("切分");
-        for (位, 字符) in 原文.char_indices() {
+        for (位置, 字符) in 原文.char_indices() {
             if !是否兜底(字符) {
                 continue;
             }
-            let 位置 = 位 as u32;
+            let 位置 = 位置 as u32;
             let 落处 = 输出流.记号表.iter().find(|记号| 记号.起 <= 位置 && 位置 < 记号.止);
             let 落处 = 落处.unwrap_or_else(|| panic!("{原文:?} 位置 {位置} 无归属"));
             assert!(

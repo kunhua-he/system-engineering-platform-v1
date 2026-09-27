@@ -26,7 +26,7 @@ pub fn 切对(原文: &str) -> Vec<(记号种类, String)> {
 /// 也要与实现产出的对上），所以不是放宽判据。
 pub fn 期望(片段: &[(记号种类, &str)]) -> Vec<(记号种类, String)> {
     let mut 输出缓冲: Vec<(记号种类, String)> =
-        片段.iter().map(|(种, 文)| (*种, (*文).to_string())).collect();
+        片段.iter().map(|(种类, 文本)| (*种类, (*文本).to_string())).collect();
     输出缓冲.push((记号种类::文件结束, String::new()));
     输出缓冲
 }
@@ -48,9 +48,9 @@ pub fn 判六条(输出流: &记号流) -> [bool; 6] {
         // J2：首记号的起 == 0
         项表[0].起 == 0,
         // J3：无缝隙
-        项表.windows(2).all(|两| 两[0].止 == 两[1].起),
+        项表.windows(2).all(|相邻两枚| 相邻两枚[0].止 == 相邻两枚[1].起),
         // J4：无重叠
-        项表.windows(2).all(|两| 两[0].止 <= 两[1].起),
+        项表.windows(2).all(|相邻两枚| 相邻两枚[0].止 <= 相邻两枚[1].起),
         // J5：末记号的止 == 全文长
         项表[尾部].止 == 长度,
         // J6：每枚 起 <= 止 <= 全文长
@@ -60,7 +60,7 @@ pub fn 判六条(输出流: &记号流) -> [bool; 6] {
 
 /// 断言一份原文切出来的流是好流：六条全过 + 逐字节还原。
 pub fn 断言好流(原文: &str) {
-    let 输出流 = 切记号(原文).unwrap_or_else(|错| panic!("{原文:?} 该切得动，实得 {错:?}"));
+    let 输出流 = 切记号(原文).unwrap_or_else(|错误| panic!("{原文:?} 该切得动，实得 {错误:?}"));
     assert_eq!(判六条(&输出流), [true; 6], "{原文:?} 有不变量没过");
     assert_eq!(输出流.还原(), 原文.as_bytes(), "{原文:?} 还原不等于原文");
 }
@@ -71,9 +71,9 @@ pub fn 语料文件() -> Vec<PathBuf> {
         .join("语料")
         .join("真文本");
     let mut 路s: Vec<PathBuf> = std::fs::read_dir(&目录)
-        .unwrap_or_else(|错| panic!("读不到 {}：{错}", 目录.display()))
-        .filter_map(|项| 项.ok().map(|项| 项.path()))
-        .filter(|路| 路.to_str().is_some_and(|名| 名.ends_with(".txt")))
+        .unwrap_or_else(|错误| panic!("读不到 {}：{错误}", 目录.display()))
+        .filter_map(|一项| 一项.ok().map(|一项| 一项.path()))
+        .filter(|路径| 路径.to_str().is_some_and(|名称| 名称.ends_with(".txt")))
         .collect();
     路s.sort();
     路s
@@ -81,5 +81,5 @@ pub fn 语料文件() -> Vec<PathBuf> {
 
 /// 读一份语料（UTF-8）。
 pub fn 读语料(路径: &Path) -> String {
-    std::fs::read_to_string(路径).unwrap_or_else(|错| panic!("{}：{错}", 路径.display()))
+    std::fs::read_to_string(路径).unwrap_or_else(|错误| panic!("{}：{错误}", 路径.display()))
 }

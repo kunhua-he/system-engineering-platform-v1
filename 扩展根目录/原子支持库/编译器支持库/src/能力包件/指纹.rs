@@ -35,8 +35,8 @@ pub struct 段指纹 {
 pub fn 编码(段们: &[(u8, &[u8])]) -> Vec<u8> {
     let mut 输出缓冲 = Vec::new();
     输出缓冲.extend_from_slice(&(段们.len() as u32).to_le_bytes());
-    for (号, 数据) in 段们 {
-        输出缓冲.push(*号);
+    for (号值, 数据) in 段们 {
+        输出缓冲.push(*号值);
         输出缓冲.extend_from_slice(&算指纹(数据));
     }
     输出缓冲
@@ -104,8 +104,8 @@ pub fn 算指纹(数据: &[u8]) -> [u8; 指纹宽度] {
     }
 
     let mut 输出缓冲 = [0u8; 指纹宽度];
-    for (序, 字) in 状态.iter().enumerate() {
-        输出缓冲[序 * 4..序 * 4 + 4].copy_from_slice(&字.to_be_bytes());
+    for (序号, 字符表) in 状态.iter().enumerate() {
+        输出缓冲[序号 * 4..序号 * 4 + 4].copy_from_slice(&字符表.to_be_bytes());
     }
     输出缓冲
 }

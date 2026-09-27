@@ -17,8 +17,8 @@ pub fn 生成段数据(输出流: &记录流) -> Result<Vec<u8>, 生成错误> {
             return Err(生成错误::支持库引用字段为空 { 第几条: 序号 as u32 });
         }
     }
-    if let Some(位) = 输出流.头.补零.iter().position(|&字节| 字节 != 0) {
-        return Err(生成错误::补零非零 { 第几字节: 位 as u32 });
+    if let Some(位置) = 输出流.头.补零.iter().position(|&字节| 字节 != 0) {
+        return Err(生成错误::补零非零 { 第几字节: 位置 as u32 });
     }
 
     let 体长 = 体长实算(输出流);

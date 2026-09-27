@@ -211,28 +211,28 @@ impl<'a> 分析器<'a> {
                     }
                 }
             } else if self.是界符(b"[") {
-                let Some(闭) = self.配对(b"[", b"]") else {
+                let Some(闭符) = self.配对(b"[", b"]") else {
                     self.游标 = 保存;
                     return Some(基节点);
                 };
                 let 开符 = self.游标;
-                let 下标 = self.子区间(开符 + 1, 闭);
-                self.游标 = 闭 + 1;
+                let 下标 = self.子区间(开符 + 1, 闭符);
+                self.游标 = 闭符 + 1;
                 let Some(下标) = 下标 else {
                     self.游标 = 保存;
                     return Some(基节点);
                 };
-                let 区间 = (self.草稿.取原文起点(基节点), self.记号表[闭].止);
+                let 区间 = (self.草稿.取原文起点(基节点), self.记号表[闭符].止);
                 基节点 = self.草稿.节点(节点种类::下标访问, 区间, vec![基节点, 下标]);
             } else if self.是界符(b"(") {
-                let Some(闭) = self.配对(b"(", b")") else {
+                let Some(闭符) = self.配对(b"(", b")") else {
                     self.游标 = 保存;
                     return Some(基节点);
                 };
                 let 开符 = self.游标;
-                let 实参 = self.实参表在(开符, 闭);
-                self.游标 = 闭 + 1;
-                let 区间终点 = self.记号表[闭].止;
+                let 实参 = self.实参表在(开符, 闭符);
+                self.游标 = 闭符 + 1;
+                let 区间终点 = self.记号表[闭符].止;
                 match self.草稿.种类(基节点) {
                     节点种类::标识符引用 => {
                         // `名 (实参表)` ⇒ 命令调用：子 = [名, 实参…]
