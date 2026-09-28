@@ -77,7 +77,7 @@ pub(super) fn 成功(数据: 协议值, 区间起点: &Instant) -> 协议值 {
     协议值::对象(vec![
         ("成功".to_owned(), 协议值::逻辑真),
         ("数据".to_owned(), 数据),
-        ("耗时微秒".to_owned(), 微秒(区间起点)),
+        ("耗时微秒".to_owned(), 取耗时微秒(区间起点)),
     ])
 }
 
@@ -95,15 +95,15 @@ pub(super) fn 失败(适配器: &适配器, 错误码: u32, 数据: Option<协�
     if let Some(数据) = 数据 {
         成员.push(("数据".to_owned(), 数据));
     }
-    成员.push(("耗时微秒".to_owned(), 微秒(区间起点)));
+    成员.push(("耗时微秒".to_owned(), 取耗时微秒(区间起点)));
     协议值::对象(成员)
 }
 
-fn 微秒(区间起点: &Instant) -> 协议值 {
-    let 微秒 = 区间起点.elapsed().as_micros().min(u128::from(u64::MAX)) as u64;
-    match i64::try_from(微秒) {
+fn 取耗时微秒(区间起点: &Instant) -> 协议值 {
+    let 耗时微秒 = 区间起点.elapsed().as_micros().min(u128::from(u64::MAX)) as u64;
+    match i64::try_from(耗时微秒) {
         Ok(个数) => 协议值::整数(个数),
-        Err(_) => 协议值::无符号(微秒),
+        Err(_) => 协议值::无符号(耗时微秒),
     }
 }
 
@@ -112,13 +112,13 @@ pub(super) fn 造文本值(待处理值: &str) -> 协议值 {
 }
 
 /// 一对「键 → 文本」。
-pub(super) fn 键文(键名: &str, 待处理值: &str) -> (String, 协议值) {
+pub(super) fn 造键文对(键名: &str, 待处理值: &str) -> (String, 协议值) {
     (键名.to_owned(), 造文本值(待处理值))
 }
 
 /// 回执里报路径一律报**相对工具根**的（绝对路径会把部署位置写进回执，
 /// 而回执要能跨机器比对）。
-pub(super) fn 相对(工具根: &Path, 路径: &Path) -> String {
+pub(super) fn 取相对路径(工具根: &Path, 路径: &Path) -> String {
     路径.strip_prefix(工具根)
         .unwrap_or(路径)
         .display()

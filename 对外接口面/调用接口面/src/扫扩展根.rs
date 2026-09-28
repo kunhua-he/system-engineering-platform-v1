@@ -26,7 +26,7 @@ use v1_adapter::平台信息;
 pub const 库后缀: [&str; 3] = [".dylib", ".so", ".dll"];
 
 /// 取一个目录下的直接子目录，**按名字排序**（装载顺序即依赖序，不许随文件系统飘）。
-pub fn 子目录(目录: &Path) -> Vec<PathBuf> {
+pub fn 列子目录(目录: &Path) -> Vec<PathBuf> {
     let Ok(读器) = fs::read_dir(目录) else { return Vec::new() };
     let mut 输出缓冲: Vec<PathBuf> = 读器
         .filter_map(|一项| 一项.ok())

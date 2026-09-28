@@ -16,7 +16,7 @@ use v1_adapter::{适配器, 平台信息};
 use v1_gateway::扫扩展根::读声明根;
 use v1_gateway::{启动失败, 服务};
 
-use crate::扫根::子目录;
+use crate::扫根::列子目录;
 use crate::接缝::取扩展声明;
 
 /// 失败 → 一句可读的原因（**不吞段位**：失败是结构化的，这里只做转写，不做判断）。
@@ -77,7 +77,7 @@ pub(crate) fn 跑网关() -> Result<(), String> {
             println!("跳过 {}：目录不存在", 目录.display());
             continue;
         }
-        for 子目录项 in 子目录(目录) {
+        for 子目录项 in 列子目录(目录) {
             let 落点 = 子目录项.display().to_string();
             match 取扩展声明(&子目录项) {
                 Err(原因) => 剔除的.push((落点, 原因)),

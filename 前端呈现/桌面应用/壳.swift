@@ -45,7 +45,7 @@ final class 壳: NSObject, NSApplicationDelegate {
         NSApp.activate(ignoringOtherApps: true)
     }
 
-    func applicationShouldTerminateAfterLastWindowClosed(_ 应用: NSApplication) -> Bool {
+    func applicationShouldTerminateAfterLastWindowClosed(_ 应用实例: NSApplication) -> Bool {
         true
     }
 }
@@ -58,8 +58,8 @@ guard let 地址 = 参数.first else {
     exit(2)
 }
 
-let 应用 = NSApplication.shared
-let 代理 = 壳(地址: 地址)
-应用.delegate = 代理
-应用.setActivationPolicy(.regular)
-应用.run()
+let 应用实例 = NSApplication.shared
+let 应用代理 = 壳(地址: 地址)
+应用实例.delegate = 应用代理
+应用实例.setActivationPolicy(.regular)
+应用实例.run()

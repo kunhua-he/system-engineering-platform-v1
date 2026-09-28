@@ -23,7 +23,9 @@ pub struct 转码错误 {
 
 /// base64 标准字母表（`+/`，带 `=` 补齐）。**不做 URL 安全变体**：
 /// 契约里只认一种编码，多一种就多一处「同一事实两个来源」。
-const 字母表: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+// `base64` 是语言 / 协议强加的名（`命名例外`）⇒ 前缀小写是它的定名，不是取名。
+#[allow(non_upper_case_globals)]
+const base64字母表: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
 /// 字节集 → base64 字符串（带 `=` 补齐，长度恒为 4 的倍数）。
 pub fn base64编码(来源: &[u8]) -> String {
@@ -33,15 +35,15 @@ pub fn base64编码(来源: &[u8]) -> String {
         let 次字节值 = u32::from(数据块.get(1).copied().unwrap_or(0));
         let 末字节值 = u32::from(数据块.get(2).copied().unwrap_or(0));
         let 合并值 = (首字节值 << 16) | (次字节值 << 8) | 末字节值;
-        输出缓冲.push(char::from(字母表[(合并值 >> 18) as usize & 63]));
-        输出缓冲.push(char::from(字母表[(合并值 >> 12) as usize & 63]));
+        输出缓冲.push(char::from(base64字母表[(合并值 >> 18) as usize & 63]));
+        输出缓冲.push(char::from(base64字母表[(合并值 >> 12) as usize & 63]));
         输出缓冲.push(if 数据块.len() > 1 {
-            char::from(字母表[(合并值 >> 6) as usize & 63])
+            char::from(base64字母表[(合并值 >> 6) as usize & 63])
         } else {
             '='
         });
         输出缓冲.push(if 数据块.len() > 2 {
-            char::from(字母表[合并值 as usize & 63])
+            char::from(base64字母表[合并值 as usize & 63])
         } else {
             '='
         });
@@ -51,7 +53,7 @@ pub fn base64编码(来源: &[u8]) -> String {
 
 /// 一位 base64 字符 → 6 位值。`=` 与表外字符都算不合法。
 fn 取值(字符表: u8, 位置: usize) -> Result<u32, 转码错误> {
-    match 字母表.iter().position(|一项| *一项 == 字符表) {
+    match base64字母表.iter().position(|一项| *一项 == 字符表) {
         Some(序号) => Ok(序号 as u32),
         None => Err(转码错误 {
             位置: 位置,
