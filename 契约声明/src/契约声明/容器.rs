@@ -20,7 +20,7 @@
 use alloc::vec::Vec;
 
 /// 文件头魔数（8 字节）。与 `.e` 容器同源。
-pub const 魔数: [u8; 8] = *b"CNWTEPRG";
+pub const 文件头魔数: [u8; 8] = *b"CNWTEPRG";
 
 /// 段头长度（字节）。冻结形状：`u32 校验和 + u8 段类型 + 27 字节名称区 + u32 段名长 + u64 数据长 = 44`。
 pub const 段头长度: usize = 44;
@@ -105,9 +105,9 @@ pub fn 装包(接口说明段: &[u8], 能力码段: &[u8]) -> Vec<u8> {
         (段类型_指纹, 段名_指纹, 指纹段.as_slice()),
     ];
     let mut 输出缓冲 = Vec::with_capacity(
-        魔数.len() + 3 * 段头长度 + 接口说明段.len() + 能力码段.len() + 指纹段.len(),
+        文件头魔数.len() + 3 * 段头长度 + 接口说明段.len() + 能力码段.len() + 指纹段.len(),
     );
-    输出缓冲.extend_from_slice(&魔数);
+    输出缓冲.extend_from_slice(&文件头魔数);
     for (号值, 段名, 数据) in 段表 {
         输出缓冲.extend_from_slice(&写段头(号值, 段名));
         输出缓冲.extend_from_slice(数据);
@@ -157,11 +157,11 @@ fn 编名称区(段名: &[u8], 号值: u8) -> [u8; 名称区容量] {
 /// 段头校验 · 段类型号只认 `16`/`17`/`18` · 名称区密钥照旧。**只解形状，不校哈希**
 /// （哈希校验是 [`校验`] 的事）。
 pub fn 解包(字节: &[u8]) -> Result<能力包件三段, 容器错误> {
-    if 字节.len() < 魔数.len() || 字节[..魔数.len()] != 魔数 {
+    if 字节.len() < 文件头魔数.len() || 字节[..文件头魔数.len()] != 文件头魔数 {
         return Err(容器错误::魔数不符);
     }
     let mut 段表: Vec<(u8, Vec<u8>)> = Vec::new();
-    let mut 位置 = 魔数.len();
+    let mut 位置 = 文件头魔数.len();
     while 位置 < 字节.len() {
         let 号值 = 解析段头(字节, 位置)?;
         let 数据起点 = 位置 + 段头长度;
@@ -311,13 +311,13 @@ const 轮常量: [u32; 64] = [
 ];
 
 /// 初始哈希值（前 8 个质数平方根小数部的头 32 位）。
-const 初始值: [u32; 8] = [
+const 初始哈希值: [u32; 8] = [
     0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19,
 ];
 
 /// SHA-256。
 pub fn 算指纹(数据: &[u8]) -> [u8; 指纹宽度] {
-    let mut 状态 = 初始值;
+    let mut 状态 = 初始哈希值;
     let mut 数据块 = Vec::with_capacity(数据.len() + 72);
     数据块.extend_from_slice(数据);
     数据块.push(0x80);
@@ -329,7 +329,7 @@ pub fn 算指纹(数据: &[u8]) -> [u8; 指纹宽度] {
     数据块.extend_from_slice(&(数据.len() as u64 * 8).to_be_bytes());
 
     for 片段 in 数据块.chunks_exact(64) {
-        压缩(&mut 状态, 片段);
+        压缩状态(&mut 状态, 片段);
     }
 
     let mut 输出缓冲 = [0u8; 指纹宽度];
@@ -339,7 +339,7 @@ pub fn 算指纹(数据: &[u8]) -> [u8; 指纹宽度] {
     输出缓冲
 }
 
-fn 压缩(状态: &mut [u32; 8], 数据块: &[u8]) {
+fn 压缩状态(状态: &mut [u32; 8], 数据块: &[u8]) {
     let mut 字符表 = [0u32; 64];
     for 序号 in 0..16 {
         字符表[序号] = u32::from_be_bytes(数据块[序号 * 4..序号 * 4 + 4].try_into().unwrap());

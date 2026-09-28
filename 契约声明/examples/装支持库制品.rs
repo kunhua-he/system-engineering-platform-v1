@@ -26,7 +26,7 @@ use std::process::ExitCode;
 use v1_contract::容器;
 
 fn main() -> ExitCode {
-    let 参数 = match 解析参数() {
+    let 参数 = match 解析命令行参数() {
         Ok(参数) => 参数,
         Err(说明) => {
             eprintln!("装支持库制品：{说明}");
@@ -34,11 +34,11 @@ fn main() -> ExitCode {
             return ExitCode::from(2);
         }
     };
-    let 能力码 = match 读入(&参数.能力码, "能力码（cdylib）") {
+    let 能力码 = match 读输入件(&参数.能力码, "能力码（cdylib）") {
         Ok(字节) => 字节,
         Err(退出码) => return 退出码,
     };
-    let 接口说明段 = match 读入(&参数.接口说明, "接口说明段") {
+    let 接口说明段 = match 读输入件(&参数.接口说明, "接口说明段") {
         Ok(字节) => 字节,
         Err(退出码) => return 退出码,
     };
@@ -81,7 +81,7 @@ fn main() -> ExitCode {
 }
 
 /// 读一个输入件。失败即指路（不回退、不猜）。
-fn 读入(路径: &Path, 是什么: &str) -> Result<Vec<u8>, ExitCode> {
+fn 读输入件(路径: &Path, 是什么: &str) -> Result<Vec<u8>, ExitCode> {
     match fs::read(路径) {
         Ok(字节) => Ok(字节),
         Err(错误) => {
@@ -92,14 +92,14 @@ fn 读入(路径: &Path, 是什么: &str) -> Result<Vec<u8>, ExitCode> {
 }
 
 /// 三个入参路径。
-struct 参数集 {
+struct 入参路径集 {
     能力码: PathBuf,
     接口说明: PathBuf,
     输出: PathBuf,
 }
 
 /// 解命令行。缺参数 / 有不认识的参数一律拒（不猜）。
-fn 解析参数() -> Result<参数集, String> {
+fn 解析命令行参数() -> Result<入参路径集, String> {
     let 实参: Vec<String> = std::env::args().skip(1).collect();
     let mut 能力码 = None;
     let mut 接口说明 = None;
@@ -113,7 +113,7 @@ fn 解析参数() -> Result<参数集, String> {
             其他 => return Err(format!("不认识的参数：{其他}")),
         }
     }
-    Ok(参数集 {
+    Ok(入参路径集 {
         能力码: 能力码.ok_or("缺 --能力码")?,
         接口说明: 接口说明.ok_or("缺 --接口说明")?,
         输出: 输出.ok_or("缺 --输出")?,

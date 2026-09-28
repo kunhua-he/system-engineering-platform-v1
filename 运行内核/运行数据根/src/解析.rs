@@ -5,13 +5,13 @@
 //! 解析的每条分支（覆盖 · macOS · Linux+XDG · Linux 无 XDG · Windows · 全缺）都必须**判得了**。
 //! 从 `std::env` 直接读的话，测试只能靠改进程环境变量，分支之间会互相污染
 //! （本项目已有的教训：两个测试共用一个进程级 `static` ⇒ 并行跑互相污染）。
-//! ⇒ 解析器**只吃参数**；读真实环境是 [`解析当前`] 那一层薄壳的事。
+//! ⇒ 解析器**只吃参数**；读真实环境是 [`解析当前环境`] 那一层薄壳的事。
 
 use std::path::PathBuf;
 
 /// 解析要的全部外部事实。**注入**，不从全局读。
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
-pub struct 环境<'a> {
+pub struct 解析环境<'a> {
     /// 覆盖：环境变量 `V1_RUN_DATA_ROOT`。**部署事实**（可配、可换、可清空）。
     ///
     /// 为什么变量名是 ASCII：`macOS` 的 `/bin/sh` 是 bash 3.2，**不认中文变量名**
@@ -43,7 +43,7 @@ pub enum 解析失败 {
 /// 平台数据目录下那一层的名字。**唯一来源** —— 别处要这个名字就引用它，不许再写一份。
 pub const 默认目录名: &str = "系统工程平台V1";
 
-/// 覆盖用的环境变量名。**ASCII**（见 [`环境::覆盖`] 的理由）。
+/// 覆盖用的环境变量名。**ASCII**（见 [`解析环境::覆盖`] 的理由）。
 pub const 覆盖变量名: &str = "V1_RUN_DATA_ROOT";
 
 /// **唯一解析器**：`覆盖 > 平台默认`。
@@ -51,13 +51,13 @@ pub const 覆盖变量名: &str = "V1_RUN_DATA_ROOT";
 /// - 覆盖非空 ⇒ 原样用它（**不再拼 [`默认目录名`]** —— 覆盖就是完整根，部署方说了算）；
 /// - 覆盖为空 / 缺 ⇒ 平台数据目录 + [`默认目录名`]；
 /// - 两条都拿不到 ⇒ [`解析失败::无位置`]。
-pub fn 解析(环境: &环境, 平台: 平台) -> Result<PathBuf, 解析失败> {
-    if let Some(覆盖) = 环境.覆盖
+pub fn 解析(解析环境: &解析环境, 平台: 平台) -> Result<PathBuf, 解析失败> {
+    if let Some(覆盖) = 解析环境.覆盖
         && !覆盖.is_empty()
     {
         return Ok(PathBuf::from(覆盖));
     }
-    let 基准目录 = 默认基(环境, 平台).ok_or(解析失败::无位置)?;
+    let 基准目录 = 默认基目录(解析环境, 平台).ok_or(解析失败::无位置)?;
     Ok(基准目录.join(默认目录名))
 }
 
@@ -65,25 +65,25 @@ pub fn 解析(环境: &环境, 平台: 平台) -> Result<PathBuf, 解析失败> 
 ///
 /// 三条规则互不重叠，且**没有一条**落在当前目录或它的祖先 —— 这正是
 /// 「运行数据不在源码树内」这条纪律在解析层的落点。
-fn 默认基(环境: &环境, 平台: 平台) -> Option<PathBuf> {
+fn 默认基目录(解析环境: &解析环境, 平台: 平台) -> Option<PathBuf> {
     match 平台 {
         // macOS：`~/Library/Application Support`
-        平台::MacOS => 环境
+        平台::MacOS => 解析环境
             .家目录
             .filter(|家目录| !家目录.is_empty())
             .map(|家目录| PathBuf::from(家目录).join("Library").join("Application Support")),
         // Linux：`$XDG_DATA_HOME`，未设则按 XDG 规范退回 `~/.local/share`
         平台::Linux => {
-            if let Some(数据) = 环境.xdg数据目录.filter(|目录| !目录.is_empty()) {
+            if let Some(数据) = 解析环境.xdg数据目录.filter(|目录| !目录.is_empty()) {
                 return Some(PathBuf::from(数据));
             }
-            环境
+            解析环境
                 .家目录
                 .filter(|家目录| !家目录.is_empty())
                 .map(|家目录| PathBuf::from(家目录).join(".local").join("share"))
         }
         // Windows：`%APPDATA%`（家目录不是它 —— 两者别混）
-        平台::Windows => 环境
+        平台::Windows => 解析环境
             .应用数据目录
             .filter(|目录| !目录.is_empty())
             .map(PathBuf::from),
@@ -91,18 +91,18 @@ fn 默认基(环境: &环境, 平台: 平台) -> Option<PathBuf> {
 }
 
 /// 从**真实环境**解析：读四个环境变量 + 判目标平台。**只做这两件事，零判断**。
-pub fn 解析当前() -> Result<PathBuf, 解析失败> {
+pub fn 解析当前环境() -> Result<PathBuf, 解析失败> {
     let 覆盖 = std::env::var(覆盖变量名).ok();
     let 家目录 = std::env::var("HOME").ok();
     let xdg = std::env::var("XDG_DATA_HOME").ok();
     let 应用 = std::env::var("APPDATA").ok();
-    let 环境 = 环境 {
+    let 解析环境 = 解析环境 {
         覆盖: 覆盖.as_deref(),
         家目录: 家目录.as_deref(),
         xdg数据目录: xdg.as_deref(),
         应用数据目录: 应用.as_deref(),
     };
-    解析(&环境, 当前平台())
+    解析(&解析环境, 当前平台())
 }
 
 /// 编译期定死的目标平台。**不查环境、不猜** —— 平台由构建目标决定。
