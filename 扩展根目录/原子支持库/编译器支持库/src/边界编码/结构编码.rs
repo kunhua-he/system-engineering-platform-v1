@@ -33,7 +33,7 @@ pub fn 编码容器(容器: &容器) -> Vec<u8> {
 
 /// 字节集 → 结构。`None` = 编码非法（长度字段与实到字节数不符，或尾部有多余字节）。
 pub fn 解码容器(字节: &[u8]) -> Option<容器> {
-    let mut 读器 = 读器 { 字节, 位: 0 };
+    let mut 读器 = 顺序读器 { 字节, 位: 0 };
     let 段数 = 读器.读四字节()?;
     let mut 段表 = Vec::new();
     for _ in 0..段数 {
@@ -58,12 +58,12 @@ pub fn 解码容器(字节: &[u8]) -> Option<容器> {
 }
 
 /// 顺序读器：每个 `取字节` 都查边界，越界给 `None`。
-struct 读器<'a> {
+struct 顺序读器<'a> {
     字节: &'a [u8],
     位: usize,
 }
 
-impl<'a> 读器<'a> {
+impl<'a> 顺序读器<'a> {
     fn 取字节(&mut self, 个数: usize) -> Option<&'a [u8]> {
         let 尾部 = self.位.checked_add(个数)?;
         if 尾部 > self.字节.len() {
