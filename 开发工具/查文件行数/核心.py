@@ -49,7 +49,7 @@ def 读文本(路径):
         return 文件句柄.read()
 
 
-def 入口类(相对路, 文本):
+def 入口类别(相对路, 文本):
     """返回入口类别；不是入口给 None。"""
     名称 = os.path.basename(相对路)
     if 名称 in 入口件名:
@@ -102,7 +102,7 @@ def 扫一遍(仓根):
         行数 = len(文本.splitlines())
         if 行数 > 行数上限:
             超行数.append((行数, 相对路))
-        类别 = 入口类(相对路, 文本)
+        类别 = 入口类别(相对路, 文本)
         if 类别 is None:
             continue
         if 行数 > 入口行数上限:

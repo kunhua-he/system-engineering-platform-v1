@@ -22,7 +22,7 @@ from pathlib import Path
 仓根 = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(仓根 / "开发工具"))
 
-from MCP服务 import 工具表, 派发, 服务  # noqa: E402
+from MCP服务 import 工具表, 派发, 跑主循环  # noqa: E402
 
 
 def 入口函数(argv=None):
@@ -46,7 +46,7 @@ def 入口函数(argv=None):
         if 非ASCII:
             print("★工具名必须 ASCII（客户端会截掉非 ASCII ⇒ 撞名）：%s" % 非ASCII)
         return 0 if 名表 == 期望 and not 非ASCII else 1
-    return 服务(仓根, 工具表)
+    return 跑主循环(仓根, 工具表)
 
 
 if __name__ == "__main__":

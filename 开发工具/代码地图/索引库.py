@@ -61,7 +61,7 @@ def 连库(库路径=None) -> sqlite3.Connection:
     return sqlite3.connect("file:%s?mode=ro" % (库路径 or 默认库路径()), uri=True)
 
 
-def 找命令() -> str:
+def 找索引器命令() -> str:
     """索引器可执行件在不在 ⇒ 路径 或 `""`（环境依赖，不是底座能力）。"""
     return shutil.which(索引器命令) or ""
 
@@ -92,7 +92,7 @@ def 建索引(仓根: Path) -> tuple:
     `✗ CodeGraph not initialized in <路径>`（退出码 1）。实测撞到两处 —— 一开工一工作树
     登记时刚建出的工作树、以及**新克隆的仓**。
     """
-    命令 = 找命令()
+    命令 = 找索引器命令()
     if not 命令:
         return 1, 0, ("代码地图：索引器 `%s` 不在（环境依赖，不是底座能力）。装法："
                     "`npm i -g @colbymchenry/codegraph`" % 索引器命令)
@@ -113,14 +113,14 @@ def 建索引(仓根: Path) -> tuple:
         读数["节点"], 读数["边"], 读数["件"], 读数["索引器版本"] or "—", 库文件)
 
 
-def 同步(仓根: Path) -> tuple:
+def 同步索引(仓根: Path) -> tuple:
     """增量同步（改了件之后刷索引）⇒ `(退出码, 说明)`。
 
     **为什么用 `sync` 不用 `index`**：实测改 1 件后 `sync` 全链 **389 ms**，`index` 要 1.0–1.4 s。
     写盘后每条改动都要刷一次（下一条改动要拿到新行号与新指纹）⇒ 这一档必须便宜。
     `仓根` 是**显式参数**：一开工一工作树时，刷的必须是那条树的索引，不是主树的。
     """
-    命令 = 找命令()
+    命令 = 找索引器命令()
     if not 命令:
         return 1, "索引器不在（`%s`）⇒ 索引没刷，下次查符号会读到旧行号" % 索引器命令
     回执 = subprocess.run([命令, "sync", str(仓根)], cwd=str(仓根),
@@ -132,7 +132,7 @@ def 同步(仓根: Path) -> tuple:
 
 def 报缺工具() -> int:
     """索引器不在 ⇒ 报装法与退法（它是**环境依赖**，不是底座能力）。"""
-    if 找命令():
+    if 找索引器命令():
         return 0
     print("代码地图：索引器不在（它是**环境依赖**，不是底座能力）。缺：")
     print("  · %-16s 装法：`npm i -g @colbymchenry/codegraph`" % 索引器命令)
@@ -154,7 +154,7 @@ def _件行表(件路径: str) -> list:
     return _行缓存[件路径]
 
 
-def 名字列(件路径: str, 行号: int, 名字: str, 起始列: int) -> int:
+def 名字所在列(件路径: str, 行号: int, 名字: str, 起始列: int) -> int:
     """**定义处**名字所在列。
 
     `variable` / `enum_member` / `field` 这几类，索引给的 `start_column` **就是名字起点**；
@@ -200,7 +200,7 @@ def 节点记录(一行) -> dict:
         "声明": (声明 or "").replace("\n", " ").strip()[:200],
         "路径": 件路径,
         "行": 起始行,
-        "列": 名字列(件路径, 起始行, 名字, 起始列),
+        "列": 名字所在列(件路径, 起始行, 名字, 起始列),
         "末行": 末行,
         "出现数": 引用数 + 1,
     }
@@ -269,7 +269,7 @@ def 出现位(键名: str, 上限: int = 0, 库路径=None) -> dict:
                 continue
             位置表 = []
             for 标识, 名字, 件路径, 行号, 起始列 in 节点行表:
-                位置表.append((件路径, 行号, 名字列(件路径, 行号, 名字, 起始列)))
+                位置表.append((件路径, 行号, 名字所在列(件路径, 行号, 名字, 起始列)))
                 for 来源, 边行, 边列 in 动态库.execute(
                         "select source, line, col from edges "
                         "where target=? and kind<>'contains' and line is not null", (标识,)):
