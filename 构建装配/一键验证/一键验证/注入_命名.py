@@ -1,13 +1,12 @@
 # -*- coding: utf-8 -*-
 """注入样本 · 命名防回潮一类（判据 ㉒）：序数代称作标识符 · 西文单字母 · 基线陈旧登记。
 
-反向样本全部注入到**干净合成仓**（不依赖仓库现状 ⇒ 可重复）。合成仓的
-`构建装配/一键验证/命名基线.json` 是**空的两档**（合成仓里没有这两档标识符），
-所以任何一处注入都必然是「新增」⇒ 当场红。
+反向样本全部注入到**干净合成仓**（不依赖仓库现状 ⇒ 可重复）。合成仓的规则库里
+`命名基线` 表是**空的**（合成仓里没有这两档标识符），所以任何一处注入都必然是「新增」⇒ 当场红。
 """
 from __future__ import annotations
 
-import json
+import sqlite3
 from pathlib import Path
 
 from .判据_命名 import _查名
@@ -16,7 +15,7 @@ from .判据_命名 import _查名
 代称首字 = _查名().序数代称字[0]
 
 
-命名基线相对路径 = "构建装配/一键验证/命名基线.json"
+规则库相对路径 = "开发工具/信息核心/信息核心.db"
 _样本件 = "运行内核/实例状态/src/命名样本.rs"
 
 
@@ -141,10 +140,11 @@ def 注入_命名基线陈旧登记(临根: Path) -> str:
     专证「基线只许减」的反面不是空的（同判据 ⑲ 的 `注入_基线陈旧登记`）：
     改名批次落地后若留着旧登记，基线读数就不再是现状，而且它白占一格上限。
     """
-    路径 = 临根 / 命名基线相对路径
-    数据 = json.loads(路径.read_text(encoding="utf-8"))
-    数据["档"]["西文单字母"].append(
-        {"路径": "契约声明/src/lib.rs", "名字": "i", "处数": 1}
-    )
-    路径.write_text(json.dumps(数据, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    连接 = sqlite3.connect(临根 / 规则库相对路径)
+    try:
+        连接.execute("insert or replace into 命名基线 values(?,?,?,?)",
+                   ("西文单字母", "契约声明/src/lib.rs", "i", 1))
+        连接.commit()
+    finally:
+        连接.close()
     return "契约声明/src/lib.rs"
