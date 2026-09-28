@@ -103,15 +103,15 @@ impl 错误对象 {
             ("码".to_owned(), 协议值::整数(i64::from(self.码))),
             ("段位".to_owned(), 协议值::整数(i64::from(self.段位))),
             ("名称".to_owned(), 协议值::文本(self.名称.clone())),
-            ("可重试".to_owned(), 布尔(self.可重试)),
-            ("可自愈".to_owned(), 布尔(self.可自愈)),
-            ("需人工".to_owned(), 布尔(self.需人工)),
-            ("已登记".to_owned(), 布尔(self.已登记)),
+            ("可重试".to_owned(), 逻辑型值(self.可重试)),
+            ("可自愈".to_owned(), 逻辑型值(self.可自愈)),
+            ("需人工".to_owned(), 逻辑型值(self.需人工)),
+            ("已登记".to_owned(), 逻辑型值(self.已登记)),
         ])
     }
 }
 
-fn 布尔(待处理值: bool) -> 协议值 {
+fn 逻辑型值(待处理值: bool) -> 协议值 {
     if 待处理值 {
         协议值::逻辑真
     } else {

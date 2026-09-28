@@ -30,7 +30,7 @@
 
 
 def _是整数(待处理值) -> bool:
-    """布尔不算整数（Python 里 True 是 int 的子类，这里必须排掉）。"""
+    """逻辑型不算整数（Python 里 True 是 int 的子类，这里必须排掉）。"""
     return isinstance(待处理值, int) and not isinstance(待处理值, bool)
 
 
