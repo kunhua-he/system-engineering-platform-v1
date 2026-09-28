@@ -12,9 +12,9 @@ from . import 常量, 判据表
 
 from .合成仓 import 造干净仓
 from .常量 import 检查名, 硬顶毫秒, 进程起始时刻
-from .打印 import 打印
+from .打印 import 打印验证结果
 from .注入 import 注入_常量重定义
-from .验证 import 验证
+from .验证 import 跑全量判据
 
 
 def _挪进程起点到此刻():
@@ -28,7 +28,7 @@ def _挪进程起点到此刻():
       挪成「现在」= 模拟一条刚启动的命令 ⇒ 量的是它该量的东西。
       调用方负责在 `finally` 里还原（`验证模块.进程起始时刻 = 原值`）。
     """
-    模块 = sys.modules[验证.__module__]
+    模块 = sys.modules[跑全量判据.__module__]
     原值 = 模块.进程起始时刻
     模块.进程起始时刻 = time.perf_counter()
     return 模块, 原值
@@ -69,7 +69,7 @@ def 自检_延迟判据承重() -> list:
                     判据表.检查表 = tuple(
                         (判据名, (lambda 上层读数: []) if 判据名 == 名称 else 判据函数) for 判据名, 判据函数 in 原表
                     )
-                return 验证(临根, 两遍=False)
+                return 跑全量判据(临根, 两遍=False)
             finally:
                 常量.硬顶毫秒 = 原硬顶
                 验证模块.进程起始时刻 = 原起
@@ -123,9 +123,9 @@ def 自检_延迟判据承重() -> list:
         临根 = Path(临时) / "仓"
         造干净仓(临根)
         注入_常量重定义(临根)  # 造一条失败明细，让「打印」那段尾巴真的发生
-        尾巴果 = 验证(临根)
+        尾巴果 = 跑全量判据(临根)
         读数 = 尾巴果["上下文"].get("本命令墙钟毫秒")
-        打印(尾巴果, io.StringIO())
+        打印验证结果(尾巴果, io.StringIO())
         真墙钟 = int((time.perf_counter() - 进程起始时刻) * 1000)
     尾巴 = 真墙钟 - (读数 or 0)
     输出缓冲.append(
@@ -178,7 +178,7 @@ def 自检_两遍复核收窄() -> list:
             try:
                 判据表.检查表 = 带计数(原表)
                 常量.提速开关 = 提速
-                return 验证(临根), dict(计数)
+                return 跑全量判据(临根), dict(计数)
             finally:
                 判据表.检查表 = 原表
                 常量.提速开关 = 真提速

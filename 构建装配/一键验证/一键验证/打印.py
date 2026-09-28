@@ -8,7 +8,7 @@ import sys
 from . import 常量
 
 
-def 打印(结果: dict, 输出流=None) -> None:
+def 打印验证结果(结果: dict, 输出流=None) -> None:
     输出流 = 输出流 or sys.stdout
     失败项 = [明细条 for 明细条 in 结果["失败"] if isinstance(明细条, str)]
     # 未判按**判据**计（整条判据空集 + 判据内部的子判据空集都算这条判据有未判读数）。
