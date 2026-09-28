@@ -24,11 +24,11 @@ import urllib.request
 from pathlib import Path
 
 from 常量 import (
-    仓根, 扩展根声明源, 暂存根, 打印, 端口监听读数, 流量端口, 程序文本源, 被调号表,
-    HTTP超时秒, 硬顶毫秒, 尾巴余量毫秒, 阈值毫秒, 注入人为慢,
+    仓根, 扩展根声明源, 暂存根, 打印, 端口监听读数, 流量端口, 程序文本源, 被调能力号表,
+    写回执, HTTP超时秒, 硬顶毫秒, 尾巴余量毫秒, 阈值毫秒, 注入人为慢,
 )
 from 装配 import 载入构建制品, 备网关产物, 清扫残部, 符号导出读数
-from 网关与调用 import 起网关, 启动读数, 真调, 停网关
+from 网关与调用 import 起网关, 启动读数, 真调网关, 停网关
 
 回执落点 = 暂存根 / "最近一次热载入回执.json"
 
@@ -191,16 +191,16 @@ def 跑主链(壳起表=None) -> int:
         # 第 6 步：经 HTTP 真调新载入扩展的能力（**不重启**）
         死层 = "调用层"
         程序文本 = 程序文本源.read_text(encoding="utf-8")
-        打印("⑥ 经 HTTP 真调 {}（新载入的能力）".format("/".join(str(号值) for 号值 in 被调号表)))
+        打印("⑥ 经 HTTP 真调 {}（新载入的能力）".format("/".join(str(号值) for 号值 in 被调能力号表)))
         调用读数 = {}
-        for 号值 in 被调号表:
-            结果 = 真调(端口, 号值, 程序文本)
+        for 号值 in 被调能力号表:
+            结果 = 真调网关(端口, 号值, 程序文本)
             调用读数[str(号值)] = 结果
             打印("   {} → HTTP {} · 成功={} · 返回 {}".format(
                 号值, 结果["HTTP状态"], 结果["成功"],
                 "{} 字节".format(结果["返回字节数"]) if 结果["返回字节数"] is not None else "—"))
         回执["层"]["调用"] = {"样本": str(程序文本源), "逐号": 调用读数}
-        for 号值 in 被调号表:
+        for 号值 in 被调能力号表:
             结果 = 调用读数[str(号值)]
             if 结果["HTTP状态"] != 200 or 结果["成功"] is not True:
                 raise RuntimeError("新载入的能力 {} 真调不过：HTTP {} · 成功={}".format(
@@ -250,17 +250,9 @@ def 跑主链(壳起表=None) -> int:
         待处理值 for 键名, 待处理值 in 回执["判据"].items() if 键名 != "到过判定"
     ) and 回执.get("层", {}).get("清理", {}).get("暂存已删") is True
     回执["结论"] = "通过" if 是否通过 and "失败" not in 回执 else "不通过"
-    写回执到(回执)
+    写回执(回执, 回执落点)
     打印("回执 → {}".format(回执落点))
     打印("命令墙钟（壳自量）{} ms · 阈值 {} ms（硬顶 {} − 尾巴余量 {}）· 人为慢注入 {} ms".format(
         墙钟毫秒, 阈值毫秒, 硬顶毫秒, 尾巴余量毫秒, 注入毫秒))
     打印("结论：{} · 总耗时 {} 秒".format(回执["结论"], 回执["总耗时秒"]))
     return 0 if 回执["结论"] == "通过" else 1
-
-
-def 写回执到(回执: dict) -> None:
-    """原子写本件的回执（与 `常量.写回执` 同写法，只是换个落点）。"""
-    回执落点.parent.mkdir(parents=True, exist_ok=True)
-    临时路径 = 回执落点.with_suffix(".json.临时")
-    临时路径.write_text(json.dumps(回执, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    os.replace(临时路径, 回执落点)

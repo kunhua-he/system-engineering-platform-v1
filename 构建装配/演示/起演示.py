@@ -65,13 +65,13 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-起始 = time.monotonic()  # 壳自量的起表点：**在导入本包之前** ⇒ 导入也算进墙钟
+起始时刻 = time.monotonic()  # 壳自量的起表点：**在导入本包之前** ⇒ 导入也算进墙钟
 
 from 网关与调用 import 跑主链  # noqa: E402
 
 
 def 入口函数() -> int:
-    return 跑主链(起始)
+    return 跑主链(起始时刻)
 
 
 if __name__ == "__main__":

@@ -44,7 +44,7 @@ HTTP超时秒 = 5.0
 停等秒 = 2.0
 
 # 真调样本：案例库「真程序文本」的输入（195 字节真语料，1101/1102 真调成功过的同一份）。
-被调号表 = (1101, 1102)
+被调能力号表 = (1101, 1102)
 
 # ── 命令级墙钟**自量自门禁**（`2026-09-27_所有运行五秒硬顶.md` §一 / §六.1）──────────
 # 一条命令的**完整墙钟只有它自身的壳能量**（中央判据读别条命令的回执行不通，理由见 网关与调用.py）。
@@ -88,9 +88,13 @@ def 端口监听读数(端口: int) -> list:
     return 源码行
 
 
-def 写回执(回执: dict) -> None:
-    """原子写回执（同 上线切换.py::写指针 的写法：临时件 + os.replace）。"""
-    回执落点.parent.mkdir(parents=True, exist_ok=True)
-    临时路径 = 回执落点.with_suffix(".json.临时")
+def 写回执(回执: dict, 落点: Path = 回执落点) -> None:
+    """原子写回执（同 上线切换.py::写指针 的写法：临时件 + os.replace）。
+
+    落点由参数定（默认 = 本模块的 `回执落点`）：`热载入与调用.py` 传它那份
+    `最近一次热载入回执.json` —— 同一份实现，不另写第二套。
+    """
+    落点.parent.mkdir(parents=True, exist_ok=True)
+    临时路径 = 落点.with_suffix(".json.临时")
     临时路径.write_text(json.dumps(回执, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    os.replace(临时路径, 回执落点)
+    os.replace(临时路径, 落点)

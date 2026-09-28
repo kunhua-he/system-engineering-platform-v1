@@ -15,7 +15,7 @@ def 走源文件(目录: Path):
                 yield Path(根目录) / 名称
 
 
-def 相对(路径: Path) -> str:
+def 取相对路径(路径: Path) -> str:
     return 路径.relative_to(仓根).as_posix()
 
 
