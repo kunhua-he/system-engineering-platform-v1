@@ -56,7 +56,7 @@ from 构建装配.门禁 import 自门禁  # noqa: E402
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from 准入判据.报告 import 单条, 扫一遍, 打印, 清单  # noqa: E402
+from 准入判据.报告 import 跑单条判据, 扫一遍, 打印, 清单  # noqa: E402
 from 准入判据.样本 import 自测  # noqa: E402
 from 准入判据.世界 import 世界, 找仓根  # noqa: E402
 
@@ -74,7 +74,7 @@ def 入口函数(参数) -> int:
         if 判位 + 1 >= len(参数):
             print("用法：--判 <编号>（如 --判 ⑧）")
             return 1
-        return 单条(测试世界, 参数[判位 + 1])
+        return 跑单条判据(测试世界, 参数[判位 + 1])
     区间起点 = time.perf_counter()
     结果 = 扫一遍(测试世界)
     毫秒 = int((time.perf_counter() - 区间起点) * 1000)

@@ -102,26 +102,26 @@ impl 支持库引用 {
 
     /// 5 段时取 `库文件名`。
     pub fn 库文件名(&self) -> Option<&[u8]> {
-        self.五段()?.first().map(Vec::as_slice)
+        self.取五段引用字段()?.first().map(Vec::as_slice)
     }
     /// 5 段时取 `GUID`。
     pub fn 取GUID(&self) -> Option<&[u8]> {
-        self.五段()?.get(1).map(Vec::as_slice)
+        self.取五段引用字段()?.get(1).map(Vec::as_slice)
     }
     /// 5 段时取 `版本首`。
     pub fn 首版本(&self) -> Option<&[u8]> {
-        self.五段()?.get(2).map(Vec::as_slice)
+        self.取五段引用字段()?.get(2).map(Vec::as_slice)
     }
     /// 5 段时取 `版本次`。
     pub fn 次版本(&self) -> Option<&[u8]> {
-        self.五段()?.get(3).map(Vec::as_slice)
+        self.取五段引用字段()?.get(3).map(Vec::as_slice)
     }
     /// 5 段时取 `中文名`。6 段（`.npk` 类库）时返回 `None`，不做猜测。
     pub fn 中文名(&self) -> Option<&[u8]> {
-        self.五段()?.get(4).map(Vec::as_slice)
+        self.取五段引用字段()?.get(4).map(Vec::as_slice)
     }
 
-    fn 五段(&self) -> Option<&Vec<Vec<u8>>> {
+    fn 取五段引用字段(&self) -> Option<&Vec<Vec<u8>>> {
         if self.字段.len() == 引用字段名.len() { Some(&self.字段) } else { None }
     }
 }
