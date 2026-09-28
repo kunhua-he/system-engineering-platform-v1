@@ -18,6 +18,7 @@ from .注入_落点 import 注入_判据落点悬空
 from .注入_台账号 import 注入_台账号引用  # noqa: F401
 from .注入_引用 import 注入_引用不存在节  # noqa: F401
 from .注入_十干 import 注入_字面十干  # noqa: F401
+from .注入_命名穷举 import 注入_未登记名  # noqa: F401
 
 from . import 常量
 
