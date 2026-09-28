@@ -34,7 +34,7 @@ import sys
 改文件只能走 v1_edit（Edit / Write 会被钩子拦）。"""
 
 
-def _回(输出, 码, 结果=None, 错误=None):
+def _写响应报文(输出, 码, 结果=None, 错误=None):
     """写一条响应。`错误` 非空 ⇒ JSON-RPC 错误对象（协议级失败，不是工具失败）。"""
     响应报文 = {"jsonrpc": "2.0", "id": 码}
     if 错误 is not None:
@@ -88,5 +88,5 @@ def 服务(仓根, 工具表, 输入=None, 输出=None):
         if 错误码 is None:
             continue                       # 通知：不回应
         结果, 错误 = 派发(请求.get("method"), 请求.get("params") or {}, 仓根, 工具表)
-        _回(输出, 错误码, 结果, 错误)
+        _写响应报文(输出, 错误码, 结果, 错误)
     return 0
