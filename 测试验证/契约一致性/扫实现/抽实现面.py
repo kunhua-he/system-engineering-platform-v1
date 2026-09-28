@@ -261,7 +261,7 @@ def _按构造器解字段(构造, 实参, 符号表, 本表) -> dict:
     形参 = 构造.get("形参") or []
     for 字段, (来源, 文本) in 构造["字段"].items():
         if 来源 == "形参":
-            序号 = _序(形参, 文本)
+            序号 = _取项下标(形参, 文本)
             if 0 <= 序号 < len(实参):
                 输出缓冲[字段] = {"原文": 实参[序号], "值": 解符号(实参[序号], 符号表, 本表)}
             continue
@@ -274,7 +274,7 @@ def _按构造器解字段(构造, 实参, 符号表, 本表) -> dict:
     return 输出缓冲
 
 
-def _序(项表: list, 名称: str) -> int:
+def _取项下标(项表: list, 名称: str) -> int:
     try:
         return 项表.index(名称)
     except ValueError:
@@ -309,7 +309,7 @@ def _代形参(文本: str, 形参: list, 实参: list) -> str:
         return 文本
     代换文本 = 文本
     for 名称 in sorted(形参, key=len, reverse=True):
-        序号 = _序(形参, 名称)
+        序号 = _取项下标(形参, 名称)
         if 序号 < 0 or 序号 >= len(实参):
             continue
         代换文本 = re.sub(r"(?<![\w:])" + re.escape(名称) + r"(?![\w:])", lambda _, 值=实参[序号]: 值, 代换文本)
