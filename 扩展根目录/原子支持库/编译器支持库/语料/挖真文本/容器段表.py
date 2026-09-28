@@ -24,7 +24,7 @@ def 段表(字节流):
     return out
 
 
-def 所属段(tab, off):
+def 偏移所属段(tab, off):
     cur = None
     for st, 段型, 段名 in tab:
         if st <= off:
@@ -34,7 +34,7 @@ def 所属段(tab, off):
     return cur
 
 
-def 常量名(字节流, off, back=4096):
+def 取常量名(字节流, off, back=4096):
     best = None
     for 匹配 in 常量记录正则.finditer(字节流, max(0, off - back), off):
         try:

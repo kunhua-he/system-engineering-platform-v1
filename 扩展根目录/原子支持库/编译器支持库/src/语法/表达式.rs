@@ -40,7 +40,7 @@ pub(crate) const 兜底种类: 节点种类 = 节点种类::标识符引用;
 
 use crate::语言面::节点种类;
 
-pub(crate) struct 分析器<'a> {
+pub(crate) struct 表达式分析器<'a> {
     pub(super) 原文: &'a [u8],
     pub(super) 记号表: &'a [记号],
     pub(super) 草稿: &'a mut 草稿表,
@@ -51,7 +51,7 @@ pub(crate) struct 分析器<'a> {
     pub(super) 深度: u32,
 }
 
-impl<'a> 分析器<'a> {
+impl<'a> 表达式分析器<'a> {
     pub(crate) fn 新建(
         原文: &'a [u8],
         记号表: &'a [记号],

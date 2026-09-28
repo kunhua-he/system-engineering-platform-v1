@@ -7,16 +7,16 @@
 
 use super::名称区::{名称区容量, 编名称区};
 use super::形状::{
-    段头, 段头偏移, 段头长度, 段类型, 容器, 生成错误, 魔数, 魔术次字节, 魔术首字节,
+    段头, 段头偏移, 段头长度, 段类型, 容器, 生成错误, 文件头魔数, 魔术次字节, 魔术首字节,
 };
 
 /// 生成：结构 → 容器字节。**必须与 `反解` 构成往返一致**。
 pub fn 生成(容器: &容器) -> Result<Vec<u8>, 生成错误> {
-    let 预估 = 魔数.len()
+    let 预估 = 文件头魔数.len()
         + 容器.段表.len().saturating_mul(段头长度)
         + 容器.段表.iter().map(|号段| 号段.数据.len()).sum::<usize>();
     let mut 输出缓冲 = Vec::with_capacity(预估);
-    输出缓冲.extend_from_slice(&魔数);
+    输出缓冲.extend_from_slice(&文件头魔数);
     for (序号, 号段) in 容器.段表.iter().enumerate() {
         let 第几段 = u32::try_from(序号).unwrap_or(u32::MAX);
         输出缓冲.extend_from_slice(&写段头(&号段.头, 第几段)?);

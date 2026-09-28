@@ -28,9 +28,9 @@ from 构建装配.门禁 import 自门禁  # noqa: E402
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from 形状检查 import 案例根, 查根, 自测, 样本  # noqa: E402
+from 形状检查 import 案例根, 查根, 自测, 跑样本  # noqa: E402
 
-__all__ = ["案例根", "查根", "自测", "样本"]
+__all__ = ["案例根", "查根", "自测", "跑样本"]
 
 
 def 入口函数(参数: list) -> int:
@@ -38,7 +38,7 @@ def 入口函数(参数: list) -> int:
     if "--自测" in 参数:
         return 自测()
     if "--样本" in 参数:
-        return 样本()
+        return 跑样本()
     根目录 = 案例根
     if "--案例根" in 参数:
         序号 = 参数.index("--案例根")

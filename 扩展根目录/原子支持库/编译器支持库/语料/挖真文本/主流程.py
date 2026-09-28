@@ -5,9 +5,9 @@ import json
 import os
 import re
 
-from .容器段表 import 常量名, 所属段, 段表
+from .容器段表 import 取常量名, 偏移所属段, 段表
 from .常量 import 真文本目录, 最少声明行数, 挖出JSON路径, 源码根, 版本锚, 版本行首, 弱证据白名单
-from .行判定 import 检查取值, 声明行数, 扩张边界
+from .行判定 import 检查候选文本, 声明行数, 扩张边界
 
 
 # ── 主流程 ────────────────────────────────────────────────────────────────
@@ -38,13 +38,13 @@ def 入口函数():
                     continue
                 raw = 字节流[锚点:锚点 + 段长]
                 val = raw.rstrip(b"\x00")
-                ok, probs, nb, blk = 检查取值(val)
+                ok, probs, nb, blk = 检查候选文本(val)
                 ver = sum(1 for ln in val.split(b"\n") if ln.startswith(版本行首))
                 nd, kc = 声明行数(val)
                 if not (ok and ver >= 1 and nd >= 最少声明行数):
                     continue
-                st = 所属段(tab, 锚点)
-                cn = 常量名(字节流, 锚点)
+                st = 偏移所属段(tab, 锚点)
+                cn = 取常量名(字节流, 锚点)
                 covered.append((锚点, 锚点 + len(val)))
                 hard.append({
                     "file": rel, "anchor": 锚点, "end": 锚点 + len(val), "bytes": len(val),
@@ -65,7 +65,7 @@ def 入口函数():
                         continue
                     段起, 段止 = 扩张边界(字节流, 锚点)
                     val = 字节流[段起:段止]
-                    ok, probs, nb, blk = 检查取值(val)
+                    ok, probs, nb, blk = 检查候选文本(val)
                     ver = sum(1 for ln in val.split(b"\n") if ln.startswith(版本行首))
                     nd, kc = 声明行数(val)
                     if not (ok and ver >= 1 and nd >= 最少声明行数):
@@ -101,7 +101,7 @@ def 入口函数():
     plain = []
     if os.path.exists(路径):
         字节流 = open(路径, "rb").read()
-        ok, probs, nb, blk = 检查取值(字节流)
+        ok, probs, nb, blk = 检查候选文本(字节流)
         nd, kc = 声明行数(字节流)
         if ok and nd >= 最少声明行数:
             plain.append({

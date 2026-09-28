@@ -3,14 +3,14 @@
 import subprocess
 import sys
 
-from .常量 import 仓库根, 取证器
+from .常量 import 仓根, 取证器路径
 
 
 def 跑取证(参数):
     """跑取证器，返回 (退出码, stdout)。"""
     进程 = subprocess.run(
-        [sys.executable, 取证器] + 参数,
-        cwd=仓库根,
+        [sys.executable, 取证器路径] + 参数,
+        cwd=仓根,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         text=True,

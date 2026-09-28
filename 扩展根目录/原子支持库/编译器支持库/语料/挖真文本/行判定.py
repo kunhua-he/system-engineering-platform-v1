@@ -12,7 +12,7 @@ def GBK合规(原文):
         return False
 
 
-def 检查取值(val):
+def 检查候选文本(val):
     probs = []
     nb = blk = 0
     for 序号, ln in enumerate(val.split(b"\n")):
