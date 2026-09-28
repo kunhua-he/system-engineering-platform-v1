@@ -75,7 +75,7 @@ impl 名号表 {
         if 字节.is_empty() {
             return Some(Self::空实例());
         }
-        let mut 读器 = 读器 { 字节, 位: 0 };
+        let mut 读器 = 顺序读器 { 字节, 位: 0 };
         let 项数 = 读器.读四字节()? as usize;
         // 每项至少 4 字节名长 + 2 字节号 = 6 字节 ⇒ 项数不可能超过 字节.len()/6。
         // 先卡这一条，免得下面 `Vec::with_capacity` 被一个伪造的大项数撑爆内存。
@@ -98,12 +98,12 @@ impl 名号表 {
 }
 
 /// 顺序读器：每个 `取字节` 都查边界，越界给 `None`（不 panic）。
-struct 读器<'a> {
+struct 顺序读器<'a> {
     字节: &'a [u8],
     位: usize,
 }
 
-impl<'a> 读器<'a> {
+impl<'a> 顺序读器<'a> {
     fn 取字节(&mut self, 个数: usize) -> Option<&'a [u8]> {
         let 尾部 = self.位.checked_add(个数)?;
         if 尾部 > self.字节.len() {

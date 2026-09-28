@@ -55,7 +55,7 @@ fn 写一个值(输出缓冲: &mut String, 待处理值: &JSON值, 层级: usize
         JSON值::逻辑真 => 输出缓冲.push_str("true"),
         JSON值::逻辑假 => 输出缓冲.push_str("false"),
         JSON值::整数(数) => 输出缓冲.push_str(&数.to_string()),
-        JSON值::文本(文) => 写文本(输出缓冲, 文),
+        JSON值::文本(文) => 写JSON文本(输出缓冲, 文),
         JSON值::数组(项) => {
             if 项.is_empty() {
                 输出缓冲.push_str("[]");
@@ -83,7 +83,7 @@ fn 写一个值(输出缓冲: &mut String, 待处理值: &JSON值, 层级: usize
                     输出缓冲.push(',');
                 }
                 写缩进(输出缓冲, 层级 + 1);
-                写文本(输出缓冲, 键);
+                写JSON文本(输出缓冲, 键);
                 输出缓冲.push_str(": ");
                 写一个值(输出缓冲, 一, 层级 + 1);
             }
@@ -96,7 +96,7 @@ fn 写一个值(输出缓冲: &mut String, 待处理值: &JSON值, 层级: usize
 /// 写一个 JSON 字符串：只转 `"` `\` 与 `U+0000..U+001F`（见文件头）。
 /// 把一个字符串按 JSON 规则转义着写进去。**公开**：转义表是**正确性资产**
 /// （少转一个控制字符就产出非法 JSON）⇒ 只许有一份，上层复用本函数。
-pub fn 写文本(输出缓冲: &mut String, 文本: &str) {
+pub fn 写JSON文本(输出缓冲: &mut String, 文本: &str) {
     输出缓冲.push('"');
     for 字符表 in 文本.chars() {
         match 字符表 {
