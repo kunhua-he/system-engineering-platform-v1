@@ -6,7 +6,7 @@ import os
 from .常量 import 回退账上限, 运行根
 
 
-def 就绪() -> None:
+def 建运行子目录() -> None:
     for 子目录 in ("已装载", "日志"):
         (运行根 / 子目录).mkdir(parents=True, exist_ok=True)
 

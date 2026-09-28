@@ -24,7 +24,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from 常量 import (  # noqa: E402
     仓根, 回执落点, 健康超时秒, 停等秒, 打印, 扩展落点, 写回执, 端口监听读数,
-    流量端口, 程序文本源, 被调号表, 暂存根, HTTP超时秒,
+    流量端口, 程序文本源, 被调能力号表, 暂存根, HTTP超时秒,
     硬顶毫秒, 尾巴余量毫秒, 阈值毫秒, 注入人为慢,
 )
 from 装配 import (  # noqa: E402
@@ -82,7 +82,7 @@ def 启动读数(文本: str) -> dict:
     return 输出缓冲
 
 
-def 真调(端口: int, 被调号: int, 程序文本: str) -> dict:
+def 真调网关(端口: int, 被调号: int, 程序文本: str) -> dict:
     应答体 = json.dumps({"编号": 被调号, "值": [{"类型标签": 4, "值": 程序文本}]},
                     ensure_ascii=False).encode("utf-8")
     请求对象 = urllib.request.Request(
@@ -251,16 +251,16 @@ def 跑主链(壳起表=None) -> int:
         死层 = "调用层"
         程序文本 = 程序文本源.read_text(encoding="utf-8")
         打印("④ 经 HTTP 真调 {}（样本：测试验证/案例/真程序文本/输入.程序文本，{} 字节）".format(
-            "/".join(str(号值) for 号值 in 被调号表), 程序文本源.stat().st_size))
+            "/".join(str(号值) for 号值 in 被调能力号表), 程序文本源.stat().st_size))
         调用读数 = {}
-        for 号值 in 被调号表:
-            结果 = 真调(端口, 号值, 程序文本)
+        for 号值 in 被调能力号表:
+            结果 = 真调网关(端口, 号值, 程序文本)
             调用读数[str(号值)] = 结果
             打印("   {} → HTTP {} · 成功={} · 返回 {} 字节".format(
                 号值, 结果["HTTP状态"], 结果["成功"],
                 "{} 字节".format(结果["返回字节数"]) if 结果["返回字节数"] is not None else "—"))
         回执["层"]["调用"] = {"成了": True, "样本": str(程序文本源), "逐号": 调用读数}
-        for 号值 in 被调号表:
+        for 号值 in 被调能力号表:
             结果 = 调用读数[str(号值)]
             if 结果["HTTP状态"] != 200 or 结果["成功"] is not True:
                 raise RuntimeError("能力 {} 真调不过：HTTP {} · 成功={} · {}".format(

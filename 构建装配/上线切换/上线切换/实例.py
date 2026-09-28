@@ -18,7 +18,7 @@ from .制品 import 制品目录
 from .输出 import 打印
 
 
-def 活着(pid: int) -> bool:
+def 进程活着(pid: int) -> bool:
     try:
         os.kill(pid, 0)
         return True
@@ -76,22 +76,22 @@ def 等端口(日志: Path, 进程) -> int:
 
 def 停实例(记录: dict) -> str:
     pid = int(记录.get("pid") or 0)
-    if not pid or not 活着(pid):
+    if not pid or not 进程活着(pid):
         return "pid {} 已不在".format(pid or "?")
     try:
         os.kill(pid, signal.SIGTERM)
     except OSError as 错误:
         return "发信号失败：{}".format(错误)
     截止 = time.time() + 停等秒
-    while time.time() < 截止 and 活着(pid):
+    while time.time() < 截止 and 进程活着(pid):
         time.sleep(0.05)
-    if 活着(pid):
+    if 进程活着(pid):
         os.kill(pid, signal.SIGKILL)
         return "pid {} 强杀（SIGTERM 未收）".format(pid)
     return "pid {} 已停".format(pid)
 
 
-def 健康(端口: int) -> tuple:
+def 取健康读数(端口: int) -> tuple:
     """`GET /接口` → (HTTP 状态, 读数)。这是「起没起来」的唯一判据（不是看进程在不在）。
 
     **实测**：路径必须**百分号编码**。端点名是中文，而 Python 标准库的 `http.client`
@@ -116,8 +116,8 @@ def 健康(端口: int) -> tuple:
     )
 
 
-def 要求健康(端口: int) -> None:
-    状态码, 读数 = 健康(端口)
+def 要求健康读数(端口: int) -> None:
+    状态码, 读数 = 取健康读数(端口)
     if 状态码 != 200:
         raise SystemExit("健康检查不过（端口 {}）：{}".format(端口, 读数))
     打印("  健康检查 GET /接口 → 200 · {}".format(读数))
