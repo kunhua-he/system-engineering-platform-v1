@@ -5,8 +5,8 @@
 
 use super::*;
 
-fn 只覆盖<'a>(覆盖: &'a str) -> 环境<'a> {
-    环境 {
+fn 只覆盖<'a>(覆盖: &'a str) -> 解析环境<'a> {
+    解析环境 {
         覆盖: Some(覆盖),
         ..Default::default()
     }
@@ -26,12 +26,12 @@ fn 覆盖非空时原样用它_不再拼默认目录名() {
 
 #[test]
 fn 覆盖为空串等于没给() {
-    let 环境 = 环境 {
+    let 解析环境 = 解析环境 {
         覆盖: Some(""),
         家目录: Some("/家"),
         ..Default::default()
     };
-    let 根目录 = 解析(&环境, 平台::MacOS).expect("空覆盖 ⇒ 退回默认");
+    let 根目录 = 解析(&解析环境, 平台::MacOS).expect("空覆盖 ⇒ 退回默认");
     assert_eq!(根目录, std::path::PathBuf::from("/家/Library/Application Support").join(默认目录名));
 }
 
@@ -39,25 +39,25 @@ fn 覆盖为空串等于没给() {
 
 #[test]
 fn 苹果系统_用应用支持目录() {
-    let 环境 = 环境 {
+    let 解析环境 = 解析环境 {
         家目录: Some("/用户/我"),
         ..Default::default()
     };
     assert_eq!(
-        解析(&环境, 平台::MacOS).unwrap(),
+        解析(&解析环境, 平台::MacOS).unwrap(),
         std::path::PathBuf::from("/用户/我/Library/Application Support").join(默认目录名)
     );
 }
 
 #[test]
 fn linux_设了数据目录变量就用它() {
-    let 环境 = 环境 {
+    let 解析环境 = 解析环境 {
         xdg数据目录: Some("/数据"),
         家目录: Some("/家"),
         ..Default::default()
     };
     assert_eq!(
-        解析(&环境, 平台::Linux).unwrap(),
+        解析(&解析环境, 平台::Linux).unwrap(),
         std::path::PathBuf::from("/数据").join(默认目录名),
         "XDG_DATA_HOME 设了就必须用它，不许看家目录"
     );
@@ -65,25 +65,25 @@ fn linux_设了数据目录变量就用它() {
 
 #[test]
 fn linux_没设数据目录变量就退回家目录下() {
-    let 环境 = 环境 {
+    let 解析环境 = 解析环境 {
         家目录: Some("/家"),
         ..Default::default()
     };
     assert_eq!(
-        解析(&环境, 平台::Linux).unwrap(),
+        解析(&解析环境, 平台::Linux).unwrap(),
         std::path::PathBuf::from("/家/.local/share").join(默认目录名)
     );
 }
 
 #[test]
 fn 视窗系统_用应用数据目录而不是家目录() {
-    let 环境 = 环境 {
+    let 解析环境 = 解析环境 {
         应用数据目录: Some("C:\\数据"),
         家目录: Some("C:\\用户\\我"),
         ..Default::default()
     };
     assert_eq!(
-        解析(&环境, 平台::Windows).unwrap(),
+        解析(&解析环境, 平台::Windows).unwrap(),
         std::path::PathBuf::from("C:\\数据").join(默认目录名),
         "APPDATA 与家目录是两处，别混"
     );
@@ -91,7 +91,7 @@ fn 视窗系统_用应用数据目录而不是家目录() {
 
 #[test]
 fn 全缺时结构化失败_不编一个路径() {
-    let 空环境 = 环境::default();
+    let 空环境 = 解析环境::default();
     assert_eq!(解析(&空环境, 平台::MacOS), Err(解析失败::无位置));
     assert_eq!(解析(&空环境, 平台::Linux), Err(解析失败::无位置));
     assert_eq!(解析(&空环境, 平台::Windows), Err(解析失败::无位置));
@@ -99,11 +99,11 @@ fn 全缺时结构化失败_不编一个路径() {
 
 #[test]
 fn 空串与缺失同义_不算有值() {
-    let 环境 = 环境 {
+    let 解析环境 = 解析环境 {
         家目录: Some(""),
         ..Default::default()
     };
-    assert_eq!(解析(&环境, 平台::MacOS), Err(解析失败::无位置));
+    assert_eq!(解析(&解析环境, 平台::MacOS), Err(解析失败::无位置));
 }
 
 // ── 三 判据的反向样本 ─────────────────────────────────────────────────────
@@ -114,38 +114,38 @@ fn 空串与缺失同义_不算有值() {
 #[test]
 fn 默认位置不在源码树内_三条规则都推不出当前目录() {
     let 当前 = std::env::current_dir().expect("取当前目录");
-    let 样本: [(平台, 环境); 4] = [
+    let 样本: [(平台, 解析环境); 4] = [
         (
             平台::MacOS,
-            环境 {
+            解析环境 {
                 家目录: Some("/家"),
                 ..Default::default()
             },
         ),
         (
             平台::Linux,
-            环境 {
+            解析环境 {
                 xdg数据目录: Some("/数据"),
                 ..Default::default()
             },
         ),
         (
             平台::Linux,
-            环境 {
+            解析环境 {
                 家目录: Some("/家"),
                 ..Default::default()
             },
         ),
         (
             平台::Windows,
-            环境 {
+            解析环境 {
                 应用数据目录: Some("/数据"),
                 ..Default::default()
             },
         ),
     ];
-    for (平台, 环境) in 样本 {
-        let 根目录 = 解析(&环境, 平台).expect("该分支必推得出");
+    for (平台, 解析环境) in 样本 {
+        let 根目录 = 解析(&解析环境, 平台).expect("该分支必推得出");
         assert!(根目录.is_absolute(), "默认位置必须绝对：{根目录:?}");
         assert!(
             !根目录.starts_with(&当前),
