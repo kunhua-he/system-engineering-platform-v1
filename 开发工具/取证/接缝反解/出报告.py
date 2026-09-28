@@ -5,7 +5,7 @@ import struct
 
 from .常量 import (库信息大小, 导出名, 命令项大小, 命令字段, 参数项大小, 参数字段,
                    常量项大小, 常量字段, 类型项大小, 类型字段, 命令状态位, 库状态位)
-from .字段 import 解表
+from .字段 import 解结构表
 from PE形状 import 解析错误
 
 
@@ -43,17 +43,17 @@ def 出报告(读数):
                      表值 for 键名, 表值 in 命令状态位.items() if 字段项["m_wState"][0] & (1 << 键名)) or "无",
                  字段项["m_dtRetValType"][0], 字段项["m_nArgCount"][0],
                  ("0x%08x" % 读数["函数"][序号]) if 序号 < len(读数["函数"]) else "<无>"))
-        for 位次, _, 组读数 in 解表(pe, 字段项["m_nArgCount"][0], 字段项["m_pBeginArgInfo"][0], 参数项大小, 参数字段):
+        for 位次, _, 组读数 in 解结构表(pe, 字段项["m_nArgCount"][0], 字段项["m_pBeginArgInfo"][0], 参数项大小, 参数字段):
             print("        参数%d %-12s type=0x%08x state=0x%08x default=%d"
                   % (位次, 组读数["m_szName"][1], 组读数["m_dtType"][0], 组读数["m_dwState"][0], 组读数["m_nDefault"][0]))
     for 序号, _, 读器 in 读数["物理槽"][1]:
         print("   ⚠ 声明数与物理槽数不齐：表外第 %d 槽仍是命令项：%s" % (序号, 读器))
     print("⑤ 常量表：声明数 m_nLibConstCount=%d" % 字典["m_nLibConstCount"])
-    for 序号, _, 组读数 in 解表(pe, 字典["m_nLibConstCount"], 字典["m_pLibConst"], 常量项大小, 常量字段):
+    for 序号, _, 组读数 in 解结构表(pe, 字典["m_nLibConstCount"], 字典["m_pLibConst"], 常量项大小, 常量字段):
         print("   [%d] name=%s reserved=%s type=%s text=%s value=%s" % (
             序号, 组读数["m_szName"][1], 组读数["m_shtReserved"][1], 组读数["m_shtType"][1], 组读数["m_szText"][1], 组读数["m_dbValue"][1]))
     print("⑥ 类型表：声明数 m_nDataTypeCount=%d" % 字典["m_nDataTypeCount"])
-    for 序号, _, 组读数 in 解表(pe, 字典["m_nDataTypeCount"], 字典["m_pDataType"], 类型项大小, 类型字段):
+    for 序号, _, 组读数 in 解结构表(pe, 字典["m_nDataTypeCount"], 字典["m_pDataType"], 类型项大小, 类型字段):
         下标 = []
         if 组读数["m_pnCmdsIndex"][0] and 组读数["m_nCmdCount"][0]:
             try:

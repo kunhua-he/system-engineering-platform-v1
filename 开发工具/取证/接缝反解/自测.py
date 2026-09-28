@@ -6,7 +6,7 @@ import struct
 
 from .常量 import 库格式号, 库信息字段, 命令项大小, 命令字段
 from .接缝 import 解接缝
-from .字段 import 读字段, 解表
+from .字段 import 读字段, 解结构表
 from PE形状 import PE, 解析错误
 from .反解 import 反解
 
@@ -36,7 +36,7 @@ def 自测(样本="/tmp/易语言源码/lib/shellEx.fne"):
             字典 = {字段项[2]: 字段项[4] for 字段项 in 读字段(pe, pe.转偏移(解接缝(pe)[3]), 库信息字段)}
             if 字典["m_dwLibFormatVer"] != 库格式号:
                 raise 解析错误("格式号不符 0x%08x" % 字典["m_dwLibFormatVer"])
-            解表(pe, 字典["m_nCmdCount"], 字典["m_pBeginCmdInfo"], 命令项大小, 命令字段)
+            解结构表(pe, 字典["m_nCmdCount"], 字典["m_pBeginCmdInfo"], 命令项大小, 命令字段)
             print("  ✗ %-26s 竟然解析成功 —— 假绿" % 名称); 失败 += 1
         except 解析错误 as ex:
             print("  ✓ %-26s 报错：%s" % (名称, ex))

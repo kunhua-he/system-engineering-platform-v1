@@ -319,7 +319,7 @@ def 查询页(连接, sql: str) -> bytes:
         "/条款": lambda 连接: 条款页(连接, ""), "/未完成": 未完成页, "/接口": 接口页}
 
 
-class 处理器(BaseHTTPRequestHandler):
+class 页面处理器(BaseHTTPRequestHandler):
     def do_GET(self):
         # 路径要先 `unquote` —— 路由表的键是中文，不解码就永远匹配不上（只命中首页/404）。
         路径 = urlparse(unquote(self.path))
@@ -350,6 +350,6 @@ class 处理器(BaseHTTPRequestHandler):
 
 def 起页面(端口: int = 表定义.默认端口) -> None:
     """起页面端口（**永不返回**）。端口由 `信息核心.py 查看 --端口 N` 传进来。"""
-    服务 = ThreadingHTTPServer(("127.0.0.1", 端口), 处理器)
+    服务 = ThreadingHTTPServer(("127.0.0.1", 端口), 页面处理器)
     print(f"信息核心页面：http://127.0.0.1:{端口}/　（Ctrl-C 退）")
     服务.serve_forever()

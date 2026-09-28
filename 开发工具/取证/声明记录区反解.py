@@ -42,9 +42,9 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-起始 = time.monotonic()  # 壳自量的起表点：越早越好（见 门禁.py 的边界登记）
+起始时刻 = time.monotonic()  # 壳自量的起表点：越早越好（见 门禁.py 的边界登记）
 
 from 声明记录区反解.门禁 import 带门禁跑  # noqa: E402
 
 if __name__ == "__main__":
-    sys.exit(带门禁跑(sys.argv[1:], 起始))
+    sys.exit(带门禁跑(sys.argv[1:], 起始时刻))

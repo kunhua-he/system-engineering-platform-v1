@@ -37,7 +37,7 @@ def _读配置() -> dict:
     return 数据 if isinstance(数据, dict) else {}
 
 
-def _自家条(一条) -> bool:
+def _是自家钩子条(一条) -> bool:
     return any(自家标记 in str(一个.get("command") or "")
               for 一个 in (一条.get("hooks") or []) if isinstance(一个, dict))
 
@@ -55,7 +55,7 @@ def 装钩子() -> int:
     if not isinstance(前事件, list):
         前事件 = []
     # 幂等：先把自家旧条摘掉，再插一条新的（重复跑不叠加；**别人的条一律不动**）
-    别人的条 = [一条 for 一条 in 前事件 if not (isinstance(一条, dict) and _自家条(一条))]
+    别人的条 = [一条 for 一条 in 前事件 if not (isinstance(一条, dict) and _是自家钩子条(一条))]
     前事件 = 别人的条 + [{"matcher": 拦的工具,
                       "hooks": [{"type": "command", "command": 钩子命令, "timeout": 5}]}]
     事件表["PreToolUse"] = 前事件
@@ -81,7 +81,7 @@ def 卸钩子() -> int:
     if not isinstance(前事件, list):
         print("装钩子：没有 PreToolUse 段 ⇒ 本来就没装")
         return 0
-    留下的条 = [一条 for 一条 in 前事件 if not (isinstance(一条, dict) and _自家条(一条))]
+    留下的条 = [一条 for 一条 in 前事件 if not (isinstance(一条, dict) and _是自家钩子条(一条))]
     摘掉数 = len(前事件) - len(留下的条)
     if 摘掉数 == 0:
         print("装钩子：没有自家那条（标记 `%s`）⇒ 没动" % 自家标记)

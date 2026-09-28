@@ -55,15 +55,15 @@ _形参名 = re.compile(
 )
 
 # JS 面：箭头函数（`(首参, 次参) =>` 与 `首参 =>` 两种写法）。
-_箭头 = re.compile(
+_箭头函数 = re.compile(
     r'(?:^|[^\w$])(?:\(([^()]*)\)|([A-Za-z_\u4e00-\u9fff][\w\u4e00-\u9fff]*))\s*=>'
 )
 
 # JS 面：函数表达式 / 回调（`function 名(首参, 次参)` 与匿名 `function (首参, 次参)`）。
-_函数式 = re.compile(r'function\s*[\w\u4e00-\u9fff$]*\s*\(([^()]*)\)')
+_函数表达式 = re.compile(r'function\s*[\w\u4e00-\u9fff$]*\s*\(([^()]*)\)')
 
 # JS 形参段里取一个名：段首 / 逗号之后，允许 `...` 剩余参数与默认值。
-_JS名 = re.compile(r'(?:^|,)\s*\.{0,3}([A-Za-z_\u4e00-\u9fff][\w\u4e00-\u9fff]*)')
+_JS形参名 = re.compile(r'(?:^|,)\s*\.{0,3}([A-Za-z_\u4e00-\u9fff][\w\u4e00-\u9fff]*)')
 
 
 def 是单字形参(名称: str) -> bool:
@@ -133,13 +133,13 @@ def 扫JS形参(行表: list) -> list:
     for 序号, 源码行 in enumerate(行表, 1):
         if 源码行.strip().startswith(注释头):
             continue
-        for 匹配 in list(_箭头.finditer(源码行)) + list(_函数式.finditer(源码行)):
+        for 匹配 in list(_箭头函数.finditer(源码行)) + list(_函数表达式.finditer(源码行)):
             形参段 = ""
             for 匹配组 in 匹配.groups():
                 if 匹配组 is not None:
                     形参段 = 匹配组
                     break
-            for 形参名 in _JS名.findall(形参段):
+            for 形参名 in _JS形参名.findall(形参段):
                 if 是单字形参(形参名):
                     输出缓冲.append((序号, 形参名))
     return 输出缓冲
@@ -165,12 +165,12 @@ def 扫件(路径: str) -> list:
 def 有函数头(路径: str, 文本: str) -> bool:
     """这段文本里有没有函数头（**判空集用**：面下一个函数头都没有 ⇒ 未判，不是通过）。
 
-    走**与扫描同一套正则**（`_函数头` / `_箭头` / `_函数式`）—— 这样「扫描器坏了」与
+    走**与扫描同一套正则**（`_函数头` / `_箭头函数` / `_函数表达式`）—— 这样「扫描器坏了」与
     「真的没有形参」分得开：正则一坏，空集那一关当场报未判，而不是静默报 0（假绿）。
     """
     行表 = 文本.splitlines()
     if 路径.endswith(JS后缀):
-        return any(_箭头.search(源码行) or _函数式.search(源码行) for 源码行 in 行表)
+        return any(_箭头函数.search(源码行) or _函数表达式.search(源码行) for 源码行 in 行表)
     return any(_函数头.match(源码行.strip()) and not 源码行.strip().startswith(注释头)
                for 源码行 in 行表)
 
@@ -185,7 +185,7 @@ def 遍历命名件(根目录: str = None):
                 yield os.path.join(目录, 节点件)
 
 
-def 面读数(条表: list) -> dict:
+def 扫描面读数(条表: list) -> dict:
     """一面的读数：处数 / 唯一名数 / 件数。"""
     return {"处": len(条表),
             "唯一名": len({一条["形参名"] for 一条 in 条表}),
@@ -195,7 +195,7 @@ def 面读数(条表: list) -> dict:
 def 检形参(根目录: str = None, 上限: int = 25) -> dict:
     """走一遍全树的两套扫描 ⇒ `{"读数": {面: 读数}, "明细": {面: 前若干条}}`。
 
-    每面读数见 `面读数`；每条明细 = `{"路径","行","函数名","形参名"}`（JS 面无函数名）。
+    每面读数见 `扫描面读数`；每条明细 = `{"路径","行","函数名","形参名"}`（JS 面无函数名）。
     **不依赖索引库** —— 自行走树，没建索引也能跑。
     """
     起点 = str(根目录 or 仓根)
@@ -206,7 +206,7 @@ def 检形参(根目录: str = None, 上限: int = 25) -> dict:
         for 源码行, 函数名, 形参名 in 扫件(路径):
             面表[面名].append(
                 {"路径": 短路径, "行": 源码行, "函数名": 函数名, "形参名": 形参名})
-    return {"读数": {扫描面: 面读数(条表) for 扫描面, 条表 in 面表.items()},
+    return {"读数": {扫描面: 扫描面读数(条表) for 扫描面, 条表 in 面表.items()},
             "明细": {扫描面: 条表[:上限] for 扫描面, 条表 in 面表.items()}}
 
 

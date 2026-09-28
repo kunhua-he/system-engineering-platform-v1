@@ -18,8 +18,8 @@
 
 import sys
 
-from .像素 import 分析
-from .打印 import 打印
+from .像素 import 分析像素
+from .打印 import 打印读数
 
 
 def 入口函数(参数):
@@ -28,7 +28,7 @@ def 入口函数(参数):
         return 1
     for 路径 in 参数:
         try:
-            打印(分析(路径))
+            打印读数(分析像素(路径))
         except OSError as 错误:
             print(f"打不开 {路径}：{错误}", file=sys.stderr)
             return 1

@@ -65,7 +65,7 @@ def 抽镜像口径(文本: str) -> dict:
     }
 
 
-def 比对(解析路: Path, 子目录路: Path, python路: Path) -> list:
+def 比对口径(解析路: Path, 子目录路: Path, python路: Path) -> list:
     """逐项比对 ⇒ 不一致项清单（空 = 一致）。"""
     真源口径 = 抽真源口径(解析路.read_text(encoding="utf-8"), 子目录路.read_text(encoding="utf-8"))
     镜像口径 = 抽镜像口径(python路.read_text(encoding="utf-8"))
@@ -82,7 +82,7 @@ def 比对(解析路: Path, 子目录路: Path, python路: Path) -> list:
     return 输出缓冲
 
 
-def 改坏(文本: str, 一项: str, 假值) -> str:
+def 改坏口径项(文本: str, 一项: str, 假值) -> str:
     """把 Python 源文本里某一项改成假值（反向样本用）。"""
     元组项 = ("四类子目录名", "苹果基片段", "利努克斯退回片段")
     变量 = "子目录名" if 一项 == "四类子目录名" else 一项
@@ -110,8 +110,8 @@ def 反向样本(临时根: Path) -> int:
     漏判项表 = []
     for 一项, 待处理值 in 假值表.items():
         路径 = 临时根 / "坏.py"
-        路径.write_text(改坏(原文, 一项, 待处理值), encoding="utf-8")
-        if not 比对(真源解析路径, 真源子目录路径, 路径):
+        路径.write_text(改坏口径项(原文, 一项, 待处理值), encoding="utf-8")
+        if not 比对口径(真源解析路径, 真源子目录路径, 路径):
             漏判项表.append(一项)
     if 漏判项表:
         print("反向样本失败：改坏这些项却没判红 ⇒ %s" % " · ".join(漏判项表))
@@ -122,7 +122,7 @@ def 反向样本(临时根: Path) -> int:
 
 def 跑一遍(解析路: Path, 子目录路: Path, python路: Path) -> int:
     """正向检查：逐项比对 ⇒ 一致退 0，不一致逐条报出退 1。"""
-    输出缓冲 = 比对(解析路, 子目录路, python路)
+    输出缓冲 = 比对口径(解析路, 子目录路, python路)
     if 输出缓冲:
         print("一致性判据失败（%d 项不一致）：" % len(输出缓冲))
         for 一条 in 输出缓冲:

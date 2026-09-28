@@ -73,7 +73,7 @@ def 派发(方法, 参数, 仓根, 工具表):
     return None, {"code": -32601, "message": "方法不存在：%r" % (方法,)}
 
 
-def 服务(仓根, 工具表, 输入=None, 输出=None):
+def 跑主循环(仓根, 工具表, 输入=None, 输出=None):
     """跑 stdio 主循环（**永不返回** —— 它是「结构边界：永不返回」，见 入口白名单.json）。"""
     输入 = 输入 or sys.stdin
     输出 = 输出 or sys.stdout
