@@ -21,6 +21,8 @@
 #![allow(non_snake_case)]
 #![no_std]
 
+extern crate alloc;
+
 // 生成物（`声明数据.rs`）里的路径一律写成 `v1_contract::..` 全限定。本 crate 内部要能
 // 解析这个名字，故把 crate 自身引入作用域。**别名必须与本 crate 名一致。**
 extern crate self as v1_contract;
@@ -52,6 +54,9 @@ mod 通知形状;
 mod 平台形状;
 #[path = "契约声明/台账形状.rs"]
 mod 台账形状;
+
+#[path = "契约声明/容器.rs"]
+pub mod 容器;
 
 // ── 再导出：公开面（符号名 · 参数顺序 · 路径）逐字不变 ──
 pub use 号空间形状::{能力号, 资源号, 错误码, 类型标签, 通知号, 常量号, 操作号, 格式号, 号值};

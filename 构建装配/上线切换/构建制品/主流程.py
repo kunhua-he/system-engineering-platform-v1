@@ -22,6 +22,8 @@ def 预构建(纳入的扩展: list) -> int:
     本步的墙钟由入口按「环境步」如实报、**不判顶**（见 `构建装配/门禁/壳.py::报告环境步`）。
     """
     跑命令(["cargo", "build", "--locked", "--offline", "--release", "-p", "v1-gateway", "--example", "启动网关"], cwd=仓根)
+    # 构建期打包 bin：扩展编出 cdylib 后由它包成 `.支持库制品`（容器 codec 在 契约声明）。
+    跑命令(["cargo", "build", "--locked", "--offline", "--release", "-p", "v1-contract", "--example", "装支持库制品"], cwd=仓根)
     for 扩展 in 纳入的扩展:
         建扩展产物(扩展)
     预构建戳.parent.mkdir(parents=True, exist_ok=True)
