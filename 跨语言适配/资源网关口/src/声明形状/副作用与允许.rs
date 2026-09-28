@@ -54,7 +54,7 @@ impl 副作用集 {
     pub const 全集: Self = Self(0b1111);
 
     /// 只含一项。
-    pub const fn 单个(一项: 副作用) -> Self {
+    pub const fn 造单项集(一项: 副作用) -> Self {
         Self(一项.取位掩码())
     }
 

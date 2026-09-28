@@ -18,12 +18,12 @@ from pathlib import Path
 真源子目录路径 = 仓根 / "运行内核" / "运行数据根" / "src" / "子目录.rs"
 镜像源 = 本件.parent / "口径.py"
 
-七项 = ("默认目录名", "覆盖变量名", "四类子目录名", "苹果基片段", "利努克斯退回片段",
+七项口径字段名 = ("默认目录名", "覆盖变量名", "四类子目录名", "苹果基片段", "利努克斯退回片段",
         "XDG变量名", "应用数据变量名")
 
 
 def 抽真源口径(解析文: str, 子目录文: str) -> dict:
-    """从 Rust 源文本抽出「与 Python 对齐」的七项口径。缺项 ⇒ `None`（判据当场报缺）。"""
+    """从 Rust 源文本抽出「与 Python 对齐」的七项口径字段名表。缺项 ⇒ `None`（判据当场报缺）。"""
     默认目录名 = re.search(r'pub const 默认目录名:\s*&str\s*=\s*"([^"]+)"', 解析文)
     覆盖变量名 = re.search(r'pub const 覆盖变量名:\s*&str\s*=\s*"([^"]+)"', 解析文)
     macOS = re.search(r'\.join\("(Library)"\)\.join\("(Application Support)"\)', 解析文)
@@ -70,7 +70,7 @@ def 比对(解析路: Path, 子目录路: Path, python路: Path) -> list:
     真源口径 = 抽真源口径(解析路.read_text(encoding="utf-8"), 子目录路.read_text(encoding="utf-8"))
     镜像口径 = 抽镜像口径(python路.read_text(encoding="utf-8"))
     输出缓冲 = []
-    for 一项 in 七项:
+    for 一项 in 七项口径字段名:
         if 真源口径[一项] is None:
             输出缓冲.append("%s：Rust 源里抽不到（Rust 那边改了？）" % 一项)
         elif 镜像口径[一项] is None:
