@@ -28,7 +28,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import 表定义  # noqa: E402
 import 验证  # noqa: E402
 
-样式 = """
+页面样式 = """
 body{font:13px/1.7 -apple-system,"Songti SC",serif;margin:0;color:#000;background:#fff}
 header{background:#f0f0f0;border-bottom:1px solid #a0a0a0;padding:8px 12px}
 header b{margin-right:14px}
@@ -50,21 +50,21 @@ th{background:#ececec;position:sticky;top:0}
 输入{width:100%;font:12px monospace;padding:6px}
 """
 
-导航 = """<header><b>信息核心</b>
+导航栏 = """<header><b>信息核心</b>
 <a href="/">内核咬合图</a><a href="/命名">命名</a><a href="/规则">规则</a>
 <a href="/条款">条款</a><a href="/文档">文档账本</a><a href="/未完成">未完成</a>
 <a href="/接口">接口</a><a href="/查询">查询</a></header>"""
 
 
 # ── 小工具 ─────────────────────────────────────────────────────────
-def 壳(标题: str, 正文: str) -> bytes:
+def 页面壳(标题: str, 正文: str) -> bytes:
     文档 = (f"<!doctype html><html lang=\"zh\"><head><meta charset=\"utf-8\">"
-            f"<title>{html.escape(标题)} · 信息核心</title><style>{样式}</style></head>"
-            f"<body>{导航}<main>{正文}</main></body></html>")
+            f"<title>{html.escape(标题)} · 信息核心</title><style>{页面样式}</style></head>"
+            f"<body>{导航栏}<main>{正文}</main></body></html>")
     return 文档.encode("utf-8")
 
 
-def 表(列名: tuple, 数据行: list, 红列: set = (), 原样: set = ()) -> str:
+def 表格(列名: tuple, 数据行: list, 红列: set = (), 原样: set = ()) -> str:
     """`原样` 列不转义（该列的值已是 HTML，如一个链接）。"""
     表头 = "".join(f"<th>{html.escape(str(一列))}</th>" for 一列 in 列名)
     表体 = ""
@@ -78,7 +78,7 @@ def 表(列名: tuple, 数据行: list, 红列: set = (), 原样: set = ()) -> s
     return f"<table><tr>{表头}</tr>{表体}</table>"
 
 
-def 连库():
+def 连信息核心库():
     库文件 = 表定义.库路径(仓根)
     if not 库文件.is_file():
         return None
@@ -87,7 +87,7 @@ def 连库():
 
 # ── 页 ─────────────────────────────────────────────────────────────
 def 库现状(连接) -> str:
-    """库现状：每张表的行数 + 命名覆盖读数 —— 让主页**自身**回答「库弄好了没」。"""
+    """库现状：每张表的行数 + 命名覆盖读数 —— 让内核咬合图页**自身**回答「库弄好了没」。"""
     表名表 = [表名 for (表名,) in 连接.execute(
         "select name from sqlite_master where type='table' and name<>'元' order by name")]
     行数表 = [(表名, 连接.execute(f"select count(*) from {表名}").fetchone()[0])
@@ -106,7 +106,7 @@ def 库现状(连接) -> str:
                   覆盖.get("例外", 0), len(结果["未定义"]))))
 
 
-def 主页(连接) -> bytes:
+def 内核咬合图页(连接) -> bytes:
     节点表 = list(连接.execute("select 名,层,职责 from 节点 order by 层,名"))
     边表 = list(连接.execute("select 起,止,条数 from 连接 order by 条数 desc"))
     入度, 出度 = {}, {}
@@ -128,24 +128,24 @@ def 主页(连接) -> bytes:
             + f"<h2>内核咬合图（节点 {len(节点表)} · 连接 {len(边表)}）</h2>"
             f"<div>{图层}</div>"
             f"<h2>连接（按 import 实际条数降序，前 60）</h2>"
-            + 表(("起", "止", "条数"), 边行))
-    return 壳("内核咬合图", 正文)
+            + 表格(("起", "止", "条数"), 边行))
+    return 页面壳("内核咬合图", 正文)
 
 
 def 节点页(连接, 节点名: str) -> bytes:
     数据行 = 连接.execute("select 名,层,职责 from 节点 where 名=?", (节点名,)).fetchone()
     if not 数据行:
-        return 壳("找不到节点", f"<p class=\"红\">库里没有节点：{html.escape(节点名)}</p>")
+        return 页面壳("找不到节点", f"<p class=\"红\">库里没有节点：{html.escape(节点名)}</p>")
     出边 = list(连接.execute("select 止,条数 from 连接 where 起=? order by 条数 desc", (节点名,)))
     入边 = list(连接.execute("select 起,条数 from 连接 where 止=? order by 条数 desc", (节点名,)))
     文件表 = [件名 for (件名,) in 连接.execute(
         "select distinct 文件 from 代码名 where 文件 like ? limit 40", (节点名 + "/%",))]
     正文 = (f"<h2>{html.escape(节点名)}</h2>"
             f"<p>层：<b>{html.escape(str(数据行[1]))}</b>　职责：{html.escape(数据行[2] or '（未登记）')}</p>"
-            f"<h2>它连出去（{len(出边)}）</h2>" + 表(("止", "条数"), 出边)
-            + f"<h2>连到它（{len(入边)}）</h2>" + 表(("起", "条数"), 入边)
-            + f"<h2>它的文件（{len(文件表)}）</h2>" + 表(("文件",), [(件名,) for 件名 in 文件表]))
-    return 壳(节点名, 正文)
+            f"<h2>它连出去（{len(出边)}）</h2>" + 表格(("止", "条数"), 出边)
+            + f"<h2>连到它（{len(入边)}）</h2>" + 表格(("起", "条数"), 入边)
+            + f"<h2>它的文件（{len(文件表)}）</h2>" + 表格(("文件",), [(件名,) for 件名 in 文件表]))
+    return 页面壳(节点名, 正文)
 
 
 # 出处行的缓存：一个件读一次（判语义要看那个名住在什么上下文里）。
@@ -172,59 +172,42 @@ def 所在范围(限定名: str) -> str:
     return "（顶层）"
 
 
-def 同义候选(未定义表: list, 上限: int = 120) -> list:
-    """**同 种类 且 一个名含另一个名** ⇒ 很可能是一个语义两个名 —— 这就是要「统一」的对象。
-
-    华哥 2026-09-28：「全部命名，都统一一下，按照语义去命名……是否有前缀，这个关系不大，
-    主要是语义这个。」⇒ 归类看的是**意思**，不是字面前缀。
-    """
-    按种类 = {}
-    for 名称, _件数, 种类, _样例 in 未定义表:
-        按种类.setdefault(种类, set()).add(名称)
-    候选组 = []
-    for 种类, 名集 in 按种类.items():
-        名表 = sorted(名集, key=len)
-        for 序号, 前名 in enumerate(名表):
-            for 后名 in 名表[序号 + 1:]:
-                if len(前名) >= 2 and 前名 in 后名 and len(后名) - len(前名) <= 3:
-                    候选组.append((种类, 前名, 后名))
-                    if len(候选组) >= 上限:
-                        return 候选组
-    return 候选组
-
-
 def 命名页(连接) -> bytes:
     结果 = 验证.查命名(连接)
     定义行 = list(连接.execute("select 语义,唯一名,现状 from 命名定义 order by 语义"))
     模式行 = list(连接.execute("select 种类,模式,例 from 命名模式 order by 种类"))
     未定义表 = 结果["未定义"]
-    名集 = {一项[0] for 一项 in 未定义表}
-    代表 = {}
-    for 名称, 种类, 限定名, 文件, 行号 in 连接.execute(
-        "select 名,种类,限定名,文件,行 from 代码名 where 种类 not in ('import','file')"
-    ):
-        if 名称 in 名集 and 名称 not in 代表:
-            代表[名称] = (种类, 限定名 or "", 文件, 行号)
+    名到记录 = 结果["归"]
     线索行 = []
     for 名称, 件数, _种类, _样例 in 未定义表[:400]:
-        种类, 限定名, 文件, 行号 = 代表.get(名称, ("", "", "", 0))
+        位表 = 名到记录.get(名称, {}).get("位") or [("", "", "", 0)]
+        种类, 限定名, 文件, 行号 = 位表[0]
         线索行.append((名称, 件数, 种类, 所在范围(限定名), f"{文件}:{行号}",
                       取行(仓根, 文件, 行号)))
-    候选 = 同义候选(未定义表)
+    泛名行 = 验证.泛名候选(名到记录)
+    候选 = 验证.同义候选(名到记录)
     正文 = (f"<h2>命名：扫描 {结果['总数']} 个代码名 · 分档 {html.escape(str(结果['分档']))}</h2>"
             f"<p>规则（**穷举口径**，华哥 2026-09-28）：出现即须定义 —— 在 `命名定义` 里 · 或匹配 `命名模式` · "
-            f"或属例外（语言强加）。三者都不满足 = 未定义。**私有名与局部名同样管**。<br>"
+            f"或属例外（语言强加）。三者都不满足 = 未定义。<br>"
+            f"<span class=\"灰\">扫描面 = 代码地图索引的**定义面**（模块级名 · 方法 · 枚举变体）；"
+            f"**形参面与局部绑定面索引看不见** —— 那两层由判据 ㉒ 的 `命名面.py` 惰性入口单管，本读数不覆盖。</span><br>"
             f"<b class=\"红\">未定义 {len(未定义表)} 个唯一名</b>（其中跨件 {len(结果['跨件未定义'])} 个）。<br>"
             f"归类看**语义**（华哥：「按照语义去命名……是否有前缀，这个关系不大」）—— "
             f"所以下面给的是「种类 · 住在哪 · 出处一行」，而不是按字面前缀分族。</p>"
+            + f"<h2>真泛名候选：无主且泛指（该加限定词，共 {len(泛名行)} 个）</h2>"
+            f"<p class=\"灰\">判「泛」的关键不是名短不短，而是**有没有主人**："
+            f"<code>号类::类型</code> 短，但主人把语义钉死了 ⇒ 精准；"
+            f"<code>渲染</code> 短且无主（顶层函数）⇒ 泛指，得写成「渲染<什么>」。"
+            f"只在测试/案例件里出现的也不算 —— 那是测试名（本来就是一整句）。</p>"
+            + 表格(("种类", "名", "件数", "细化数", "细化它的（例）"), 泛名行, 红列={1})
             + f"<h2>同义候选：一个意思两个名（要「统一」的就是这些，共 {len(候选)} 组）</h2>"
-            + 表(("种类", "名 A", "名 B（含 A）"), 候选, 红列={1, 2})
+            + 表格(("种类", "名 A", "名 B（含 A）"), 候选, 红列={1, 2})
             + "<h2>未定义的名 —— 按语义线索看（种类 · 住在哪 · 出处一行）</h2>"
-            + 表(("名", "件数", "种类", "所在范围", "出处", "那一行代码"), 线索行, 红列={0})
+            + 表格(("名", "件数", "种类", "所在范围", "出处", "那一行代码"), 线索行, 红列={0})
             + f"<h2>命名定义（语义 → 唯一名，{len(定义行)} 行）</h2>"
-            + 表(("语义", "唯一名", "现状"), 定义行)
-            + "<h2>命名模式</h2>" + 表(("种类", "模式", "例"), 模式行))
-    return 壳("命名", 正文)
+            + 表格(("语义", "唯一名", "现状"), 定义行)
+            + "<h2>命名模式</h2>" + 表格(("种类", "模式", "例"), 模式行))
+    return 页面壳("命名", 正文)
 
 
 def 规则页(连接) -> bytes:
@@ -235,21 +218,21 @@ def 规则页(连接) -> bytes:
     正文 = f"<h2>规则（{len(数据行)} 条，{len(按类)} 类）</h2>"
     for 类别 in sorted(按类):
         正文 += (f"<h2>{html.escape(类别)}（{len(按类[类别])}）</h2>"
-                 + 表(("名", "内容", "依据"), 按类[类别]))
-    return 壳("规则", 正文)
+                 + 表格(("名", "内容", "依据"), 按类[类别]))
+    return 页面壳("规则", 正文)
 
 
 def 文档页(连接) -> bytes:
     数据行 = list(连接.execute("select 路径,权威档,表达什么 from 文档 order by 权威档,路径"))
     红列集 = {1} if any(一行[1] == "（未定义）" for 一行 in 数据行) else set()
-    return 壳("文档账本", f"<h2>文档账本（{len(数据行)} 份 md）</h2>"
-              + 表(("路径", "权威档", "表达什么"), 数据行, 红列=红列集))
+    return 页面壳("文档账本", f"<h2>文档账本（{len(数据行)} 份 md）</h2>"
+              + 表格(("路径", "权威档", "表达什么"), 数据行, 红列=红列集))
 
 
 def 未完成页(连接) -> bytes:
     数据行 = list(连接.execute("select 号,缺什么,落点 from 未完成 order by 号"))
-    return 壳("未完成", f"<h2>未完成事项（{len(数据行)} 条）</h2>"
-              + 表(("号", "缺什么", "落点"), 数据行))
+    return 页面壳("未完成", f"<h2>未完成事项（{len(数据行)} 条）</h2>"
+              + 表格(("号", "缺什么", "落点"), 数据行))
 
 
 def 接口页(连接) -> bytes:
@@ -258,24 +241,24 @@ def 接口页(连接) -> bytes:
     类型表 = list(连接.execute("select 标签,名称,说明 from 类型 order by 标签"))
     错误表 = list(连接.execute("select 码,段位,名称,可重试,可自愈,需人工 from 错误码 order by 码"))
     越界表 = 验证.查契约(连接)
-    正文 = f"<h2>契约参数越界：{len(越界表)} 处</h2>" + 表(("能力", "位", "名", "问题"), 越界表, 红列={3})
-    正文 += "<h2>能力</h2>" + 表(("编号", "名称", "参数个数", "返回类型", "可抛错误码"), 能力表)
-    正文 += "<h2>能力参数</h2>" + 表(("编号", "序号", "名", "类型", "方向"), 参数表)
-    正文 += "<h2>类型</h2>" + 表(("标签", "名称", "说明"), 类型表)
-    正文 += f"<h2>错误码（{len(错误表)}）</h2>" + 表(("码", "段位", "名称", "可重试", "可自愈", "需人工"), 错误表)
-    return 壳("接口", 正文)
+    正文 = f"<h2>契约参数越界：{len(越界表)} 处</h2>" + 表格(("能力", "位", "名", "问题"), 越界表, 红列={3})
+    正文 += "<h2>能力</h2>" + 表格(("编号", "名称", "参数个数", "返回类型", "可抛错误码"), 能力表)
+    正文 += "<h2>能力参数</h2>" + 表格(("编号", "序号", "名", "类型", "方向"), 参数表)
+    正文 += "<h2>类型</h2>" + 表格(("标签", "名称", "说明"), 类型表)
+    正文 += f"<h2>错误码（{len(错误表)}）</h2>" + 表格(("码", "段位", "名称", "可重试", "可自愈", "需人工"), 错误表)
+    return 页面壳("接口", 正文)
 
 
 def 条款页(连接, 件: str) -> bytes:
     if 件:
         数据行 = list(连接.execute("select 序号,标题,正文 from 条款 where 文档路径=? order by 序号", (件,)))
         if not 数据行:
-            return 壳("找不到", f"<p class=\"红\">库里没有这份文档：{html.escape(件)}</p>")
+            return 页面壳("找不到", f"<p class=\"红\">库里没有这份文档：{html.escape(件)}</p>")
         正文 = f"<h2>{html.escape(件)}（{len(数据行)} 节）</h2>"
         for _序号, 标题, 节正文 in 数据行:
             正文 += (f"<h3>{html.escape(标题 or '（无标题）')}</h3>"
                      f"<pre style=\"white-space:pre-wrap;font:12px/1.5 monospace\">{html.escape(节正文)}</pre>")
-        return 壳(件, 正文)
+        return 页面壳(件, 正文)
     数据行 = list(连接.execute(
         "select 文档路径,权威档,count(*),sum(length(正文)) from 条款 group by 文档路径,权威档 "
         "order by 权威档,文档路径"))
@@ -283,8 +266,8 @@ def 条款页(连接, 件: str) -> bytes:
               for 格首, 格次, 格三, 格四 in 数据行]
     正文 = (f"<h2>条款（{len(数据行)} 份文档 · {sum(一行[2] for 一行 in 数据行)} 节）</h2>"
             "<p class=\"灰\">全部 md 的正文都在这里 —— md 本身只是本表的一个视图。</p>"
-            + 表(("文档路径", "权威档", "节数", "字节"), 表格行, 原样={0}))
-    return 壳("条款", 正文)
+            + 表格(("文档路径", "权威档", "节数", "字节"), 表格行, 原样={0}))
+    return 页面壳("条款", 正文)
 
 
 def 查询页(连接, sql: str) -> bytes:
@@ -296,19 +279,19 @@ def 查询页(连接, sql: str) -> bytes:
     正文 = f"<h2>查询（只读 select）</h2>{输入框}<p class=\"灰\">表：{html.escape(' · '.join(表名))}</p>"
     if sql.strip():
         if not sql.strip().lower().startswith(("select", "with", "pragma")):
-            return 壳("查询", 正文 + "<p class=\"红\">只许 select / with / pragma。</p>")
+            return 页面壳("查询", 正文 + "<p class=\"红\">只许 select / with / pragma。</p>")
         try:
             游标 = 连接.execute(sql)
             列名 = tuple(一列[0] for 一列 in 游标.description)
             数据行 = 游标.fetchall()[:500]
-            正文 += f"<p>{len(数据行)} 行（最多 500）</p>" + 表(列名, 数据行)
+            正文 += f"<p>{len(数据行)} 行（最多 500）</p>" + 表格(列名, 数据行)
         except sqlite3.Error as 错误:
             正文 += f"<p class=\"红\">SQL 错：{html.escape(str(错误))}</p>"
-    return 壳("查询", 正文)
+    return 页面壳("查询", 正文)
 
 
 # ── 路由 ──────────────────────────────────────────────────────────
-路由表 = {"/": 主页, "/命名": 命名页, "/规则": 规则页, "/文档": 文档页,
+路由表 = {"/": 内核咬合图页, "/命名": 命名页, "/规则": 规则页, "/文档": 文档页,
         "/条款": lambda 连接: 条款页(连接, ""), "/未完成": 未完成页, "/接口": 接口页}
 
 
@@ -316,9 +299,9 @@ class 处理器(BaseHTTPRequestHandler):
     def do_GET(self):
         # 路径要先 `unquote` —— 路由表的键是中文，不解码就永远匹配不上（只命中首页/404）。
         路径 = urlparse(unquote(self.path))
-        连接 = 连库()
+        连接 = 连信息核心库()
         if 连接 is None:
-            应答体 = 壳("库不在", "<p class=\"红\">库不在。先跑：<code>python3 开发工具/信息核心/建库.py</code></p>")
+            应答体 = 页面壳("库不在", "<p class=\"红\">库不在。先跑：<code>python3 开发工具/信息核心/建库.py</code></p>")
         elif 路径.path == "/条款":
             应答体 = 条款页(连接, (parse_qs(路径.query).get("件") or [""])[0])
         elif 路径.path == "/节点":
@@ -328,7 +311,7 @@ class 处理器(BaseHTTPRequestHandler):
         elif 路径.path in 路由表:
             应答体 = 路由表[路径.path](连接)
         else:
-            应答体 = 壳("404", f"<p class=\"红\">没有这个页面：{html.escape(路径.path)}</p>")
+            应答体 = 页面壳("404", f"<p class=\"红\">没有这个页面：{html.escape(路径.path)}</p>")
         if 连接 is not None:
             连接.close()
         self.send_response(200)
@@ -341,7 +324,7 @@ class 处理器(BaseHTTPRequestHandler):
         pass
 
 
-def 起(端口: int = 表定义.默认端口) -> None:
+def 起页面(端口: int = 表定义.默认端口) -> None:
     """起页面端口（**永不返回**）。端口由 `信息核心.py 查看 --端口 N` 传进来。"""
     服务 = ThreadingHTTPServer(("127.0.0.1", 端口), 处理器)
     print(f"信息核心页面：http://127.0.0.1:{端口}/　（Ctrl-C 退）")

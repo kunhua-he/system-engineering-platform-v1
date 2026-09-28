@@ -43,7 +43,7 @@ def 入口函数(参数: list) -> int:
         端口 = 表定义.默认端口
         if "--端口" in 余参数:
             端口 = int(余参数[余参数.index("--端口") + 1])
-        查看.起(端口)  # 永不返回
+        查看.起页面(端口)  # 永不返回
         return 0
     print(用法, file=sys.stderr)
     return 2
