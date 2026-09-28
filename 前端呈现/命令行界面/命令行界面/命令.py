@@ -8,7 +8,7 @@ from .常量 import 默认端口, 用法, 路径_声明, 路径_能力, 路径_�
 from .参数 import 取端口, 用法错
 from .显示 import 印应答, 印失败, 印调用成功
 from .请求体 import 拼值
-from .连接 import 发请求, 连不上
+from .连接 import 发请求, 报连不上
 
 # 本次真正用的端口（入口函数 里定下来）。**只为把报错话说准**：连不上时要说清是哪个端口连不上，
 # 报默认值会指错方向（端口可能是 --端口 或环境变量给的）。
@@ -93,7 +93,7 @@ def 跑命令行(参数: list) -> None:
         sys.exit(2)
     except urllib.error.URLError as 错误:
         # 报的是**本次真正用的那个端口**（可能是 --端口 或环境变量给的），不报默认值。
-        sys.exit(连不上(当前端口, 错误.reason if hasattr(错误, "reason") else 错误))
+        sys.exit(报连不上(当前端口, 错误.reason if hasattr(错误, "reason") else 错误))
     except ValueError as 错误:
         print("用法错：{}（编号与端口必须是十进制数）".format(错误), file=sys.stderr)
         sys.exit(2)

@@ -16,7 +16,7 @@ const 命名空间 = "http" + "://www.w3.org/2000/svg";
  * 图形表：每项一条 `d`（可含多个子路径）+ 是否填充。
  * 全部画在 16×16 的框里，描边宽 1，跟文字同色。
  */
-export const 图形 = {
+export const 图形表 = {
   新建: { 路径: "M3 1h7l3 3v11H3zM10 1v3h3" },
   打开: { 路径: "M1 13V4h5l2 2h7v7zM1 13h14" },
   保存: { 路径: "M2 2h9l3 3v9H2zM5 2v5h6V2M4 9h8v5H4z" },
@@ -66,7 +66,7 @@ export const 图形 = {
 
 /** 建一个 SVG 节点。`名称` 不在表里就给一个空框（宁可空着，也不编一个形状出来）。 */
 export function 画图标(名称) {
-  const 图形项 = 图形[名称] || { 路径: "M1 1h14v14H1z" };
+  const 图形项 = 图形表[名称] || { 路径: "M1 1h14v14H1z" };
   const 元素 = document.createElementNS(命名空间, "svg");
   元素.setAttribute("viewBox", "0 0 16 16");
   元素.setAttribute("aria-hidden", "true");

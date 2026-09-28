@@ -30,7 +30,7 @@ pub(crate) fn 读报文(输出流: &mut TcpStream) -> Result<报文, String> {
     let mut 缓冲: Vec<u8> = Vec::with_capacity(1024);
     let mut 临时 = [0u8; 4096];
     let 头尾 = loop {
-        if let Some(位置) = 找头尾(&缓冲) {
+        if let Some(位置) = 找头体分界(&缓冲) {
             break 位置;
         }
         if 缓冲.len() > 头区上限 {
@@ -96,7 +96,7 @@ pub(crate) fn 读报文(输出流: &mut TcpStream) -> Result<报文, String> {
 }
 
 /// 找 `\r\n\r\n` 的起始偏移（请求头与体的分界）。
-fn 找头尾(缓冲: &[u8]) -> Option<usize> {
+fn 找头体分界(缓冲: &[u8]) -> Option<usize> {
     缓冲
         .windows(4)
         .position(|字节窗口| 字节窗口 == b"\r\n\r\n")

@@ -7,7 +7,7 @@ def 显示真假(待处理值) -> str:
     return "是" if 待处理值 is True else ("否" if 待处理值 is False else str(待处理值))
 
 
-def 漂亮(待处理值) -> str:
+def 漂亮化应答(待处理值) -> str:
     return json.dumps(待处理值, ensure_ascii=False, indent=2)
 
 
@@ -26,7 +26,7 @@ def 印应答(状态: int, 体文本: str) -> int:
         print(状态行 + " —— 请求本身不合法（协议层，不是业务失败）")
     else:
         print(状态行)
-    print(漂亮(应答体))
+    print(漂亮化应答(应答体))
     return 0
 
 
@@ -55,7 +55,7 @@ def 印失败(状态行: str, 应答体: dict) -> int:
         print("  协议错误：{}".format(应答体["协议错误"]))
     else:
         print("  返回体：")
-        print(漂亮(应答体))
+        print(漂亮化应答(应答体))
     if "耗时微秒" in 应答体:
         print("  耗时微秒：{}".format(应答体["耗时微秒"]))
     return 1

@@ -9,7 +9,7 @@
 //
 // 图标是内联 SVG（`图标.js`），不是位图 —— 位图在 e.exe 资源里是索引不是像素，本页量不到。
 
-import { 建元素, 摘要, 写状态 } from "./呈现.js";
+import { 建元素, 取应答摘要, 写状态 } from "./呈现.js";
 import { 画图标 } from "./图标.js";
 import { 选中路径 } from "./编辑器.js";
 import { 发程序文本 } from "./取接口.js";
@@ -72,7 +72,7 @@ export function 装工具栏(取元素, 钩子) {
         return;
       }
       const 应答 = await 发程序文本("写", 路径, 钩子.编辑.value);
-      const 摘要结果 = 摘要(应答.体);
+      const 摘要结果 = 取应答摘要(应答.体);
       if (摘要结果.类 === "好") {
         报状态("保存：已写入 " + 路径 + "（" + 钩子.编辑.value.length + " 字符）", true);
       } else {

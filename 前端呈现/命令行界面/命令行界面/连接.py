@@ -36,7 +36,7 @@ def 发请求(端口: int, 方法: str, 路径: str, 体文本: str, 显示请�
         return 错误.code, 错误.read().decode("utf-8", "replace")
 
 
-def 连不上(端口: int, 原因) -> int:
+def 报连不上(端口: int, 原因) -> int:
     print("连不上 http://{}:{} —— 接口面没起？".format(回环地址, 端口))
     print("  原因：{}".format(原因))
     print("  端口来源：--端口 > 环境变量 {} > 默认 {}".format(

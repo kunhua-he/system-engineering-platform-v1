@@ -19,11 +19,11 @@ def 取端口(参数: list) -> int:
         if 这项 == "--端口":
             if 位置 + 1 >= len(参数):
                 raise 用法错("--端口 后面要给一个数")
-            端口 = 取端口数(参数[位置 + 1])
+            端口 = 取端口号(参数[位置 + 1])
             位置 += 2
             continue
         if 这项.startswith("--端口="):
-            端口 = 取端口数(这项.split("=", 1)[1])
+            端口 = 取端口号(这项.split("=", 1)[1])
             位置 += 1
             continue
         剩余.append(这项)
@@ -33,11 +33,11 @@ def 取端口(参数: list) -> int:
     for 名称 in 端口环境变量:
         原值 = os.environ.get(名称)
         if 原值:
-            return 取端口数(原值), 剩余
+            return 取端口号(原值), 剩余
     return 默认端口, 剩余
 
 
-def 取端口数(原值: str) -> int:
+def 取端口号(原值: str) -> int:
     个数 = int(原值.strip())
     if not (0 < 个数 < 65536):
         raise 用法错("端口必须在 1–65535：{}".format(原值))

@@ -14,7 +14,7 @@
 // 没有一处写着「这个编号合不合法」——发出去，后端说了算。
 
 import { 取根 } from "./取接口.js";
-import { 建元素, 清空, 写状态 } from "./呈现.js";
+import { 建元素, 清空容器, 写状态 } from "./呈现.js";
 import { 号段, 找段, 找扩展, 拉扩展表 } from "./号段表.js";
 import { 画图标 } from "./图标.js";
 
@@ -120,7 +120,7 @@ export function 装支持库树(取元素, 钩子) {
 
   function 摆能力树(能力表) {
     const 枝表 = 折树(能力表);
-    清空(容器);
+    清空容器(容器);
     let 总数 = 0;
     const 根盒 = 建元素("div", "树子");
     for (const 段项 of 号段) {
@@ -162,7 +162,7 @@ export function 装支持库树(取元素, 钩子) {
     try {
       const 应答 = await 取根();
       if (应答.状态 !== 200) {
-        清空(容器);
+        清空容器(容器);
         写状态(状态, "HTTP " + 应答.状态 + " —— 同源托管没把 /接口 交出来，树摆不出来", false);
         return null;
       }
@@ -171,7 +171,7 @@ export function 装支持库树(取元素, 钩子) {
       await 拉扩展表();
       const 能力表 = 取能力表(应答.体);
       if (!能力表.length) {
-        清空(容器);
+        清空容器(容器);
         写状态(状态, "应答里没有能力清单（顶层键："
           + (应答.体 && typeof 应答.体 === "object" ? Object.keys(应答.体).join(" · ") : "不是对象")
           + "）", false);
@@ -180,7 +180,7 @@ export function 装支持库树(取元素, 钩子) {
       摆能力树(能力表);
       return 应答;
     } catch (错误) {
-      清空(容器);
+      清空容器(容器);
       写状态(状态, "发不出去：" + 错误.message, false);
       return null;
     }
