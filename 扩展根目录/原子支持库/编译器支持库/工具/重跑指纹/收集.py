@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""重跑指纹 · 收集与计算 —— 按固定范围收集文件 · sha256 · 算表 · 读旧表。"""
+"""重跑指纹 · 收集与计算 —— 按固定范围收集文件 · sha256 · 算指纹表 · 读旧指纹表。"""
 import hashlib
 import json
 import os
@@ -44,11 +44,11 @@ def 算指纹(路径):
     return 摘要.hexdigest()
 
 
-def 算表():
+def 算指纹表():
     return {相对路径: 算指纹(os.path.join(扩展根, 相对路径)) for 相对路径 in 收集()}
 
 
-def 读旧表():
+def 读旧指纹表():
     if not os.path.isfile(指纹件):
         return None
     with open(指纹件, "r", encoding="utf-8") as 句柄:

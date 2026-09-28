@@ -106,7 +106,7 @@ pub use 错误::{反解错误, 生成错误};
 // 测试按 `记录流::读四字节` 这一族取零件（原路径逐字不变）。只在测试档存在：
 // 生产档没有调用方，留着会触发 `unused_imports`（clippy `-D warnings`）。
 #[cfg(test)]
-pub(crate) use 反解::{切串, 读双字节, 读四字节};
+pub(crate) use 反解::{切引用字段, 读双字节, 读四字节};
 
 #[cfg(test)]
 #[path = "记录流/测试夹具.rs"]

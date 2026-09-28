@@ -52,7 +52,7 @@ pub(crate) unsafe fn 写字节集(返回槽: *mut 数据槽, 字节: Vec<u8>) {
 /// # Safety
 ///
 /// 调用方保证 `返回槽` 可写。
-pub(crate) unsafe fn 写错误码(返回槽: *mut 数据槽, 错误码: u32) {
+pub(crate) unsafe fn 写错误槽(返回槽: *mut 数据槽, 错误码: u32) {
     // SAFETY: 由调用方保证 返回槽 可写。
     unsafe { *返回槽 = 数据槽::内联(类型标签_4294967295.into(), 错误码 as u64, 0) };
 }

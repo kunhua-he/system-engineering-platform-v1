@@ -38,7 +38,7 @@ def 入口函数():
     rows = 读样本(真文本目录)
     读数 = 统计.统计读数(rows)
     tier_bytes = 统计.分层字节(rows)
-    报表.打印(读数, rows, tier_bytes)
+    报表.打印报表读数(读数, rows, tier_bytes)
     if "--json" in sys.argv:
         报表.导出(读数, tier_bytes)
 

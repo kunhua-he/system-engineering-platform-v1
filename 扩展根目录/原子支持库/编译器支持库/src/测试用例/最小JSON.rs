@@ -55,22 +55,22 @@ impl JSON值 {
 }
 
 pub(crate) fn 解析(文本: &str) -> Option<JSON值> {
-    let mut 读器 = 读器 { 字节: 文本.as_bytes(), 位: 0 };
-    读器.跳空白();
-    let 待处理值 = 读器.读一个值()?;
-    读器.跳空白();
-    if 读器.位 != 读器.字节.len() {
+    let mut 顺序读器 = 顺序读器 { 字节: 文本.as_bytes(), 位: 0 };
+    顺序读器.跳空白();
+    let 待处理值 = 顺序读器.读一个值()?;
+    顺序读器.跳空白();
+    if 顺序读器.位 != 顺序读器.字节.len() {
         return None;
     }
     Some(待处理值)
 }
 
-struct 读器<'a> {
+struct 顺序读器<'a> {
     字节: &'a [u8],
     位: usize,
 }
 
-impl<'a> 读器<'a> {
+impl<'a> 顺序读器<'a> {
     fn 取当前字节(&self) -> Option<u8> {
         self.字节.get(self.位).copied()
     }
@@ -86,7 +86,7 @@ impl<'a> 读器<'a> {
         match self.取当前字节()? {
             b'{' => self.对象(),
             b'[' => self.数组(),
-            b'"' => Some(JSON值::字符串(self.读字符串()?)),
+            b'"' => Some(JSON值::字符串(self.读JSON串()?)),
             b't' => self.字面量(b"true", JSON值::逻辑真(true)),
             b'f' => self.字面量(b"false", JSON值::逻辑真(false)),
             b'n' => self.字面量(b"null", JSON值::空值),
@@ -113,7 +113,7 @@ impl<'a> 读器<'a> {
         }
         loop {
             self.跳空白();
-            let 键名 = self.读字符串()?;
+            let 键名 = self.读JSON串()?;
             self.跳空白();
             if self.取当前字节()? != b':' {
                 return None;
@@ -156,7 +156,7 @@ impl<'a> 读器<'a> {
         }
     }
 
-    fn 读字符串(&mut self) -> Option<String> {
+    fn 读JSON串(&mut self) -> Option<String> {
         if self.取当前字节()? != b'"' {
             return None;
         }
