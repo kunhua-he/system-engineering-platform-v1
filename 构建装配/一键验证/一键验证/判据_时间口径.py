@@ -13,7 +13,7 @@ from .常量 import 单位词表, 时间口径面, 检查名
 _标识符 = re.compile(r"[A-Za-z_\u4e00-\u9fff][0-9A-Za-z_\u4e00-\u9fff]*")
 
 
-def _去注释(源码行: str) -> str:
+def _去行注释(源码行: str) -> str:
     """去掉行注释（`//` 之后）。本判据只看**代码里的标识符**，不看注释里的散文。"""
     注释起 = 源码行.find("//")
     return 源码行[:注释起] if 注释起 >= 0 else 源码行
@@ -37,7 +37,7 @@ def _抽量名(文本: str) -> set:
     """抽**量**的名字：常量 / 静态量 · 结构体字段 · `pub use` 再导出的名字。段位名与函数名不在内。"""
     输出缓冲 = set()
     for 源码行 in 文本.split("\n"):
-        代码行 = _去注释(源码行)
+        代码行 = _去行注释(源码行)
         for 格式器 in (_常量声明, _字段声明):
             匹配结果 = 格式器.match(代码行)
             if 匹配结果:
@@ -52,7 +52,7 @@ def _抽标识符(文本: str) -> set:
     """抽全部标识符（只用来确认「主人还在」这一条 sanity，不用来判违规）。"""
     输出缓冲 = set()
     for 源码行 in 文本.split("\n"):
-        for 匹配结果 in _标识符.finditer(_去注释(源码行)):
+        for 匹配结果 in _标识符.finditer(_去行注释(源码行)):
             输出缓冲.add(匹配结果.group(0))
     return 输出缓冲
 
@@ -91,7 +91,7 @@ def 检查21_时间口径(上层读数: dict) -> list:
 
     for 键名 in sorted(件表):
         for 序号, 源码行 in enumerate(件表[键名].split("\n")):
-            if "SystemTime" not in _去注释(源码行):
+            if "SystemTime" not in _去行注释(源码行):
                 continue
             输出缓冲.append(
                 违规(

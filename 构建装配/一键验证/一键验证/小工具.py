@@ -62,7 +62,7 @@ def 判不了(检查: str, 位置: str, 缺什么: str, 不能自愈: str) -> No
     )
 
 
-def 相对(仓根: Path, 路径: Path) -> str:
+def 取相对路径(仓根: Path, 路径: Path) -> str:
     try:
         return 路径.relative_to(仓根).as_posix()
     except ValueError:

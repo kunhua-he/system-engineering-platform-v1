@@ -43,7 +43,7 @@ def 承重证明(源仓根: Path) -> int:
             f"_状态.提速开关 = {提速!r}\n"
             f"if {注入慢毫秒}:\n"
             f"    time.sleep({注入慢毫秒} / 1000)\n"
-            "r = m.验证(m.找仓根())\n"
+            "r = m.跑全量判据(m.找仓根())\n"
             "条 = [x['缺什么'] for x in r['失败']\n"
             "      if isinstance(x, dict) and x['检查'] == m.检查名[17]]\n"
             "print('⑱条:', 条)\n"

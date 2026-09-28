@@ -37,7 +37,7 @@ import os
 import re
 from pathlib import Path
 
-from .小工具 import 判不了, 相对, 违规
+from .小工具 import 判不了, 取相对路径, 违规
 from .常量 import 检查名
 
 
@@ -56,7 +56,7 @@ from .常量 import 检查名
 )
 
 
-def _排掉(相对根: str, 名称: str) -> bool:
+def _该排除路径(相对根: str, 名称: str) -> bool:
     路径 = f"{相对根}/{名称}" if 相对根 not in ("", ".") else 名称
     return 路径 in 走树排除路径 or 名称 in (".git", "__pycache__", "node_modules", "target")
 
@@ -74,7 +74,7 @@ def 扫入口(仓根: Path) -> dict:
     输出缓冲 = {}
     for 根目录, 目录表, 文件表 in os.walk(仓根):
         相对根 = os.path.relpath(根目录, 仓根).replace(os.sep, "/")
-        目录表[:] = [目录名 for 目录名 in 目录表 if not _排掉(相对根, 目录名)]
+        目录表[:] = [目录名 for 目录名 in 目录表 if not _该排除路径(相对根, 目录名)]
         for 名称 in sorted(文件表):
             if not (名称.endswith(".py") or 名称.endswith(".sh")):
                 continue
@@ -85,18 +85,18 @@ def 扫入口(仓根: Path) -> dict:
                 continue
             if 名称.endswith(".py") and not 主入口模式.search(文本):
                 continue
-            输出缓冲[相对(仓根, 路径)] = 文本
+            输出缓冲[取相对路径(仓根, 路径)] = 文本
     _入口面缓存[键名] = 输出缓冲
     return 输出缓冲
 
 
-def 带壳(路径: str, 文本: str) -> bool:
+def 入口带壳(路径: str, 文本: str) -> bool:
     """这条入口带壳吗（口径逐字抄 §四/§六）。"""
     标记 = 外壳脚本带壳标记 if 路径.endswith(".sh") else 脚本带壳标记
     return any(关键词 in 文本 for 关键词 in 标记)
 
 
-def 读白名单(仓根: Path) -> tuple:
+def 读入口白名单(仓根: Path) -> tuple:
     """读被扫仓的入口白名单 ⇒ `({路径: (类, 理由)}, 错误或 None)`。"""
     节点件 = 仓根 / 入口白名单路径
     if not 节点件.is_file():
@@ -127,7 +127,7 @@ def 检查24_入口覆盖面(上层读数: dict) -> list:
     """
     输出缓冲 = []
     仓根 = 上层读数["仓根"]
-    白名单, 错误 = 读白名单(仓根)
+    白名单, 错误 = 读入口白名单(仓根)
     if 错误:
         return [
             违规(
@@ -151,7 +151,7 @@ def 检查24_入口覆盖面(上层读数: dict) -> list:
         return 输出缓冲
 
     for 键名 in sorted(入口):
-        if 带壳(键名, 入口[键名]) or 键名 in 白名单:
+        if 入口带壳(键名, 入口[键名]) or 键名 in 白名单:
             continue
         输出缓冲.append(
             违规(

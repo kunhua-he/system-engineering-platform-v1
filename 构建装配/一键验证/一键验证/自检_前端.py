@@ -13,7 +13,7 @@ from .合成仓 import 造干净仓
 from .常量 import 前端逻辑模式, 检查名
 from .判据_拓扑 import 前端命中
 from .测试件 import 生产区文本
-from .验证 import 验证
+from .验证 import 跑全量判据
 
 
 def 自检_前端语义判据() -> list:
@@ -201,7 +201,7 @@ def 自检_前端语义判据() -> list:
             try:
                 if 关判据:
                     常量.前端逻辑模式 = re.compile(r"(?!)")  # 永不匹配 = 判据关掉
-                return 验证(临根, 两遍=False)
+                return 跑全量判据(临根, 两遍=False)
             finally:
                 常量.前端逻辑模式 = 原模式
 
@@ -283,7 +283,7 @@ def 自检_前端内联脚本() -> list:
             try:
                 if 关判据:
                     常量.前端逻辑模式 = re.compile(r"(?!)")  # 永不匹配 = 判据关掉
-                return 验证(临根, 两遍=False)
+                return 跑全量判据(临根, 两遍=False)
             finally:
                 常量.前端逻辑模式 = 原模式
 

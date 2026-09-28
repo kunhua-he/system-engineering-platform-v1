@@ -8,10 +8,10 @@ from pathlib import Path
 
 from .Rust文本 import 载入调用点
 from .合成仓 import 造干净仓
-from .小工具 import 相对
+from .小工具 import 取相对路径
 from .常量 import 边界业务判断模式, 边界状态模式, 监听模式, 资源出入口形
 from .测试件 import 建测试文件集
-from .验证 import 验证
+from .验证 import 跑全量判据
 
 
 def 自检_整份夹具跳过() -> list:
@@ -63,7 +63,7 @@ def 自检_整份夹具跳过() -> list:
                 路径 = 临根 / 相对
                 路径.parent.mkdir(parents=True, exist_ok=True)
                 路径.write_text(内容, encoding="utf-8")
-            return 验证(临根)
+            return 跑全量判据(临根)
 
     挂了, 没挂 = 跑自检(True), 跑自检(False)
     失败数 = lambda 结果: len([明细条 for 明细条 in 结果["失败"] if isinstance(明细条, str)])  # noqa: E731

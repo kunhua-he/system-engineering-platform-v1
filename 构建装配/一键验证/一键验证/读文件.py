@@ -11,7 +11,7 @@ from pathlib import Path
 
 from . import 常量
 
-from .小工具 import 是临时路径, 相对
+from .小工具 import 是临时路径, 取相对路径
 from .常量 import 临时目录前缀, 号段图路径, 契约目录名, 常量表路径, 并发度, 扫描后缀, 编号字段, 编号目录, 跳过目录, 顶层目录到层
 from .测试件 import 建测试文件集
 
@@ -39,7 +39,7 @@ def 扫源文件(仓根: Path) -> list:
 def 读一个文件(任务: tuple) -> tuple:
     """一个分片的全部重活：读字节 → 解 UTF-8 → 解 JSON。都在这里做，并行跑。"""
     仓根, 路径 = 任务
-    键名 = 相对(仓根, 路径)
+    键名 = 取相对路径(仓根, 路径)
     try:
         字节 = 路径.read_bytes()
     except OSError as 错误:
@@ -64,7 +64,7 @@ def 读一个文件(任务: tuple) -> tuple:
     return 键名, {"文本": 文本, "数据": 数据, "错误": 错误}
 
 
-def 并行读(仓根: Path, 路径表: list) -> dict:
+def 并行读文件(仓根: Path, 路径表: list) -> dict:
     任务 = [(仓根, 路径) for 路径 in 路径表]
     with ThreadPoolExecutor(max_workers=并发度) as 线程池:
         return dict(线程池.map(读一个文件, 任务))
@@ -77,9 +77,9 @@ def 建上下文(仓根: Path) -> dict:
     契约件 = sorted(契约根.rglob("*.json")) if 契约根.is_dir() else []
     # `rglob` 不走 `跳过目录` / 临时件排除 ⇒ 这里按同一口径再筛一遍
     # （否则落进 `契约声明/` 的临时声明根仍会被读进来）。
-    契约件 = [声明件 for 声明件 in 契约件 if not 是临时路径(相对(仓根, 声明件))]
+    契约件 = [声明件 for 声明件 in 契约件 if not 是临时路径(取相对路径(仓根, 声明件))]
     源件 = [源路径 for 源路径 in 扫源文件(仓根) if 源路径.suffix != ".json"]
-    文件 = 并行读(仓根, 契约件 + 源件)
+    文件 = 并行读文件(仓根, 契约件 + 源件)
 
     平台 = 解析(文件, f"{契约目录名}/平台声明.json")
     号段图 = 解析(文件, 号段图路径)

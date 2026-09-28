@@ -9,11 +9,11 @@ from pathlib import Path
 from . import 常量
 
 from .常量 import 检查名, 契约目录名
-from .打印 import 打印, 打印缺口
+from .打印 import 打印验证结果, 打印缺口
 from .承重证明 import 承重证明
 from .自测 import 自测
 from .退出码 import 算退出码
-from .验证 import 验证
+from .验证 import 跑全量判据
 
 
 def 解析只跑(词表: list) -> tuple:
@@ -56,8 +56,8 @@ def 入口函数(参数: list) -> int:
         if 错误:
             print("一键验证：%s" % 错误, file=sys.stderr)
             return 2
-    结果 = 验证(仓根, 只跑=只跑集)
-    打印(结果)
+    结果 = 跑全量判据(仓根, 只跑=只跑集)
+    打印验证结果(结果)
     if "--缺口" in 参数:
         print("")
         打印缺口()

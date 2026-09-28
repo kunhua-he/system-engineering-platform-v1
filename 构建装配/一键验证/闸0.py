@@ -49,7 +49,7 @@ from 构建装配.门禁 import 自门禁  # noqa: E402
     ("闸 1 · 声明侧", "构建装配/一键验证/一键验证.py"),
     ("闸 2 · 实现侧", "测试验证/契约一致性/扫实现.py"),
 )
-读数模式 = re.compile(r"^通过\s.*$", re.M)
+读数行模式 = re.compile(r"^通过\s.*$", re.M)
 
 
 def 入口函数(参数: list) -> int:
@@ -64,7 +64,7 @@ def 入口函数(参数: list) -> int:
             [sys.executable, str(仓根 / 相对)],
             cwd=str(仓根), capture_output=True, text=True,
         )
-        命中 = 读数模式.search(结果.stdout or "")
+        命中 = 读数行模式.search(结果.stdout or "")
         读数 = 命中.group(0).strip() if 命中 else "（没有读出「通过 …」那一行）"
         全过 = 全过 and (结果.returncode == 0)
         print(f"  {名称} ｜ {相对}")
