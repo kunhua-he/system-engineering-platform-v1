@@ -25,16 +25,19 @@ from pathlib import Path
 
 工具仓根 = Path(__file__).resolve().parents[2]
 for _目录 in (str(工具仓根), str(工具仓根 / "开发工具"),
+             str(工具仓根 / "开发工具" / "信息核心"),
              str(工具仓根 / "构建装配" / "一键验证")):
     if _目录 not in sys.path:
         sys.path.insert(0, _目录)
 
+import 表定义                        # noqa: E402
 import 代码地图.查名 as 查名          # noqa: E402
 import 代码地图.形参面 as 形参面      # noqa: E402
 import 代码地图.索引库 as 索引库      # noqa: E402
 import 一键验证.命名扫描 as 命名扫描  # noqa: E402
 
-库相对路径 = "开发工具/信息核心/信息核心.db"
+# 库路径**只此一份**（主人 = `表定义.库相对路径`）—— 本件原先自写一份字面量（全仓曾有 6 份）。
+库相对路径 = 表定义.库相对路径
 面_定义 = "定义面"
 面_形参 = "形参面"
 面_局部 = "局部面"

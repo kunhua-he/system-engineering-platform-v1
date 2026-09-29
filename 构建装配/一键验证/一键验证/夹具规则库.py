@@ -14,15 +14,20 @@ import sqlite3
 import sys
 from pathlib import Path
 
-库相对路径 = "开发工具/信息核心/信息核心.db"
+def 取表定义():
+    """惰性取**表结构主人**（`开发工具/信息核心/表定义.py`）—— 库路径与建表语句只此一份。
 
-# 夹具只需要判据用到的那几张表（真仓的库有 8 张源表，夹具不必跟）。
-建表 = (
-    "create table if not exists 命名定义(语义 text primary key, 唯一名 text not null, 现状 text)",
-    "create table if not exists 命名例外(名 text primary key)",
-    "create table if not exists 命名基线(档 text not null, 路径 text not null, 名字 text not null, 处数 integer not null, primary key(档, 路径, 名字))",
-    "create table if not exists 命名穷举基线(面 text not null, 名字 text not null, 处数 integer not null, primary key(面, 名字))",
-)
+    本件原先各抄一份：库路径一份字面量、四张表一份手抄的 `create table`。那是**假绿风险**
+    —— 给真库加一列，夹具照旧是旧形状 ⇒ 判据在夹具上绿、真仓已经不一样（「能复用的绝对不能
+    重复写」，库 `规则` 表 开发规范-20）。夹具多建几张空表零成本，不再维护一份会漂的形状。
+    """
+    工具根 = Path(__file__).resolve().parents[3]
+    根目录 = str(工具根 / "开发工具" / "信息核心")
+    if 根目录 not in sys.path:
+        sys.path.insert(0, 根目录)
+    import 表定义
+
+    return 表定义
 
 
 def 取命名扫描():
@@ -62,11 +67,11 @@ def 名册表(件表: dict) -> list:
 
 def 建夹具规则库(临根: Path, 件表: dict) -> Path:
     """在夹具仓里造一份最小规则库（名册 = 夹具干净代码的标识符；两张基线留空）⇒ 库路径。"""
-    库件 = 临根 / 库相对路径
+    库件 = 临根 / 取表定义().库相对路径
     库件.parent.mkdir(parents=True, exist_ok=True)
     连接 = sqlite3.connect(库件)
     try:
-        for 语句 in 建表:
+        for 语句 in 取表定义().建表语句:
             连接.execute(语句)
         for 出现名 in 名册表(件表):
             连接.execute("insert or replace into 命名定义 values(?,?,?)",

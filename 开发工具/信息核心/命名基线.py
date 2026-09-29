@@ -11,9 +11,14 @@
 from __future__ import annotations
 
 import sqlite3
+import sys
 from pathlib import Path
 
-库相对路径 = "开发工具/信息核心/信息核心.db"
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import 表定义  # noqa: E402
+
+# 库路径**只此一份**（主人 = `表定义.库相对路径`）—— 本件原先自写一份字面量（全仓曾有 6 份）。
+库相对路径 = 表定义.库相对路径
 表_命名基线 = "命名基线"
 表_穷举基线 = "命名穷举基线"
 
