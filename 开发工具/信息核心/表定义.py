@@ -41,6 +41,27 @@ def 派生库路径(根目录) -> Path:
     return Path(根目录) / 派生库相对路径
 
 
+def 内容指纹(库路径) -> str:
+    """库**内容**的指纹（`iterdump` 的 sha256）—— 与**字节**无关。库不在 ⇒ 空串。
+
+    为何要它：sqlite 文件头带**事务计数**（第 24 字节起）⇒ 内容一字不差，写两次的字节也不同。
+    规则库受版本控制之后，那点字节差会让它在 `git status` 里无谓变脏（「脏」必须等于「真变了」）。
+    `建库` 拿它比落盘前后：没变就把原字节还原回去（见 `建库.建库`）。
+    """
+    import hashlib
+    import sqlite3 as _sqlite3
+
+    库件 = Path(库路径)
+    if not 库件.is_file():
+        return ""
+    连接 = _sqlite3.connect("file:%s?mode=ro" % 库件, uri=True)
+    try:
+        文本 = "\n".join(连接.iterdump())
+    finally:
+        连接.close()
+    return hashlib.sha256(文本.encode("utf-8")).hexdigest()
+
+
 def 连规则库(根目录):
     """**读**用的连接：主库是规则库，派生库 ATTACH 进来并建**临时视图**。
 
