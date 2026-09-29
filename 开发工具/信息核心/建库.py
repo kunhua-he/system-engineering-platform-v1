@@ -203,13 +203,6 @@ def 装未完成(根目录: Path) -> list:
     return 读源件(根目录, "未完成")
 
 
-def 装命名定义(根目录: Path) -> list:
-    return 读源件(根目录, "命名定义")
-
-
-
-
-
 def 装代码名(根目录: Path) -> list:
     索引 = 根目录 / ".codegraph" / "codegraph.db"
     if not 索引.is_file():
@@ -359,6 +352,9 @@ def 建库(指定根: Path = None, 打读数: bool = False) -> dict:
     根目录 = 指定根 or 仓根
     规则库 = 表定义.库路径(根目录)
     派生库 = 表定义.派生库路径(根目录)
+    # 受控的规则库不许无谓变脏：sqlite 文件头带事务计数 ⇒ 内容没变时字节也变（见 表定义.内容指纹）。
+    建库前指纹 = 表定义.内容指纹(规则库)
+    建库前字节 = 规则库.read_bytes() if 规则库.is_file() else None
     规则连接 = sqlite3.connect(规则库)
     for 语句 in 表定义.建表语句:
         规则连接.execute(语句)
@@ -372,6 +368,10 @@ def 建库(指定根: Path = None, 打读数: bool = False) -> dict:
     }
     规则连接.commit()
     规则连接.close()
+    if 建库前字节 is not None and 表定义.内容指纹(规则库) == 建库前指纹:
+        临时件 = 规则库.with_name(规则库.name + ".还原")
+        临时件.write_bytes(建库前字节)
+        临时件.replace(规则库)
     派生连接 = sqlite3.connect(派生库)
     for 语句 in 表定义.派生建表语句:
         派生连接.execute(语句)
