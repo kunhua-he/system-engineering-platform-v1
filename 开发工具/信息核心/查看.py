@@ -78,13 +78,6 @@ def 表格(列名: tuple, 数据行: list, 红列: set = (), 原样: set = ()) -
     return f"<table><tr>{表头}</tr>{表体}</table>"
 
 
-def 连信息核心库():
-    库文件 = 表定义.库路径(仓根)
-    if not 库文件.is_file():
-        return None
-    return 表定义.连规则库(仓根)
-
-
 # ── 页 ─────────────────────────────────────────────────────────────
 def 库现状(连接) -> str:
     """库现状：每张表的行数 + 命名覆盖读数 —— 让内核咬合图页**自身**回答「库弄好了没」。"""
@@ -331,7 +324,7 @@ class 页面处理器(BaseHTTPRequestHandler):
     def do_GET(self):
         # 路径要先 `unquote` —— 路由表的键是中文，不解码就永远匹配不上（只命中首页/404）。
         路径 = urlparse(unquote(self.path))
-        连接 = 连信息核心库()
+        连接 = 验证.连信息核心库()[0]
         if 连接 is None:
             应答体 = 页面壳("库不在", "<p class=\"红\">库不在。先跑：<code>python3 开发工具/信息核心/建库.py</code></p>")
         elif 路径.path == "/条款":
