@@ -84,9 +84,9 @@ const 类型说明_0001: &[u8] = "64 位有符号整数\0".as_bytes();
 /// 契约声明/类型声明/0002.json · 类型标签 2 · 名称「双精度」
 const 类型名_0002: &[u8] = "双精度\0".as_bytes();
 const 类型说明_0002: &[u8] = "64 位浮点数\0".as_bytes();
-/// 契约声明/类型声明/0003.json · 类型标签 3 · 名称「逻辑」
-const 类型名_0003: &[u8] = "逻辑\0".as_bytes();
-const 类型说明_0003: &[u8] = "逻辑值，取 0 或 1\0".as_bytes();
+/// 契约声明/类型声明/0003.json · 类型标签 3 · 名称「逻辑型」
+const 类型名_0003: &[u8] = "逻辑型\0".as_bytes();
+const 类型说明_0003: &[u8] = "逻辑型值，取 0 或 1\0".as_bytes();
 /// 契约声明/类型声明/0004.json · 类型标签 4 · 名称「文本」
 const 类型名_0004: &[u8] = "文本\0".as_bytes();
 const 类型说明_0004: &[u8] = "UTF-8 字节序列，必须带长度\0".as_bytes();
@@ -110,7 +110,7 @@ const 类型说明_4294967295: &[u8] = "保留标签，不参与类型相容判�
 pub const 类型标签_0000: v1_contract::类型标签 = v1_contract::类型标签::新建(0); // 空
 pub const 类型标签_0001: v1_contract::类型标签 = v1_contract::类型标签::新建(1); // 整数
 pub const 类型标签_0002: v1_contract::类型标签 = v1_contract::类型标签::新建(2); // 双精度
-pub const 类型标签_0003: v1_contract::类型标签 = v1_contract::类型标签::新建(3); // 逻辑
+pub const 类型标签_0003: v1_contract::类型标签 = v1_contract::类型标签::新建(3); // 逻辑型
 pub const 类型标签_0004: v1_contract::类型标签 = v1_contract::类型标签::新建(4); // 文本
 pub const 类型标签_0005: v1_contract::类型标签 = v1_contract::类型标签::新建(5); // 字节集
 pub const 类型标签_0006: v1_contract::类型标签 = v1_contract::类型标签::新建(6); // 句柄

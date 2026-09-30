@@ -5,11 +5,20 @@
 //! 所以在这里放一个只够用的递归下降读取器——它只服务测试，不进制品。
 //!
 //! 从 `src/lib.rs` 的 `#[cfg(test)] mod 测试` 里那个 `mod 最小JSON` 原样搬来（去掉外层模块壳）。
+//!
+//! # 与 `测试验证/案例/跑案例/src/最小JSON.rs` 的关系（2026-09-30）
+//!
+//! 仓里有**两份**最小 JSON 读取器，分处**互斥的层**（那份住 `v1-case-runner`，本份住编译器
+//! 支持库的测试面）⇒ 实现体**不合并**。**那份是严的**；**本份是有意简化的测试子集**
+//! （返回 `Option` 而非 `Result`、不带字节位置、只服务声明自洽测试）。**但行为不许更松**：
+//! 2026-09-30 已把三处差异按严的那份对齐 —— ① 代理对（`\ud83d\ude00`）解得成一个字符；
+//! ② 字符串里未转义的控制字符（`< 0x20`）当场拒；③ 数字的 `+/-` 只在开头收。
 
 #[derive(Debug, Clone, PartialEq)]
 pub(crate) enum JSON值 {
     空值,
-    逻辑真(bool),
+    真,
+    假,
     数值(f64),
     字符串(String),
     数组(Vec<JSON值>),
@@ -48,7 +57,8 @@ impl JSON值 {
     /// JSON 的 `true` / `false`。
     pub(crate) fn 真假(&self) -> Option<bool> {
         match self {
-            JSON值::逻辑真(真) => Some(*真),
+            JSON值::真 => Some(true),
+            JSON值::假 => Some(false),
             _ => None,
         }
     }
@@ -87,8 +97,8 @@ impl<'a> 顺序读器<'a> {
             b'{' => self.对象(),
             b'[' => self.数组(),
             b'"' => Some(JSON值::字符串(self.读JSON串()?)),
-            b't' => self.字面量(b"true", JSON值::逻辑真(true)),
-            b'f' => self.字面量(b"false", JSON值::逻辑真(false)),
+            b't' => self.字面量(b"true", JSON值::真),
+            b'f' => self.字面量(b"false", JSON值::假),
             b'n' => self.字面量(b"null", JSON值::空值),
             _ => self.读数值(),
         }
@@ -177,22 +187,17 @@ impl<'a> 顺序读器<'a> {
                         b'"' => 输出缓冲.push('"'),
                         b'\\' => 输出缓冲.push('\\'),
                         b'/' => 输出缓冲.push('/'),
+                        b'b' => 输出缓冲.push('\u{8}'),
+                        b'f' => 输出缓冲.push('\u{c}'),
                         b'n' => 输出缓冲.push('\n'),
                         b'r' => 输出缓冲.push('\r'),
                         b't' => 输出缓冲.push('\t'),
-                        b'u' => {
-                            let 码点 = u32::from_str_radix(
-                                std::str::from_utf8(self.字节.get(self.位..self.位 + 4)?)
-                                    .ok()?,
-                                16,
-                            )
-                            .ok()?;
-                            self.位 += 4;
-                            输出缓冲.push(char::from_u32(码点)?);
-                        }
+                        b'u' => 输出缓冲.push(self.取码点()?),
                         _ => return None,
                     }
                 }
+                // 未转义的控制字符不是合法 JSON（与 `跑案例/最小JSON.rs` 同一口径）。
+                控制字节 if 控制字节 < 0x20 => return None,
                 _ => {
                     // 多字节 UTF-8：整块拷贝。
                     let 区间起点 = self.位;
@@ -203,9 +208,45 @@ impl<'a> 顺序读器<'a> {
         }
     }
 
+    /// `\u` 后的码点；**代理对合成一个字符**（与 `跑案例/最小JSON.rs` 同一口径）。
+    fn 取码点(&mut self) -> Option<char> {
+        let 高代理 = self.取四位()?;
+        if (0xD800..0xDC00).contains(&高代理) {
+            if self.取当前字节()? != b'\\' {
+                return None;
+            }
+            self.位 += 1;
+            if self.取当前字节()? != b'u' {
+                return None;
+            }
+            self.位 += 1;
+            let 低代理 = self.取四位()?;
+            if !(0xDC00..0xE000).contains(&低代理) {
+                return None;
+            }
+            let 合成码点 = 0x10000 + ((高代理 - 0xD800) << 10) + (低代理 - 0xDC00);
+            return char::from_u32(合成码点);
+        }
+        char::from_u32(高代理)
+    }
+
+    /// 取 `\u` 后的 4 位十六进制。
+    fn 取四位(&mut self) -> Option<u32> {
+        let 四位值 = u32::from_str_radix(
+            std::str::from_utf8(self.字节.get(self.位..self.位 + 4)?).ok()?,
+            16,
+        )
+        .ok()?;
+        self.位 += 4;
+        Some(四位值)
+    }
+
     fn 读数值(&mut self) -> Option<JSON值> {
         let 区间起点 = self.位;
-        while matches!(self.取当前字节(), Some(b'0'..=b'9' | b'-' | b'+' | b'.' | b'e' | b'E')) {
+        if matches!(self.取当前字节(), Some(b'-' | b'+')) {
+            self.位 += 1;
+        }
+        while matches!(self.取当前字节(), Some(b'0'..=b'9' | b'.' | b'e' | b'E' | b'+' | b'-')) {
             self.位 += 1;
         }
         if self.位 == 区间起点 {

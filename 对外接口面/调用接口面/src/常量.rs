@@ -71,7 +71,7 @@ pub mod 类型标签 {
     pub const 无值: u32 = 0;
     pub const 整数: u32 = 1;
     pub const 双精度: u32 = 2;
-    pub const 逻辑: u32 = 3;
+    pub const 逻辑型: u32 = 3;
     pub const 文本: u32 = 4;
     pub const 字节集: u32 = 5;
     pub const 句柄: u32 = 6;

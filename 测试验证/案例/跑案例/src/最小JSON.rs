@@ -8,6 +8,14 @@
 //! 不做：注释 · 尾随逗号 · 单引号 · `NaN` / `Infinity`（都不是合法 JSON）。
 //!
 //! 读进来一律 UTF-8；写出时非 ASCII 不转义（JSON 允许，且案例名是中文）。
+//!
+//! # 与 `扩展根目录/原子支持库/编译器支持库/src/测试用例/最小JSON.rs` 的关系（2026-09-30）
+//!
+//! 仓里有**两份**最小 JSON 读取器，分处**互斥的层**（本份住 `v1-case-runner`，那份住
+//! 编译器支持库的测试面）⇒ 实现体**不合并**，只对齐**类型定义**与**行为**。**本份是严的那份**：
+//! ① 代理对（`\ud83d\ude00`）解得成一个字符；② 字符串里未转义的控制字符（`< 0x20`）当场拒；
+//! ③ 数字的 `+/-` 只在开头收（见 `取数`）。那份是有意简化的**测试子集**（返回 `Option`、
+//! 只服务声明自洽测试），**行为不许比本份更松** —— 三处差异见那份件头。
 
 use std::fmt::Write as _;
 
@@ -15,8 +23,8 @@ use std::fmt::Write as _;
 #[derive(Debug, Clone, PartialEq)]
 pub enum JSON值 {
     空值,
-    逻辑真,
-    逻辑假,
+    真,
+    假,
     数值(f64),
     字符串(String),
     数组(Vec<JSON值>),
@@ -64,8 +72,8 @@ impl JSON值 {
 
     pub fn 真假(&self) -> Option<bool> {
         match self {
-            JSON值::逻辑真 => Some(true),
-            JSON值::逻辑假 => Some(false),
+            JSON值::真 => Some(true),
+            JSON值::假 => Some(false),
             _ => None,
         }
     }
@@ -130,8 +138,8 @@ impl 读器<'_> {
             Some(b'{') => self.取对象(),
             Some(b'[') => self.取数组(),
             Some(b'"') => self.取串().map(JSON值::字符串),
-            Some(b't') => self.取字面("true").map(|()| JSON值::逻辑真),
-            Some(b'f') => self.取字面("false").map(|()| JSON值::逻辑假),
+            Some(b't') => self.取字面("true").map(|()| JSON值::真),
+            Some(b'f') => self.取字面("false").map(|()| JSON值::假),
             Some(b'n') => self.取字面("null").map(|()| JSON值::空值),
             Some(_) => self.取数(),
         }

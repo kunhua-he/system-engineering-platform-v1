@@ -112,5 +112,5 @@ fn 写错误码(错误码: &错误码摘要) -> JSON值 {
 }
 
 fn 真假值转线上值(真假值: bool) -> JSON值 {
-    if 真假值 { JSON值::逻辑真 } else { JSON值::逻辑假 }
+    if 真假值 { JSON值::真 } else { JSON值::假 }
 }
