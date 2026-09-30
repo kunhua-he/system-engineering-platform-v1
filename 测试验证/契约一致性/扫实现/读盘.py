@@ -4,9 +4,16 @@ from __future__ import annotations
 
 import json
 import os
+import sys
 from pathlib import Path
 
 from .常量 import 读上限字节, 契约目录名, 常量表相对, 判据名表, 处数基线相对
+
+# 仓根判定的**主人**在 `测试验证/准入判据/准入判据/世界.py`（同一顶层区 `测试验证/`；
+# 两包互不 import ⇒ 无环）。插它所在包根，照 `判据_准入.py::_取准入模块` 的先例：
+# 从**本件自身那棵树**取，不从被扫的仓取。
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "准入判据"))
+from 准入判据 import 世界  # noqa: E402
 from .小工具 import 取相对路径
 from .掩码 import 掩码
 from .夹具判定 import 建夹具集
@@ -133,7 +140,9 @@ def 扫实现(仓根: str, 范围: list) -> list:
 
 
 def 找仓根() -> str:
-    for 区间起点 in [Path.cwd(), Path(__file__).resolve().parent, *Path(__file__).resolve().parents]:
-        if (区间起点 / 契约目录名).is_dir():
-            return str(区间起点)
-    return str(Path.cwd())
+    """仓根的**唯一实现**在 `测试验证/准入判据/准入判据/世界.py`（2026-09-30 收口）。
+
+    本件原先自带一份**更宽**的判定 —— 只认 `契约声明/`。宽条件在一棵「有 `契约声明/`、
+    无 `扩展装载/`」的树里会返回**更浅的错根**：那是静默错，不是兼容性 ⇒ 改引严条件那一份。
+    """
+    return 世界.找仓根()
