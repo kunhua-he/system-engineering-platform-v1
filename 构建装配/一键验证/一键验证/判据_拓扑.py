@@ -217,7 +217,10 @@ def 检查11_拓扑唯一性(上层读数: dict) -> list:
         源层 = 路径到层(键名)
         if not 源层:
             continue
-        for 匹配结果 in re.finditer(r"(?m)^[ \t]*(?:pub[ \t]+)?use[ \t]+([A-Za-z_][\w]*)", 文本):
+        # ★ 2026-09-30 收紧（判据假绿审计 ⑪-5）：原来只认行首 `use` / `pub use`，
+        #   `pub(crate) use` / `pub(super) use` 整类漏判 —— 反向/跳层依赖写成这两种就绕过边表
+        #   （实测全仓 `pub(...) use` 11 处）。放宽到带括号的可见性；复算后层间边违规仍为 0。
+        for 匹配结果 in re.finditer(r"(?m)^[ \t]*(?:pub(?:\([^)]*\))?[ \t]+)?use[ \t]+([A-Za-z_][\w]*)", 文本):
             目标包 = 匹配结果.group(1)
             目标层 = 包到层.get(目标包)
             if not 目标层:
