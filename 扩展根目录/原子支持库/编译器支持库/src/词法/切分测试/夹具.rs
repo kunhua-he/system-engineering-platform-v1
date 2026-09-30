@@ -1,10 +1,10 @@
-//! 词法 · 切分测试 · 夹具 —— 四件共用的四样东西：切对 · 期望 · 判六条 · 语料读取。
+//! 词法 · 切分测试 · 夹具 —— 四件共用的四样东西：切对 · 期望 · 判六条 · 断言好流。
 //!
 //! 夹具只有一处实现（同一件事不许两套），四件都从这里取。
+//! 语料读取（同一批 53 份真文本）已收进 `crate::测试夹具`。
 
 use crate::词法::切分::切记号;
 use crate::语言面::{记号流, 记号种类};
-use std::path::{Path, PathBuf};
 
 /// 切一份原文，返回**逐枚** `(种类, 区间切片文本)`。用来与手写的期望逐枚对上。
 ///
@@ -63,23 +63,4 @@ pub fn 断言好流(原文: &str) {
     let 输出流 = 切记号(原文).unwrap_or_else(|错误| panic!("{原文:?} 该切得动，实得 {错误:?}"));
     assert_eq!(判六条(&输出流), [true; 6], "{原文:?} 有不变量没过");
     assert_eq!(输出流.还原(), 原文.as_bytes(), "{原文:?} 还原不等于原文");
-}
-
-/// 53 份真文本样本（`语料/真文本/*.txt`，UTF-8），按文件名排序。
-pub fn 语料文件() -> Vec<PathBuf> {
-    let 目录 = Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("语料")
-        .join("真文本");
-    let mut 路s: Vec<PathBuf> = std::fs::read_dir(&目录)
-        .unwrap_or_else(|错误| panic!("读不到 {}：{错误}", 目录.display()))
-        .filter_map(|一项| 一项.ok().map(|一项| 一项.path()))
-        .filter(|路径| 路径.to_str().is_some_and(|名称| 名称.ends_with(".txt")))
-        .collect();
-    路s.sort();
-    路s
-}
-
-/// 读一份语料（UTF-8）。
-pub fn 读语料(路径: &Path) -> String {
-    std::fs::read_to_string(路径).unwrap_or_else(|错误| panic!("{}：{错误}", 路径.display()))
 }

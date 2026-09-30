@@ -7,7 +7,8 @@
 use super::*;
 // 名称区的那一对互逆函数私有在同层的 `名称区.rs`（不属公开面），测试要直接点名。
 use super::名称区::{解名称区, 编名称区};
-use std::path::{Path, PathBuf};
+use std::path::Path;
+use crate::测试夹具::{首个不一致, 收集语料};
 
 /// 语料根目录。不存在时往返测试跳过（不失败）。
 const 语料根目录: &str = "/tmp/易语言源码";
@@ -17,43 +18,6 @@ const 语料根目录: &str = "/tmp/易语言源码";
 const GBK系统信息段: &[u8] = &[0xCF, 0xB5, 0xCD, 0xB3, 0xD0, 0xC5, 0xCF, 0xA2, 0xB6, 0xCE];
 const GBK用户信息段: &[u8] = &[0xD3, 0xC3, 0xBB, 0xA7, 0xD0, 0xC5, 0xCF, 0xA2, 0xB6, 0xCE];
 const GBK程序加固段: &[u8] = &[0xB3, 0xCC, 0xD0, 0xF2, 0xBC, 0xD3, 0xB9, 0xCC, 0xB6, 0xCE];
-
-fn 首个不一致(原文: &[u8], 产物: &[u8]) -> u64 {
-    let 上限 = 原文.len().min(产物.len());
-    for 位置 in 0..上限 {
-        if 原文[位置] != 产物[位置] {
-            return 位置 as u64;
-        }
-    }
-    上限 as u64
-}
-
-/// 大小写不敏感地认 `.e` / `.ec`。
-fn 是语料文件(路径: &Path) -> bool {
-    match 路径.extension().and_then(|扩展| 扩展.to_str()) {
-        Some(扩展) => {
-            let 小写 = 扩展.to_ascii_lowercase();
-            小写 == "e" || 小写 == "ec"
-        }
-        None => false,
-    }
-}
-
-/// 递归收集语料。用 `file_type()` 不追符号链接，避免环。
-fn 收集语料(根目录: &Path, 输出缓冲: &mut Vec<PathBuf>) {
-    let Ok(项集) = std::fs::read_dir(根目录) else {
-        return;
-    };
-    for 一项 in 项集.flatten() {
-        let Ok(类型) = 一项.file_type() else { continue };
-        let 路径 = 一项.path();
-        if 类型.is_dir() {
-            收集语料(&路径, 输出缓冲);
-        } else if 类型.is_file() && 是语料文件(&路径) {
-            输出缓冲.push(路径);
-        }
-    }
-}
 
 /// **唯一硬判据**：对语料里的容器文件，`生成(反解(原文))` 必须与原文逐字节相同。
 ///
