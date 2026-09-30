@@ -10,33 +10,10 @@ use crate::{参数摘要, 错误码摘要, 能力契约, 能力摘要, 适配器
 use v1_contract::{能力号, 平台信息};
 use v1_registry::{命令信息, 命令槽, 注册表};
 
-/// 契约串的读取上限（防呆：扫不到 NUL 就当读不出，不去 `from_raw_parts` 一个巨数）。
-pub(crate) const 契约串上限: usize = 4096;
-
-/// 读一个契约串（静态只读 NUL 结尾）。空指针 / 超上限仍无 NUL ⇒ 空串。
-///
-/// # Safety
-///
-/// `指针` 要么为空，要么指向**至少 `契约串上限` 字节可读**的静态数据。
-pub(crate) unsafe fn 读契约串(指针: *const u8) -> String {
-    if 指针.is_null() {
-        return String::new();
-    }
-    let mut 长度 = 0usize;
-    while 长度 < 契约串上限 {
-        // SAFETY: 由调用方保证 指针..指针+契约串上限 可读。
-        if unsafe { *指针.add(长度) } == 0 {
-            break;
-        }
-        长度 += 1;
-    }
-    if 长度 == 契约串上限 {
-        return String::new();
-    }
-    // SAFETY: 已扫到 NUL，前 长 字节可读且不再变动（静态数据）。
-    let 字节 = unsafe { core::slice::from_raw_parts(指针, 长度) };
-    String::from_utf8_lossy(字节).into_owned()
-}
+// 契约串读法**全平台只有一份**：`运行内核/装载入口/src/读数.rs`（`读串` + `读契约串`，
+// 上限 `契约串上限` = 4096，越界 / 无 NUL ⇒ 空串，**不 panic**）。本件不再自带扫描循环，
+// 只把那份再导出 —— `crate::契约读取::读契约串` 这个路径逐字不变（`通知口` / `适配器定义` 按它取）。
+pub(crate) use v1_loader::读契约串;
 
 /// 命令的参数表 → 参数摘要（**行序原样保留**：调用方按这个顺序填值）。
 pub(crate) fn 读参数表(命令: &命令信息) -> Vec<参数摘要> {

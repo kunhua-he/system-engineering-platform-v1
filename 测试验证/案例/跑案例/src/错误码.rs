@@ -27,6 +27,9 @@
 use std::collections::BTreeMap;
 
 use v1_adapter::{适配器, 调度错误, 载入错误, 号段类宽度};
+// 契约串读法**全平台只有一份**（`运行内核/装载入口/src/读数.rs`，经 `v1_loader` 再导出）：
+// 本件不再自带扫描循环 —— 早先那份与适配器那份逐字同，现在两处都指向同一份。
+use v1_loader::读契约串;
 
 /// 一条错误码登记。**结构化的六项 + 一个暴露缺口的旁路项**。
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -217,31 +220,6 @@ pub fn 段位到层(段位: u32) -> &'static str {
         1..=8 => "扩展",
         _ => "接口面",
     }
-}
-
-/// 读一个契约串（静态只读 NUL 结尾）。与适配器读契约串同一口径、同一上限。
-///
-/// # Safety
-/// `指针` 要么为空，要么指向至少 `契约串上限` 字节可读的静态数据。
-unsafe fn 读契约串(指针: *const u8) -> String {
-    const 上限: usize = 4096;
-    if 指针.is_null() {
-        return String::new();
-    }
-    let mut 长度 = 0usize;
-    while 长度 < 上限 {
-        // SAFETY: 由调用方保证 指针..指针+上限 可读。
-        if unsafe { *指针.add(长度) } == 0 {
-            break;
-        }
-        长度 += 1;
-    }
-    if 长度 == 上限 {
-        return String::new();
-    }
-    // SAFETY: 已扫到 NUL，前 长 字节可读且不再变动（静态数据）。
-    let 字节 = unsafe { core::slice::from_raw_parts(指针, 长度) };
-    String::from_utf8_lossy(字节).into_owned()
 }
 
 #[cfg(test)]

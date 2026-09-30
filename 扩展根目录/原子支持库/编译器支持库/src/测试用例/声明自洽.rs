@@ -36,7 +36,7 @@ fn 声明自洽_表等长与参数行数与错误码登记() {
         // SAFETY: 命令名是静态只读 NUL 结尾串。
         assert_eq!(
             unsafe { 读串(命令.名称) },
-            json名.as_bytes(),
+            Some(json名.as_bytes()),
             "编号 {编号} 的名称漂了"
         );
 
@@ -44,7 +44,7 @@ fn 声明自洽_表等长与参数行数与错误码登记() {
         // SAFETY: 同上。
         assert_eq!(
             unsafe { 读串(命令.说明) },
-            json说明.as_bytes(),
+            Some(json说明.as_bytes()),
             "编号 {编号} 的说明漂了"
         );
 
@@ -75,7 +75,7 @@ fn 声明自洽_表等长与参数行数与错误码登记() {
             );
             let 参名 = 参数.取成员("名称").and_then(|待处理值| 待处理值.取字符串()).expect("参数名");
             // SAFETY: 参数名是静态只读 NUL 结尾串。
-            assert_eq!(unsafe { 读串(参数槽.名称) }, 参名.as_bytes());
+            assert_eq!(unsafe { 读串(参数槽.名称) }, Some(参名.as_bytes()));
         }
 
         // ③ 每个可抛错误码都在 错误码表/ 里登记过，且段位 == 码 // 1000。
@@ -123,7 +123,7 @@ fn 声明自洽_表等长与参数行数与错误码登记() {
         // SAFETY: 错误码名是静态只读 NUL 结尾串。
         assert_eq!(
             unsafe { 读串(一项.名称) },
-            json名.as_bytes(),
+            Some(json名.as_bytes()),
             "码 {} 的名称漂了",
             一项.码
         );
@@ -131,7 +131,7 @@ fn 声明自洽_表等长与参数行数与错误码登记() {
         // SAFETY: 同上。
         assert_eq!(
             unsafe { 读串(一项.说明) },
-            json说明.as_bytes(),
+            Some(json说明.as_bytes()),
             "码 {} 的说明漂了",
             一项.码
         );

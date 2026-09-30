@@ -96,6 +96,7 @@ pub use 关口主体::资源网关口;
 pub use 结果与摘要::{关口结果, 操作摘要, 资源摘要};
 
 // 测试按 `crate::关口::槽表指纹` 取它（原路径逐字不变）。
+// 实现已收口到内核节点 `v1_trace`（全平台只此一份）；这里只是把同一条路径再导出。
 // 只在测试档存在：生产档没有调用方，留着会触发 `unused_imports`（clippy `-D warnings`）。
 #[cfg(test)]
-pub(crate) use 零件::槽表指纹;
+pub(crate) use v1_trace::槽表指纹;
