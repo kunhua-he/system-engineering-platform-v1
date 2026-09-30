@@ -50,7 +50,7 @@ impl 收到 {
     }
 
     /// 取顶层的一个逻辑型键。
-    pub fn 取逻辑型值(&self, 键名: &str) -> bool {
+    pub fn 取逻辑值(&self, 键名: &str) -> bool {
         match self.取成员(键名) {
             协议值::逻辑真 => true,
             协议值::逻辑假 => false,
@@ -76,7 +76,7 @@ impl 收到 {
 }
 
 /// 取一个逻辑型成员。**不是逻辑型就挂**：形状不对当场暴露，不静默当 `false`。
-pub fn 逻辑型值(待处理值: &协议值, 键名: &str) -> bool {
+pub fn 取逻辑值(待处理值: &协议值, 键名: &str) -> bool {
     match 待处理值.取成员(键名) {
         Some(协议值::逻辑真) => true,
         Some(协议值::逻辑假) => false,
