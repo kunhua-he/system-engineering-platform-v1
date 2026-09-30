@@ -15,8 +15,8 @@
 #[derive(Debug, Clone, PartialEq)]
 pub enum 协议值 {
     空值,
-    逻辑真,
-    逻辑假,
+    真,
+    假,
     整数(i64),
     /// 超出 `i64::MAX` 但仍在 64 位无符号范围内的整数。
     ///

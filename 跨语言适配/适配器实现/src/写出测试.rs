@@ -35,8 +35,8 @@ fn 小写出_转义_引号反斜杠控制字符都转() {
 #[test]
 fn 小写出_形状与确定性() {
     assert_eq!(写协议值(&JSON值::空值), "null");
-    assert_eq!(写协议值(&JSON值::逻辑真), "true");
-    assert_eq!(写协议值(&JSON值::逻辑假), "false");
+    assert_eq!(写协议值(&JSON值::真), "true");
+    assert_eq!(写协议值(&JSON值::假), "false");
     assert_eq!(写协议值(&JSON值::整数(-7)), "-7");
     assert_eq!(写协议值(&JSON值::数组(Vec::new())), "[]");
     assert_eq!(写协议值(&JSON值::对象(Vec::new())), "{}");
@@ -44,7 +44,7 @@ fn 小写出_形状与确定性() {
     let 造对象 = || {
         JSON值::对象(vec![
             ("首项".to_owned(), JSON值::整数(1)),
-            ("次项".to_owned(), JSON值::数组(vec![JSON值::逻辑真])),
+            ("次项".to_owned(), JSON值::数组(vec![JSON值::真])),
         ])
     };
     assert_eq!(写协议值(&造对象()), 写协议值(&造对象()), "同一份数据两次序列化逐字节相同");
