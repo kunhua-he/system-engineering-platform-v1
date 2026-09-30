@@ -23,6 +23,8 @@ import tempfile
 import time
 from pathlib import Path
 
+from . import 世界
+
 考题相对路径 = "扩展根目录/原子支持库/编译器支持库/src/测试用例/长活原语考题.rs"
 缓存目录相对 = "构建环境/构建缓存/长活原语考题"
 内核扫描面相对 = "运行内核"
@@ -43,11 +45,9 @@ from pathlib import Path
 
 
 def 找仓根() -> Path:
-    """从本件往上找仓根（认 `契约声明/` 与 `扩展装载/` 同在的那一层）。"""
-    for 区间起点 in [Path.cwd(), *Path(__file__).resolve().parents]:
-        if (区间起点 / "契约声明").is_dir() and (区间起点 / "扩展装载").is_dir():
-            return 区间起点
-    return Path.cwd()
+    """仓根的**唯一实现**在 `世界.py`（2026-09-30 收口：本件原先自带一份「契约声明 且
+    扩展装载」的**硬写串**搜索）。本模块各口按 `Path` 收 ⇒ 只把它的 `str` 转成 `Path`。"""
+    return Path(世界.找仓根())
 
 
 def 考题路径(根目录: Path) -> Path:
