@@ -5,7 +5,12 @@
 """
 import os
 import re
+import sys
 import tempfile
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))  # 开发工具：取段形态主人
+from 代码地图.落点 import 排除目录  # noqa: E402
 
 行数上限 = 400
 入口行数上限 = 120
@@ -16,7 +21,9 @@ import tempfile
 # 开后门就是「同一件事两套口径」）。实测这一步不改变任何既有读数（前端现无一件超限），
 # 只堵住将来。
 源码后缀 = (".rs", ".py", ".js", ".css", ".html", ".sh", ".swift")
-跳过目录 = {".git", "构建环境", "__pycache__"}
+# 跳过目录 = **段形态主人**（`开发工具/代码地图/落点.py::排除目录`）± 本面增量：本面扫全仓源码，
+# 但**不排** `只读参考`（只收参考件，无源码后缀）与 `.codegraph`（只放索引库）⇒ 减掉；增量 = `__pycache__`。
+跳过目录 = set(排除目录) - {"只读参考", ".codegraph"} | {"__pycache__"}
 入口件名 = {"lib.rs", "main.rs", "mod.rs"}
 
 # Rust 语法的顶层项定义（含 `pub` / `pub(crate)` / `unsafe` / `extern "C"` 前缀）——

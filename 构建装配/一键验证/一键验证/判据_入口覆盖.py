@@ -42,7 +42,7 @@ import re
 from pathlib import Path
 
 from .小工具 import 判不了, 取相对路径, 违规
-from .常量 import 检查名
+from .常量 import 检查名, 排除目录
 from .命名扫描 import 剥后缀
 
 
@@ -67,10 +67,15 @@ from .命名扫描 import 剥后缀
 # `.sh`：非注释行里的 `trap ` / `自门禁` / `gate_report` / 自量起表 `START_EPOCH=`。
 外壳脚本带壳形 = re.compile(r"trap[ \t]|自门禁|gate_report|START_EPOCH=")
 
-# 走树时的排除：按**相对路径**排（不是按目录名 —— 免得误伤将来别处同名目录）。
+# 走树时的排除：按**相对路径**排（不是按目录名 —— 免得误伤将来别处同名目录）；顶层目录的
+# 相对路径**就是段名本身** ⇒ 基础集直接取**段形态主人**（`常量.排除目录` ← `开发工具/代码地图/落点.py`）。
+# ★ 本判据**故意要含 `构建环境/`**（`构建环境/{进入,自检}.sh` 是 §六 点名的边界实例，必须进覆盖面）
+#   ⇒ 从基础集**减去** `构建环境`，再按相对路径补回它下面真正要跳的缓存 / 工具链目录；
+#   `只读参考` 走基础集；`.codegraph` 不在本面（无 `.py` / `.sh`）⇒ 也减掉（集合与改前逐项相等）。
 走树排除路径 = (
-    ".git", "__pycache__", "node_modules", "target",
-    "只读参考", "构建环境/构建缓存", "构建环境/cargo", "构建环境/python",
+    tuple(目录名 for 目录名 in 排除目录 if 目录名 not in ("构建环境", ".codegraph"))
+    + ("__pycache__", "node_modules", "target",
+       "构建环境/构建缓存", "构建环境/cargo", "构建环境/python")
 )
 
 
