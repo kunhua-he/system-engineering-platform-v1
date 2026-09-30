@@ -6,11 +6,15 @@
 
 from __future__ import annotations
 
+import json as _json
 from pathlib import Path
 
 from .冻结形状 import 形状指纹
-from .合成仓_准入 import 准入夹具
 
+
+def 转JSON文本(对象):
+    """JSON 文本（`ensure_ascii=False` · 两空格缩进 · 末尾换行）——合成仓夹具的写盘口径。"""
+    return _json.dumps(对象, ensure_ascii=False, indent=2) + "\n"
 
 
 # ════════════════════════════════════════════════════════════════════════════
@@ -20,11 +24,6 @@ from .合成仓_准入 import 准入夹具
 
 def 干净合成仓() -> dict:
     """返回 {相对路径: 内容}。**不依赖仓库现状**——所以它是一份可重复的正向样本。"""
-    import json as _json
-
-    def 转JSON文本(对象):
-        return _json.dumps(对象, ensure_ascii=False, indent=2) + "\n"
-
     类型声明 = {
         "类型标签": 0, "名称": "空", "说明": "无返回值 / 无值", "状态位": 0,
         "元素表": [], "属性表": [], "事件表": [], "命令号表": [],
@@ -363,6 +362,9 @@ def 干净合成仓() -> dict:
         ".git/refs/heads/占位": "",
     }
     # ㉗–㊱（外部支持库准入判据）的夹具从 合成仓_准入.py 并入（拆件控行数）。
+    # ★ 就地 import：`合成仓_准入` 反过来要 `from .合成仓 import 转JSON文本` ⇒ 模块级会成环。
+    from .合成仓_准入 import 准入夹具
+
     节点件.update(准入夹具())
     return 节点件
 

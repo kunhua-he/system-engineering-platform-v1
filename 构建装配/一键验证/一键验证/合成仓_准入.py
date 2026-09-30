@@ -3,14 +3,11 @@
 
 from __future__ import annotations
 
+from .合成仓 import 转JSON文本
+
 
 def 准入夹具() -> dict:
     """返回 {相对路径: 内容}：准入 10 条在干净合成仓上必须全过。"""
-    import json as _json
-
-    def 转JSON文本(对象):
-        return _json.dumps(对象, ensure_ascii=False, indent=2) + "\n"
-
     return {
         # ④ 广播段：判定.rs 调广播段并 continue；载入判定.json 写明广播段。
         "运行内核/装载入口/src/判定.rs": (
