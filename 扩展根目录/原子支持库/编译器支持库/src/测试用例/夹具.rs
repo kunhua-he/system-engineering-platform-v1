@@ -76,18 +76,29 @@ pub(crate) unsafe fn 释放返回字节(数据槽: &数据槽) {
     }
 }
 
-/// 读一个静态 NUL 结尾串（不含 NUL）。
+/// 读一个静态 NUL 结尾串（不含 NUL）。扫到上限仍无 NUL ⇒ `None`（**不 panic、不越界长扫**）。
+///
+/// 口径与 `运行内核/装载入口/src/读数.rs::读串` **同一份**（上限 `契约串上限` = 4096、
+/// 空指针 / 越界给 `None`）。本 crate 是扩展，只依赖底座公布的契约、不依赖底座内部节点
+/// （`Cargo.toml`）⇒ 同名同口径地本地留一份，**不另立无上限的弱口径**。
 ///
 /// # Safety
-/// 指针必须指向静态只读的 NUL 结尾串。
-pub(crate) unsafe fn 读串(指针: *const u8) -> &'static [u8] {
+/// 指针要么为空，要么指向至少 `契约串上限` 字节可读的静态数据。
+pub(crate) unsafe fn 读串(指针: *const u8) -> Option<&'static [u8]> {
+    const 契约串上限: usize = 4096;
+    if 指针.is_null() {
+        return None;
+    }
     let mut 长度 = 0usize;
-    // SAFETY: 由调用方保证 NUL 结尾。
-    while unsafe { *指针.add(长度) } != 0 {
+    while 长度 < 契约串上限 {
+        // SAFETY: 由调用方保证 指针..指针+契约串上限 可读。
+        if unsafe { *指针.add(长度) } == 0 {
+            // SAFETY: 已扫到 NUL，前 长 字节可读且不再变动（静态数据）。
+            return Some(unsafe { core::slice::from_raw_parts(指针, 长度) });
+        }
         长度 += 1;
     }
-    // SAFETY: 前 长 字节可读且是静态数据。
-    unsafe { core::slice::from_raw_parts(指针, 长度) }
+    None
 }
 
 /// 取声明的错误段位表切片。
