@@ -24,6 +24,8 @@
 //! 三张表的号**不是** `.e` 声明记录区里那些 4 字节令牌的号 —— 令牌的字段语义是**不判项**
 //! （该文 §七 第 1 条），本件一个字节都不替它编。这里定的只是**本库过边界用的**编码。
 
+use crate::顺序读器::顺序读器;
+
 /// 一张「名字 → 号」的表。项数 ≤ `u32`，号 ≤ `u16`（见 `形状.rs` 的号宽口径）。
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct 名号表 {
@@ -94,31 +96,5 @@ impl 名号表 {
             return None;
         }
         Some(Self { 项: 一项 })
-    }
-}
-
-/// 顺序读器：每个 `取字节` 都查边界，越界给 `None`（不 panic）。
-struct 顺序读器<'a> {
-    字节: &'a [u8],
-    位: usize,
-}
-
-impl<'a> 顺序读器<'a> {
-    fn 取字节(&mut self, 个数: usize) -> Option<&'a [u8]> {
-        let 尾部 = self.位.checked_add(个数)?;
-        if 尾部 > self.字节.len() {
-            return None;
-        }
-        let 片段 = &self.字节[self.位..尾部];
-        self.位 = 尾部;
-        Some(片段)
-    }
-
-    fn 读双字节(&mut self) -> Option<u16> {
-        Some(u16::from_le_bytes(self.取字节(2)?.try_into().ok()?))
-    }
-
-    fn 读四字节(&mut self) -> Option<u32> {
-        Some(u32::from_le_bytes(self.取字节(4)?.try_into().ok()?))
     }
 }

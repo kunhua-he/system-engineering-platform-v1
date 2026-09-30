@@ -24,6 +24,7 @@
 //! 若收口方要把本编码冻成盘面形状，照 `原生路边界编码` 的先例补一条旁路即可。
 
 use super::形状::{接口说明, 接口参数项, 接口错误项};
+use crate::顺序读器::顺序读器;
 
 /// 六字段的**字段序**（照接口面返回体，`接口面形状.md` §三）。
 ///
@@ -139,67 +140,4 @@ fn 读错误项(读器: &mut 顺序读器) -> Option<接口错误项> {
         需人工: 读器.逻辑型值()?,
         已登记: 读器.逻辑型值()?,
     })
-}
-
-/// 顺序读器：每个 `取字节` 都查边界，越界给 `None`（不 panic）。同 `注册表定义.rs` 的形状。
-struct 顺序读器<'a> {
-    字节: &'a [u8],
-    位: usize,
-}
-
-impl<'a> 顺序读器<'a> {
-    fn 取剩余长度(&self) -> usize {
-        self.字节.len().saturating_sub(self.位)
-    }
-
-    fn 取字节(&mut self, 个数: usize) -> Option<&'a [u8]> {
-        let 尾部 = self.位.checked_add(个数)?;
-        if 尾部 > self.字节.len() {
-            return None;
-        }
-        let 片段 = &self.字节[self.位..尾部];
-        self.位 = 尾部;
-        Some(片段)
-    }
-
-    fn 读双字节(&mut self) -> Option<u16> {
-        Some(u16::from_le_bytes(self.取字节(2)?.try_into().ok()?))
-    }
-
-    fn 读四字节(&mut self) -> Option<u32> {
-        Some(u32::from_le_bytes(self.取字节(4)?.try_into().ok()?))
-    }
-
-    fn 读八字节(&mut self) -> Option<u64> {
-        Some(u64::from_le_bytes(self.取字节(8)?.try_into().ok()?))
-    }
-
-    fn 文本(&mut self) -> Option<String> {
-        let 长度 = self.读四字节()? as usize;
-        let 片段 = self.取字节(长度)?;
-        Some(core::str::from_utf8(片段).ok()?.to_owned())
-    }
-
-    fn 逻辑型值(&mut self) -> Option<bool> {
-        Some(match self.取字节(1)?[0] {
-            0 => false,
-            1 => true,
-            _ => return None,
-        })
-    }
-
-    fn 读数据槽(&mut self) -> Option<v1_contract::数据槽> {
-        let 类型标签 = self.读四字节()?;
-        let 标志 = self.读双字节()?;
-        let 保留 = self.读双字节()?;
-        let 长度 = self.读八字节()?;
-        let 待处理值 = self.读八字节()?;
-        Some(v1_contract::数据槽 {
-            类型标签: v1_contract::类型标签::新建(类型标签),
-            标志,
-            保留,
-            长度,
-            值: 待处理值,
-        })
-    }
 }
