@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import re
 
-from ..小工具 import 是整数, 违规
+from ..小工具 import 判不了, 是整数, 违规
 from ..冻结形状 import 算落点指纹
 from ..常量 import 契约目录名, 检查名
 
@@ -264,15 +264,34 @@ def 检查9_冻结登记(上层读数: dict) -> list:
             for _族, 号表 in 已占用.items():
                 if isinstance(号表, list):
                     占号.update(int(号值) for 号值 in 号表 if isinstance(号值, int))
-        # 容器形状的**声明值集**：从 `容器/形状.rs::段类型` 枚举的判别式里读。
-        # 读实现而不是读另一份清单 —— 清单就是第二个事实源。
-        形状路径 = "扩展根目录/原子支持库/编译器支持库/src/容器/形状.rs"
-        形状文本 = (上层读数["文件"].get(形状路径, {}) or {}).get("文本") or ""
+        # 容器形状的**声明值集**：扫扩展目录下**含 `pub enum 段类型` 的那一件**（按符号找，
+        # 不写死文件名 —— 写死文件名，搬家/改名就让这一问**静默消失**，审计 N3 实测过）。
+        # ★ 2026-09-30 收紧（判据假绿审计 N3）：取不到就报**未判**（不是静默降级成两问）。
+        形状路径 = ""
+        形状文本 = ""
+        for 键名, 条目 in sorted(上层读数["文件"].items()):
+            if not (键名.startswith("扩展根目录/原子支持库/编译器支持库/src/") and 键名.endswith(".rs")):
+                continue
+            文本 = 条目.get("文本") or ""
+            if re.search(r"pub enum\s+段类型\s*\{", 文本):
+                形状路径, 形状文本 = 键名, 文本
+                break
         可表示 = set()
         if 形状文本:
-            数据块 = re.search(r"pub enum 段类型\s*\{(.*?)\n\}", 形状文本, re.S)
+            数据块 = re.search(r"pub enum\s+段类型\s*\{(.*?)\n\}", 形状文本, re.S)
             if 数据块:
-                可表示 = {int(数字) for 数字 in re.findall(r"=\s*(\d+)\s*,", 数据块.group(1))}
+                # 显式判别式与**隐式递增**两读（`用户信息 = 1` 与 `系统信息,` 都要认 ——
+                # 只认显式会在隐式枚举上变假红工厂）。
+                数字 = -1
+                for 源码行 in 数据块.group(1).split("\n"):
+                    源码行 = 源码行.split("//")[0].strip()
+                    命中 = re.match(
+                        r"([A-Za-z_\u4e00-\u9fff][0-9A-Za-z_\u4e00-\u9fff]*)\s*(?:=\s*(\d+))?\s*,",
+                        源码行)
+                    if not 命中:
+                        continue
+                    数字 = int(命中.group(2)) if 命中.group(2) is not None else 数字 + 1
+                    可表示.add(数字)
         if not isinstance(新增, dict) or not 新增:
             输出缓冲.append(
                 违规(
@@ -283,6 +302,18 @@ def 检查9_冻结登记(上层读数: dict) -> list:
                 )
             )
         else:
+            if not 可表示:
+                判不了(
+                    检查名[8],
+                    f"{位置}:段类型号登记",
+                    f"判不了：容器形状的 `段类型` 枚举取不到（在 "
+                    f"`扩展根目录/原子支持库/编译器支持库/src` 下扫含 `pub enum 段类型` 的 `.rs` "
+                    f"⇒ 命中 {形状路径 or '0 件'} · 判别式 {len(可表示)} 个）",
+                    "这一问读的是**实现**（`pub enum 段类型` 的判别式），不读另一份清单 —— "
+                    "实现搬了家或改了名，它就**静默消失**（登记写一个盘面上表示不了的号也报绿）。"
+                    "修法：把容器形状件放回 `扩展根目录/原子支持库/编译器支持库/src/` 下"
+                    "（或把本判据的扫描前缀指到新落点）⇒ 只能由该扩展的作者改",
+                )
             for 段名, 号值 in 新增.items():
                 条位置 = f"{位置}:段类型号登记:新增:{段名}"
                 if not isinstance(号值, int) or isinstance(号值, bool):
