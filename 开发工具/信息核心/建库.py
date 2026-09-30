@@ -23,7 +23,7 @@ from pathlib import Path
 sys.path.insert(0, str(仓根))
 sys.path.insert(0, str(仓根 / "开发工具"))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-
+from 代码地图.落点 import 库目录名, 库文件名  # noqa: E402
 import 表定义  # noqa: E402
 
 # 两张「一次扫描 → 多张表」的中间结果缓存：一对入口共用一次解析。
@@ -204,7 +204,7 @@ def 装未完成(根目录: Path) -> list:
 
 
 def 装代码名(根目录: Path) -> list:
-    索引 = 根目录 / ".codegraph" / "codegraph.db"
+    索引 = 根目录 / 库目录名 / 库文件名
     if not 索引.is_file():
         return []
     索引库 = sqlite3.connect(索引)
@@ -236,7 +236,7 @@ def _拓扑表(根目录: Path) -> tuple:
     """代码地图索引 → `(节点行, 连接行)`。缓存住，两张表共用一次读。"""
     if 根目录 in _拓扑缓存:
         return _拓扑缓存[根目录]
-    索引 = 根目录 / ".codegraph" / "codegraph.db"
+    索引 = 根目录 / 库目录名 / 库文件名
     if not 索引.is_file():
         _拓扑缓存[根目录] = ([], [])
         return _拓扑缓存[根目录]
