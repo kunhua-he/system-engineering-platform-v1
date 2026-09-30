@@ -84,7 +84,7 @@ def 入口函数(参数):
         网址 = f"http://127.0.0.1:{端口}/"
         try:
             with sync_playwright() as 驱动器:
-                浏览器 = 剧.chromium.launch()
+                浏览器 = 驱动器.chromium.launch()
                 try:
                     页面 = 浏览器.new_page(viewport={"width": 宽度, "height": 高度})
                     页面.goto(网址, wait_until="load", timeout=5000)
