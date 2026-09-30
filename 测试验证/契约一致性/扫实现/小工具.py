@@ -1,25 +1,19 @@
 # -*- coding: utf-8 -*-
-"""小工具 —— 括号配对 · 顶层拆分 · 行号与相对路径（纯函数）。"""
+"""小工具 —— 括号配对 · 顶层拆分 · 行号与相对路径（纯函数）。
+
+`是整数` 与 `取相对路径` 的主人在 `构建装配/一键验证/一键验证/小工具.py` —— 本件只**转出**它，
+不另留第二份实现（`测试验证 → 构建装配` 是既有合法 import 方向：`扫实现.py` 已
+`from 构建装配.门禁 import 自门禁`）。
+"""
 from __future__ import annotations
 
 from pathlib import Path
 
-def 是整数(待处理值) -> bool:
-    """真整数（bool 不算——它是 int 的子类，会把 True 当 1 蒙过去）。"""
-    return isinstance(待处理值, int) and not isinstance(待处理值, bool)
+from 构建装配.一键验证.一键验证.小工具 import 取相对路径, 是整数
 
 
 def 行号(文本: str, 位置: int) -> int:
     return 文本.count("\n", 0, 位置) + 1
-
-
-def 相对(仓根, 路径) -> str:
-    路径 = Path(路径)
-    仓根 = Path(仓根)
-    try:
-        return 路径.relative_to(仓根).as_posix()
-    except ValueError:
-        return 路径.as_posix()
 
 
 对括号 = {"{": "}", "(": ")", "[": "]"}

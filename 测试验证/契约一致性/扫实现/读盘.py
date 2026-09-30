@@ -7,7 +7,7 @@ import os
 from pathlib import Path
 
 from .常量 import 读上限字节, 契约目录名, 常量表相对, 判据名表, 处数基线相对
-from .小工具 import 相对
+from .小工具 import 取相对路径
 from .掩码 import 掩码
 from .夹具判定 import 建夹具集
 from .符号解析 import 建符号表
@@ -25,7 +25,7 @@ def 读盘(仓根: str, 范围: list) -> dict:
     坏件表 = []
 
     def 收文件(路径: Path):
-        键名 = 相对(仓根路径, 路径)
+        键名 = 取相对路径(仓根路径, 路径)
         try:
             if 路径.stat().st_size > 读上限字节:
                 坏件表.append((键名, f"超过读上限 {读上限字节} 字节（不截断——截断会让解析腿拿到半个文件）"))

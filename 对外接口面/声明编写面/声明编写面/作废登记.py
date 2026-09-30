@@ -24,10 +24,6 @@ from pathlib import Path
 号空间值域 = ("能力", "类型", "通知", "错误码", "资源")
 
 
-def _是整数(待处理值) -> bool:
-    return isinstance(待处理值, int) and not isinstance(待处理值, bool)
-
-
 def 读作废号表(声明根):
     """→ (表对象, 现有条目表, 错说明)。读不动 ⇒ fail-closed（不覆写一份读不懂的档案）。"""
     路径 = Path(声明根) / "作废号表.json"
