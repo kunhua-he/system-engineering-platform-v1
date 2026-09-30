@@ -12,6 +12,8 @@ mod 协议值;
 mod 协议写出;
 #[path = "协议解析.rs"]
 mod 协议解析;
+#[path = "线上逻辑值.rs"]
+mod 线上逻辑值;
 #[path = "分发.rs"]
 mod 分发;
 #[path = "响应.rs"]
