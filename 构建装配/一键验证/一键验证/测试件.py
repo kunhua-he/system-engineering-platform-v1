@@ -13,22 +13,33 @@ from .构造点 import _条件编译属性, _夹具挂载形, _属性窗口起
 
 
 def 建测试文件集(文件: dict) -> set:
-    """整文件都是测试的 .rs（父模块用 `#[cfg(test)] … mod X;` 把它挂进来）。
+    """整文件都是测试的 .rs —— 口径：**路径在测试面即算**。
+
+    判法：某份 .rs 被一条 `#[cfg(test)]`（可含别的 cfg 条件）属性引出的 `mod` 项挂进来
+    ⇒ 它整份是夹具。**内联 `mod 名 { … }` 不排除**：它照样是一条 cfg(test) 引出的 mod 项，
+    目标解析后落在仓里就算夹具——实测 `对外接口面/调用接口面/tests/整条HTTP.rs` 自带内联
+    `#[cfg(test)] mod 整条HTTP {`（模块名与文件同名 ⇒ 自挂），它在 `tests/` 下本就是 cargo
+    的集成测试目标，必须算（此前本件跳内联 ⇒ 漏判）。
+
+    ★ 同一事实只有一份实现（本件）；闸 2 侧 `测试验证/契约一致性/扫实现/夹具判定.py::建夹具集`
+      的「整份夹具」直接 import 本函数（闸2→闸1 是既有合法方向），那边不再另算一份。
 
     为什么要它：夹具常被拆成单独文件（`#[cfg(test)] #[path = "测试夹具.rs"] mod 测试夹具;`），
     文件**自身**没有 `#[cfg(test)]` 属性 ⇒ 只看文件内会把它当生产代码（实测撞到过）。
 
-    口径（与 `测试验证/契约一致性/扫实现.py` 的 `建夹具集` 同）：
+    口径细节（真仓实测）：
       · 父文件可以是**任意一个 .rs**——实测撞到过 `装载测试.rs` 由同目录兄弟 `装载.rs`
         挂进来，不是 lib.rs/mod.rs/main.rs 挂的；
       · `#[path = "…"]` 与 `mod 名;` 都**相对父文件所在目录**解析 ⇒ 目标可以在子目录里、
         名字也可以与 mod 名不同——实测撞到过 `容器.rs` 用 `#[path = "容器/测试.rs"] mod 测试;`
         把 `容器/测试.rs` 挂进来（只按「同目录 + 同名」找会把这一份当生产代码 ⇒ 假红）；
       · `#[path]` 写在 `#[cfg(test)]` 之前也合法；cfg 条件里可以嵌括号
-        （`#[cfg(any(test, feature = "x"))]`）——两种形状都要认。
+        （`#[cfg(any(test, feature = "x"))]`）——两种形状都要认；
+      · **父文件本身是夹具的，它的 mod 声明不算数**（两趟不动点）：夹具文件内部的
+        `#[cfg(test)] mod …;` 是测试内部的事，不该把第三份文件也拖进集合；
+      · `mod lib;` / `mod mod;` / `mod main;` 不是 Rust 能编的形状 ⇒ 包根不算夹具。
     """
-    输出缓冲 = set()
-    # 一遍预扫：把每份 .rs 的挂载声明解析成「相对父文件目录的目标路径」。
+    # 一遍预扫：把每份 .rs 的挂载声明解析成「(父角色, 父目录, 相对父文件目录的目标路径)」。
     # 注意 `#[path = "…"]` 的值写在字符串里 ⇒ 去字面量会把它抹成空白，必须回**原文**取引号内内容。
     挂载 = []
     for 父键, 一项 in 文件.items():
@@ -44,12 +55,12 @@ def 建测试文件集(文件: dict) -> set:
             属性文本, 属止 = 属性
             if not re.search(r"\btest\b", 属性文本):
                 continue
-            # 项头：从 cfg 属性之后扫到第一个 `{` 或 `;`
+            # 项头：从 cfg 属性之后扫到第一个 `{` 或 `;`（`{` 是内联块，照样算一条挂载声明）
             区间终点 = 属止
             while 区间终点 < len(净文本) and 净文本[区间终点] not in "{;":
                 区间终点 += 1
-            if 区间终点 >= len(净文本) or 净文本[区间终点] != ";":
-                continue  # 内联 `mod 名 { … }`：同一个文件里的测试块，不是外部夹具文件
+            if 区间终点 >= len(净文本):
+                continue
             名配 = re.search(r"\bmod\s+([^\s;{]+)", 净文本[属止:区间终点])
             if not 名配:
                 continue
@@ -65,21 +76,29 @@ def 建测试文件集(文件: dict) -> set:
                         break
             if 路径 is None:
                 路径 = 名配.group(1) + ".rs"
-            挂载.append((父目录, 路径))
-    for 父目录, 路径 in 挂载:
-        候选 = f"{父目录}/{路径}" if 父目录 else 路径
-        候选 = os.path.normpath(候选).replace("\\", "/")
-        目标 = None
-        if 候选 in 文件:
-            目标 = 候选
-        elif 候选.endswith(".rs") and (候选[:-3] + "/mod.rs") in 文件:
-            目标 = 候选[:-3] + "/mod.rs"
-        if 目标 is None or not 目标.endswith(".rs"):
-            continue
-        if 目标.rsplit("/", 1)[-1][:-3] in ("lib", "mod", "main"):
-            continue  # 包根不是夹具（`mod lib;` 不是 Rust 能编的形状）
-        输出缓冲.add(目标)
-    return 输出缓冲
+            挂载.append((父键, 父目录, 路径))
+    整份 = set()
+    # 两趟不动点：先按「父文件不是夹具文件」收集；父文件本身是夹具的，它的 mod 声明不算数。
+    for _ in range(2):
+        新内容 = set()
+        for 父角色, 父目录, 路径 in 挂载:
+            if 父角色 in 整份:
+                continue
+            备选路径 = f"{父目录}/{路径}" if 父目录 else 路径
+            备选路径 = os.path.normpath(备选路径).replace("\\", "/")
+            待定 = [备选路径]
+            if 备选路径 not in 文件 and 备选路径.endswith(".rs"):
+                待定.append(备选路径[:-3] + "/mod.rs")
+            for 备2 in 待定:
+                if 备2 not in 文件 or not 备2.endswith(".rs"):
+                    continue
+                if 备2.rsplit("/", 1)[-1][:-3] in ("lib", "mod", "main"):
+                    continue  # 包根不是夹具（`mod lib;` 不是 Rust 能编的形状）
+                新内容.add(备2)
+        if not 新内容 - 整份:
+            break
+        整份 |= 新内容
+    return 整份
 
 
 def 生产区文本(文本: str, 保串: bool = False) -> str:
