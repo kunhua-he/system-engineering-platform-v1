@@ -1,5 +1,4 @@
 use super::*;
-use std::path::{Path, PathBuf};
 
 /// 语料根目录。不存在时往返测试跳过（不失败）。
 pub(crate) const 语料根目录: &str = "/tmp/易语言源码";
@@ -8,43 +7,6 @@ pub(crate) const 语料根目录: &str = "/tmp/易语言源码";
 // 故这里直接写出实测得到的 GBK 字节（与容器层测试同一串）。
 pub(crate) const GBK系统核心支持库: &[u8] =
     &[0xCF, 0xB5, 0xCD, 0xB3, 0xBA, 0xCB, 0xD0, 0xC4, 0xD6, 0xA7, 0xB3, 0xD6, 0xBF, 0xE2];
-
-pub(crate) fn 首个不一致(原文: &[u8], 产物: &[u8]) -> u64 {
-    let 上限 = 原文.len().min(产物.len());
-    for 位置 in 0..上限 {
-        if 原文[位置] != 产物[位置] {
-            return 位置 as u64;
-        }
-    }
-    上限 as u64
-}
-
-/// 大小写不敏感地认 `.e` / `.ec`。
-pub(crate) fn 是语料文件(路径: &Path) -> bool {
-    match 路径.extension().and_then(|扩展| 扩展.to_str()) {
-        Some(扩展) => {
-            let 小写 = 扩展.to_ascii_lowercase();
-            小写 == "e" || 小写 == "ec"
-        }
-        None => false,
-    }
-}
-
-/// 递归收集语料。用 `file_type()` 不追符号链接，避免环。
-pub(crate) fn 收集语料(根目录: &Path, 输出缓冲: &mut Vec<PathBuf>) {
-    let Ok(项集) = std::fs::read_dir(根目录) else {
-        return;
-    };
-    for 一项 in 项集.flatten() {
-        let Ok(类型) = 一项.file_type() else { continue };
-        let 路径 = 一项.path();
-        if 类型.is_dir() {
-            收集语料(&路径, 输出缓冲);
-        } else if 类型.is_file() && 是语料文件(&路径) {
-            输出缓冲.push(路径);
-        }
-    }
-}
 
 /// 造一条合法记录流：1 条支持库引用（5 段）+ 4 字节其余载荷。
 pub(crate) fn 样例流() -> 记录流 {

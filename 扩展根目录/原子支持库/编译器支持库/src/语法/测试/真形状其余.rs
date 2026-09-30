@@ -5,6 +5,7 @@
 
 use super::夹具::*;
 use super::真形状::{建过, 贴快照};
+use crate::测试夹具::区间;
 use crate::语言面::{节点种类, 记号种类};
 use crate::语法::建树;
 
