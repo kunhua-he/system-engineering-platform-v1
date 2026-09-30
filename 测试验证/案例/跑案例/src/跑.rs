@@ -53,7 +53,7 @@ pub fn 入口() -> i32 {
         .ancestors()
         .nth(2)
         .map_or_else(|| 案例根.clone(), Path::to_path_buf);
-    let 回执路 = 案例根.join(回执件::回执文件名);
+    let 回执路 = 案例根.join(回执件::案例回执件);
     match 跑案例(&仓根, &案例根, &回执路) {
         Ok(汇总值) => {
             println!(
