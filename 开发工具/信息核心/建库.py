@@ -23,7 +23,7 @@ from pathlib import Path
 sys.path.insert(0, str(仓根))
 sys.path.insert(0, str(仓根 / "开发工具"))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from 代码地图.落点 import 库目录名, 库文件名  # noqa: E402
+from 代码地图.落点 import 库目录名, 库文件名, 排除目录  # noqa: E402
 import 表定义  # noqa: E402
 
 # 两张「一次扫描 → 多张表」的中间结果缓存：一对入口共用一次解析。
@@ -47,7 +47,7 @@ def 读文本(路径: Path) -> str:
 
 
 def 扫md(根目录: Path) -> list:
-    跳过 = {"构建环境", "只读参考", ".git", ".codegraph", "__pycache__", "node_modules", "target"}
+    跳过 = set(排除目录) | {"__pycache__", "node_modules", "target"}  # 段形态主人（落点.排除目录）+ 本面增量
     结果 = []
     for 路径 in 根目录.rglob("*.md"):
         if any(路径段 in 跳过 for 路径段 in 路径.relative_to(根目录).parts):
