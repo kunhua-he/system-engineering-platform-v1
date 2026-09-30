@@ -14,6 +14,7 @@
 //! 从 `src/lib.rs` 搬来（那是路由：声明子模块 · 再导出公开面 · 零实现）；函数体一字不改。
 
 use crate::容器::{容器段, 段头, 容器};
+use crate::顺序读器::顺序读器;
 
 /// 结构 → 字节集。
 pub fn 编码容器(容器: &容器) -> Vec<u8> {
@@ -55,34 +56,4 @@ pub fn 解码容器(字节: &[u8]) -> Option<容器> {
         return None;
     }
     Some(容器 { 段表 })
-}
-
-/// 顺序读器：每个 `取字节` 都查边界，越界给 `None`。
-struct 顺序读器<'a> {
-    字节: &'a [u8],
-    位: usize,
-}
-
-impl<'a> 顺序读器<'a> {
-    fn 取字节(&mut self, 个数: usize) -> Option<&'a [u8]> {
-        let 尾部 = self.位.checked_add(个数)?;
-        if 尾部 > self.字节.len() {
-            return None;
-        }
-        let 片段 = &self.字节[self.位..尾部];
-        self.位 = 尾部;
-        Some(片段)
-    }
-
-    fn 读单字节(&mut self) -> Option<u8> {
-        self.取字节(1).map(|片段| 片段[0])
-    }
-
-    fn 读四字节(&mut self) -> Option<u32> {
-        Some(u32::from_le_bytes(self.取字节(4)?.try_into().ok()?))
-    }
-
-    fn 读八字节(&mut self) -> Option<u64> {
-        Some(u64::from_le_bytes(self.取字节(8)?.try_into().ok()?))
-    }
 }
