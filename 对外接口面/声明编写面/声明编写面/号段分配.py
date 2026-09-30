@@ -11,6 +11,8 @@
 import json
 from pathlib import Path
 
+from .请求形状 import _是整数
+
 声明文件名 = ("平台声明.json", "包声明.json")
 
 _类别到占用键 = {"能力": "能力号段", "通知号": "通知号段"}
@@ -38,10 +40,6 @@ def 读JSON件(路径):
         return json.loads(Path(路径).read_text(encoding="utf-8"))
     except (OSError, ValueError):
         return None
-
-
-def _是整数(待处理值) -> bool:
-    return isinstance(待处理值, int) and not isinstance(待处理值, bool)
 
 
 def 声明文件(声明根):
