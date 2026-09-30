@@ -19,7 +19,7 @@
 
 from pathlib import Path
 
-from 代码地图 import 查符号, 出现位置, 库路径
+from 代码地图 import 查符号, 出现位置, 库目录名, 库文件名, 库路径
 from 代码地图.索引库 import 找索引器命令
 
 from . import 开工账本 as 账本
@@ -43,8 +43,8 @@ def _查询根(开工号: str, 仓根) -> tuple:
         return Path(仓根), 库路径(), "", "没有这条开工：%s ⇒ 先 `v1_task` 功能 = 1 登记" % 开工号
     根目录 = Path(一条["工作树"])
     if not 根目录.is_dir():
-        return 根目录, 根目录 / ".codegraph" / "codegraph.db", "", "那条开工的工作树不在了：%s" % 根目录
-    return 根目录, 根目录 / ".codegraph" / "codegraph.db", "%s（支线 %s）" % (开工号, 一条["分支名"]), ""
+        return 根目录, 根目录 / 库目录名 / 库文件名, "", "那条开工的工作树不在了：%s" % 根目录
+    return 根目录, 根目录 / 库目录名 / 库文件名, "%s（支线 %s）" % (开工号, 一条["分支名"]), ""
 
 
 def _源码块(根目录: Path, 路径: str, 起始行: int, 末行: int, 上限行: int = 源码上限行) -> str:
