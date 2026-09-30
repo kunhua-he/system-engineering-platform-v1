@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""常量与三件共用读法 —— 落点 · 端口 · 超时 · 打印 · 写回执 · 端口监听。
+"""常量与三件共用读法 —— 落点 · 端口 · 超时 · 打印 · 打点 · 写回执 · 端口监听。
 
 拆自 `起演示.py`（入口 ≤120 行且零实现，开发规范 §六）。本件是**叶子**：不 import 兄弟件
 （五秒硬顶的阈值与反向样本注入从共享 `构建装配/门禁/` 取，见下）。
@@ -9,6 +9,7 @@ import json
 import os
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 仓根 = Path(__file__).resolve().parents[2]
@@ -70,6 +71,16 @@ from 构建装配.门禁 import 硬顶毫秒, 注入人为慢  # noqa: E402
 
 def 打印(文本: str) -> None:
     print(文本, flush=True)
+
+
+def 打点(阶段: dict, 打点起: list, 名称: str) -> None:
+    """演示阶段打点：把「距上次打点」的秒数记进 `阶段[名称]`，并推进起表。
+
+    `打点起` 是**单元素表**（闭包外的可变格子）—— `网关与调用.py` 与
+    `热载入与调用.py` 共用这一份，不各写一遍。
+    """
+    阶段[名称] = round(time.time() - 打点起[0], 2)
+    打点起[0] = time.time()
 
 
 def 端口监听读数(端口: int) -> list:
