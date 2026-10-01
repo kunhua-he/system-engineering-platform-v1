@@ -38,3 +38,20 @@ def 注入_边界里出现状态(临根: Path) -> str:
         encoding="utf-8",
     )
     return "跨语言适配/适配器实现/src/lib.rs"
+
+
+def 注入_层间边括号可见性(临根: Path) -> str:
+    """判据 ⑪-5 的反向样本：`pub(crate) use` 造成的**反向依赖**也必须进边表 ⇒ 当场红。
+
+    审计（`2026-09-30_判据假绿审计落点.md` N6）：原正则只认行首 `use` / `pub use`，
+    `pub(crate) use` / `pub(super) use` 整类漏判（实测全仓 11 处）。修完必须补反向样本
+    （`判据元数据.py` 那条纪律：**给已有判据扩面必须同时补反向样本** —— 没有它，
+    「面扩了却没人证它真走到了」）。
+    `v1_gateway` 属 `对外接口面`（层序 3），本件在 `跨语言适配`（2）⇒ 目标序 > 源序 = 反向依赖。
+    """
+    路径 = 临根 / "跨语言适配" / "适配器实现" / "src" / "lib.rs"
+    路径.write_text(
+        路径.read_text(encoding="utf-8") + "\npub(crate) use v1_gateway::起;\n",
+        encoding="utf-8",
+    )
+    return "跨语言适配/适配器实现/src/lib.rs"

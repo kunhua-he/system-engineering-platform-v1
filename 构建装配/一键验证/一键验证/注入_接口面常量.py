@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from .常量 import 命令行件
+from .常量 import 命令行件, 接口面件
 
 
 def 注入_接口面常量不一致(临根: Path) -> str:
@@ -22,3 +22,18 @@ def 注入_接口面常量不一致(临根: Path) -> str:
     assert 改后 != 文本, "样本前置条件不成立：夹具前端件里没有 `路径_调用 = \"/接口/调用\"`"
     路径.write_text(改后, encoding="utf-8")
     return 命令行件
+
+
+def 注入_案例布局不一致(临根: Path) -> str:
+    """把合成仓后端件的 `案例回执件` 改一个字 ⇒ 判据 ㊼ 当场红（库 `条款` 里仍是原值）。
+
+    专证这条判据不是空转：文档（库 `条款` 的 `测试验证/案例/形状.md` §一）与代码
+    （`常量.rs`）各写一份，漂了必须有人抓。改的是**代码**那一侧。
+    """
+    路径 = 临根 / 接口面件
+    文本 = 路径.read_text(encoding="utf-8")
+    改后 = 文本.replace('pub const 案例回执件: &str = "运行回执.jsonl";',
+                        'pub const 案例回执件: &str = "运行回执错.jsonl";', 1)
+    assert 改后 != 文本, "样本前置条件不成立：夹具后端件里没有 `案例回执件 = \"运行回执.jsonl\"`"
+    路径.write_text(改后, encoding="utf-8")
+    return 接口面件
