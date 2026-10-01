@@ -54,7 +54,8 @@ from 运行数据根 import 无位置, 子目录路径, 解析当前环境, 确�
         功能     text not null,
         写前指纹 text,
         写后指纹 text,
-        时间     text not null
+        时间     text not null,
+        说明     text
     )""",
 )
 
@@ -75,8 +76,20 @@ def 连账本() -> sqlite3.Connection:
     连接.row_factory = sqlite3.Row
     for 一条 in 建表语句:
         连接.execute(一条)
+    _补列(连接)
     连接.commit()
     return 连接
+
+
+def _补列(连接) -> None:
+    """老账本补列：`改动.说明`（2026-10-01 加 —— 源件记账要记「为什么」）。
+
+    `create table if not exists` 只对新库生效 ⇒ 老库要显式补。判定走 `pragma table_info`，
+    补过就不动（幂等）。
+    """
+    列名集 = {一行[1] for 一行 in 连接.execute("pragma table_info(改动)")}
+    if "说明" not in 列名集:
+        连接.execute("alter table 改动 add column 说明 text")
 
 
 # ── 开工 ────────────────────────────────────────────────────────────────────────────────
@@ -224,10 +237,12 @@ def 写回指纹(连接, 开工号: str, 路径: str, 指纹: str) -> None:
 
 # ── 改动 ────────────────────────────────────────────────────────────────────────────────
 
-def 记改动(连接, 开工号: str, 路径: str, 功能: str, 写前指纹: str, 写后指纹: str) -> None:
-    连接.execute("insert into 改动 (开工号, 路径, 功能, 写前指纹, 写后指纹, 时间) "
-              "values (?, ?, ?, ?, ?, ?)",
-              (开工号, 路径, 功能, 写前指纹, 写后指纹, 时刻串()))
+def 记改动(连接, 开工号: str, 路径: str, 功能: str, 写前指纹: str, 写后指纹: str,
+         说明: str = "") -> None:
+    """记一条改动。`说明` 只有**源件记账**（功能 = 6）填 —— 「为什么改这个源件」。"""
+    连接.execute("insert into 改动 (开工号, 路径, 功能, 写前指纹, 写后指纹, 时间, 说明) "
+              "values (?, ?, ?, ?, ?, ?, ?)",
+              (开工号, 路径, 功能, 写前指纹, 写后指纹, 时刻串(), 说明))
     连接.commit()
 
 

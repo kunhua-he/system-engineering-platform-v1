@@ -7,7 +7,7 @@ import os
 import sys
 from pathlib import Path
 
-from .常量 import 读上限字节, 契约目录名, 常量表相对, 判据名表, 处数基线相对
+from .常量 import 读上限字节, 契约目录名, 常量表相对, 判据名表, 处数基线相对, 跳过目录
 
 # 仓根判定的**主人**在 `测试验证/准入判据/准入判据/世界.py`（同一顶层区 `测试验证/`；
 # 两包互不 import ⇒ 无环）。插它所在包根，照 `判据_准入.py::_取准入模块` 的先例：
@@ -15,7 +15,9 @@ from .常量 import 读上限字节, 契约目录名, 常量表相对, 判据名
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "准入判据"))
 from 准入判据 import 世界  # noqa: E402
 from .小工具 import 取相对路径
-from .掩码 import 掩码
+# 词法器只留一套：闸 2 直接引闸 1 的 `去字面量`（原 `掩码.py` 只是它的转口，已删）。
+# 跨区 import 方向「测试验证 → 构建装配」已确立合法（同 `夹具判定.py` 引 `构造点`/`测试件`）。
+from 构建装配.一键验证.一键验证.剥字面量 import 去字面量
 from .夹具判定 import 建夹具集
 from .符号解析 import 建符号表
 from .抽实现面 import 抽实现面
@@ -46,14 +48,14 @@ def 读盘(仓根: str, 范围: list) -> dict:
         if not 范围根.is_dir():
             continue
         for 根目录, 目录表, 文件表 in os.walk(范围根):
-            目录表[:] = [目录 for 目录 in 目录表 if 目录 not in {".git", "__pycache__", "构建缓存", "target"}]
+            目录表[:] = [目录 for 目录 in 目录表 if 目录 not in 跳过目录]
             for 名称 in 文件表:
                 if 名称.endswith((".rs", ".json")) or 名称 == "Cargo.toml":
                     收文件(Path(根目录) / 名称)
     契约 = 仓根路径 / 契约目录名
     if 契约.is_dir():
         for 根目录, 目录表, 文件表 in os.walk(契约):
-            目录表[:] = [目录 for 目录 in 目录表 if 目录 not in {"__pycache__"}]
+            目录表[:] = [目录 for 目录 in 目录表 if 目录 not in 跳过目录]
             for 名称 in 文件表:
                 # `.rs` 全收（含 `契约声明/src/` 子目录）——符号表的落点是符号不是文件，
                 # 写死文件名会让拆分后的子件静默丢出符号表。
@@ -86,7 +88,7 @@ def _扫一遍(仓根: str, 范围: list, 件表=None, 坏件表=None) -> list:
         读回 = 读盘(仓根, 范围)
         件表, 坏件表 = 读回["件表"], 读回["坏"]
     坏件表 = 坏件表 or []
-    掩表 = {件键: 掩码(掩前) for 件键, 掩前 in 件表.items() if 件键.endswith(".rs") and 掩前 is not None}
+    掩表 = {件键: 去字面量(掩前) for 件键, 掩前 in 件表.items() if 件键.endswith(".rs") and 掩前 is not None}
     夹具 = 建夹具集(件表, 掩表)
     符号表 = 建符号表(件表, 掩表)
     实现面 = 抽实现面(件表, 范围, 符号表, 夹具, 掩表)

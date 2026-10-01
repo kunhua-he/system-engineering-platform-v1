@@ -38,15 +38,16 @@
 """
 from __future__ import annotations
 
-import json
 import re
 
 from .小工具 import 判不了, 违规
 from .常量 import 代码后缀, 检查名
 from .测试件 import 并行生产区
+from .判据基线 import 读运行数据基线, 库相对路径
 
 
-运行数据基线路径 = "构建装配/一键验证/运行数据基线.json"
+# 基线**住规则库**（`运行数据基线` 表）—— 不再落外部 json（华哥 2026-09-29）。库路径**只此一份**。
+运行数据基线路径 = 库相对路径
 
 # 唯一解析器本人（它「自身拼」是它的职责，不算违规）：Rust 那份 **＋** Python 侧的那份。
 # 两份同职 —— Python 件调不了 Rust crate，故 Python 侧另有一份**镜像**（`开发工具/运行数据根.py`
@@ -133,22 +134,6 @@ def 样本_运行数据面(上层读数: dict) -> int:
     return len(运行数据面(上层读数))
 
 
-def _读基线(基线件) -> tuple:
-    if not 基线件.is_file():
-        return {}, f"基线文件不存在（{运行数据基线路径}）"
-    try:
-        数据 = json.loads(基线件.read_text(encoding="utf-8"))
-    except Exception as 错误:
-        return {}, f"基线文件解析不了（{type(错误).__name__}）"
-    项表 = {}
-    for 一条 in 数据.get("债务") or []:
-        try:
-            项表[(str(一条["路径"]), str(一条["形"]))] = int(一条.get("处数", 0))
-        except (KeyError, TypeError, ValueError):
-            return {}, f"基线条目形状不对（{一条!r}）—— 要 路径/形/处数 三键"
-    return 项表, None
-
-
 def 检查25_运行数据自拼路径(上层读数: dict) -> list:
     """要落运行数据的节点必须调 `v1_dataroot`，0 处自身拼（存量入基线 · 基线只许减）。
 
@@ -167,7 +152,7 @@ def 检查25_运行数据自拼路径(上层读数: dict) -> list:
         )
         return 输出缓冲
 
-    基线表, 错误 = _读基线(上层读数["仓根"] / 运行数据基线路径)
+    基线表, 错误 = 读运行数据基线(上层读数["仓根"])
     if 错误:
         return [
             违规(

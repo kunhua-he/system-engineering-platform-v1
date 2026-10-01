@@ -3,7 +3,12 @@
 #
 #   ① Rust 工具链：当前 rustc 版本 == rust-toolchain.toml 里钉的版本
 #   ② Rust 依赖  ：Cargo.lock 里除本仓成员外无任何第三方包
-#   ③ Rust 静态检查：cargo check --workspace --locked 通过（离线），并报墙钟毫秒
+#   ③ Rust 静态检查：**两个工作区**都 `cargo check --all-targets --locked` 通过（离线），并报墙钟毫秒
+#      —— 根工作区（底座 + 跑案例）与扩展工作区（`扩展根目录/原子支持库/编译器支持库`，
+#      被根 `Cargo.toml` exclude 的独立工作区）。`--all-targets` 才编 `#[cfg(test)]` 与 `tests/`：
+#      少了它，测试面的编译错从不被编，也就没人抓。
+#      ★ **收口必跑**：本件就是收口路径。cargo 是分钟级 ⇒ **不**进 5 秒硬顶的闸 0，
+#        也**不**进每提交的 pre-commit；测试面的编译门禁接在**这一条**上。
 #   ④ Python 环境：仓库内 venv 存在，且其中无第三方包（只用标准库）
 #
 # 注：变量名用 ASCII —— sh/bash 不认中文变量名（工具链强制）。
@@ -32,11 +37,30 @@ if [ "$THIRD_PKG" -eq 0 ]; then echo "② Rust 依赖    lock 里 $LOCKED 个包
 else echo "② Rust 依赖    lock 里 $THIRD_PKG 个包来自 registry/git ⇒ 有第三方  ✗"; exit 1; fi
 
 START=$(python3 -c 'import time;print(int(time.time()*1000))')
-cargo check --workspace --locked >/dev/null 2>&1 || { echo "③ Rust 静态检查  失败  ✗"; exit 1; }
+cargo check --workspace --all-targets --locked >/dev/null 2>&1 \
+  || { echo "③ Rust 静态检查（根工作区 · --all-targets）失败  ✗"; exit 1; }
 END=$(python3 -c 'import time;print(int(time.time()*1000))')
 MS=$((END - START))
-echo "③ Rust 静态检查  通过  ✓  （墙钟 ${MS} ms）"
+echo "③ Rust 静态检查  根工作区 --all-targets  通过  ✓  （墙钟 ${MS} ms）"
 [ "$MS" -gt 3000 ] && echo "   ⚠ 超过 3 秒：慢就是 bug，先查并发与串行点（README 第二节）"
+
+# 扩展工作区（独立）：被根 `Cargo.toml` exclude ⇒ 上面那条 `--workspace` 看不见它一个字。
+# 它的测试面此前无门禁，靠的就是这一条补上。用 `--manifest-path` 指到它自身的 Cargo.toml。
+START=$(python3 -c 'import time;print(int(time.time()*1000))')
+cargo check --manifest-path 扩展根目录/原子支持库/编译器支持库/Cargo.toml --all-targets --locked >/dev/null 2>&1 \
+  || { echo "③ Rust 静态检查（扩展工作区 · --all-targets）失败  ✗"; exit 1; }
+END=$(python3 -c 'import time;print(int(time.time()*1000))')
+MS=$((END - START))
+echo "③ Rust 静态检查  扩展工作区 --all-targets  通过  ✓  （墙钟 ${MS} ms）"
+[ "$MS" -gt 3000 ] && echo "   ⚠ 超过 3 秒：慢就是 bug，先查并发与串行点（README 第二节）"
+
+# ★ 本件只做**编译面**，不跑 `cargo test`：`cargo test --workspace --locked` 现在**不自洽** ——
+#   ① 有几条用例转调 `构建环境/构建缓存/debug/v1-case-runner`，得先
+#      `cargo build -p v1-case-runner` 把那个二进制编出来；
+#   ② `案例清单_有条数且坏回执为零` 读**真仓根**的 `测试验证/案例/运行回执.jsonl`，
+#      而该件被 gitignore ⇒ **空树首跑必红**。
+#   最小口径：要跑测试就先 `cargo build -p v1-case-runner`、再跑一次案例生成回执，然后 `cargo test`。
+#   本件不替它兜底（那样会把测试面变成假绿）。
 
 PY="$ROOT/构建环境/python/bin/python"
 if [ ! -x "$PY" ]; then echo "④ Python 环境  venv 不存在  ✗"; exit 1; fi

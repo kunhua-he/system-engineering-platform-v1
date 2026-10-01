@@ -10,7 +10,7 @@ from __future__ import annotations
 import re
 
 from .小工具 import 配对
-from .掩码 import 掩码
+from 构建装配.一键验证.一键验证.剥字面量 import 去字面量
 # `#[cfg(…)]` 属性扫描的两件**只有一份**，主人 = `构建装配/一键验证/一键验证/构造点.py`：
 #   · 属性开头正则 `_夹具挂载形` · 括号配对解析 `_条件编译属性`。
 # 本件原先自带三份同形实现（`条件属性开头模式` · `解析条件属性` · `_属性窗起`；后两者与主人
@@ -79,7 +79,7 @@ def 建夹具集(件表: dict, 掩表: dict = None) -> dict:
     """
     Rs件 = {括号位: 原文 for 括号位, 原文 in 件表.items() if 括号位.endswith(".rs") and 原文 is not None}
     if 掩表 is None:
-        掩表 = {括号位: 掩码(原文) for 括号位, 原文 in Rs件.items()}
+        掩表 = {括号位: 去字面量(原文) for 括号位, 原文 in Rs件.items()}
     块表 = {}
     其它 = []
     for 键名, 掩码文本 in 掩表.items():

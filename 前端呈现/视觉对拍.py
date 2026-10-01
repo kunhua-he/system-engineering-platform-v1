@@ -16,6 +16,9 @@
     # 不给 --网关 / --声明根 ⇒ 转调老路（带污染，只作对照）
     # 出图后自动调配色对拍；加 --只出图 就只出图。
 
+**依赖（例外）**：本件要 `playwright`（+ chromium），转调的 `配色对拍.py` 要 `Pillow` ⇒ **只在系统
+`python3` 下跑**（仓内 venv 只标准库，装它会破自检 ④）。裁决见库 `规则` 表 开发规范-21。`--help` 不 import 它们。
+
 退出码：0 = 出图并打完读数；1 = 起不来 / 渲染失败 / 对拍失败（原因打到 stderr，不假装成功）。
 """
 import subprocess
@@ -38,6 +41,9 @@ from 界面反解截图 import 前端目录, 参考尺寸, 参考图  # noqa: E4
 
 
 def 入口函数(参数):
+    if 参数 and 参数[0] in ("-h", "--help"):
+        print(__doc__)
+        return 0
     if not 参数:
         print(__doc__)
         return 1

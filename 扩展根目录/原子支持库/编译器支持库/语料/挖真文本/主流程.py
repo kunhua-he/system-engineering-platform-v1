@@ -12,6 +12,9 @@ from .行判定 import 检查候选文本, 声明行数, 扩张边界
 
 # ── 主流程 ────────────────────────────────────────────────────────────────
 def 入口函数():
+    if not 源码根 or not os.path.isdir(源码根):
+        print("未判：语料源头不在 ⇒ 没跑（**不是通过**）：%s" % (源码根 or "（运行数据根解析不出）"))
+        return 1
     hard, weak_ev, weak_json = [], [], []
     for dp, dn, fn in os.walk(源码根):
         for 文件名 in fn:

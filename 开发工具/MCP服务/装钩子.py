@@ -11,7 +11,7 @@ import sys
 import time
 from pathlib import Path
 
-进程起始时刻 = time.monotonic()   # 壳起表点：必须在 import 业务包**之前**（见 构建装配/门禁/壳.py）
+起始时刻 = time.monotonic()   # 壳起表点：必须在 import 业务包**之前**（见 构建装配/门禁/壳.py）
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))   # 仓根：取 构建装配.门禁
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))   # 开发工具/：取 MCP服务 包
@@ -20,6 +20,6 @@ from 构建装配.门禁 import 自门禁  # noqa: E402
 from MCP服务.钩子 import 入口函数  # noqa: E402
 
 if __name__ == "__main__":
-    sys.exit(自门禁(进程起始时刻, 入口函数(), 尾巴余量毫秒=200,
+    sys.exit(自门禁(起始时刻, 入口函数(), 尾巴余量毫秒=200,
                   修法="本件只读写一个 JSON 配置文件，不该慢。慢就是配置大到离谱或磁盘卡住 —— "
                       "别放宽超时，先量是哪一段。"))

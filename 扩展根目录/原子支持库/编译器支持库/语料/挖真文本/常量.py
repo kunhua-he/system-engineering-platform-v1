@@ -2,10 +2,27 @@
 """挖真文本 · 常量 —— 语料根 · 落点 · 判定阈值 · 扫描白名单（纯搬家，取值逐字不变）。"""
 import os
 import re
+import sys
+from pathlib import Path
 
 # 本件 = <语料>/挖真文本/常量.py ⇒ 上溯两层 = <语料>/（与拆分前的 语料根 同值）。
 语料根 = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-源码根 = "/tmp/易语言源码"
+
+# 语料源头（易语言原版安装树）——**不再写死 `/tmp`**（易失路径，重启即丢；实测 2026-10-01
+# 源头已被大幅清空）。落点走**运行数据根**（唯一解析器 `运行内核/运行数据根/`；Python 侧入口
+# `开发工具/运行数据根.py`，**不自持第二份解析**）：默认 = `<运行数据根>/临时件/易语言源码`；
+# 环境变量 `V1_CORPUS_ROOT`（ASCII 名）非空则原样覆盖。解析器不在 / 解析不出 ⇒ 空串
+# （调用方按「未判」报，**不猜路径**）。
+源码根 = ""
+sys.path.insert(0, str(Path(__file__).resolve().parents[5] / "开发工具"))
+try:
+    from 运行数据根 import 解析当前环境, 子目录路径
+    源码根 = str(子目录路径(解析当前环境(), "临时件") / "易语言源码")
+except Exception:
+    源码根 = ""
+if os.environ.get("V1_CORPUS_ROOT"):
+    源码根 = os.environ["V1_CORPUS_ROOT"]
+
 真文本目录 = os.path.join(语料根, "真文本")
 挖出JSON路径 = os.path.join(语料根, "_挖出.json")
 
