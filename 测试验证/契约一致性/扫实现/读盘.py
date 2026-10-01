@@ -7,7 +7,7 @@ import os
 import sys
 from pathlib import Path
 
-from .常量 import 读上限字节, 契约目录名, 常量表相对, 判据名表, 处数基线相对
+from .常量 import 读上限字节, 契约目录名, 常量表相对, 判据名表, 处数基线相对, 跳过目录
 
 # 仓根判定的**主人**在 `测试验证/准入判据/准入判据/世界.py`（同一顶层区 `测试验证/`；
 # 两包互不 import ⇒ 无环）。插它所在包根，照 `判据_准入.py::_取准入模块` 的先例：
@@ -46,14 +46,14 @@ def 读盘(仓根: str, 范围: list) -> dict:
         if not 范围根.is_dir():
             continue
         for 根目录, 目录表, 文件表 in os.walk(范围根):
-            目录表[:] = [目录 for 目录 in 目录表 if 目录 not in {".git", "__pycache__", "构建缓存", "target"}]
+            目录表[:] = [目录 for 目录 in 目录表 if 目录 not in 跳过目录]
             for 名称 in 文件表:
                 if 名称.endswith((".rs", ".json")) or 名称 == "Cargo.toml":
                     收文件(Path(根目录) / 名称)
     契约 = 仓根路径 / 契约目录名
     if 契约.is_dir():
         for 根目录, 目录表, 文件表 in os.walk(契约):
-            目录表[:] = [目录 for 目录 in 目录表 if 目录 not in {"__pycache__"}]
+            目录表[:] = [目录 for 目录 in 目录表 if 目录 not in 跳过目录]
             for 名称 in 文件表:
                 # `.rs` 全收（含 `契约声明/src/` 子目录）——符号表的落点是符号不是文件，
                 # 写死文件名会让拆分后的子件静默丢出符号表。
