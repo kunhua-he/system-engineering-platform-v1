@@ -26,15 +26,15 @@ static 通知号段表: [号段; 1] = [号段::新建(2000, 2999)];
 static 错误段位表: [u32; 1] = [1];
 
 /// 「按指针」那条测试用的在飞引用计数：0 = 还有引用（拒绝卸载），非 0 = 已清零（放行）。
-static 在飞引用: AtomicUsize = AtomicUsize::new(0);
+static 在飞引用计数: AtomicUsize = AtomicUsize::new(0);
 /// 该测试收到通知的次数（读数用）。
-static 收到通知: AtomicUsize = AtomicUsize::new(0);
+static 收到通知数: AtomicUsize = AtomicUsize::new(0);
 
 /// 「按指针」那条测试的通知函数：`2001 卸载` / `2003 延迟释放` 时，若还有在飞引用 ⇒ 回 `2015` 拒绝。
 unsafe extern "C" fn 扩展通知(通知号: v1_contract::通知号, _参数一: usize, _参数二: usize) -> isize {
-    收到通知.fetch_add(1, Ordering::SeqCst);
+    收到通知数.fetch_add(1, Ordering::SeqCst);
     if matches!(通知号, 生命周期通知::卸载 | 生命周期通知::延迟释放)
-        && 在飞引用.load(Ordering::SeqCst) == 0
+        && 在飞引用计数.load(Ordering::SeqCst) == 0
     {
         通知返回::延迟释放
     } else {
@@ -96,8 +96,8 @@ fn 造生命周期扩展(通知: unsafe extern "C" fn(v1_contract::通知号, us
 
 #[test]
 fn 生命周期_申报号段到优雅卸载真跑通() {
-    在飞引用.store(0, Ordering::SeqCst);
-    收到通知.store(0, Ordering::SeqCst);
+    在飞引用计数.store(0, Ordering::SeqCst);
+    收到通知数.store(0, Ordering::SeqCst);
     let 扩展 = 造生命周期扩展(扩展通知);
 
     // ④：扩展申报通知号段 [2000,2999]（与底座预置占用同段）——必须载得进来。
@@ -123,7 +123,7 @@ fn 生命周期_申报号段到优雅卸载真跑通() {
     assert_eq!(适配器.通知端点数(), 1, "被拒的卸载必须原样保留端点");
 
     // ⑥-2：引用清零后复核（发 2003）——扩展回成功，端点收回。
-    在飞引用.store(1, Ordering::SeqCst);
+    在飞引用计数.store(1, Ordering::SeqCst);
     let 结局 = 适配器.延迟释放协商(扩展.标识串);
     println!(
         "⑥-2 引用清零后复核（发 2003）→ 扩展回成功 → 派发结果 {结局:?}（端点剩 {} 个）",
@@ -131,7 +131,7 @@ fn 生命周期_申报号段到优雅卸载真跑通() {
     );
     assert_eq!(结局, 派发结果::成功);
     assert_eq!(适配器.通知端点数(), 0, "放行即收回：端点摘掉");
-    println!("扩展共收到通知 {} 次", 收到通知.load(Ordering::SeqCst));
+    println!("扩展共收到通知 {} 次", 收到通知数.load(Ordering::SeqCst));
 }
 
 /// **按标识（文本）的卸载路**（HTTP 面走的就是这一组）：
