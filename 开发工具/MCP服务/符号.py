@@ -95,7 +95,7 @@ def 查出现位(查询根: Path, 索引库, 限定名: str, 条数: int, 要源
 
 def 派发(参数表: dict, 仓根) -> tuple:
     """`v1_symbol` 的入口。"""
-    from .开工 import 跑命令
+    from .仓操作 import 跑命令
 
     开工号 = str(参数表.get("开工ID") or "").strip()
     关键词 = str(参数表.get("关键词") or "").strip()
