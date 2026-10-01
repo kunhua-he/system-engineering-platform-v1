@@ -5,6 +5,7 @@ from pathlib import Path
 import 表定义
 
 from .通用 import 读JSON件, 读文本
+from .文档 import 装文档
 
 
 def 读源件(根目录: Path, 表名: str) -> list:
@@ -42,3 +43,28 @@ def 读一件(源件路径: Path) -> list:
 
 def 装未完成(根目录: Path) -> list:
     return 读源件(根目录, "未完成")
+
+
+def 装分片源件(连接, 表名: str, 分片列: str, 现抽, 根目录: Path) -> int:
+    """分片源件表：只重抽**源件在场**的那几片，其余行**保住**（见 `表定义.分片源件表`）。
+
+    `条款` 走这条：每片的源件 = 该片 `文档路径` 指的那份 md。md 在场 ⇒ 重抽它那几节；
+    md 已删（全树只剩 `README.md` / `AGENTS.md`）⇒ 旧节一字不动（库是它们的唯一存本）。
+    返回**整表**行数（读数口径与 `装表` 一致）。
+    """
+    文档行 = 装文档(根目录)
+    在场路径表 = [一行[0] for 一行 in 文档行]
+    数据行 = 现抽(根目录, 文档行)
+    if 在场路径表:
+        占位符 = ",".join("?" * len(在场路径表))
+        连接.execute(f"delete from {表名} where {分片列} in ({占位符})", 在场路径表)
+        if 数据行:
+            连接.executemany(
+                f"insert or replace into {表名} values({','.join('?' * len(数据行[0]))})", 数据行)
+            落库行数 = 连接.execute(
+                f"select count(*) from {表名} where {分片列} in ({占位符})", 在场路径表).fetchone()[0]
+            if 落库行数 != len(数据行):
+                raise ValueError(
+                    f"{表名}：分片源件抽出 {len(数据行)} 行、落库只剩 {落库行数} 行 ⇒ "
+                    f"有行被**主键**合并掉了（先修源件再跑）。")
+    return 连接.execute(f"select count(*) from {表名}").fetchone()[0]

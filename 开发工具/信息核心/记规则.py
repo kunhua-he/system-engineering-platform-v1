@@ -48,18 +48,26 @@ def 取新编号(连接, 类名: str) -> str:
 
 
 def 记规则(字段表: dict) -> int:
-    """写一条规则进 `规则` 表 ⇒ 退出码。"""
+    """写一条规则进 `规则` 表 ⇒ 退出码。
+
+    给了 `--编号` ⇒ **就地改写那一行**（编号不变）；不给 ⇒ 自动编号（追加新号）。
+    """
     类名 = (字段表.get("类") or "").strip()
     规则名 = (字段表.get("名") or "").strip()
     内容 = (字段表.get("内容") or "").strip()
     依据 = (字段表.get("依据") or "").strip()
+    编号 = (字段表.get("编号") or "").strip()
     if not 类名 or not 规则名 or not 内容:
-        print("用法：信息核心.py 记规则 --类 <类名> --名 <一句话> --内容 <散文> [--依据 <落点>]",
-              file=sys.stderr)
+        print("用法：信息核心.py 记规则 --类 <类名> --名 <一句话> --内容 <散文> "
+              "[--依据 <落点>] [--编号 <既有编号>]", file=sys.stderr)
+        return 2
+    if 编号 and not 编号.startswith(类名 + "-"):
+        print(f"记规则：`--编号 {编号}` 与 `--类 {类名}` 对不上 —— "
+              f"编号必须带 `<类>-` 前缀（就地改写不许把一行挪到别的类）。", file=sys.stderr)
         return 2
     连接 = sqlite3.connect(表定义.库路径(仓根))
     try:
-        编号 = 取新编号(连接, 类名)
+        编号 = 编号 or 取新编号(连接, 类名)
         连接.execute("insert or replace into 规则 values(?,?,?,?,?)", (编号, 类名, 规则名, 内容, 依据))
         连接.commit()
     finally:
