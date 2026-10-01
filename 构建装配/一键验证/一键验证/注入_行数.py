@@ -1,9 +1,21 @@
 # -*- coding: utf-8 -*-
-"""注入样本 · 行数硬数一类（判据 ⑲）：单文件超行数 · 存量还在长 · 基线陈旧 · 基线缩水。"""
+"""注入样本 · 行数硬数一类（判据 ⑲）：单文件超行数 · 存量还在长 · 基线陈旧 · 基线缩水。
+
+四张判据基线住规则库（`行数基线` 表）⇒ 注入改的是**夹具规则库**，不再改 json。
+"""
 from __future__ import annotations
 
-import json
 from pathlib import Path
+
+
+def _改基线(临根: Path, 路径: str, 处数) -> None:
+    """改夹具规则库 `行数基线` 里 `("入口有实现", 路径)` 那一行（处数给 `None` = 新增一行）。"""
+    from .判据基线 import 读行数基线, 写行数基线
+
+    基线表, 错误 = 读行数基线(临根)
+    assert not 错误, 错误
+    基线表[("入口有实现", 路径)] = 1 if 处数 is None else 处数
+    写行数基线(临根, 基线表)
 
 
 def 注入_单文件超行数(临根: Path) -> str:
@@ -20,13 +32,8 @@ def 注入_存量还在长(临根: Path) -> str:
 
     这条反向样本专证「基线只许减不许增」不是空转：基线不是白名单，**缩小的登记也拦得住**。
     """
-    路径 = 临根 / "构建装配" / "一键验证" / "行数基线.json"
-    数据 = json.loads(路径.read_text(encoding="utf-8"))
-    for 一条 in 数据["债务"]["入口有实现"]:
-        if 一条["路径"] == "运行内核/资源网关口/src/lib.rs":
-            一条["处数"] = 2
-    路径.write_text(json.dumps(数据, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    return "构建装配/一键验证/行数基线.json"
+    _改基线(临根, "运行内核/资源网关口/src/lib.rs", 2)
+    return "运行内核/资源网关口/src/lib.rs"
 
 
 
@@ -36,10 +43,7 @@ def 注入_基线陈旧登记(临根: Path) -> str:
     专证「基线只许减」的反面不是空的：留着一条不再欠债的登记，基线读数就不再是现状，
     而且它白占一格上限。
     """
-    路径 = 临根 / "构建装配" / "一键验证" / "行数基线.json"
-    数据 = json.loads(路径.read_text(encoding="utf-8"))
-    数据["债务"]["入口有实现"].append({"路径": "运行内核/实例状态/src/lib.rs", "处数": 1})
-    路径.write_text(json.dumps(数据, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    _改基线(临根, "运行内核/实例状态/src/lib.rs", None)
     return "运行内核/实例状态/src/lib.rs"
 
 
@@ -49,10 +53,5 @@ def 注入_基线缩水登记(临根: Path) -> str:
 
     专证那个洞：登记比实测高，那一件就能一路长回登记值而不报红。
     """
-    路径 = 临根 / "构建装配" / "一键验证" / "行数基线.json"
-    数据 = json.loads(路径.read_text(encoding="utf-8"))
-    for 一条 in 数据["债务"]["入口有实现"]:
-        if 一条["路径"] == "运行内核/资源网关口/src/lib.rs":
-            一条["处数"] = 999   # 远高于实测 ⇒ 实测 < 登记
-    路径.write_text(json.dumps(数据, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    _改基线(临根, "运行内核/资源网关口/src/lib.rs", 999)   # 远高于实测 ⇒ 实测 < 登记
     return "运行内核/资源网关口/src/lib.rs"
