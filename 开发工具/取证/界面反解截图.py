@@ -17,6 +17,11 @@
     # 出图后接着对拍：
     python3 开发工具/取证/配色对拍.py 项目文档/参考/易语言IDE_截图.png <输出.png>
 
+**依赖（例外，如实登记）**：本件要 `playwright`（+ chromium）。仓内 venv（`构建环境/python`）是
+`--without-pip`，且 `构建环境/自检.sh` ④ 要求 site-packages 空（只用标准库）⇒ **本件只在系统
+`python3` 下跑**。为何是例外：它是**取证 / 视觉**工具链的依赖，不进闸 0、不参与「Python 只用标准库」
+那条口径；装进 venv 反而会把那条口径破在 venv 里（自检 ④ 当场红）。`--help` 不 import playwright。
+
 退出码：0 = 出图；1 = 起不来或渲染失败（原因一律打到 stderr，**不假装成功**）。
 """
 import functools
@@ -40,6 +45,9 @@ from 构建装配.门禁 import 自门禁  # noqa: E402
 
 
 def 入口函数(参数):
+    if 参数 and 参数[0] in ("-h", "--help"):
+        print(__doc__)
+        return 0
     if not 参数:
         print(__doc__)
         return 1
