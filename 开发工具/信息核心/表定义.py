@@ -148,6 +148,10 @@ def 连规则库(根目录):
     "create table if not exists 命名穷举基线(面 text not null, 名字 text not null, 处数 integer not null, primary key(面, 名字))",
 )
 
+# `元` 表的键**全部由代码写**：`建库` 是唯一写口 —— 写 `生成物声明`，并剪掉不在键集里的旧键。
+# ★ 旧键 `命名基线说明` · `命名基线口径` 是**孤儿**（活代码里从无写入口，git 历史里也查不到），
+#   内容已过时（仍写 ㉒ 档 E/F「只吃定义面」，而 E/F 现已扩到形参面 + 局部面）且无人读 ⇒ 已剪。
+#   防再长孤儿：键集只有 `生成物声明`，写口只有 `建库`。
 # **派生库**的建表语句（派生表）—— 它是缓存：每次 `建库` 重抽，不进版本库。
 派生建表语句 = (
     "create table if not exists 文档(路径 text primary key, 权威档 text not null, 表达什么 text not null)",
