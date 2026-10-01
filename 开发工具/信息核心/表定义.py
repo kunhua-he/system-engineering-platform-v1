@@ -96,7 +96,8 @@ def 连规则库(根目录):
 #   `命名模式`（§七 的 17 条形状正则）**整条废除** —— 它是「形状对就算有定义」的老规则，
 #   华哥 2026-09-29：「之前的老规则，全部移除掉」。
 源表 = ("规则", "条款", "未完成", "命名定义", "命名例外", "命名族", "命名词性",
-       "命名基线", "命名穷举基线")
+       "命名基线", "命名穷举基线",
+       "行数基线", "运行数据基线", "引用基线", "引用未判基线", "十干基线")
 
 # **派生表**：每次重建都重抽 —— 它们出自活源（代码地图索引 · `契约声明/` · `文档账本.json`）。
 # ★ 它们住在**派生库**（`信息核心_派生.db`，不进版本库）—— 缓存与规则分家：规则改才动规则库。
@@ -125,7 +126,9 @@ def 连规则库(根目录):
               "生成器：开发工具/信息核心/信息核心.py\n"
               "（本件由 `建库` 写出；改它走 `信息核心.py` 的 登记 / 记规则 / 冻结基线 —— 二进制别手改。"
               "派生表从活源重抽；**源表**（规则 · 条款 · 未完成 · 命名定义 · 命名例外 · 命名族 · "
-              "命名词性 · 命名基线 · 命名穷举基线）是**唯一存本**，`建库` 保住它们。"
+              "命名词性 · 命名基线 · 命名穷举基线 · 行数基线 · 运行数据基线 · 引用基线 · "
+              "引用未判基线 · 十干基线）"
+              "是**唯一存本**，`建库` 保住它们。"
               "★ `生成器：<路径>` 必须**独占一行**：记账件按「那一行 `生成器：` 之后到行尾」取路径。")
 # ★ 头标窗口（2026-09-29 实测）：它是 sqlite（第 0 字节必须是 `SQLite format 3\0`）⇒ 带不了文件头注释，
 #   而这一行声明是表 `元` 里的一行数据，落在文件 ~137 KB 处，头 400 行（~15 KB）看不到 ⇒
@@ -154,6 +157,16 @@ def 连规则库(根目录):
     "create table if not exists 命名基线(档 text not null, 路径 text not null, 名字 text not null, 处数 integer not null, primary key(档, 路径, 名字))",
     # 判据 ㊷ 的**存量清单**（三面：定义面 / 形参面 / 局部面）。
     "create table if not exists 命名穷举基线(面 text not null, 名字 text not null, 处数 integer not null, primary key(面, 名字))",
+    # 判据 ⑲ 的**存量清单**（三类：超行数 / 入口超行数 / 入口有实现）。
+    "create table if not exists 行数基线(类别 text not null, 路径 text not null, 处数 integer not null, primary key(类别, 路径))",
+    # 判据 ㉕ 的**存量清单**（键 = (路径, 形)）。
+    "create table if not exists 运行数据基线(路径 text not null, 形 text not null, 处数 integer not null, primary key(路径, 形))",
+    # 判据 ㊴ 的**存量清单**（键 = (件, 名, 节号)；是集合，无处数）。
+    "create table if not exists 引用基线(件 text not null, 名 text not null, 节号 integer not null, primary key(件, 名, 节号))",
+    # 判据 ㊴ 未判面的**存量清单**（键 = 已删件名；是集合，无处数）。
+    "create table if not exists 引用未判基线(件名 text not null primary key)",
+    # 判据 ㊵ 的**存量清单**（键 = (件, 码位)）。
+    "create table if not exists 十干基线(件 text not null, 码位 integer not null, 处数 integer not null, primary key(件, 码位))",
 )
 
 # `元` 表的键**全部由代码写**：`建库` 是唯一写口 —— 写 `生成物声明`，并剪掉不在键集里的旧键。
