@@ -22,7 +22,7 @@ pub enum 协议值 {
     ///
     /// 为什么要单列一支：`数据槽.值` 是 `u64`，句柄就是「只传数值的不透明值」，
     /// 一个高位句柄塞进 `i64` 会被静默改写 —— 那是把语义改错，不是丢精度。
-    无符号(u64),
+    无符号值(u64),
     小数(f64),
     文本(String),
     数组(Vec<协议值>),
@@ -52,7 +52,7 @@ impl 协议值 {
         }
     }
 
-    pub fn 是空(&self) -> bool {
+    pub fn 是空值(&self) -> bool {
         matches!(self, 协议值::空值)
     }
 
@@ -78,7 +78,7 @@ impl 协议值 {
     pub fn 取无符号(&self) -> Option<u64> {
         match self {
             协议值::整数(数) if *数 >= 0 => Some(*数 as u64),
-            协议值::无符号(数) => Some(*数),
+            协议值::无符号值(数) => Some(*数),
             _ => None,
         }
     }
@@ -87,7 +87,7 @@ impl 协议值 {
     pub fn 取有符号(&self) -> Option<i64> {
         match self {
             协议值::整数(数) => Some(*数),
-            协议值::无符号(数) => i64::try_from(*数).ok(),
+            协议值::无符号值(数) => i64::try_from(*数).ok(),
             _ => None,
         }
     }
@@ -96,7 +96,7 @@ impl 协议值 {
     pub fn 取数值(&self) -> Option<f64> {
         match self {
             协议值::整数(数) => Some(*数 as f64),
-            协议值::无符号(数) => Some(*数 as f64),
+            协议值::无符号值(数) => Some(*数 as f64),
             协议值::小数(数) => Some(*数),
             _ => None,
         }
