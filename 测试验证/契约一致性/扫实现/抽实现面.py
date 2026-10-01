@@ -38,7 +38,7 @@ def 抽实现面(件表: dict, 范围: list, 符号表: dict, 夹具: dict, 掩�
     Rs = {
         件键: 裸值
         for 件键, 裸值 in 件表.items()
-        if 件键.endswith(".rs") and 裸值 is not None and 任内(件键, 范围)
+        if 件键.endswith(".rs") and 裸值 is not None and 键名在范围内(件键, 范围)
     }
     单元表 = {}
     for 键名 in Rs:
@@ -317,5 +317,5 @@ def _代形参(文本: str, 形参: list, 实参: list) -> str:
     return 代换文本
 
 
-def 任内(键名: str, 范围: list) -> bool:
+def 键名在范围内(键名: str, 范围: list) -> bool:
     return any(键名 == 一项 or 键名.startswith(一项.rstrip("/") + "/") for 一项 in 范围)
