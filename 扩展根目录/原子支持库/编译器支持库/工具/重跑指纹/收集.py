@@ -11,7 +11,7 @@ def 相对路径(路径):
     return os.path.relpath(路径, 扩展根).replace(os.sep, "/")
 
 
-def 收集():
+def 收集指纹文件():
     """按固定范围收集要指纹的文件（返回相对路径列表，已排序）。"""
     文件 = []
     顶层声明 = ("包声明.json",)
@@ -45,7 +45,7 @@ def 算指纹(路径):
 
 
 def 算指纹表():
-    return {相对路径: 算指纹(os.path.join(扩展根, 相对路径)) for 相对路径 in 收集()}
+    return {相对路径: 算指纹(os.path.join(扩展根, 相对路径)) for 相对路径 in 收集指纹文件()}
 
 
 def 读旧指纹表():

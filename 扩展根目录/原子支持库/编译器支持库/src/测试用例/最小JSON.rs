@@ -97,14 +97,14 @@ impl<'a> 顺序读器<'a> {
             b'{' => self.对象(),
             b'[' => self.数组(),
             b'"' => Some(JSON值::字符串(self.读JSON串()?)),
-            b't' => self.字面量(b"true", JSON值::真),
-            b'f' => self.字面量(b"false", JSON值::假),
-            b'n' => self.字面量(b"null", JSON值::空值),
+            b't' => self.吃字面量(b"true", JSON值::真),
+            b'f' => self.吃字面量(b"false", JSON值::假),
+            b'n' => self.吃字面量(b"null", JSON值::空值),
             _ => self.读数值(),
         }
     }
 
-    fn 字面量(&mut self, 期望: &[u8], 待处理值: JSON值) -> Option<JSON值> {
+    fn 吃字面量(&mut self, 期望: &[u8], 待处理值: JSON值) -> Option<JSON值> {
         if self.字节.get(self.位..self.位 + 期望.len())? == 期望 {
             self.位 += 期望.len();
             Some(待处理值)

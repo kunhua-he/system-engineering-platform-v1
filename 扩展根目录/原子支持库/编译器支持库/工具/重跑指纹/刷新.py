@@ -4,7 +4,7 @@ import json
 import os
 from datetime import datetime, timezone, timedelta
 
-from .常量 import 扩展根, 指纹件, 重跑指纹命令, 说明, 指纹范围, 缺口
+from .常量 import 扩展根, 指纹件, 重跑指纹命令, 说明, 指纹范围, 指纹缺口
 from .收集 import 相对路径, 算指纹表, 读旧指纹表
 
 
@@ -21,7 +21,7 @@ def 刷新指纹():
         "生成物声明": "生成物，禁手改。生成器：%s" % 重跑指纹命令.removeprefix("python3 "),
         "生成命令": 重跑指纹命令,
         "范围": 指纹范围,
-        "缺口": 缺口,
+        "缺口": 指纹缺口,
         "指纹": 项表,
     }
     with open(指纹件, "w", encoding="utf-8") as 句柄:

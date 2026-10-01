@@ -14,7 +14,7 @@ impl 表达式分析器<'_> {
     /// `…, )` 的尾空位锚在它前面那个逗号。`(首参, , 次参)` ⇒ 空位 `[11,11)`（首参止 == 11）。
     ///
     /// 解不出的实参：把余下记号包成一个兜底叶，**不再往下切**（不 panic、不死循环）。
-    pub(super) fn 实参表在(&mut self, 开符: usize, 闭符: usize) -> Vec<u32> {
+    pub(super) fn 解实参表(&mut self, 开符: usize, 闭符: usize) -> Vec<u32> {
         let 左止 = self.记号表[开符].止;
         let mut 实参: Vec<u32> = Vec::new();
         let mut 游标 = 开符 + 1;
@@ -55,7 +55,7 @@ impl 表达式分析器<'_> {
             let 保存止 = self.止;
             self.游标 = 游标;
             self.止 = 闭符;
-            let 结果 = self.二元();
+            let 结果 = self.解二元表达式();
             游标 = self.游标;
             self.游标 = 保存游标;
             self.止 = 保存止;
@@ -85,7 +85,7 @@ impl 表达式分析器<'_> {
         self.游标 = 开符;
         self.止 = 区间终点;
         let 结果 = match self.配对(b"(", b")") {
-            Some(闭符) => self.实参表在(开符, 闭符),
+            Some(闭符) => self.解实参表(开符, 闭符),
             None => Vec::new(),
         };
         self.游标 = 保存游标;
