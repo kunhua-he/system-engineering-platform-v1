@@ -7,6 +7,7 @@ from concurrent.futures import ThreadPoolExecutor
 import json
 import os
 import re
+import threading
 from pathlib import Path
 
 from . import 常量
@@ -223,29 +224,47 @@ def 建合成索引(仓根: Path, 件表: dict) -> Path:
 
     写在**仓外**（`<仓根>._合成索引_/codegraph.db`）：写进被扫的树会多出一个目录，
     那样 ⑰（临时件）与 ⑳（运行数据）会拿它当对象 —— 面被自身改了，读数就不真。
+
+    ★ **线程安全**（判据批是 32 路线程池，见 `验证.分片跑任务表`）：判据 ㉒/㊷ 会各自
+    同时来取面 ⇒ 不串行化就会两个线程同时 `unlink` + 重建同一个库，`commit()` 当场
+    `sqlite3.OperationalError: disk I/O error`（实测 32 线程并发 `ok 1 / err 31`）。
+    本函数用模块级锁把「查缓存 → 建库 → 写缓存」整段串行化，并把**缓存收进本函数**
+    （同一仓根只建一次，后到的线程直接命中缓存）⇒ 并发下退化为「一次建库 + 其余命中」。
+    单线程行为逐字不变：第一趟建库、写缓存、返回同一路径。
     """
     import sqlite3
 
-    动态库 = Path(str(仓根) + "." + 合成索引目录名) / 合成索引文件名
-    动态库.parent.mkdir(parents=True, exist_ok=True)
-    if 动态库.is_file():
-        动态库.unlink()  # 每轮重建：同一夹具被跑多次时不许读到上一轮的节点
-    连接 = sqlite3.connect(str(动态库))
-    try:
-        for 语句 in _合成索引建表:
-            连接.execute(语句)
-        连接.executemany("insert into nodes values (?,?,?,?,?,?,?,?,?,?,?)",
-                       _合成索引节点(件表))
-        连接.commit()
-    finally:
-        连接.close()
-    return 动态库
+    键名 = str(仓根)
+    with _合成索引锁:
+        记住 = _合成索引缓存.get(键名)
+        if 记住 is not None and 记住.is_file():
+            return 记住
+        动态库 = Path(str(仓根) + "." + 合成索引目录名) / 合成索引文件名
+        动态库.parent.mkdir(parents=True, exist_ok=True)
+        if 动态库.is_file():
+            动态库.unlink()  # 每轮重建：同一夹具被跑多次时不许读到上一轮的节点
+        连接 = sqlite3.connect(str(动态库))
+        try:
+            for 语句 in _合成索引建表:
+                连接.execute(语句)
+            连接.executemany("insert into nodes values (?,?,?,?,?,?,?,?,?,?,?)",
+                           _合成索引节点(件表))
+            连接.commit()
+        finally:
+            连接.close()
+        _合成索引缓存[键名] = 动态库
+        return 动态库
 
 
 # 合成索引的按仓缓存（键 = 仓根路径）。**一次 `验证` 只建一次**：`上["文件"]`
 # 在一次调用里不变，而 `数命中` / `命名扫描件` 会各取一次面 ⇒ 不缓存就白重建两遍。
 # 不跨调用复用：`--自测` 的注入发生在两次 `验证` 之间（照 `跑一遍` 里「一次验证只读一次仓」同一理由）。
 _合成索引缓存: dict = {}
+
+# 建合成索引的模块级锁：判据批是 32 路线程池（`验证.分片跑任务表`），而 ㉒/㊷ 会同时
+# 来取面 ⇒ 必须把「查缓存 → 建库 → 写缓存」整段串行化，否则并发重建同一库会
+# `sqlite3.OperationalError: disk I/O error`（实测 32 线程 `ok 1 / err 31`）。
+_合成索引锁 = threading.Lock()
 
 # **哪些仓是夹具**（`造干净仓` 登记）。只给它们造合成索引 —— 真仓没有索引时**不许**造：
 # 真仓缺索引是「代码地图没建」⇒ 那是**未判**；造一份合成索引会把真仓的符号面偷偷换掉，
@@ -314,10 +333,5 @@ def 索引路径(仓根: Path, 件表: dict, 检查: str) -> Path:
         return 真库
     if str(仓根) not in _夹具仓根集:
         return 真库  # 真仓没索引 = 未判（调用方据空表报未判），不造合成索引
-    键名 = str(仓根)
-    记住 = _合成索引缓存.get(键名)
-    if 记住 is not None and 记住.is_file():
-        return 记住
-    动态库 = 建合成索引(仓根, 件表)
-    _合成索引缓存[键名] = 动态库
-    return 动态库
+    # 建库 + 缓存都在 `建合成索引` 里、且持同一把模块级锁 ⇒ 并发下只建一次（见那里）。
+    return 建合成索引(仓根, 件表)
