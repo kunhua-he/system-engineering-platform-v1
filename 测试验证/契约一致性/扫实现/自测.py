@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from .常量 import 默认范围, 判据名表, 短名表, 空话表
-from .掩码 import 掩码
+from 构建装配.一键验证.一键验证.剥字面量 import 去字面量
 from .夹具判定 import 建夹具集
 from .符号解析 import 建符号表
 from .抽实现面 import 抽实现面
@@ -151,7 +151,7 @@ def 自检_整份夹具跳过() -> list:
     键夹具 = "p/src/子/夹具.rs"
     for 名称, 挂载 in 形状:
         节点件 = {"p/src/lib.rs": 挂载, 键夹具: 夹具文}
-        夹具集 = 建夹具集(节点件, {件键: 掩码(裸值) for 件键, 裸值 in 节点件.items()})
+        夹具集 = 建夹具集(节点件, {件键: 去字面量(裸值) for 件键, 裸值 in 节点件.items()})
         输出缓冲.append(
             (
                 f"反向样本：整份夹具被跳过（{名称}）",

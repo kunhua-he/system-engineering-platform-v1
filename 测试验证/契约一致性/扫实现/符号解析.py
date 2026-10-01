@@ -6,7 +6,7 @@ import re
 
 from .常量 import 生成物相对路径, 契约源相对, 契约源目录
 from .小工具 import 配对
-from .掩码 import 掩码
+from 构建装配.一键验证.一键验证.剥字面量 import 去字面量
 
 
 def 解整数(文本) -> object:
@@ -157,7 +157,7 @@ def 建符号表(件表: dict, 掩表: dict = None) -> dict:
         文本 = 件表.get(键名)
         if 文本 is None:
             continue
-        掩码文本 = 掩表.get(键名) or 掩码(文本)
+        掩码文本 = 掩表.get(键名) or 去字面量(文本)
         # `pub const <名>: <t> = <整数字面量>;`（顶层或缩进都认；`pub const fn` 不匹配）
         for 匹配 in re.finditer(
             r"(?m)^\s*pub\s+const\s+([^\s:]+)\s*:\s*[^=;]*?=\s*([^;]+);", 掩码文本
