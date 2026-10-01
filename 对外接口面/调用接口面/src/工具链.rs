@@ -114,7 +114,7 @@ pub fn 跑命令(程序: &Path, 参数: &[&str], 工作目录: &Path) -> Result<
     // 管道**并发抽干**：不抽的话子进程写满管道缓冲就阻塞，超时会被误报成「挂住」。
     let 抽输出 = 子进程.stdout.take().map(|管道| std::thread::spawn(move || 抽干(管道)));
     let 抽错误 = 子进程.stderr.take().map(|管道| std::thread::spawn(move || 抽干(管道)));
-    let 上限 = Duration::from_millis(跑命令超时毫秒);
+    let 超时上限 = Duration::from_millis(跑命令超时毫秒);
     let 起点 = Instant::now();
     let 退出码 = loop {
         match 子进程.try_wait() {
@@ -129,7 +129,7 @@ pub fn 跑命令(程序: &Path, 参数: &[&str], 工作目录: &Path) -> Result<
                 });
             }
         }
-        if 起点.elapsed() >= 上限 {
+        if 起点.elapsed() >= 超时上限 {
             let _ = 子进程.kill();
             let _ = 子进程.wait();
             return Err(命令错误::超时 {

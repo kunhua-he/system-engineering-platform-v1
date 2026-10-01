@@ -17,7 +17,7 @@
 import sys
 from pathlib import Path
 
-from .开工 import 变更路径表, 跑命令, 超时秒      # 先导开工：它把 开发工具/ 挂上 sys.path
+from .仓操作 import 变更路径表, 跑命令, 超时秒    # 先导仓操作：它把 开发工具/ 挂上 sys.path
 from 代码地图 import 文件指纹                 # noqa: E402
 from . import 开工账本 as 账本                # noqa: E402
 
