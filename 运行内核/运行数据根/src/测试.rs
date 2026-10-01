@@ -5,7 +5,7 @@
 
 use super::*;
 
-fn 只覆盖<'a>(覆盖: &'a str) -> 解析环境<'a> {
+fn 环境_只给覆盖<'a>(覆盖: &'a str) -> 解析环境<'a> {
     解析环境 {
         覆盖: Some(覆盖),
         ..Default::default()
@@ -16,7 +16,7 @@ fn 只覆盖<'a>(覆盖: &'a str) -> 解析环境<'a> {
 
 #[test]
 fn 覆盖非空时原样用它_不再拼默认目录名() {
-    let 根目录 = 解析(&只覆盖("/临时/我的根"), 平台::MacOS).expect("覆盖非空必成功");
+    let 根目录 = 解析(&环境_只给覆盖("/临时/我的根"), 平台::MacOS).expect("覆盖非空必成功");
     assert_eq!(根目录, std::path::PathBuf::from("/临时/我的根"));
     assert!(
         !根目录.to_string_lossy().contains(默认目录名),
