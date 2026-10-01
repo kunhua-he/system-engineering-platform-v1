@@ -18,9 +18,9 @@ use v1_registry::命令槽;
 /// 本轮不动）；`数据槽::内联` 要的是 `类型标签`，故各处用 `类型标签::新建(测试标签)` 包一层。
 pub(crate) const 测试标签: u32 = 1;
 
-pub(crate) static 两参次数: AtomicUsize = AtomicUsize::new(0);
+pub(crate) static 两参命令被调次数: AtomicUsize = AtomicUsize::new(0);
 pub(crate) static 配额次数: AtomicUsize = AtomicUsize::new(0);
-pub(crate) static 拒绝次数: AtomicUsize = AtomicUsize::new(0);
+pub(crate) static 拒绝命令被调次数: AtomicUsize = AtomicUsize::new(0);
 
 /// 静态表包装。
 ///
@@ -54,7 +54,7 @@ pub(crate) unsafe extern "C" fn 两参命令(
     参数个数: u32,
     参数表: *const 数据槽,
 ) {
-    两参次数.fetch_add(1, Ordering::SeqCst);
+    两参命令被调次数.fetch_add(1, Ordering::SeqCst);
     let _ = (参数个数, 参数表);
     // SAFETY: 调度核心保证 `返回槽` 可写。
     unsafe { 返回槽.write(数据槽::内联(v1_contract::类型标签::新建(测试标签), 7, 0)) };
@@ -78,7 +78,7 @@ pub(crate) unsafe extern "C" fn 拒绝命令(
     参数个数: u32,
     参数表: *const 数据槽,
 ) {
-    拒绝次数.fetch_add(1, Ordering::SeqCst);
+    拒绝命令被调次数.fetch_add(1, Ordering::SeqCst);
     let _ = (参数个数, 参数表);
     // SAFETY: 调度核心保证 `返回槽` 可写。
     unsafe { 返回槽.write(数据槽::内联(v1_contract::类型标签::新建(测试标签), 7, 0)) };
@@ -97,7 +97,7 @@ pub(crate) unsafe extern "C" fn 慢命令(
 }
 
 /// 两参命令的参数表（**行序即契约**，测试里只为占位）。
-pub(crate) static 参数表_两参: 静态<[参数信息; 2]> = 静态([
+pub(crate) static 参数表_两参命令: 静态<[参数信息; 2]> = 静态([
     参数信息 {
         名称: c"首项".as_ptr().cast::<u8>(),
         说明: c"第一个入参".as_ptr().cast::<u8>(),
@@ -139,7 +139,7 @@ pub(crate) static 命令表_测试: 静态<[命令信息; 4]> = 静态([
         返回类型: v1_contract::类型标签::新建(测试标签),
         用户级别: 0,
         参数个数: 2,
-        参数表: 参数表_两参.0.as_ptr(),
+        参数表: 参数表_两参命令.0.as_ptr(),
         编号: v1_contract::能力号::新建(测试命令首号.取号值() + 1),
         可抛错误码: v1_contract::表段::空实例(),
     },
