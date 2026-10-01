@@ -17,6 +17,8 @@ MCP 的 stdio 传输就是换行分隔的 JSON-RPC：不需要 SDK。本件只�
 import json
 import sys
 
+from .服务指纹 import 过期提示行
+
 协议版本 = "2024-11-05"
 服务名 = "v1-devkit"
 服务显示名 = "V1 开发工具"
@@ -69,6 +71,10 @@ def 派发(方法, 参数, 仓根, 工具表):
             return None, {"code": -32602, "message": "没有这个工具：%r" % (名称,)}
         实现 = 工具表[名称][0]
         退出码, 输出文本 = 实现(参数.get("arguments") or {}, 仓根)
+        # ⑤ 服务代码过期自查：MCP 是长驻进程，改了 `MCP服务/**` 不重启就跑旧码 ⇒ 回执头如实报一行。
+        过期行 = 过期提示行()
+        if 过期行:
+            输出文本 = 过期行 + "\n" + 输出文本
         return {"content": [{"type": "text", "text": 输出文本}], "isError": 退出码 != 0}, None
     return None, {"code": -32601, "message": "方法不存在：%r" % (方法,)}
 
