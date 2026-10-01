@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """长活原语考题 runner —— 给 `跨语言适配/边界协议/边界协议.md` §四 判据 7–10 出真读数。
 
-    python3 测试验证/准入判据/长活原语.py --预编   # 环境步：编单文件考题（不碰 cargo 锁）
+    python3 测试验证/准入判据/长活原语.py --预编译考题   # 环境步：编单文件考题（不碰 cargo 锁）
     python3 测试验证/准入判据/长活原语.py          # 命令体：跑它，打 判据 7–10 的读数
     python3 测试验证/准入判据/长活原语.py --自测   # runner 自身的三组正/反向样本
 
@@ -21,21 +21,21 @@ from 构建装配.门禁 import 报告环境步, 自门禁  # noqa: E402
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from 准入判据.长活原语 import 判定, 找仓根, 自测, 预编  # noqa: E402
+from 准入判据.长活原语 import 判定, 找仓根, 自测, 预编译考题  # noqa: E402
 
 
 def 入口函数(参数: list) -> int:
     """命令行入口：分发到 `长活原语` 的公开面。阈值与注入只从 `构建装配/门禁/` 取。"""
     if "--自测" in 参数:
         return 自测()
-    if "--预编" in 参数:
-        return 预编(找仓根())
+    if "--预编译考题" in 参数:
+        return 预编译考题(找仓根())
     return 判定(找仓根())
 
 
 if __name__ == "__main__":
     命令行参数 = sys.argv[1:]
-    if "--预编" in 命令行参数:
+    if "--预编译考题" in 命令行参数:
         sys.exit(
             报告环境步(
                 起始时刻, 入口函数(命令行参数), "单文件 Rust 考题的一次性编译（rustc --test，不碰 cargo 锁）"

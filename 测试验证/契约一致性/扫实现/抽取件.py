@@ -286,13 +286,13 @@ def 抽错误码表(掩码文本: str, 键名: str, 符号表: dict, 本表: dic
     return 结果
 
 
-导出模式 = re.compile(r"#\[\s*(?:unsafe\s*\(\s*)?export_name\s*=")
+导出属性模式 = re.compile(r"#\[\s*(?:unsafe\s*\(\s*)?export_name\s*=")
 无修饰模式 = re.compile(r"#\[\s*no_mangle\s*\]")
 
 
 def 抽导出(掩码文本: str, 原文本: str, 键名: str) -> list:
     结果 = []
-    for 匹配 in 导出模式.finditer(掩码文本):
+    for 匹配 in 导出属性模式.finditer(掩码文本):
         引号位 = 原文本.find('"', 匹配.end(), min(len(原文本), 匹配.end() + 200))
         if 引号位 < 0:
             continue

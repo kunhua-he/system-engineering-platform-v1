@@ -1,4 +1,4 @@
-//! 运行回执 —— **追加**一行 JSON 到 `测试验证/案例/运行回执.jsonl`。
+//! 运行回执 —— **追加一行** JSON 到 `测试验证/案例/运行回执.jsonl`。
 //!
 //! # 为什么必须绑提交哈希
 //!
@@ -35,7 +35,7 @@ use crate::错误码::登记;
 pub const 案例回执件: &str = "运行回执.jsonl";
 
 /// 回执相对仓根的路径。**它不参与「工作区是否干净」的判定**（见文件头）。
-pub const 回执相对路: &str = "测试验证/案例/运行回执.jsonl";
+pub const 回执相对路径: &str = "测试验证/案例/运行回执.jsonl";
 
 /// 一条步骤读数。
 #[derive(Debug, Clone)]
@@ -78,7 +78,7 @@ pub struct 回执 {
 
 impl 回执 {
     /// 一行 JSON（**没有换行**，追加时补）。
-    pub fn 到行(&self) -> String {
+    pub fn 写成一行(&self) -> String {
         let mut 文本缓冲 = String::from("{");
         文本缓冲.push_str("\"提交哈希\":");
         crate::最小JSON::写串(&mut 文本缓冲, &self.提交哈希);
@@ -139,8 +139,8 @@ fn 写可选串(文本缓冲: &mut String, 待处理值: Option<&str>) {
     }
 }
 
-/// **追加**一行。追加不是覆盖：回执是历史，抹掉历史就没法判「回执是不是旧的」。
-pub fn 追加(路径: &Path, 源码行: &str) -> Result<(), String> {
+/// **追加一行**。追加不是覆盖：回执是历史，抹掉历史就没法判「回执是不是旧的」。
+pub fn 追加一行(路径: &Path, 源码行: &str) -> Result<(), String> {
     if let Some(父目录) = 路径.parent() {
         std::fs::create_dir_all(父目录).map_err(|错误| format!("建不了 {}：{错误}", 父目录.display()))?;
     }
@@ -181,7 +181,7 @@ pub fn 工作区干净(仓根: &Path) -> Result<bool, String> {
         .arg("-C")
         .arg(仓根)
         .args(["status", "--porcelain", "--"])
-        .arg(format!(":(exclude){回执相对路}"))
+        .arg(format!(":(exclude){回执相对路径}"))
         .output()
         .map_err(|错误| format!("跑不了 git status：{错误}"))?;
     if !文本缓冲.status.success() {
@@ -285,7 +285,7 @@ mod 测试 {
                 说明: "无".to_owned(),
             }],
         };
-        let 源码行 = 回执值.到行();
+        let 源码行 = 回执值.写成一行();
         let 解析值 = crate::最小JSON::解析(&源码行).expect("回执必须是合法 JSON");
         assert_eq!(解析值.取成员("案例名").and_then(|一项| 一项.取字符串()), Some("首项\"次项"));
         assert_eq!(解析值.取成员("死在哪一层").and_then(|一项| 一项.取字符串()), Some("内核"));
