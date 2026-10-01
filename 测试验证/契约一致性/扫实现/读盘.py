@@ -15,7 +15,9 @@ from .常量 import 读上限字节, 契约目录名, 常量表相对, 判据名
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "准入判据"))
 from 准入判据 import 世界  # noqa: E402
 from .小工具 import 取相对路径
-from .掩码 import 掩码
+# 词法器只留一套：闸 2 直接引闸 1 的 `去字面量`（原 `掩码.py` 只是它的转口，已删）。
+# 跨区 import 方向「测试验证 → 构建装配」已确立合法（同 `夹具判定.py` 引 `构造点`/`测试件`）。
+from 构建装配.一键验证.一键验证.剥字面量 import 去字面量
 from .夹具判定 import 建夹具集
 from .符号解析 import 建符号表
 from .抽实现面 import 抽实现面
@@ -86,7 +88,7 @@ def _扫一遍(仓根: str, 范围: list, 件表=None, 坏件表=None) -> list:
         读回 = 读盘(仓根, 范围)
         件表, 坏件表 = 读回["件表"], 读回["坏"]
     坏件表 = 坏件表 or []
-    掩表 = {件键: 掩码(掩前) for 件键, 掩前 in 件表.items() if 件键.endswith(".rs") and 掩前 is not None}
+    掩表 = {件键: 去字面量(掩前) for 件键, 掩前 in 件表.items() if 件键.endswith(".rs") and 掩前 is not None}
     夹具 = 建夹具集(件表, 掩表)
     符号表 = 建符号表(件表, 掩表)
     实现面 = 抽实现面(件表, 范围, 符号表, 夹具, 掩表)

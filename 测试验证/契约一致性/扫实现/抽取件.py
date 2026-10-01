@@ -311,7 +311,10 @@ def 抽导出(掩码文本: str, 原文本: str, 键名: str) -> list:
 
 def 抽常量(掩码文本: str, 键名: str) -> list:
     结果 = []
-    for 匹配 in re.finditer(r"(?:^|\n)[ \t]*(?:pub\s+)?const\s+([^\s:]+)\s*:", 掩码文本):
+    # ★ 2026-10-01（抽取面缺口）：可见性修饰放宽到 `pub(crate)` / `pub(super)` —— 旧正则只认
+    #   `pub ` / 无修饰 ⇒ 全仓 166 个 `pub(crate) const` 名抽不出（③j 常量同名再定义 · ③k
+    #   与闸 1 的常量判据都建立在这个抽取面上 ⇒ 漏抽即静默少判）。
+    for 匹配 in re.finditer(r"(?:^|\n)[ \t]*(?:pub(?:\([^)]*\))?\s+)?const\s+([^\s:]+)\s*:", 掩码文本):
         名称 = 匹配.group(1)
         _, 值文, _ = _切声明(掩码文本, 匹配.end())
         结果.append(
