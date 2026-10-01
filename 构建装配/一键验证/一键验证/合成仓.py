@@ -191,6 +191,7 @@ def 干净合成仓() -> dict:
             "    通知号段: v1_contract::声明数据::底座通知号段表段(),\n"
             "    错误段位表: v1_contract::声明数据::底座错误段位表表段(),\n"
             "});\n"
+            "pub const 底座宿主版本: v1_contract::版本三元组 = v1_contract::声明数据::底座提供宿主版本;\npub const 底座内核版本: v1_contract::版本三元组 = v1_contract::声明数据::底座提供内核版本;\n"  # 判据 ⑩(d)：真仓的这两项在 `判定.rs`；夹具照形状补上，否则正向样本多两条未判
         ),
         "运行内核/资源网关口/Cargo.toml": '[package]\nname = "v1-resource"\nversion = "0.1.0"\n',
         # 正向样本必须带**冻结的访问形状**（资源网关口.md §四）：⑪-4 收窄到形状后，
