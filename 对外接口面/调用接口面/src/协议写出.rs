@@ -27,7 +27,7 @@ fn 写一个值(输出缓冲: &mut String, 待处理值: &协议值, 层级: usi
         协议值::真 => 输出缓冲.push_str("true"),
         协议值::假 => 输出缓冲.push_str("false"),
         协议值::整数(数) => 输出缓冲.push_str(&数.to_string()),
-        协议值::无符号(数) => 输出缓冲.push_str(&数.to_string()),
+        协议值::无符号值(数) => 输出缓冲.push_str(&数.to_string()),
         协议值::小数(数) => {
             if 数.is_finite() {
                 输出缓冲.push_str(&数.to_string());

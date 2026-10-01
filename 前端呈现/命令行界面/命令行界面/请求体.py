@@ -2,7 +2,7 @@
 
 import base64
 
-from .参数 import 用法错
+from .参数 import 用法错误
 
 
 def 拼值(参数: str) -> dict:
@@ -36,6 +36,6 @@ def 拼值(参数: str) -> dict:
             return {"类型标签": 3, "值": 1}
         if 小写文本 in ("假", "false", "0", "否"):
             return {"类型标签": 3, "值": 0}
-        raise 用法错("逻辑值只认 真/假/true/false/1/0：{}".format(值文))
+        raise 用法错误("逻辑值只认 真/假/true/false/1/0：{}".format(值文))
     # 4 文本 · 5 字节集（base64 原样透传）· 其余标签原样透传 —— 不解释未登记的标签。
     return {"类型标签": 标签, "值": 值文}

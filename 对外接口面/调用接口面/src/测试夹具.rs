@@ -85,7 +85,7 @@ pub fn 取逻辑值(待处理值: &协议值, 键名: &str) -> bool {
 }
 
 /// 取一个非负整数成员。
-pub fn 无符号(待处理值: &协议值, 键名: &str) -> u64 {
+pub fn 无符号值(待处理值: &协议值, 键名: &str) -> u64 {
     待处理值.取成员(键名)
         .and_then(协议值::取无符号)
         .unwrap_or_else(|| panic!("「{键名}」应当是非负整数，实际 {:?}", 待处理值.取成员(键名)))
@@ -149,7 +149,7 @@ pub fn 取请求(路径: &str) -> String {
 }
 
 /// 一条 POST 请求（原始文本）。`Content-Length` 按**字节数**算，与冻结件一致。
-pub fn 交请求(路径: &str, 请求体: &str) -> String {
+pub fn 交POST请求(路径: &str, 请求体: &str) -> String {
     format!(
         "POST {路径} HTTP/1.1\r\nHost: 127.0.0.1\r\nContent-Type: application/json; charset=utf-8\r\nContent-Length: {}\r\n\r\n{请求体}",
         请求体.len()

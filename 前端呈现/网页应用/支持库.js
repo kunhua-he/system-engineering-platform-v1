@@ -35,7 +35,7 @@ function 摆变量(容器, 应答体) {
   }
 }
 
-export function 装支持库(取元素) {
+export function 装支持库视图(取元素) {
   const 清单果 = 取元素("清单果");
   const 契约果 = 取元素("契约果");
 

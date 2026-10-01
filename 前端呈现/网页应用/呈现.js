@@ -143,7 +143,7 @@ export function 摆应答(容器, 应答) {
 }
 
 /** 一份静态件 → DOM：HTTP 状态 + 原文。 */
-export function 摆件(容器, 路径, 节点件) {
+export function 摆静态件(容器, 路径, 节点件) {
   清空容器(容器);
   const 头部 = 建元素("div", "应答头");
   头部.append(建元素("span", 节点件.状态 === 200 ? "状态 好" : "状态 坏", "HTTP " + 节点件.状态));

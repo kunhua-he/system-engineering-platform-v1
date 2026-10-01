@@ -10,7 +10,7 @@
 // SVG 的元素命名空间。**它不是外链**：这里没有一次网络请求，`自检.sh` 第四条要的是
 // 「离线可跑」（0 处外链），而这个串只是 DOM 规范里给 SVG 元素定的名字。
 // 所以它按两半分写：免得自检那条 `https?://` 的模式把它当成一个外链来数（实测撞到过）。
-const 命名空间 = "http" + "://www.w3.org/2000/svg";
+const 图形命名空间 = "http" + "://www.w3.org/2000/svg";
 
 /**
  * 图形表：每项一条 `d`（可含多个子路径）+ 是否填充。
@@ -67,10 +67,10 @@ export const 图形表 = {
 /** 建一个 SVG 节点。`名称` 不在表里就给一个空框（宁可空着，也不编一个形状出来）。 */
 export function 画图标(名称) {
   const 图形项 = 图形表[名称] || { 路径: "M1 1h14v14H1z" };
-  const 元素 = document.createElementNS(命名空间, "svg");
+  const 元素 = document.createElementNS(图形命名空间, "svg");
   元素.setAttribute("viewBox", "0 0 16 16");
   元素.setAttribute("aria-hidden", "true");
-  const 路径 = document.createElementNS(命名空间, "path");
+  const 路径 = document.createElementNS(图形命名空间, "path");
   路径.setAttribute("d", 图形项.路径);
   路径.setAttribute("stroke", "currentColor");
   路径.setAttribute("stroke-width", "1");
