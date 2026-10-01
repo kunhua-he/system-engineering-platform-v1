@@ -358,8 +358,8 @@ def 建库(指定根: Path = None, 打读数: bool = False) -> dict:
     规则连接 = sqlite3.connect(规则库)
     for 语句 in 表定义.建表语句:
         规则连接.execute(语句)
-    规则连接.execute("insert or replace into 元 values(?,?)",
-                 ("生成物声明", 表定义.生成物声明))
+    规则连接.execute("insert or replace into 元 values(?,?)", ("生成物声明", 表定义.生成物声明))
+    规则连接.execute("delete from 元 where 键 <> '生成物声明'")  # `元` 只留它；旧键是孤儿，见 表定义.py
     计数 = {
         # `条款` 现抽要拿 `文档` 的行当入参 —— `文档` 是派生表，故这里直接现抽一次。
         "条款": 装表(规则连接, "条款", 装条款, 根目录, 装文档(根目录)),
