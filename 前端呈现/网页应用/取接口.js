@@ -130,34 +130,34 @@ export function 拼文本调用体(编号, 文本, 参数个数) {
  * 只把状态码与原文带回去，不认扩展名、不看内容。取不到就把取不到的原因原样摆出来。
  */
 export async function 取静态件(路径) {
-  const 应答 = await fetch(路径, { headers: { Accept: "text/plain, */*" } });
-  return { 状态: 应答.status, 文: await 应答.text() };
+  const 造应答 = await fetch(路径, { headers: { Accept: "text/plain, */*" } });
+  return { 状态: 造应答.status, 文: await 造应答.text() };
 }
 
 async function 取应答(路径) {
-  const 应答 = await fetch(路径, { headers: { Accept: "application/json" } });
-  return 收应答(应答);
+  const 造应答 = await fetch(路径, { headers: { Accept: "application/json" } });
+  return 收应答(造应答);
 }
 
 async function 发请求(路径, 体文) {
-  const 应答 = await fetch(路径, {
+  const 造应答 = await fetch(路径, {
     method: "POST",
     headers: { "Content-Type": "application/json; charset=utf-8" },
     body: 体文,
   });
-  return 收应答(应答);
+  return 收应答(造应答);
 }
 
 // 收一条应答。**本页不看键名、不判定内容**：只把状态码与原文带回去。
 // 体用 `clone().json()` 试一次；拿不到就当原文摆出来（例如静态服务把 /接口 当文件找、
 // 回一段 HTML —— 那是同源托管没接上，不是本页能修的事）。
-async function 收应答(应答) {
+async function 收应答(造应答) {
   let 应答体 = null;
   try {
-    应答体 = await 应答.clone().json();
+    应答体 = await 造应答.clone().json();
   } catch {
     应答体 = null;
   }
-  const 文本 = await 应答.text();
-  return { 状态: 应答.status, 体: 应答体, 文: 文本 };
+  const 文本 = await 造应答.text();
+  return { 状态: 造应答.status, 体: 应答体, 文: 文本 };
 }

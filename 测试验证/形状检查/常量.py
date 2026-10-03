@@ -33,5 +33,5 @@ from pathlib import Path
 判定_未判 = "未判"
 
 
-class 形状错(ValueError):
+class 期望形状错(ValueError):
     """期望写坏了（形状硬伤）——与 `形状.md` §五 的「工具错误」同档。"""

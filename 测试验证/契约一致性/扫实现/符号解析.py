@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 
 from .常量 import 生成物相对路径, 契约源相对路径, 契约源目录
-from .小工具 import 配对
+from .小工具 import 找配对界符
 from 构建装配.一键验证.一键验证.剥字面量 import 去字面量
 
 
@@ -168,7 +168,7 @@ def 建符号表(件表: dict, 掩表: dict = None) -> dict:
         # `pub mod <M> { … pub const <名>: <t> = <整数字面量>; … }`
         # 同时收**模块限定名**（`M::名`）与**末段名**（`名`）两种键。
         for mm in re.finditer(r"pub\s+mod\s+([^\s{]+)\s*\{", 掩码文本):
-            区间终点 = 配对(掩码文本, mm.end() - 1)
+            区间终点 = 找配对界符(掩码文本, mm.end() - 1)
             if 区间终点 < 0:
                 continue
             模块名 = mm.group(1)

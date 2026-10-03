@@ -15,22 +15,22 @@ use crate::测试夹具::{发请求, 取请求, 起服务};
 #[test]
 fn 静态托管_根路径回首页() {
     let 服务 = 起服务();
-    let 应答 = 发请求(&服务, &取请求("/"));
+    let 造应答 = 发请求(&服务, &取请求("/"));
 
-    assert_eq!(应答.状态, 200, "`GET /` 必须回前端的 index.html，不是 404");
+    assert_eq!(造应答.状态, 200, "`GET /` 必须回前端的 index.html，不是 404");
     assert!(
-        应答.头.contains("text/html; charset=utf-8"),
+        造应答.头.contains("text/html; charset=utf-8"),
         "静态件的内容类型必须随件走（不是 application/json）：\n{}",
-        应答.头
+        造应答.头
     );
     assert!(
-        应答.体.starts_with("<!DOCTYPE html>"),
+        造应答.体.starts_with("<!DOCTYPE html>"),
         "回的第一段该是 index.html 的开头：\n{}",
-        应答.体.chars().take(80).collect::<String>()
+        造应答.体.chars().take(80).collect::<String>()
     );
-    assert!(应答.体.contains("网页版编译器"), "该是真页面，不是占位");
+    assert!(造应答.体.contains("网页版编译器"), "该是真页面，不是占位");
     assert!(
-        应答.头.contains(&format!("Content-Length: {}", 应答.体.len())),
+        造应答.头.contains(&format!("Content-Length: {}", 造应答.体.len())),
         "Content-Length 必须按字节数算"
     );
 }
@@ -44,15 +44,15 @@ fn 静态托管_前端自身的件按扩展名给内容类型() {
         ("/取接口.js", "text/javascript; charset=utf-8", "fetch"),
         ("/应用.js", "text/javascript; charset=utf-8", "import"),
     ] {
-        let 应答 = 发请求(&服务, &取请求(路径));
-        assert_eq!(应答.状态, 200, "「{路径}」该取得到");
-        assert!(应答.头.contains(类型), "「{路径}」的内容类型该是 {类型}：\n{}", 应答.头);
-        assert!(应答.体.contains(特征), "「{路径}」该是真件：\n{}", 应答.体);
+        let 造应答 = 发请求(&服务, &取请求(路径));
+        assert_eq!(造应答.状态, 200, "「{路径}」该取得到");
+        assert!(造应答.头.contains(类型), "「{路径}」的内容类型该是 {类型}：\n{}", 造应答.头);
+        assert!(造应答.体.contains(特征), "「{路径}」该是真件：\n{}", 造应答.体);
     }
     // 浏览器发的是百分号编码路径（`/样式.css` → `/%E6%A0%B7%E5%BC%8F.css`）。
-    let 应答 = 发请求(&服务, &取请求("/%E6%A0%B7%E5%BC%8F.css"));
-    assert_eq!(应答.状态, 200, "百分号编码的件名必须认得出来");
-    assert!(应答.头.contains("text/css"));
+    let 造应答 = 发请求(&服务, &取请求("/%E6%A0%B7%E5%BC%8F.css"));
+    assert_eq!(造应答.状态, 200, "百分号编码的件名必须认得出来");
+    assert!(造应答.头.contains("text/css"));
 }
 
 /// **只托管前端自身的件**：仓内别处一律取不到 —— 那等于把源码全挂给浏览器。
@@ -69,12 +69,12 @@ fn 静态托管_仓内别处一律404() {
         "/%2e%2e/Cargo.toml",
         "/没有这个件.txt",
     ] {
-        let 应答 = 发请求(&服务, &取请求(路径));
-        assert_eq!(应答.状态, 404, "「{路径}」不许被托管出去");
+        let 造应答 = 发请求(&服务, &取请求(路径));
+        assert_eq!(造应答.状态, 404, "「{路径}」不许被托管出去");
         assert!(
-            应答.取文本("协议错误").contains("只托管前端自身的件"),
+            造应答.取文本("协议错误").contains("只托管前端自身的件"),
             "404 必须说清为什么：\n{}",
-            应答.体
+            造应答.体
         );
     }
 }

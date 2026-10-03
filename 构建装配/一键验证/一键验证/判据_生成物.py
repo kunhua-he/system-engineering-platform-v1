@@ -90,7 +90,7 @@ def 检查10_生成物与JSON一致(上层读数: dict) -> list:
     with ThreadPoolExecutor(max_workers=并发度) as 线程池:
         构造点表 = list(线程池.map(lambda 一项: (一项[0], 找构造点(一项[1])), 扫描件))
     # 生产区文本（去掉 #[cfg(test)] 区 + 整文件即测试的模块）——判据 C 的②要拿它查夹具名
-    生产区 = 并行生产区(扫描件, 上层读数["测试文件集"])
+    生产区文本 = 并行生产区(扫描件, 上层读数["测试文件集"])
 
     for 键名, 点表 in 构造点表:
         整文件测试 = 键名 in 上层读数["测试文件集"]
@@ -152,7 +152,7 @@ def 检查10_生成物与JSON一致(上层读数: dict) -> list:
                     )
                     continue
                 引用处 = []
-                for 它键, 生产文本 in 生产区.items():
+                for 它键, 生产文本 in 生产区文本.items():
                     for 匹配结果 in re.finditer(r"(?<![\w])" + re.escape(项名) + r"(?![\w])", 生产文本):
                         行号 = 生产文本[: 匹配结果.start()].count("\n") + 1
                         引用处.append(f"{它键}:{行号}")
