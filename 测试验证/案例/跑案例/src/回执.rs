@@ -41,6 +41,8 @@ pub const 回执相对路径: &str = "测试验证/案例/运行回执.jsonl";
 #[derive(Debug, Clone)]
 pub struct 步骤读数 {
     pub 名: String,
+    /// 步骤种类：`能力` / `通知`。通知步骤的 `能力编号` 恒 0（通知号另记在 `名` 与说明里）。
+    pub 种类: String,
     pub 能力编号: u32,
     /// 适配器当场取到的能力名；`None` = 这个号没被任何已装载声明认领。
     pub 能力名: Option<String>,
@@ -109,6 +111,8 @@ impl 回执 {
             文本缓冲.push('{');
             文本缓冲.push_str("\"名\":");
             crate::最小JSON::写串(&mut 文本缓冲, &步序.名);
+            文本缓冲.push_str(",\"种类\":");
+            crate::最小JSON::写串(&mut 文本缓冲, &步序.种类);
             文本缓冲.push_str(&format!(",\"能力编号\":{},\"能力名\":", 步序.能力编号));
             写可选串(&mut 文本缓冲, 步序.能力名.as_deref());
             文本缓冲.push_str(",\"调用结果\":");
@@ -274,6 +278,7 @@ mod 测试 {
             说明: "换行\n也要转义".to_owned(),
             步骤: vec![步骤读数 {
                 名: "首项".to_owned(),
+                种类: "能力".to_owned(),
                 能力编号: 1105,
                 能力名: Some("反解容器".to_owned()),
                 调用结果: "成功".to_owned(),
