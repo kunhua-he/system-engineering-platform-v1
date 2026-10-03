@@ -19,7 +19,7 @@ import json
 import sys
 from pathlib import Path
 
-配置文件 = Path.home() / ".zcode" / "cli" / "config.json"
+配置文件路径 = Path.home() / ".zcode" / "cli" / "config.json"
 自家标记 = "V1 开工闸"                    # 认它做幂等：命令串里带这个标记就是自家那条
 拦的工具 = "Edit|Write|MultiEdit|NotebookEdit"
 钩子命令 = (f"printf '%s\\n' '[{自家标记}] 改代码只能走 MCP：请调 v1_edit"
@@ -27,13 +27,13 @@ from pathlib import Path
 
 
 def _读配置() -> dict:
-    if not 配置文件.is_file():
+    if not 配置文件路径.is_file():
         return {}
     try:
-        数据 = json.loads(配置文件.read_text(encoding="utf-8"))
+        数据 = json.loads(配置文件路径.read_text(encoding="utf-8"))
     except ValueError as 解不动的原因:
         raise SystemExit("读不动 %s（不是合法 JSON）：%s\n本件不替你改它 —— 先修好它再跑"
-                         % (配置文件, 解不动的原因))
+                         % (配置文件路径, 解不动的原因))
     return 数据 if isinstance(数据, dict) else {}
 
 
@@ -61,9 +61,9 @@ def 装钩子() -> int:
     事件表["PreToolUse"] = 前事件
     钩子块["events"] = 事件表
     数据["hooks"] = 钩子块
-    配置文件.parent.mkdir(parents=True, exist_ok=True)
-    配置文件.write_text(json.dumps(数据, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    print("装钩子：已写进 %s" % 配置文件)
+    配置文件路径.parent.mkdir(parents=True, exist_ok=True)
+    配置文件路径.write_text(json.dumps(数据, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    print("装钩子：已写进 %s" % 配置文件路径)
     print("        拦：%s（其余工具一律放行，含 Bash / Read / Grep）" % 拦的工具)
     print("        拦下时打印「该调哪个工具」并 exit 2 —— 报错必须带解法。")
     print("        别人的钩子一条没动；重复跑不叠加（认标记 `%s`）。" % 自家标记)
@@ -91,7 +91,7 @@ def 卸钩子() -> int:
     else:
         del 钩子块["events"]["PreToolUse"]        # 一条不剩就把这一格删掉，不留空壳
     数据["hooks"] = 钩子块
-    配置文件.write_text(json.dumps(数据, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    配置文件路径.write_text(json.dumps(数据, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print("装钩子：摘掉自家 %d 条，别人的一条没动。重启 ZCode 生效。" % 摘掉数)
     return 0
 
