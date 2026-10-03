@@ -132,8 +132,8 @@
 
 /// 静态 NUL 结尾串 → 契约要的 `*const u8`。生成物内部用；路由件不含 `unsafe`。
 /// 定义在路由件（只一处），子件 `use super::取字节串指针;` 取用。
-const fn 取字节串指针(字节: &'static [u8]) -> *const u8 {
-    字节.as_ptr()
+const fn 取字节串指针(字节串: &'static [u8]) -> *const u8 {
+    字节串.as_ptr()
 }
 
 // ── 按表拆出的子件（文件名非 ASCII ⇒ 逐条给 `#[path]`）──
