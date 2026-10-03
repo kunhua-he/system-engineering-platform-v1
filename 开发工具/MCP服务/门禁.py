@@ -28,7 +28,7 @@ import sys
 from pathlib import Path
 
 from . import 开工账本 as 账本
-from .修改 import 对账
+from .修改 import 对账_除源件
 
 超时秒 = 5
 
@@ -41,7 +41,7 @@ def 派发(参数表: dict, 仓根) -> tuple:
         判据词表 = [判据词表]
     词表 = [str(判据词).strip() for 判据词 in (判据词表 or []) if str(判据词).strip()]
 
-    查询根, 树名, 认领表 = Path(仓根).resolve(), "主工作树", None
+    查询根, 树名, 认领表, 源件表 = Path(仓根).resolve(), "主工作树", None, set()
     if 开工号:
         连接 = 账本.连账本()
         try:
@@ -51,6 +51,7 @@ def 派发(参数表: dict, 仓根) -> tuple:
             查询根 = Path(一条["工作树"])
             树名 = "%s（支线 %s）" % (开工号, 一条["分支名"])
             认领表 = 账本.读认领(连接, 开工号)
+            源件表 = 账本.源件路径集(连接, 开工号)
         finally:
             连接.close()
         if not 查询根.is_dir():
@@ -86,7 +87,10 @@ def 派发(参数表: dict, 仓根) -> tuple:
 
     # 绕过检测：这条开工认领集里，盘上指纹 ≠ 账本指纹 ⇒ 有人绕过 MCP 改了它。
     if 认领表 is not None:
-        _, 变过表 = 对账(查询根, 认领表)
+        对得上表, 变过表, 放行表 = 对账_除源件(查询根, 认领表, 源件表)
+        if 放行表:
+            输出行表.append("（经 功能 = 6 记过的源件，指纹漂移已放行：%s）"
+                        % " · ".join(sorted(放行表)))
         if 变过表:
             输出行表.append("★ **绕过检测**：这些件被绕过 MCP 改过（盘上指纹 ≠ 账本指纹）：\n%s"
                         % "\n".join("    %s：账本 %s → 盘上 %s"
