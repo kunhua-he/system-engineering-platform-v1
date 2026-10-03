@@ -84,7 +84,7 @@ impl 表达式分析器<'_> {
         let 保存止 = self.止;
         self.游标 = 开符;
         self.止 = 区间终点;
-        let 结果 = match self.配对(b"(", b")") {
+        let 结果 = match self.找配对界符(b"(", b")") {
             Some(闭符) => self.解实参表(开符, 闭符),
             None => Vec::new(),
         };

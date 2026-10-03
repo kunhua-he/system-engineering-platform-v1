@@ -34,12 +34,12 @@ def 命令调用(端口: int, 参数: list, 显示: bool) -> int:
     编号 = int(编号文)  # 只做「是不是十进制数」的搬运，不查它存不存在（那是后端的判）
     应答体 = {"编号": 编号, "值": [拼值(一项) for 一项 in 值参数]}
     体文本 = json.dumps(应答体, ensure_ascii=False)
-    状态, 应答 = 发请求(端口, "POST", 路径_调用, 体文本, 显示)
+    状态, 造应答 = 发请求(端口, "POST", 路径_调用, 体文本, 显示)
     try:
-        解析后 = json.loads(应答)
+        解析后 = json.loads(造应答)
     except ValueError:
         print("HTTP {} —— 应答不是合法 JSON，原样贴出：".format(状态))
-        print(应答)
+        print(造应答)
         return 3
     if 解析后.get("成功") is True:
         return 印调用成功(状态, 解析后)

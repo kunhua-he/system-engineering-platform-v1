@@ -55,12 +55,12 @@ export const 扩展表 = [];
  * 一个扩展带几段号段就摊成几条（`找扩展` 按区间查，摊平了才对得上）。
  */
 export async function 拉扩展表() {
-  const 应答 = await 取扩展();
-  if (应答.状态 !== 200 || !应答.体 || !Array.isArray(应答.体.种类)) {
-    return "GET /接口/扩展 没回出扩展清单（HTTP " + 应答.状态 + "）";
+  const 造应答 = await 取扩展();
+  if (造应答.状态 !== 200 || !造应答.体 || !Array.isArray(造应答.体.种类)) {
+    return "GET /接口/扩展 没回出扩展清单（HTTP " + 造应答.状态 + "）";
   }
   扩展表.length = 0;
-  for (const 类别 of 应答.体.种类) {
+  for (const 类别 of 造应答.体.种类) {
     for (const 扩展 of 类别.扩展 || []) {
       for (const 号段 of 扩展.能力号段 || []) {
         扩展表.push({

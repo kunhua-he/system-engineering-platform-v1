@@ -42,8 +42,8 @@ def 发JSON(端口: int, 路径: str, 体对象: dict) -> tuple:
     )
     状态, 应体 = 0, ""
     try:
-        with urllib.request.urlopen(请求对象, timeout=HTTP超时秒) as 应答:
-            状态, 应体 = 应答.status, 应答.read().decode("utf-8")
+        with urllib.request.urlopen(请求对象, timeout=HTTP超时秒) as 造应答:
+            状态, 应体 = 造应答.status, 造应答.read().decode("utf-8")
     except urllib.error.HTTPError as 错误:
         状态, 应体 = 错误.code, 错误.read().decode("utf-8", errors="replace")
     try:

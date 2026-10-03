@@ -91,8 +91,8 @@ def 真调网关(端口: int, 被调号: int, 程序文本: str) -> dict:
     )
     状态, 应体 = 0, ""
     try:
-        with urllib.request.urlopen(请求对象, timeout=HTTP超时秒) as 应答:
-            状态, 应体 = 应答.status, 应答.read().decode("utf-8")
+        with urllib.request.urlopen(请求对象, timeout=HTTP超时秒) as 造应答:
+            状态, 应体 = 造应答.status, 造应答.read().decode("utf-8")
     except urllib.error.HTTPError as 错误:
         状态, 应体 = 错误.code, 错误.read().decode("utf-8", errors="replace")
     输出缓冲 = {"HTTP状态": 状态, "成功": None, "返回字节数": None, "耗时微秒": None}

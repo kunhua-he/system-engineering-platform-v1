@@ -29,8 +29,8 @@ def 发请求(端口: int, 方法: str, 路径: str, 体文本: str, 显示请�
             print("> Content-Length: {}".format(len(数据)), file=sys.stderr)
             print("> {}".format(体文本), file=sys.stderr)
     try:
-        with urllib.request.urlopen(请求, timeout=默认超时秒) as 应答:
-            return 应答.status, 应答.read().decode("utf-8", "replace")
+        with urllib.request.urlopen(请求, timeout=默认超时秒) as 造应答:
+            return 造应答.status, 造应答.read().decode("utf-8", "replace")
     except urllib.error.HTTPError as 错误:
         # 4xx 是**协议层**失败（请求本身不合法），体里仍是一份 JSON 说明。
         return 错误.code, 错误.read().decode("utf-8", "replace")

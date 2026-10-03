@@ -8,7 +8,7 @@
 //! - 不做 `Transfer-Encoding: chunked`：收到即 400（要支持它就得做流式状态机 = 连接管理）。
 //! - 不做 `keep-alive` / `pipelining`：一个连接一个请求，读到定长体为止，余料丢弃。
 
-use crate::分发::应答;
+use crate::分发::造应答;
 use std::io::{Read, Write};
 use std::net::TcpStream;
 
@@ -104,19 +104,19 @@ fn 找头体分界(缓冲: &[u8]) -> Option<usize> {
 
 /// 写一条应答。**恒带 `Connection: close`**（不做连接管理）。
 ///
-/// 内容类型**随应答走**（`应答.内容类型`）：§三 的四个端点是 JSON，§五 的静态托管是
+/// 内容类型**随应答走**（`造应答.内容类型`）：§三 的四个端点是 JSON，§五 的静态托管是
 /// `text/html` / `text/css` / `text/javascript` —— 在这里假定 JSON 就会让前端整页挂掉
 /// （浏览器按 JSON 解 HTML 只得到一个下载或一段乱码）。
-pub(crate) fn 写响应(输出流: &mut TcpStream, 应答: &应答) -> std::io::Result<()> {
+pub(crate) fn 写响应(输出流: &mut TcpStream, 造应答: &造应答) -> std::io::Result<()> {
     let 头部 = format!(
         "HTTP/1.1 {} {}\r\nContent-Type: {}\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
-        应答.状态,
-        原因短语(应答.状态),
-        应答.内容类型,
-        应答.体.len()
+        造应答.状态,
+        原因短语(造应答.状态),
+        造应答.内容类型,
+        造应答.体.len()
     );
     输出流.write_all(头部.as_bytes())?;
-    输出流.write_all(&应答.体)?;
+    输出流.write_all(&造应答.体)?;
     输出流.flush()
 }
 

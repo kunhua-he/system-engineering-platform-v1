@@ -21,7 +21,7 @@ use crate::语言面::{节点, 节点种类, 语法树};
 /// 草稿里的一个节点：种类 · 原文区间 · 子节点草稿下标。
 pub(crate) struct 草稿 {
     pub 种类: 节点种类,
-    pub 区间: (u32, u32),
+    pub 取片段字节区间: (u32, u32),
     pub 子: Vec<u32>,
 }
 
@@ -33,12 +33,12 @@ pub(crate) struct 草稿表 {
 
 impl 草稿表 {
     pub(crate) fn 追加叶节点(&mut self, 种类: 节点种类, 区间起点: u32, 区间终点: u32) -> u32 {
-        self.表.push(草稿 { 种类, 区间: (区间起点, 区间终点), 子: Vec::new() });
+        self.表.push(草稿 { 种类, 取片段字节区间: (区间起点, 区间终点), 子: Vec::new() });
         (self.表.len() - 1) as u32
     }
 
-    pub(crate) fn 节点(&mut self, 种类: 节点种类, 区间: (u32, u32), 子: Vec<u32>) -> u32 {
-        self.表.push(草稿 { 种类, 区间, 子 });
+    pub(crate) fn 节点(&mut self, 种类: 节点种类, 取片段字节区间: (u32, u32), 子: Vec<u32>) -> u32 {
+        self.表.push(草稿 { 种类, 取片段字节区间, 子 });
         (self.表.len() - 1) as u32
     }
 
@@ -47,11 +47,11 @@ impl 草稿表 {
     }
 
     pub(crate) fn 取原文起点(&self, 下标: u32) -> u32 {
-        self.表[下标 as usize].区间.0
+        self.表[下标 as usize].取片段字节区间.0
     }
 
     pub(crate) fn 取原文终点(&self, 下标: u32) -> u32 {
-        self.表[下标 as usize].区间.1
+        self.表[下标 as usize].取片段字节区间.1
     }
 
     pub(crate) fn 取子节点(&self, 下标: u32) -> &[u32] {
@@ -70,7 +70,7 @@ impl 草稿表 {
         while let Some(节点位) = 待展开栈.pop() {
             let 位置 = 输出缓冲.len() as u32;
             let 草稿节点 = &self.表[节点位 as usize];
-            输出缓冲.push(节点::叶节点(草稿节点.种类, 草稿节点.区间));
+            输出缓冲.push(节点::叶节点(草稿节点.种类, 草稿节点.取片段字节区间));
             输出缓冲[位置 as usize].子区间 = 语法树::先序子区间(位置, 大小[节点位 as usize] - 1);
             // 逆序入栈 ⇒ 出栈即先序。
             待展开栈.extend(草稿节点.子.iter().rev().copied());
