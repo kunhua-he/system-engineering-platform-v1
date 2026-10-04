@@ -69,7 +69,7 @@ impl 部署绑定 {
     }
 
     /// 绑一份。同一个号再绑即取代。
-    pub fn 绑定(&mut self, 资源号: u32, 调用体: Box<dyn 黑盒体>) {
+    pub fn 绑定资源(&mut self, 资源号: u32, 调用体: Box<dyn 黑盒体>) {
         if let Some(格子) = self.项表.iter_mut().find(|格子| 格子.0 == 资源号) {
             格子.1 = 调用体;
             return;

@@ -64,7 +64,7 @@ impl JSON值 {
     }
 }
 
-pub(crate) fn 解析(文本: &str) -> Option<JSON值> {
+pub(crate) fn 解析JSON值(文本: &str) -> Option<JSON值> {
     let mut 顺序读器 = 顺序读器 { 字节: 文本.as_bytes(), 位: 0 };
     顺序读器.跳空白();
     let 待处理值 = 顺序读器.读一个值()?;

@@ -42,8 +42,8 @@ pub fn 编码语法树(语法树: &语法树) -> Vec<u8> {
         输出缓冲.extend_from_slice(&元素.种类.取号值().to_le_bytes());
         输出缓冲.extend_from_slice(&元素.原文区间.0.to_le_bytes());
         输出缓冲.extend_from_slice(&元素.原文区间.1.to_le_bytes());
-        输出缓冲.extend_from_slice(&元素.子区间.0.to_le_bytes());
-        输出缓冲.extend_from_slice(&元素.子区间.1.to_le_bytes());
+        输出缓冲.extend_from_slice(&元素.子节点区间.0.to_le_bytes());
+        输出缓冲.extend_from_slice(&元素.子节点区间.1.to_le_bytes());
     }
     输出缓冲.extend_from_slice(&语法树.根.to_le_bytes());
     输出缓冲

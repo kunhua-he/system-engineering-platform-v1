@@ -64,7 +64,7 @@ impl<'a> 表达式分析器<'a> {
         self.原文.get(该记号.起 as usize..该记号.止 as usize).unwrap_or(&[])
     }
 
-    pub(super) fn 当前(&self) -> Option<记号> {
+    pub(super) fn 当前记号(&self) -> Option<记号> {
         if self.游标 < self.止 {
             self.记号表.get(self.游标).copied()
         } else {
@@ -73,7 +73,7 @@ impl<'a> 表达式分析器<'a> {
     }
 
     pub(super) fn 是界符(&self, 文本: &[u8]) -> bool {
-        match self.当前() {
+        match self.当前记号() {
             Some(该记号) => 该记号.种类 == 记号种类::界符 && self.取记号原文(该记号) == 文本,
             None => false,
         }
@@ -159,7 +159,7 @@ impl<'a> 表达式分析器<'a> {
         loop {
             let 保存 = self.游标;
             self.跳过空白();
-            let 是运算符 = matches!(self.当前(), Some(该记号) if 该记号.种类 == 记号种类::运算符);
+            let 是运算符 = matches!(self.当前记号(), Some(该记号) if 该记号.种类 == 记号种类::运算符);
             if !是运算符 {
                 self.游标 = 保存;
                 return Some(左操作数);
@@ -178,7 +178,7 @@ impl<'a> 表达式分析器<'a> {
     fn 解一元表达式(&mut self) -> Option<u32> {
         self.跳过空白();
         if self.是界符(b"&") {
-            let 该记号 = self.当前()?;
+            let 该记号 = self.当前记号()?;
             self.游标 += 1;
             let 操作数 = self.解一元表达式();
             let 区间终点 = 操作数.map(|节点下标| self.草稿.取原文终点(节点下标)).unwrap_or(该记号.止);
@@ -199,7 +199,7 @@ impl<'a> 表达式分析器<'a> {
             if self.是界符(b".") {
                 self.游标 += 1;
                 self.跳过空白();
-                match self.当前() {
+                match self.当前记号() {
                     Some(成员记号) if 成员记号.种类 == 记号种类::标识符 => {
                         self.游标 += 1;
                         let 成员 = self.草稿.追加叶节点(节点种类::标识符引用, 成员记号.起, 成员记号.止);
@@ -266,7 +266,7 @@ impl<'a> 表达式分析器<'a> {
 
     fn 分析主式(&mut self) -> Option<u32> {
         self.跳过空白();
-        let 该记号 = self.当前()?;
+        let 该记号 = self.当前记号()?;
         match 该记号.种类 {
             记号种类::文本字面量 => {
                 self.游标 += 1;

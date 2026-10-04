@@ -20,7 +20,7 @@ pub(crate) fn 读JSON件(相对: &str) -> 最小JSON::JSON值 {
     let 路径 = 声明目录().join(相对);
     let 文本 = std::fs::read_to_string(&路径)
         .unwrap_or_else(|错误| panic!("读不到 {}：{错误}", 路径.display()));
-    最小JSON::解析(&文本).unwrap_or_else(|| panic!("{} 不是合法 JSON", 路径.display()))
+    最小JSON::解析JSON值(&文本).unwrap_or_else(|| panic!("{} 不是合法 JSON", 路径.display()))
 }
 
 /// 造一条**类型 2（系统信息）**的合法容器：段名用实测 GBK 字节。
