@@ -37,7 +37,7 @@ from 构建装配.门禁 import 自门禁  # noqa: E402
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from 扫实现 import (  # noqa: E402
-    打印,
+    打印比对结果,
     打印读数,
     扫实现,
     找仓根,
@@ -45,7 +45,7 @@ from 扫实现 import (  # noqa: E402
     默认范围,
 )
 
-__all__ = ["默认范围", "找仓根", "扫实现", "自测", "打印", "打印读数"]
+__all__ = ["默认范围", "找仓根", "扫实现", "自测", "打印比对结果", "打印读数"]
 
 
 def 入口函数(参数: list) -> int:
@@ -61,7 +61,7 @@ def 入口函数(参数: list) -> int:
     区间起点 = time.perf_counter()
     结果 = 扫实现(仓根, 范围)
     毫秒 = int((time.perf_counter() - 区间起点) * 1000)
-    打印(结果, 耗时毫秒=毫秒)
+    打印比对结果(结果, 耗时毫秒=毫秒)
     if "--读数" in 参数:
         print("")
         打印读数(结果)

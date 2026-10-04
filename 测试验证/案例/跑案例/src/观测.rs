@@ -24,7 +24,7 @@ pub(crate) enum 观测产物 {
     错误槽(u32),
     /// 通知步骤的派发结果（能力步骤不会产出这个）。
     派发结果(String),
-    其他,
+    其他槽形态,
 }
 
 pub(crate) struct 观测 {
@@ -98,7 +98,7 @@ fn 槽产物(数据槽: &数据槽) -> 观测产物 {
             unsafe { core::slice::from_raw_parts(数据槽.值 as *const u8, usize::try_from(数据槽.长度).unwrap_or(0)) };
         return 观测产物::字节集(片段.to_vec());
     }
-    观测产物::其他
+    观测产物::其他槽形态
 }
 
 fn 由返回槽(登记表: &登记表, 能力名: Option<String>, 数据槽: 数据槽) -> 观测 {
@@ -137,7 +137,7 @@ fn 由返回槽(登记表: &登记表, 能力名: Option<String>, 数据槽: 数
             None,
             "派发结果不该出现在返回槽路径（能力调用）".to_owned(),
         ),
-        观测产物::其他 => (
+        观测产物::其他槽形态 => (
             "成功",
             None,
             None,

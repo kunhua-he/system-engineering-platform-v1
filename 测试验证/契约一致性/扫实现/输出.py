@@ -5,7 +5,7 @@ from __future__ import annotations
 import sys
 
 
-def 打印(结果: list, 耗时毫秒=None, 输出流=None) -> None:
+def 打印比对结果(结果: list, 耗时毫秒=None, 输出流=None) -> None:
     输出流 = 输出流 or sys.stdout
     通过 = [判据读数 for 判据读数 in 结果 if 判据读数["判定"] == "通过"]
     失败 = [判据读数 for 判据读数 in 结果 if 判据读数["判定"] == "失败"]

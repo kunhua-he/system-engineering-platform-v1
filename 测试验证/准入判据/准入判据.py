@@ -56,7 +56,7 @@ from 构建装配.门禁 import 自门禁  # noqa: E402
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from 准入判据.报告 import 跑单条判据, 扫一遍, 打印, 清单  # noqa: E402
+from 准入判据.报告 import 跑单条判据, 扫一遍, 打印报告, 打印清单  # noqa: E402
 from 准入判据.样本 import 自测  # noqa: E402
 from 准入判据.世界 import 世界, 找仓根  # noqa: E402
 
@@ -66,7 +66,7 @@ def 入口函数(参数) -> int:
     if "--自测" in 参数:
         return 自测()
     if "--清单" in 参数:
-        清单()
+        打印清单()
         return 0
     测试世界 = 世界(根目录)
     if "--判" in 参数:
@@ -78,7 +78,7 @@ def 入口函数(参数) -> int:
     区间起点 = time.perf_counter()
     结果 = 扫一遍(测试世界)
     毫秒 = int((time.perf_counter() - 区间起点) * 1000)
-    打印(结果, 毫秒, 读数="--读数" in 参数)
+    打印报告(结果, 毫秒, 读数="--读数" in 参数)
     失败 = sum(1 for _, _, _, 一项 in 结果 if 一项[0] == "失败")
     未判 = sum(1 for _, _, _, 一项 in 结果 if 一项[0] == "未判")
     # 16 条口径：机器可判 14 条 + 有意不判 2 条。**有意不判不阻塞**（它是第四个数），

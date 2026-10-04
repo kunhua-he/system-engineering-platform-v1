@@ -365,7 +365,7 @@ pub fn 解十六进制(文本: &str) -> Result<Vec<u8>, String> {
 
 fn 读JSON件(路径: &Path) -> Result<JSON值, String> {
     let 文本 = std::fs::read_to_string(路径).map_err(|错误| format!("读不到 {}：{错误}", 路径.display()))?;
-    最小JSON::解析(&文本).map_err(|错误| format!("{} 不是合法 JSON：{错误}", 路径.display()))
+    最小JSON::解析JSON值(&文本).map_err(|错误| format!("{} 不是合法 JSON：{错误}", 路径.display()))
 }
 
 fn 要串<'a>(一项: &'a JSON值, 键名: &str) -> Result<&'a str, String> {

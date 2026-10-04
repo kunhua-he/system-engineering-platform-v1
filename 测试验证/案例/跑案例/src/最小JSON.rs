@@ -80,7 +80,7 @@ impl JSON值 {
 }
 
 /// 解析。错误信息带**字节位置**——案例文件写错时要能直接找到那一处。
-pub fn 解析(来源: &str) -> Result<JSON值, String> {
+pub fn 解析JSON值(来源: &str) -> Result<JSON值, String> {
     let mut 读器 = 读器 { 字节: 来源.as_bytes(), 位: 0 };
     读器.跳空白();
     let 文本缓冲 = 读器.取值()?;
@@ -107,7 +107,7 @@ impl 读器<'_> {
         self.字节.get(self.位).copied()
     }
 
-    fn 期望(&mut self, 字符表: u8) -> Result<(), String> {
+    fn 期望字节(&mut self, 字符表: u8) -> Result<(), String> {
         match self.取当前字节() {
             Some(实到字节) if 实到字节 == 字符表 => {
                 self.位 += 1;
@@ -146,7 +146,7 @@ impl 读器<'_> {
     }
 
     fn 取对象(&mut self) -> Result<JSON值, String> {
-        self.期望(b'{')?;
+        self.期望字节(b'{')?;
         let mut 项表 = Vec::new();
         self.跳空白();
         if self.取当前字节() == Some(b'}') {
@@ -157,7 +157,7 @@ impl 读器<'_> {
             self.跳空白();
             let 名称 = self.取串()?;
             self.跳空白();
-            self.期望(b':')?;
+            self.期望字节(b':')?;
             self.跳空白();
             let 待处理值 = self.取值()?;
             项表.push((名称, 待处理值));
@@ -175,7 +175,7 @@ impl 读器<'_> {
     }
 
     fn 取数组(&mut self) -> Result<JSON值, String> {
-        self.期望(b'[')?;
+        self.期望字节(b'[')?;
         let mut 项表 = Vec::new();
         self.跳空白();
         if self.取当前字节() == Some(b']') {
@@ -199,7 +199,7 @@ impl 读器<'_> {
     }
 
     fn 取串(&mut self) -> Result<String, String> {
-        self.期望(b'"')?;
+        self.期望字节(b'"')?;
         let mut 文本缓冲 = String::new();
         loop {
             let 区间起点 = self.位;
@@ -253,8 +253,8 @@ impl 读器<'_> {
         let 高代理 = self.取四位()?;
         // 代理对：高代理 + `\u` + 低代理 ⇒ 合成一个字符。
         if (0xD800..0xDC00).contains(&高代理) {
-            self.期望(b'\\')?;
-            self.期望(b'u')?;
+            self.期望字节(b'\\')?;
+            self.期望字节(b'u')?;
             let 低代理 = self.取四位()?;
             if !(0xDC00..0xE000).contains(&低代理) {
                 return Err("\\u 代理对不配对（低代理不在 DC00–DFFF）".to_owned());
@@ -318,7 +318,7 @@ mod 测试 {
     use super::*;
 
     fn 解析JSON(来源: &str) -> JSON值 {
-        解析(来源).unwrap_or_else(|错误| panic!("{来源} 该能解析：{错误}"))
+        解析JSON值(来源).unwrap_or_else(|错误| panic!("{来源} 该能解析：{错误}"))
     }
 
     /// 正向样本：干净输入必须通过，且读到的东西与写的一样。
@@ -339,7 +339,7 @@ mod 测试 {
     /// 反向样本：坏输入必须报错（不是静默给一个空值）。
     #[test]
     fn 坏输入一律报错() {
-        for 坏输入 in [
+        for 坏输入样本 in [
             "{",
             "[1,",
             r#"{"首项":}"#,
@@ -349,7 +349,7 @@ mod 测试 {
             r#"{"首项":1} 尾巴"#,
             "\"未闭合",
         ] {
-            assert!(解析(坏输入).is_err(), "`{坏输入}` 该被拒");
+            assert!(解析JSON值(坏输入样本).is_err(), "`{坏输入样本}` 该被拒");
         }
     }
 

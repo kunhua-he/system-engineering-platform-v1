@@ -21,7 +21,7 @@ from 构建装配.门禁 import 报告环境步, 自门禁  # noqa: E402
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from 准入判据.长活原语 import 判定, 找仓根, 自测, 预编译考题  # noqa: E402
+from 准入判据.长活原语 import 跑长活原语考题, 找仓根, 自测, 预编译考题  # noqa: E402
 
 
 def 入口函数(参数: list) -> int:
@@ -30,7 +30,7 @@ def 入口函数(参数: list) -> int:
         return 自测()
     if "--预编译考题" in 参数:
         return 预编译考题(找仓根())
-    return 判定(找仓根())
+    return 跑长活原语考题(找仓根())
 
 
 if __name__ == "__main__":
