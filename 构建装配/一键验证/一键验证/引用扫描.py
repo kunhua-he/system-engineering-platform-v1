@@ -144,11 +144,11 @@ def 扫引用(件表: dict, 自身算: bool = True, 任一候选: bool = True, �
     悬空 = []
     判过 = 0
     未判表 = []
-    for 本件 in sorted(件表):
-        文本 = 件表[本件] or ""
+    for 本件路径 in sorted(件表):
+        文本 = 件表[本件路径] or ""
         if "§" not in 文本:
             continue
-        自身节集 = 节集缓存.get(本件, set())
+        自身节集 = 节集缓存.get(本件路径, set())
         for 行号, 行文本 in enumerate(文本.splitlines(), 1):
             if "§" not in 行文本:
                 continue
@@ -172,12 +172,12 @@ def 扫引用(件表: dict, 自身算: bool = True, 任一候选: bool = True, �
                 if not 候选:
                     # 目标件匹配不到任何件 ⇒ 不是「可解析」，也不许静默 `continue`：
                     # 进未判表，由判据 ㊴ 报**未判**（存量入基线、只许减）。
-                    未判表.append((本件, 行号, 前导[-1][1], 号值, 行文本.strip()[:160]))
+                    未判表.append((本件路径, 行号, 前导[-1][1], 号值, 行文本.strip()[:160]))
                     continue
                 判过 += 1
                 if any(号值 in 节集缓存.get(键名, set()) for 键名 in 候选):
                     continue
                 if 自身算 and 号值 in 自身节集:
                     continue
-                悬空.append((本件, 行号, 前导[-1][1], 号值, 行文本.strip()[:160]))
+                悬空.append((本件路径, 行号, 前导[-1][1], 号值, 行文本.strip()[:160]))
     return 悬空, 判过, 未判表

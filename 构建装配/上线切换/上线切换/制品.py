@@ -24,7 +24,7 @@ def 列制品() -> list:
     return sorted(路径.name for 路径 in 制品落点.iterdir() if (路径 / "制品清单.json").is_file())
 
 
-def 不可变读数(标识: str) -> tuple:
+def 制品不可变读数(标识: str) -> tuple:
     """重算制品清单里的每个文件指纹（判据：0 处不符 · 0 个清单外文件 · 0 个缺件）。"""
     import hashlib
 

@@ -42,7 +42,7 @@ import re
 
 from .小工具 import 判不了, 违规
 from .常量 import 代码后缀, 检查名
-from .测试件 import 并行生产区
+from .测试件 import 并行取生产区文本
 from .判据基线 import 读运行数据基线, 库相对路径
 
 
@@ -124,7 +124,7 @@ def 运行数据面(上层读数: dict) -> dict:
         and 键_件.endswith(代码后缀)
         and 键_件.rsplit("/", 1)[-1] not in 判据自身件
     ]
-    扫描面 = 并行生产区(件表, 上层读数.get("测试文件集") or frozenset(), 保串=True)
+    扫描面 = 并行取生产区文本(件表, 上层读数.get("测试文件集") or frozenset(), 保串=True)
     _运行数据面缓存[键名] = 扫描面
     return 扫描面
 

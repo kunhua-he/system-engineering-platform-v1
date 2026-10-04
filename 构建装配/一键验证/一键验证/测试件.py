@@ -151,7 +151,7 @@ def 去注释保串(文本: str) -> str:
     return _剥注释与串(文本, 保串=True)
 
 
-def 并行生产区(件表: list, 测试文件集=frozenset(), 保串: bool = False) -> dict:
+def 并行取生产区文本(件表: list, 测试文件集=frozenset(), 保串: bool = False) -> dict:
     件表 = [(键名, 文本) for 键名, 文本 in 件表 if 文本 is not None]
     with ThreadPoolExecutor(max_workers=并发度) as 线程池:
         return dict(
