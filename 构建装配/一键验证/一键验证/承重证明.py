@@ -30,12 +30,12 @@ def 承重证明(源仓根: Path) -> int:
       （实测：一个进程里跑完 A 再跑 C，C 的读数变成 13774 ms）。故每例一个进程，
       读数才是「一条正常命令」的量级。
     """
-    本件 = str(常量.入口文件)
+    本件路径 = str(常量.入口文件)
 
     def 跑一例(注入慢毫秒: int, 提速: bool):
         代码 = (
             "import importlib.util, sys, time\n"
-            f"spec = importlib.util.spec_from_file_location('yv', {本件!r})\n"
+            f"spec = importlib.util.spec_from_file_location('yv', {本件路径!r})\n"
             "m = importlib.util.module_from_spec(spec)\n"
             "sys.modules['yv'] = m\n"
             "spec.loader.exec_module(m)\n"

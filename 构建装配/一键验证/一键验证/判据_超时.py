@@ -39,7 +39,7 @@ import re
 
 from .小工具 import 判不了, 违规
 from .常量 import 代码后缀, 检查名
-from .测试件 import 并行生产区
+from .测试件 import 并行取生产区文本
 
 
 秒上限 = 5.0
@@ -134,7 +134,7 @@ def 超时面(上层读数: dict) -> dict:
         for 键_件, 一项 in 上层读数["文件"].items()
         if 一项.get("文本") is not None and 键_件.endswith(代码后缀)
     ]
-    扫描面 = 并行生产区(件表, 上层读数.get("测试文件集") or frozenset(), 保串=False)
+    扫描面 = 并行取生产区文本(件表, 上层读数.get("测试文件集") or frozenset(), 保串=False)
     _超时面缓存[键名] = 扫描面
     return 扫描面
 
