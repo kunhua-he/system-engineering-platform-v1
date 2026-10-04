@@ -75,7 +75,7 @@ def 读生成器声明(件路径: Path, 生成器路径: str) -> str:
             or _取声明(全文, 生成器路径))
 
 
-def 记账(仓根, 开工号: str, 生成器: str, 参数) -> tuple:
+def 记生成物账(仓根, 开工号: str, 生成器: str, 命令行参数) -> tuple:
     """跑生成器 → 把**它写过的件**记进账本 ⇒ `(退出码, 说明)`。"""
     连接 = 账本.连账本()
     try:
@@ -94,13 +94,13 @@ def 记账(仓根, 开工号: str, 生成器: str, 参数) -> tuple:
             return 2, "`生成器` 只认仓内相对 `.py` 路径（不许绝对路径 / 不许 `..`）：%r" % 相对
         if not (工作树 / 相对).is_file():
             return 1, "生成器不在工作树里：%s" % 相对
-        参数 = ([str(一项) for 一项 in 参数] if isinstance(参数, (list, tuple))
-            else ([] if not 参数 else [str(参数)]))
+        命令行参数 = ([str(一项) for 一项 in 命令行参数] if isinstance(命令行参数, (list, tuple))
+            else ([] if not 命令行参数 else [str(命令行参数)]))
 
         跑前 = 脏件指纹(工作树)
         if 跑前 is None:
             return 1, "查不清盘上动了什么（git status 失败）⇒ 没跑生成器、没记账"
-        退出码, 输出文本 = 跑命令([sys.executable, 相对] + 参数, cwd=工作树, 超时秒数=超时秒)
+        退出码, 输出文本 = 跑命令([sys.executable, 相对] + 命令行参数, cwd=工作树, 超时秒数=超时秒)
         if 退出码 != 0:
             return 1, ("生成器没跑通（退出码 %d）⇒ **一件都不记**（账本一个字没动）：\n%s"
                      % (退出码, 输出文本.strip()[-500:]))

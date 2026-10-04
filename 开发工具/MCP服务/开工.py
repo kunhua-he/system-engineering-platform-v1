@@ -39,7 +39,7 @@ def 查僵尸(连接, 仓根) -> list:
     return 僵尸表
 
 
-def 登记(仓根, 工作内容: str, 文件认领, 确认重叠: bool = False) -> tuple:
+def 登记开工(仓根, 工作内容: str, 文件认领, 确认重叠: bool = False) -> tuple:
     if not 工作内容.strip():
         return 2, "功能 = 1 登记要 `工作内容`（它同时是支线的提交信息）"
     连接 = 账本.连账本()
@@ -193,7 +193,7 @@ def 查询开工(仓根, 开工号: str, 关键词: str, 上限: int = 20) -> tu
         连接.close()
 
 
-def 释放(仓根, 开工号: str, 强制: bool, 跳过验证: bool = False) -> tuple:
+def 释放开工(仓根, 开工号: str, 强制: bool, 跳过验证: bool = False) -> tuple:
     """收工：跑验证 → 提交支线 → 推远端 ⇒ 状态「已提交待合并」（合并是**手动**的，合完跑 功能 = 4）。
 
     `跳过验证`（功能 = 7）只跳**门禁那一步**，提交与推送照走 —— 给「认领表干净、但验证跑不动
@@ -339,7 +339,7 @@ def 派发(参数表: dict, 仓根) -> tuple:
     if 功能号 == 0:
         return 查询开工(仓根, 开工号, str(参数表.get("关键词") or ""))
     if 功能号 == 1:
-        return 登记(仓根, str(参数表.get("工作内容") or ""), 参数表.get("文件认领"), 确认重叠)
+        return 登记开工(仓根, str(参数表.get("工作内容") or ""), 参数表.get("文件认领"), 确认重叠)
     if 功能号 == 2:
         if not 开工号:
             return 2, "功能 = 2 补充要 `开工ID`"
@@ -347,7 +347,7 @@ def 派发(参数表: dict, 仓根) -> tuple:
     if 功能号 == 3:
         if not 开工号:
             return 2, "功能 = 3 释放要 `开工ID`"
-        return 释放(仓根, 开工号, bool(参数表.get("强制")))
+        return 释放开工(仓根, 开工号, bool(参数表.get("强制")))
     if 功能号 == 4:
         if not 开工号:
             return 2, "功能 = 4 单纯释放要 `开工ID`"
@@ -355,8 +355,8 @@ def 派发(参数表: dict, 仓根) -> tuple:
     if 功能号 == 5:
         if not 开工号:
             return 2, "功能 = 5 生成物记账要 `开工ID`"
-        from .生成物记账 import 记账      # 迟到导入：它反过来要用本件的 `跑命令`（避免环）
-        return 记账(仓根, 开工号, str(参数表.get("生成器") or ""), 参数表.get("生成器参数"))
+        from .生成物记账 import 记生成物账      # 迟到导入：它反过来要用本件的 `跑命令`（避免环）
+        return 记生成物账(仓根, 开工号, str(参数表.get("生成器") or ""), 参数表.get("生成器参数"))
     if 功能号 == 6:
         if not 开工号:
             return 2, "功能 = 6 源件记账要 `开工ID`"
@@ -365,7 +365,7 @@ def 派发(参数表: dict, 仓根) -> tuple:
     if 功能号 == 7:
         if not 开工号:
             return 2, "功能 = 7 释放（跳过验证）要 `开工ID`"
-        return 释放(仓根, 开工号, False, 跳过验证=True)
+        return 释放开工(仓根, 开工号, False, 跳过验证=True)
     if 功能号 == 8:
         if not 开工号:
             return 2, "功能 = 8 撤销认领要 `开工ID`"

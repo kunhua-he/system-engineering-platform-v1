@@ -89,19 +89,19 @@ def 有主(限定名: str) -> bool:
     return False
 
 
-def 是测试件(文件: str) -> bool:
-    return any(关键词 in (文件 or "") for 关键词 in 测试件关键词)
+def 是测试件(文件路径: str) -> bool:
+    return any(关键词 in (文件路径 or "") for 关键词 in 测试件关键词)
 
 
 def 按名归件(连接) -> dict:
     """名 → `{件集, 出现位, 种类}`。判「跨件」与「测试/生产」都靠它。"""
     名到记录 = {}
-    for 名称, 种类, 限定名, 文件, 行号 in 连接.execute(
+    for 名称, 种类, 限定名, 文件路径, 行号 in 连接.execute(
         "select 名,种类,限定名,文件,行 from 代码名 where 种类 not in ('import','file')"
     ):
         记录 = 名到记录.setdefault(名称, {"件": set(), "位": [], "种类": 种类})
-        记录["件"].add(文件)
-        记录["位"].append((种类, 限定名 or "", 文件, 行号))
+        记录["件"].add(文件路径)
+        记录["位"].append((种类, 限定名 or "", 文件路径, 行号))
     return 名到记录
 
 

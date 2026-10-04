@@ -97,7 +97,7 @@ def 卸钩子() -> int:
 
 
 def 入口函数(argv=None) -> int:
-    参数 = list(sys.argv[1:] if argv is None else argv)
-    if "--卸" in 参数 or "--uninstall" in 参数:
+    命令行参数 = list(sys.argv[1:] if argv is None else argv)
+    if "--卸" in 命令行参数 or "--uninstall" in 命令行参数:
         return 卸钩子()
     return 装钩子()

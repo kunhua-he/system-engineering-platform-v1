@@ -8,7 +8,7 @@ from .常量 import 库格式号, 库信息字段, 命令项大小, 命令字段
 from .接缝 import 解接缝
 from .字段 import 读字段, 解结构表
 from PE形状 import PE, 解析错误
-from .反解 import 反解
+from .反解 import 反解接缝
 
 
 def 自测(样本="/tmp/易语言源码/lib/shellEx.fne"):
@@ -43,7 +43,7 @@ def 自测(样本="/tmp/易语言源码/lib/shellEx.fne"):
         except (struct.error, IndexError, ValueError, OverflowError, TypeError) as ex:
             print("  ✗ %-26s 抛了非解析错误（%s: %s）" % (名称, type(ex).__name__, ex)); 失败 += 1
     try:
-        print("  ✓ 正向样本 %s 解析成功（命令 %d 条）" % (os.path.basename(样本), len(反解(样本)["命令"])))
+        print("  ✓ 正向样本 %s 解析成功（命令 %d 条）" % (os.path.basename(样本), len(反解接缝(样本)["命令"])))
     except 解析错误 as ex:
         print("  ✗ 正向样本反而失败：%s" % ex); 失败 += 1
     print("自测结论：%s（失败 %d）" % ("通过" if 失败 == 0 else "不通过", 失败))

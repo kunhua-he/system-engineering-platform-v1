@@ -10,7 +10,7 @@ from PE形状 import PE, 解析错误
 from .物理槽 import 探物理槽数
 
 
-def 反解(路径):
+def 反解接缝(路径):
     with open(路径, "rb") as fh:
         数据 = fh.read()
     pe = PE(数据, 路径)

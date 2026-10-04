@@ -4,7 +4,7 @@
 import argparse
 
 from .出报告 import 出报告
-from .反解 import 反解
+from .反解 import 反解界面
 from .自测 import 自测
 
 
@@ -12,8 +12,8 @@ def 入口函数():
     ap = argparse.ArgumentParser(description="e.exe 界面资源静态反解（只读字节，不执行语料）")
     ap.add_argument("--样本", default="/tmp/易语言源码/e.exe")
     ap.add_argument("--自测", action="store_true")
-    参数 = ap.parse_args()
-    if 参数.自测:
-        return 自测(参数.样本)
-    出报告(反解(参数.样本))
+    命令行参数 = ap.parse_args()
+    if 命令行参数.自测:
+        return 自测(命令行参数.样本)
+    出报告(反解界面(命令行参数.样本))
     return 0

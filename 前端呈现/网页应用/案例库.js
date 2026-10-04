@@ -54,7 +54,7 @@ export function 装案例库(取元素, 编辑) {
     }
   }
 
-  async function 跑一个() {
+  async function 跑一个案例() {
     const 标识 = 取元素("案例标识").value.trim();
     if (!标识) {
       写状态(状态, "先填一个案例标识（一个目录名，不含路径分隔符）", false);
@@ -74,9 +74,9 @@ export function 装案例库(取元素, 编辑) {
   }
 
   取元素("案例列按钮").addEventListener("click", 列案例);
-  取元素("案例跑按钮").addEventListener("click", 跑一个);
+  取元素("案例跑按钮").addEventListener("click", 跑一个案例);
   取元素("案例标识").addEventListener("keydown", (事件) => {
-    if (事件.key === "Enter") 跑一个();
+    if (事件.key === "Enter") 跑一个案例();
   });
 
   // ── 通用同源只读口（静态件，不是端点）──────────────────────────────────

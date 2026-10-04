@@ -51,9 +51,9 @@ def _拓扑表(根目录: Path) -> tuple:
         return _拓扑缓存[根目录]
     索引库 = sqlite3.connect(索引)
     文件到节点, 节点集 = {}, {}
-    for (文件,) in 索引库.execute("select distinct file_path from nodes where file_path is not null"):
-        所在层, 节点键 = 节点名(文件)
-        文件到节点[文件] = 节点键
+    for (文件路径,) in 索引库.execute("select distinct file_path from nodes where file_path is not null"):
+        所在层, 节点键 = 节点名(文件路径)
+        文件到节点[文件路径] = 节点键
         节点集[节点键] = 所在层
     边表 = {}
     for (源件, 目标件) in 索引库.execute(

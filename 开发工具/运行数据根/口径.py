@@ -50,13 +50,13 @@ def 当前平台() -> str:
     return "linux"
 
 
-def 默认基目录(家目录, xdg数据目录, 应用数据目录, 平台: str):
+def 默认基目录(家目录, xdg数据目录, 应用数据目录, 目标平台: str):
     """平台数据目录（**不含** `默认目录名` 那一层）。三条规则互不重叠，无一条落在当前目录。"""
-    if 平台 == "macos":
+    if 目标平台 == "macos":
         if 家目录:
             return Path(家目录).joinpath(*苹果基片段)
         return None
-    if 平台 == "windows":
+    if 目标平台 == "windows":
         if 应用数据目录:
             return Path(应用数据目录)
         return None
@@ -67,11 +67,11 @@ def 默认基目录(家目录, xdg数据目录, 应用数据目录, 平台: str)
     return None
 
 
-def 解析(覆盖, 家目录, xdg数据目录, 应用数据目录, 平台: str) -> Path:
+def 解析运行数据根(覆盖, 家目录, xdg数据目录, 应用数据目录, 目标平台: str) -> Path:
     """**唯一解析口**：`覆盖 > 平台默认`。外部事实全部注入（不从全局读），故每条分支都判得了。"""
     if 覆盖:
         return Path(覆盖)
-    平台基 = 默认基目录(家目录, xdg数据目录, 应用数据目录, 平台)
+    平台基 = 默认基目录(家目录, xdg数据目录, 应用数据目录, 目标平台)
     if 平台基 is None:
         raise 无位置(
             "运行数据根解析不出：既没有 %s，也推不出平台默认位置"
@@ -82,7 +82,7 @@ def 解析(覆盖, 家目录, xdg数据目录, 应用数据目录, 平台: str) 
 
 def 解析当前环境() -> Path:
     """读真实环境那一层薄壳：只读四个环境变量 + 判平台，零判断。"""
-    return 解析(
+    return 解析运行数据根(
         os.environ.get(覆盖变量名),
         os.environ.get(家目录变量名),
         os.environ.get(XDG变量名),

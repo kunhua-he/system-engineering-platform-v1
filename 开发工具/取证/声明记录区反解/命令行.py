@@ -27,8 +27,8 @@ def 建解析器():
     return ap
 
 
-def 入口函数(参数):
-    选项 = 建解析器().parse_args(参数)
+def 入口函数(命令行参数):
+    选项 = 建解析器().parse_args(命令行参数)
     if 选项.自测:
         return 自测(选项.样本)
     if 选项.建议分片数:

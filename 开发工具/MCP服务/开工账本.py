@@ -68,14 +68,14 @@ def 时刻串() -> str:
     return datetime.datetime.now().astimezone().strftime(时刻格式)
 
 
-def 账本路径() -> Path:
+def 开工账本路径() -> Path:
     """`<运行数据根>/数据库/开工账本.db`。落点走 `运行数据根` 包 —— 本件不自拼路径（判据 ㉕）。"""
     return 确保子目录(解析当前环境(), 子目录类别) / 库文件名
 
 
 def 连账本() -> sqlite3.Connection:
     """开账本（第一次用就建表）。"""
-    连接 = sqlite3.connect(str(账本路径()))
+    连接 = sqlite3.connect(str(开工账本路径()))
     连接.row_factory = sqlite3.Row
     for 一条 in 建表语句:
         连接.execute(一条)
