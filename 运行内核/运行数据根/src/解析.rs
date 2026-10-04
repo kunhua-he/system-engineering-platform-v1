@@ -27,7 +27,7 @@ pub struct 解析环境<'a> {
 
 /// 目标平台。决定默认位置走哪条规则。
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum 平台 {
+pub enum 目标平台 {
     MacOS,
     Linux,
     Windows,
@@ -51,13 +51,13 @@ pub const 覆盖变量名: &str = "V1_RUN_DATA_ROOT";
 /// - 覆盖非空 ⇒ 原样用它（**不再拼 [`默认目录名`]** —— 覆盖就是完整根，部署方说了算）；
 /// - 覆盖为空 / 缺 ⇒ 平台数据目录 + [`默认目录名`]；
 /// - 两条都拿不到 ⇒ [`解析失败::无位置`]。
-pub fn 解析(解析环境: &解析环境, 平台: 平台) -> Result<PathBuf, 解析失败> {
+pub fn 解析运行数据根(解析环境: &解析环境, 目标平台: 目标平台) -> Result<PathBuf, 解析失败> {
     if let Some(覆盖) = 解析环境.覆盖
         && !覆盖.is_empty()
     {
         return Ok(PathBuf::from(覆盖));
     }
-    let 基准目录 = 默认基目录(解析环境, 平台).ok_or(解析失败::无位置)?;
+    let 基准目录 = 默认基目录(解析环境, 目标平台).ok_or(解析失败::无位置)?;
     Ok(基准目录.join(默认目录名))
 }
 
@@ -65,15 +65,15 @@ pub fn 解析(解析环境: &解析环境, 平台: 平台) -> Result<PathBuf, �
 ///
 /// 三条规则互不重叠，且**没有一条**落在当前目录或它的祖先 —— 这正是
 /// 「运行数据不在源码树内」这条纪律在解析层的落点。
-fn 默认基目录(解析环境: &解析环境, 平台: 平台) -> Option<PathBuf> {
-    match 平台 {
+fn 默认基目录(解析环境: &解析环境, 目标平台: 目标平台) -> Option<PathBuf> {
+    match 目标平台 {
         // macOS：`~/Library/Application Support`
-        平台::MacOS => 解析环境
+        目标平台::MacOS => 解析环境
             .家目录
             .filter(|家目录| !家目录.is_empty())
             .map(|家目录| PathBuf::from(家目录).join("Library").join("Application Support")),
         // Linux：`$XDG_DATA_HOME`，未设则按 XDG 规范退回 `~/.local/share`
-        平台::Linux => {
+        目标平台::Linux => {
             if let Some(数据) = 解析环境.xdg数据目录.filter(|目录| !目录.is_empty()) {
                 return Some(PathBuf::from(数据));
             }
@@ -83,7 +83,7 @@ fn 默认基目录(解析环境: &解析环境, 平台: 平台) -> Option<PathBu
                 .map(|家目录| PathBuf::from(家目录).join(".local").join("share"))
         }
         // Windows：`%APPDATA%`（家目录不是它 —— 两者别混）
-        平台::Windows => 解析环境
+        目标平台::Windows => 解析环境
             .应用数据目录
             .filter(|目录| !目录.is_empty())
             .map(PathBuf::from),
@@ -102,16 +102,16 @@ pub fn 解析当前环境() -> Result<PathBuf, 解析失败> {
         xdg数据目录: xdg.as_deref(),
         应用数据目录: 应用.as_deref(),
     };
-    解析(&解析环境, 当前平台())
+    解析运行数据根(&解析环境, 当前平台())
 }
 
 /// 编译期定死的目标平台。**不查环境、不猜** —— 平台由构建目标决定。
-pub const fn 当前平台() -> 平台 {
+pub const fn 当前平台() -> 目标平台 {
     if cfg!(target_os = "macos") {
-        平台::MacOS
+        目标平台::MacOS
     } else if cfg!(target_os = "windows") {
-        平台::Windows
+        目标平台::Windows
     } else {
-        平台::Linux
+        目标平台::Linux
     }
 }

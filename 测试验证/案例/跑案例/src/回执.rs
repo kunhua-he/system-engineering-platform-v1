@@ -291,7 +291,7 @@ mod 测试 {
             }],
         };
         let 源码行 = 回执值.写成一行();
-        let 解析值 = crate::最小JSON::解析(&源码行).expect("回执必须是合法 JSON");
+        let 解析值 = crate::最小JSON::解析JSON值(&源码行).expect("回执必须是合法 JSON");
         assert_eq!(解析值.取成员("案例名").and_then(|一项| 一项.取字符串()), Some("首项\"次项"));
         assert_eq!(解析值.取成员("死在哪一层").and_then(|一项| 一项.取字符串()), Some("内核"));
         assert!(matches!(解析值.取成员("步骤").and_then(|一项| 一项.取数组()).map(<[crate::最小JSON::JSON值]>::len), Some(1)));

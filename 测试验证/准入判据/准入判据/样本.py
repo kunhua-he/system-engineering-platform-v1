@@ -160,16 +160,16 @@ def 自测() -> int:
     断言("⑬", "报因", "反向样本（抽掉剔除台账）", "失败", 判_13_装载失败报因(反向样本))
 
     # ⑭：正向 = 临时副本刷新指纹后 --检查 退 0；反向 = 改一个哈希后 --检查 退 1
-    临时根 = Path(tempfile.mkdtemp(prefix="准入判据_指纹根_"))
-    (临时根 / "扩展装载").mkdir(parents=True, exist_ok=True)
-    临时扩展 = 临时根 / 扩展根目录名 / "原子支持库" / "编译器支持库"
+    临时仓根 = Path(tempfile.mkdtemp(prefix="准入判据_指纹根_"))
+    (临时仓根 / "扩展装载").mkdir(parents=True, exist_ok=True)
+    临时扩展 = 临时仓根 / 扩展根目录名 / "原子支持库" / "编译器支持库"
     临时扩展.parent.mkdir(parents=True, exist_ok=True)
     shutil.copytree(测试世界.扩展目录(), 临时扩展)
     # 先刷新（去掉漂移），再判
     subprocess.run([sys.executable, str(临时扩展 / "工具/重跑指纹.py")],
                    capture_output=True, text=True, timeout=5)
     正向样本 = _复制(测试世界)
-    正向样本.仓根 = 临时根
+    正向样本.仓根 = 临时仓根
     正向样本.扩展目录 = lambda: 临时扩展  # 覆盖方法
     正向样本.指纹件 = lambda: 临时扩展 / "指纹.json"
     正向样本.指纹脚本 = lambda: 临时扩展 / "工具/重跑指纹.py"
@@ -181,7 +181,7 @@ def 自测() -> int:
     (临时扩展 / "指纹.json").write_text(json.dumps(指纹, ensure_ascii=False, indent=2),
                                       encoding="utf-8")
     反向样本 = _复制(测试世界)
-    反向样本.仓根 = 临时根
+    反向样本.仓根 = 临时仓根
     反向样本.扩展目录 = lambda: 临时扩展
     反向样本.指纹件 = lambda: 临时扩展 / "指纹.json"
     反向样本.指纹脚本 = lambda: 临时扩展 / "工具/重跑指纹.py"

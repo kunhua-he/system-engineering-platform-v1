@@ -46,7 +46,7 @@ pub struct 运行汇总 {
 }
 
 /// 入口：跑完整个案例库，返回进程退出码。**本函数是入口，零实现（只做路由与打印）。**
-pub fn 入口() -> i32 {
+pub fn 跑案例入口() -> i32 {
     let 程序根 = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     let 案例根 = 程序根.parent().map_or_else(|| 程序根.clone(), Path::to_path_buf);
     let 仓根 = 案例根
@@ -123,7 +123,7 @@ pub fn 跑案例(仓根: &Path, 案例根: &Path, 回执路: &Path) -> Result<�
     for 一条 in &案例表 {
         let 案例起点 = Instant::now();
         let 读数 = match (&适配器, 装载错) {
-            (Some(适配器), _) => 跑一个(适配器, &登记表, 一条, 通知目标)?,
+            (Some(适配器), _) => 跑一个案例(适配器, &登记表, 一条, 通知目标)?,
             (None, Some(错误)) => 装载失败读数(&登记表, 错误),
             (None, None) => return Err("内部矛盾：既没有适配器，也没有装载错误".to_owned()),
         };
@@ -254,7 +254,7 @@ fn 步骤种类名(步骤: &步骤) -> String {
     if 步骤.通知号.is_some() { "通知".to_owned() } else { "能力".to_owned() }
 }
 
-fn 跑一个(
+fn 跑一个案例(
     适配器: &适配器,
     登记表: &登记表,
     一条: &案例,

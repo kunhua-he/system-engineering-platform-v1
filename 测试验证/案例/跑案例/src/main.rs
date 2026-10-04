@@ -45,6 +45,6 @@ mod 判定;
 mod 跑;
 
 fn main() {
-    std::process::exit(跑::入口());
+    std::process::exit(跑::跑案例入口());
 }
 
