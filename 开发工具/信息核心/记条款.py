@@ -26,7 +26,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import 表定义  # noqa: E402
 import 记规则  # noqa: E402  （复用它的参数解析 —— 不许写第二套）
 
-用法 = ("用法：信息核心.py 记条款 --文档路径 <仓内相对路径> --序号 <整数> "
+用法文本 = ("用法：信息核心.py 记条款 --文档路径 <仓内相对路径> --序号 <整数> "
       "[--标题 <节标题>] [--正文 <散文> | --正文文件 <仓内相对路径>] [--权威档 <档位>]")
 
 
@@ -47,7 +47,7 @@ def 记条款(字段表: dict) -> int:
     if 正文文件:
         正文 = (仓根 / 正文文件).read_text(encoding="utf-8").strip()
     if not 文档路径 or not 序号.isdigit() or not 正文:
-        print(用法, file=sys.stderr)
+        print(用法文本, file=sys.stderr)
         return 2
     if (仓根 / 文档路径).is_file():
         print(f"拒：`{文档路径}` 在盘上还有源件（md）—— 那份 md 才是权威，"

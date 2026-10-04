@@ -22,11 +22,11 @@ from .像素 import 分析像素
 from .打印 import 打印读数
 
 
-def 入口函数(参数):
-    if len(参数) < 2:
+def 入口函数(命令行参数):
+    if len(命令行参数) < 2:
         print(__doc__)
         return 1
-    for 路径 in 参数:
+    for 路径 in 命令行参数:
         try:
             打印读数(分析像素(路径))
         except OSError as 错误:

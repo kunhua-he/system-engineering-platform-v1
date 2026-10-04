@@ -36,7 +36,7 @@ from .索引库 import (  # noqa: F401
     出现数,
     出现位,
 )
-from .查询 import 查符号, 引用, 出现位置, 查符号行, 引用行, 状态行, 文件指纹  # noqa: F401
+from .查询 import 查符号, 查引用, 出现位置, 查符号行, 引用行, 状态行, 文件指纹  # noqa: F401
 from .查名 import (  # noqa: F401
     命名后缀,
     序数代称字,

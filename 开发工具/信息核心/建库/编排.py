@@ -98,7 +98,7 @@ def 建库(指定根: Path = None, 打读数: bool = False) -> dict:
     return 计数
 
 
-def 入口函数(参数: list) -> int:
+def 入口函数(命令行参数: list) -> int:
     """`信息核心.py 建库 …` 调它 —— 本包**不带** CLI（入口只有一个壳，见 信息核心.py）。"""
-    建库(打读数="--读数" in 参数)
+    建库(打读数="--读数" in 命令行参数)
     return 0

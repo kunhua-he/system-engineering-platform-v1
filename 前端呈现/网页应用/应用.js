@@ -44,10 +44,10 @@ const 设计视图 = 装设计视图(取元素, {
 });
 
 // ── 视图切换：代码视图 ↔ 窗口设计视图（两视图共用标题栏 / 菜单栏 / 工具条）──────
-let 视图 = "代码";
+let 当前视图 = "代码";
 function 切视图() {
-  视图 = 视图 === "代码" ? "设计" : "代码";
-  const 设计态 = 视图 === "设计";
+  当前视图 = 当前视图 === "代码" ? "设计" : "代码";
+  const 设计态 = 当前视图 === "设计";
   document.body.classList.toggle("视图-设计", 设计态);
   document.body.classList.toggle("视图-代码", !设计态);
   取元素("代码面").hidden = 设计态;
@@ -87,7 +87,7 @@ for (const 按钮 of 取元素("左页签带").querySelectorAll(".页签")) {
   按钮.addEventListener("click", () => {
     // 设计视图下这三格被属性面板占着（参考图里那条页签也还在）—— 点它就切回代码视图再看那一格，
     // 否则点下去什么都不变，那就是个假按钮。
-    if (视图 === "设计") 切视图();
+    if (当前视图 === "设计") 切视图();
     for (const 页签 of 取元素("左页签带").querySelectorAll(".页签")) 页签.classList.toggle("选", 页签 === 按钮);
     for (const 左格 of document.querySelectorAll(".左格")) 左格.classList.toggle("选", 左格.id === 按钮.dataset.左);
   });

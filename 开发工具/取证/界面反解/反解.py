@@ -12,7 +12,7 @@ from .菜单 import 解菜单
 from .资源树 import 走资源树
 
 
-def 反解(路径):
+def 反解界面(路径):
     with open(路径, "rb") as fh:
         数据 = fh.read()
     return 反解数据(数据, 路径)

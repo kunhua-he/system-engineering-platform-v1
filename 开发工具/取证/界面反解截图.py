@@ -44,19 +44,19 @@ from 构建装配.门禁 import 自门禁  # noqa: E402
 # ★ 上面三个是**唯一实现**（2026-09-30 收口）：`前端呈现/视觉对拍.py` 引本处，不再复写。
 
 
-def 入口函数(参数):
-    if 参数 and 参数[0] in ("-h", "--help"):
+def 入口函数(命令行参数):
+    if 命令行参数 and 命令行参数[0] in ("-h", "--help"):
         print(__doc__)
         return 0
-    if not 参数:
+    if not 命令行参数:
         print(__doc__)
         return 1
-    出图 = Path(参数[0])
-    if len(参数) >= 3:
+    出图 = Path(命令行参数[0])
+    if len(命令行参数) >= 3:
         try:
-            宽度, 高度 = int(参数[1]), int(参数[2])
+            宽度, 高度 = int(命令行参数[1]), int(命令行参数[2])
         except ValueError:
-            print(f"宽高要是整数：{参数[1]!r} {参数[2]!r}", file=sys.stderr)
+            print(f"宽高要是整数：{命令行参数[1]!r} {命令行参数[2]!r}", file=sys.stderr)
             return 1
     else:
         宽度, 高度 = 参考尺寸
