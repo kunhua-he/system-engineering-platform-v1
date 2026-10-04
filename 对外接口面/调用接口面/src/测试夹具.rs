@@ -21,13 +21,13 @@ use std::net::TcpStream;
 pub const 错误体六项: [&str; 6] = ["码", "段位", "名称", "可重试", "可自愈", "需人工"];
 
 /// 收到的一条应答：状态码 + 头 + 体。
-pub struct 收到 {
+pub struct 收到应答 {
     pub 状态: u16,
     pub 头: String,
     pub 体: String,
 }
 
-impl 收到 {
+impl 收到应答 {
     /// 体解析成 JSON。**应答体必须是合法 JSON** —— 不是就当场挂（那是本面的缺陷）。
     pub fn 取协议值(&self) -> 协议值 {
         crate::协议解析::解析(&self.体).unwrap_or_else(|错误| {
@@ -159,7 +159,7 @@ pub fn 交POST请求(路径: &str, 请求体: &str) -> String {
 /// 发一条原始请求并收回应答。
 ///
 /// 顺序固定：连上 → 写请求 → **服务处理一次** → 读应答。见文件头「为什么不必开线程」。
-pub fn 发请求(服务: &服务, 请求: &str) -> 收到 {
+pub fn 发请求(服务: &服务, 请求: &str) -> 收到应答 {
     let mut 输出流 = TcpStream::connect((监听地址, 服务.端口())).expect("必须连得上（监听已 bind）");
     输出流.write_all(请求.as_bytes()).expect("写请求");
     输出流.flush().expect("刷请求");
@@ -173,7 +173,7 @@ pub fn 发请求(服务: &服务, 请求: &str) -> 收到 {
 ///
 /// 给并发测试用：服务端由 `服务::跑并发` 的工作线程收连接，测试这一侧只能当客户端。
 /// 不能拿 [`发请求`] 代替 —— 它自带一次 `处理一个连接`，会与并发的服务端**抢同一个连接**。
-pub fn 发到端口(端口: u16, 请求: &str) -> 收到 {
+pub fn 发到端口(端口: u16, 请求: &str) -> 收到应答 {
     let mut 输出流 = TcpStream::connect((监听地址, 端口)).expect("必须连得上（监听已 bind）");
     输出流.write_all(请求.as_bytes()).expect("写请求");
     输出流.flush().expect("刷请求");
@@ -183,7 +183,7 @@ pub fn 发到端口(端口: u16, 请求: &str) -> 收到 {
 }
 
 /// 解析原始应答文本。
-fn 解析应答(字节: &[u8]) -> 收到 {
+fn 解析应答(字节: &[u8]) -> 收到应答 {
     let 文本 = String::from_utf8(字节.to_vec()).expect("应答必须是 UTF-8");
     let (头部, 应答体) = 文本
         .split_once("\r\n\r\n")
@@ -194,7 +194,7 @@ fn 解析应答(字节: &[u8]) -> 收到 {
         .and_then(|源码行| 源码行.split(' ').nth(1))
         .and_then(|状态码| 状态码.parse::<u16>().ok())
         .unwrap_or_else(|| panic!("应答首行必须是「HTTP/1.1 码 短语」：\n{文本}"));
-    收到 {
+    收到应答 {
         状态,
         头: 头部.to_owned(),
         体: 应答体.to_owned(),
