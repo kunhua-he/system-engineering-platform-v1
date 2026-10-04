@@ -15,7 +15,7 @@ from pathlib import Path
 from .常量 import 仓根, 停等秒, 运行根, 健康超时秒
 from .指针 import 读指针, 写指针
 from .制品 import 制品目录
-from .输出 import 打印
+from .输出 import 打印文本
 
 
 def 进程活着(pid: int) -> bool:
@@ -120,7 +120,7 @@ def 要求健康读数(端口: int) -> None:
     状态码, 读数 = 取健康读数(端口)
     if 状态码 != 200:
         raise SystemExit("健康检查不过（端口 {}）：{}".format(端口, 读数))
-    打印("  健康检查 GET /接口 → 200 · {}".format(读数))
+    打印文本("  健康检查 GET /接口 → 200 · {}".format(读数))
 
 
 def 活着的实例() -> list:

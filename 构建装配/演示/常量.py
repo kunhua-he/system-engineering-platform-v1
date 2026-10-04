@@ -69,7 +69,7 @@ from 构建装配.门禁 import 硬顶毫秒, 注入人为慢  # noqa: E402
 阈值毫秒 = 硬顶毫秒 - 尾巴余量毫秒
 
 
-def 打印(文本: str) -> None:
+def 打印文本(文本: str) -> None:
     print(文本, flush=True)
 
 

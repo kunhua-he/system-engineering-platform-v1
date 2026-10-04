@@ -308,17 +308,17 @@ def 跑全量判据(仓根: Path, 两遍=True, 元数据覆盖=None, 只跑=None
         # 不在 `需复核` 里的判据：第一遍是空的（无红、无子未判）⇒ 第二表就是空，取自身即可。
         第二表 = (第二["结果"].get(名称) or []) if (第二 is not None and 名称 in 需复核) else 违规表
 
-        def 指纹(一条):
+        def 取条指纹(一条):
             return (一条["检查"], 一条["位置"], 一条["缺什么"])
 
-        第二指纹 = {指纹(明细条) for 明细条 in 第二表}
+        第二指纹 = {取条指纹(明细条) for 明细条 in 第二表}
         真红, 瞬时 = [], []
         for 一条 in 违规表:
-            if 指纹(一条) in 第二指纹:
+            if 取条指纹(一条) in 第二指纹:
                 真红.append(一条)
             else:
                 瞬时.append(一条)
-        瞬时.extend(后条 for 后条 in 第二表 if 指纹(后条) not in {指纹(前条) for 前条 in 违规表})
+        瞬时.extend(后条 for 后条 in 第二表 if 取条指纹(后条) not in {取条指纹(前条) for 前条 in 违规表})
 
         对象数 = 对象数表.get(名称)
         样本数 = 对象数 if 对象数 is not None else None

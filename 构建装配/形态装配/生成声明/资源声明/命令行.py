@@ -11,12 +11,12 @@ from ..路径形状 import 生成失败
 from .路径与枚举 import 生成器相对路径, 建资源根
 from .落盘 import 生成资源声明, 检查资源声明
 
-用法行 = "用法：python3 %s [--声明根 <目录>] [--检查]" % 生成器相对路径
+用法文本 = "用法：python3 %s [--声明根 <目录>] [--检查]" % 生成器相对路径
 
 
 def 帮助文本():
     return [
-        用法行,
+        用法文本,
         "",
         "  --声明根 <目录>  一份资源声明的根。源 = <目录>/资源声明/*.json，",
         "                  落点 = <目录>/src/资源声明.rs（src/ 必须已存在）。只认仓内相对路径。",
@@ -43,7 +43,7 @@ def 资源声明入口(参数):
         elif 参数词 == "--声明根":
             if 序号 + 1 >= len(参数):
                 print("--声明根 后面要跟一个目录", file=sys.stderr)
-                print(用法行, file=sys.stderr)
+                print(用法文本, file=sys.stderr)
                 return 2
             序号 += 1
             声明根参数 = 参数[序号]
@@ -54,11 +54,11 @@ def 资源声明入口(参数):
         序号 += 1
     if 未知:
         print("不认的参数：%s" % " ".join(sorted(未知)), file=sys.stderr)
-        print(用法行, file=sys.stderr)
+        print(用法文本, file=sys.stderr)
         return 2
     if 声明根参数 is None:
         print("必须给 --声明根（资源声明没有默认根）", file=sys.stderr)
-        print(用法行, file=sys.stderr)
+        print(用法文本, file=sys.stderr)
         return 2
     try:
         根目录 = 建资源根(声明根参数)

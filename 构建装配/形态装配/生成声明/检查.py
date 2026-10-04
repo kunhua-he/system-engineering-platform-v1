@@ -5,7 +5,7 @@ import os
 import sys
 
 from .路径形状 import 生成器相对路径, 仓根
-from .生成流程 import 生成, 落盘件表
+from .生成流程 import 生成声明, 落盘件表
 
 
 def 找第一处不一致(新内容, 旧, 起点=0):
@@ -77,7 +77,7 @@ def 陈旧件(根目录, 应有):
 
 
 def 检查(根目录):
-    新件, 计数, 提醒 = 生成(根目录)
+    新件, 计数, 提醒 = 生成声明(根目录)
     报提醒(提醒)
     应有 = 落盘件表(根目录)
     缺失文件 = [相对 for 相对 in 应有 if not os.path.isfile(os.path.join(仓根, 相对))]
