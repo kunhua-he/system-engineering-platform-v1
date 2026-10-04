@@ -86,7 +86,7 @@ pub struct 读数 {
 
 impl 读数 {
     /// 退出码是不是 `0`。各端点用它，但**失败码由各端点自身定**（本文件不判）。
-    pub fn 成功(&self) -> bool {
+    pub fn 是否成功(&self) -> bool {
         self.退出码 == 0
     }
 }

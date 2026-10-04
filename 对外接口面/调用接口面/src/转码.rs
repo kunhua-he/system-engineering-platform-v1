@@ -146,8 +146,8 @@ pub fn 百分号解码(来源: &str) -> Result<String, 转码错误> {
             位置 += 1;
             continue;
         }
-        let 高位值 = 字节.get(位置 + 1).copied().and_then(十六进制);
-        let 低位值 = 字节.get(位置 + 2).copied().and_then(十六进制);
+        let 高位值 = 字节.get(位置 + 1).copied().and_then(十六进制字符值);
+        let 低位值 = 字节.get(位置 + 2).copied().and_then(十六进制字符值);
         match (高位值, 低位值) {
             (Some(高位值), Some(低位值)) => {
                 输出缓冲.push(高位值 * 16 + 低位值);
@@ -167,7 +167,7 @@ pub fn 百分号解码(来源: &str) -> Result<String, 转码错误> {
     })
 }
 
-fn 十六进制(字符表: u8) -> Option<u8> {
+fn 十六进制字符值(字符表: u8) -> Option<u8> {
     (字符表 as char).to_digit(16).map(|个数| 个数 as u8)
 }
 

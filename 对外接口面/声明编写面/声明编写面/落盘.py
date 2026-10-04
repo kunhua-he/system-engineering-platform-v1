@@ -20,7 +20,7 @@ def 序列化数据(数据) -> bytes:
     return (json.dumps(数据, ensure_ascii=False, indent=2) + "\n").encode("utf-8")
 
 
-def 指纹(字节: bytes) -> str:
+def 取字节指纹(字节: bytes) -> str:
     """与 生成声明.py 的 源指纹() 同一口径：sha256 前 16 位十六进制。"""
     return hashlib.sha256(字节).hexdigest()[:16]
 
@@ -69,7 +69,7 @@ def 只增判定(旧数据, 新数据):
     return (not 差异), 差异
 
 
-def 留痕(面根, 记录) -> str:
+def 写留痕行(面根, 记录) -> str:
     """只追加一行 JSON Lines。返回留痕文件相对面的路径。"""
     目录 = Path(面根) / 留痕目录名
     目录.mkdir(parents=True, exist_ok=True)
