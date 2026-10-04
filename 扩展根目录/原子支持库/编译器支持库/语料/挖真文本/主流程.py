@@ -127,7 +127,7 @@ def 入口函数():
     def 简化文件名(字节串):
         return re.sub(r"[^0-9A-Za-z_\u4e00-\u9fff]+", "_", 字节串)[:40]
 
-    def 落盘(rows, tier):
+    def 落盘真文本(rows, tier):
         manifest = []
         seen = {}
         for 记录 in rows:
@@ -144,9 +144,9 @@ def 入口函数():
             manifest.append(name)
         return manifest
 
-    m1 = 落盘(hard, "硬")
-    m2 = 落盘(plain, "硬文本")
-    m3 = 落盘(weak_ev, "弱")
+    m1 = 落盘真文本(hard, "硬")
+    m2 = 落盘真文本(plain, "硬文本")
+    m3 = 落盘真文本(weak_ev, "弱")
 
     json.dump({"hard": [{键名: 待处理值 for 键名, 待处理值 in 记录.items() if 键名 != "text"} for 记录 in hard],
                "hard_plain": [{键名: 待处理值 for 键名, 待处理值 in 记录.items() if 键名 != "text"} for 记录 in plain],
