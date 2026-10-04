@@ -8,7 +8,7 @@ import sys
 
 from .编排 import 声明根默认
 
-用法 = ("python 对外接口面/声明编写面/声明编写面.py --请求 '<JSON>' | --分配 <类别>"
+用法文本 = ("python 对外接口面/声明编写面/声明编写面.py --请求 '<JSON>' | --分配 <类别>"
       "（类别：能力 · 类型 · 错误码 · 通知号 · 作废；作废只能走 --请求，它没有可分配的号）")
 
 
@@ -16,7 +16,7 @@ def 建解析器() -> argparse.ArgumentParser:
     解析器 = argparse.ArgumentParser(
         prog="声明编写面",
         description="声明编写面 —— 契约声明/ 的唯一写入口（校验转调 构建装配/一键验证/一键验证.py）",
-        epilog=用法,
+        epilog=用法文本,
     )
     解析器.add_argument("--请求", metavar="JSON|-", help="写入请求体（JSON 文本；`-` = 读标准输入）")
     解析器.add_argument("--分配", metavar="类别", help="只算号不落盘：能力 · 类型 · 错误码 · 通知号")

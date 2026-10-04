@@ -27,14 +27,14 @@ from 构建装配.门禁 import 自门禁  # noqa: E402
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from 声明编写面 import 建解析器, 处理分配, 处理写入, 读请求, 用法  # noqa: E402
+from 声明编写面 import 建解析器, 处理分配, 处理写入, 读请求, 用法文本  # noqa: E402
 
 
 def 入口函数(参数: list) -> int:
     解析器 = 建解析器()
     选项 = 解析器.parse_args(参数)
     if (选项.请求 is None) == (选项.分配 is None):
-        print("用法：%s（--请求 与 --分配 二选一）" % 用法, file=sys.stderr)
+        print("用法：%s（--请求 与 --分配 二选一）" % 用法文本, file=sys.stderr)
         return 2
     仓根 = Path(选项.仓根).resolve() if 选项.仓根 else Path(__file__).resolve().parents[2]
     面根 = Path(__file__).resolve().parent

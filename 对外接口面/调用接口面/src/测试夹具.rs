@@ -30,7 +30,7 @@ pub struct 收到应答 {
 impl 收到应答 {
     /// 体解析成 JSON。**应答体必须是合法 JSON** —— 不是就当场挂（那是本面的缺陷）。
     pub fn 取协议值(&self) -> 协议值 {
-        crate::协议解析::解析(&self.体).unwrap_or_else(|错误| {
+        crate::协议解析::解析协议值(&self.体).unwrap_or_else(|错误| {
             panic!(
                 "应答体必须是合法 JSON，却在第 {} 字节报「{}」：\n{}",
                 错误.位置, 错误.说明, self.体
