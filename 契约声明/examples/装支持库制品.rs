@@ -26,19 +26,19 @@ use std::process::ExitCode;
 use v1_contract::容器;
 
 fn main() -> ExitCode {
-    let 参数 = match 解析命令行参数() {
-        Ok(参数) => 参数,
+    let 命令行参数 = match 解析命令行参数() {
+        Ok(命令行参数) => 命令行参数,
         Err(说明) => {
             eprintln!("装支持库制品：{说明}");
             eprintln!("用法：--能力码 <cdylib> --接口说明 <段文件> --输出 <制品>");
             return ExitCode::from(2);
         }
     };
-    let 能力码 = match 读输入件(&参数.能力码, "能力码（cdylib）") {
+    let 能力码 = match 读输入件(&命令行参数.能力码, "能力码（cdylib）") {
         Ok(字节) => 字节,
         Err(退出码) => return 退出码,
     };
-    let 接口说明段 = match 读输入件(&参数.接口说明, "接口说明段") {
+    let 接口说明段 = match 读输入件(&命令行参数.接口说明, "接口说明段") {
         Ok(字节) => 字节,
         Err(退出码) => return 退出码,
     };
@@ -54,7 +54,7 @@ fn main() -> ExitCode {
         }
     }
 
-    if let Some(父目录) = 参数.输出.parent() {
+    if let Some(父目录) = 命令行参数.输出.parent() {
         if !父目录.as_os_str().is_empty() {
             if let Err(错误) = fs::create_dir_all(父目录) {
                 eprintln!("建不出输出目录 {}：{错误}", 父目录.display());
@@ -62,11 +62,11 @@ fn main() -> ExitCode {
             }
         }
     }
-    match fs::write(&参数.输出, &制品) {
+    match fs::write(&命令行参数.输出, &制品) {
         Ok(()) => {
             println!(
                 "装支持库制品：{} ｜ 接口说明段 {} 字节 · 能力码段 {} 字节 · 制品 {} 字节",
-                参数.输出.display(),
+                命令行参数.输出.display(),
                 接口说明段.len(),
                 能力码.len(),
                 制品.len()
@@ -74,7 +74,7 @@ fn main() -> ExitCode {
             ExitCode::SUCCESS
         }
         Err(错误) => {
-            eprintln!("写不出制品 {}：{错误}", 参数.输出.display());
+            eprintln!("写不出制品 {}：{错误}", 命令行参数.输出.display());
             ExitCode::FAILURE
         }
     }
