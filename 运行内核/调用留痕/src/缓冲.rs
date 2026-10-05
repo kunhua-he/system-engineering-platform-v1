@@ -57,16 +57,16 @@ impl 留痕槽 {
     }
 
     /// 落字段。发布由调用方在落完之后写 `就绪` 完成。
-    fn 落字段(&self, 一条: &留痕) {
-        self.实例.store(一条.实例, Ordering::Relaxed);
-        self.能力号.store(一条.能力号.取号值(), Ordering::Relaxed);
-        self.入参指纹.store(一条.入参指纹, Ordering::Relaxed);
-        self.结果码.store(一条.结果码, Ordering::Relaxed);
-        self.耗时微秒.store(一条.耗时微秒, Ordering::Relaxed);
-        self.追踪号.store(一条.追踪号, Ordering::Relaxed);
-        self.调用类.store(一条.调用类 as u8, Ordering::Relaxed);
-        self.资源号.store(一条.资源号.取号值(), Ordering::Relaxed);
-        self.操作号.store(一条.操作号.取号值(), Ordering::Relaxed);
+    fn 落字段(&self, 源留痕: &留痕) {
+        self.实例.store(源留痕.实例, Ordering::Relaxed);
+        self.能力号.store(源留痕.能力号.取号值(), Ordering::Relaxed);
+        self.入参指纹.store(源留痕.入参指纹, Ordering::Relaxed);
+        self.结果码.store(源留痕.结果码, Ordering::Relaxed);
+        self.耗时微秒.store(源留痕.耗时微秒, Ordering::Relaxed);
+        self.追踪号.store(源留痕.追踪号, Ordering::Relaxed);
+        self.调用类.store(源留痕.调用类 as u8, Ordering::Relaxed);
+        self.资源号.store(源留痕.资源号.取号值(), Ordering::Relaxed);
+        self.操作号.store(源留痕.操作号.取号值(), Ordering::Relaxed);
     }
 
     /// 读字段。调用方须用 `就绪` 校验前后一致（顺序锁）。
@@ -148,8 +148,8 @@ impl 留痕缓冲 {
     ///
     /// **号位不自洽的记录照样记下**（痕的职责是把这次调用记下来，不许因为形状可疑就把事件抹掉），
     /// 但[`号位不自洽数`](Self::号位不自洽数)加一 ⇒ **坏痕不许静默**（与「丢痕不许静默」同一条纪律）。
-    pub fn 追加一条(&self, 一条: 留痕) {
-        if !一条.是否自洽() {
+    pub fn 追加一条(&self, 新留痕: 留痕) {
+        if !新留痕.是否自洽() {
             self.号位不自洽数.fetch_add(1, Ordering::Relaxed);
         }
 
@@ -180,14 +180,14 @@ impl 留痕缓冲 {
             return;
         }
         // 认领后再看一眼：若该格已被更新的序号占住，本条已过时，让位（丢最旧下重并发才会出现）。
-        let 就绪 = 留痕槽.就绪.load(Ordering::Acquire);
-        if 就绪 != 无序号 && 就绪 >= 写序号 {
+        let 就绪标志 = 留痕槽.就绪.load(Ordering::Acquire);
+        if 就绪标志 != 无序号 && 就绪标志 >= 写序号 {
             留痕槽.在写.store(无序号, Ordering::Release);
             self.丢弃数.fetch_add(1, Ordering::Relaxed);
             return;
         }
 
-        留痕槽.落字段(&一条);
+        留痕槽.落字段(&新留痕);
         留痕槽.就绪.store(写序号, Ordering::Release);
         留痕槽.在写.store(无序号, Ordering::Release);
 
@@ -242,8 +242,8 @@ impl 留痕缓冲 {
             let Some(留痕槽) = self.槽表.get((序号 % 容量) as usize) else {
                 continue;
             };
-            if let Some(一条) = Self::读一条(留痕槽, 序号) {
-                结果.push(一条);
+            if let Some(取回留痕) = Self::读一条(留痕槽, 序号) {
+                结果.push(取回留痕);
             }
         }
         结果
@@ -272,9 +272,9 @@ impl 留痕缓冲 {
                 core::hint::spin_loop();
                 continue;
             }
-            let 一条 = 数据槽.读字段();
+            let 取回留痕 = 数据槽.读字段();
             if 数据槽.就绪.load(Ordering::Acquire) == 前次就绪 {
-                return Some(一条);
+                return Some(取回留痕);
             }
             core::hint::spin_loop();
         }

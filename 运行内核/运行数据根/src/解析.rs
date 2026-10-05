@@ -52,10 +52,10 @@ pub const 覆盖变量名: &str = "V1_RUN_DATA_ROOT";
 /// - 覆盖为空 / 缺 ⇒ 平台数据目录 + [`默认目录名`]；
 /// - 两条都拿不到 ⇒ [`解析失败::无位置`]。
 pub fn 解析运行数据根(解析环境: &解析环境, 目标平台: 目标平台) -> Result<PathBuf, 解析失败> {
-    if let Some(覆盖) = 解析环境.覆盖
-        && !覆盖.is_empty()
+    if let Some(环境覆盖值) = 解析环境.覆盖
+        && !环境覆盖值.is_empty()
     {
-        return Ok(PathBuf::from(覆盖));
+        return Ok(PathBuf::from(环境覆盖值));
     }
     let 基准目录 = 默认基目录(解析环境, 目标平台).ok_or(解析失败::无位置)?;
     Ok(基准目录.join(默认目录名))
@@ -92,12 +92,12 @@ fn 默认基目录(解析环境: &解析环境, 目标平台: 目标平台) -> O
 
 /// 从**真实环境**解析：读四个环境变量 + 判目标平台。**只做这两件事，零判断**。
 pub fn 解析当前环境() -> Result<PathBuf, 解析失败> {
-    let 覆盖 = std::env::var(覆盖变量名).ok();
+    let 环境覆盖值 = std::env::var(覆盖变量名).ok();
     let 家目录 = std::env::var("HOME").ok();
     let xdg = std::env::var("XDG_DATA_HOME").ok();
     let 应用 = std::env::var("APPDATA").ok();
     let 解析环境 = 解析环境 {
-        覆盖: 覆盖.as_deref(),
+        覆盖: 环境覆盖值.as_deref(),
         家目录: 家目录.as_deref(),
         xdg数据目录: xdg.as_deref(),
         应用数据目录: 应用.as_deref(),

@@ -12,8 +12,8 @@ pub fn 生成段数据(输出流: &记录流) -> Result<Vec<u8>, 生成错误> {
     if 首数组长 != 次数组长 || 首数组长 != 末数组长 || 首数组长 != 引用表长 {
         return Err(生成错误::支持库数组长度不一致 { 首数组长, 次数组长, 末数组长, 引用表: 引用表长 });
     }
-    for (序号, 一条) in 输出流.支持库.引用表.iter().enumerate() {
-        if 一条.字段.is_empty() {
+    for (序号, 引用记录) in 输出流.支持库.引用表.iter().enumerate() {
+        if 引用记录.字段.is_empty() {
             return Err(生成错误::支持库引用字段为空 { 第几条: 序号 as u32 });
         }
     }
@@ -48,9 +48,9 @@ pub fn 生成段数据(输出流: &记录流) -> Result<Vec<u8>, 生成错误> {
     }
     输出缓冲.extend_from_slice(&(首数组长 as u16).to_le_bytes());
 
-    for 一条 in &输出流.支持库.引用表 {
-        输出缓冲.extend_from_slice(&(一条.串长() as u32).to_le_bytes());
-        输出缓冲.extend_from_slice(&一条.原文());
+    for 引用记录 in &输出流.支持库.引用表 {
+        输出缓冲.extend_from_slice(&(引用记录.串长() as u32).to_le_bytes());
+        输出缓冲.extend_from_slice(&引用记录.原文());
     }
 
     输出缓冲.extend_from_slice(&输出流.其余载荷);

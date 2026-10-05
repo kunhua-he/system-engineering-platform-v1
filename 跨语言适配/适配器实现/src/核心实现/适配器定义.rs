@@ -13,7 +13,7 @@ use std::sync::atomic::AtomicU64;
 
 use v1_contract::{能力号, 已载入台账, 平台信息, 数据槽};
 use v1_dispatch::{配额窗口毫秒, 配额账本, 调用结果};
-use v1_registry::注册表;
+use v1_registry::统一注册表;
 use v1_trace::留痕缓冲;
 
 use crate::契约读取::读契约串;
@@ -27,7 +27,7 @@ use super::形状::{装载失败, 转发结果};
 /// 而 [`注册表`] 只把四张表收进去、不公开 `错误码表`（见文件头缺口 3）。
 pub(crate) struct 已装载声明 {
     pub(crate) 声明: &'static 平台信息,
-    pub(crate) 注册表: 注册表,
+    pub(crate) 注册表: 统一注册表,
 }
 
 /// **全平台唯一的适配器**：读契约 → 装载内核 → 转发调用。

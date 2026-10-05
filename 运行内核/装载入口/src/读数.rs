@@ -26,15 +26,15 @@ pub const 契约串上限: usize = 4096;
 ///
 /// # Safety
 ///
-/// 调用方保证 `指针` 要么为空，要么指向**至少 `上限` 字节可读**的静态数据
+/// 调用方保证 `指针` 要么为空，要么指向**至少 `读取上限` 字节可读**的静态数据
 /// （契约规定：一切串都是静态只读的 NUL 结尾串）。
-pub unsafe fn 读串(指针: *const u8, 上限: usize) -> Option<&'static [u8]> {
+pub unsafe fn 读串(指针: *const u8, 读取上限: usize) -> Option<&'static [u8]> {
     if 指针.is_null() {
         return None;
     }
     let mut 长度 = 0usize;
-    while 长度 < 上限 {
-        // SAFETY: 由调用方保证 指针..指针+上限 可读。
+    while 长度 < 读取上限 {
+        // SAFETY: 由调用方保证 指针..指针+读取上限 可读。
         if unsafe { *指针.add(长度) } == 0 {
             // SAFETY: 已扫到 NUL，前 长 字节可读且不再变动（静态数据）。
             return Some(unsafe { core::slice::from_raw_parts(指针, 长度) });

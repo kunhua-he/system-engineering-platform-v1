@@ -38,8 +38,8 @@ impl 名号表 {
     }
 
     /// 直接给项（库内与测试构造用；顺序即盘面顺序，**不排序、不去重**）。
-    pub fn 从项(一项: Vec<(Vec<u8>, u16)>) -> Self {
-        Self { 项: 一项 }
+    pub fn 从项(项表: Vec<(Vec<u8>, u16)>) -> Self {
+        Self { 项: 项表 }
     }
 
     pub fn 项数(&self) -> usize {
@@ -77,24 +77,24 @@ impl 名号表 {
         if 字节.is_empty() {
             return Some(Self::空实例());
         }
-        let mut 读器 = 顺序读器 { 字节, 位: 0 };
-        let 项数 = 读器.读四字节()? as usize;
+        let mut 读游标 = 顺序读器 { 字节, 位: 0 };
+        let 项数 = 读游标.读四字节()? as usize;
         // 每项至少 4 字节名长 + 2 字节号 = 6 字节 ⇒ 项数不可能超过 字节.len()/6。
         // 先卡这一条，免得下面 `Vec::with_capacity` 被一个伪造的大项数撑爆内存。
         if 项数 > 字节.len() / 6 {
             return None;
         }
-        let mut 一项 = Vec::with_capacity(项数);
+        let mut 项表 = Vec::with_capacity(项数);
         for _ in 0..项数 {
-            let 名长 = 读器.读四字节()? as usize;
-            let 名称 = 读器.取字节(名长)?.to_vec();
-            let 号值 = 读器.读双字节()?;
-            一项.push((名称, 号值));
+            let 名长 = 读游标.读四字节()? as usize;
+            let 名称 = 读游标.取字节(名长)?.to_vec();
+            let 号值 = 读游标.读双字节()?;
+            项表.push((名称, 号值));
         }
         // 尾部有多余字节 ⇒ 非法（不许静默忽略）。
-        if 读器.位 != 字节.len() {
+        if 读游标.位 != 字节.len() {
             return None;
         }
-        Some(Self { 项: 一项 })
+        Some(Self { 项: 项表 })
     }
 }

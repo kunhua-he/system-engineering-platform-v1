@@ -112,14 +112,14 @@ fn 语料_53份_兜底归类字节读数() {
             if 落处档位 == 3 {
                 备注字节 += 字符.len_utf8();
             }
-            let 一项 = 兜底.entry(字符).or_insert_with(|| {
+            let 兜底条目 = 兜底.entry(字符).or_insert_with(|| {
                 (
                     [0; 4],
                     format!("{}:{行号}", 路径.file_name().unwrap().to_string_lossy()),
                     本行,
                 )
             });
-            一项.0[落处档位] += 1;
+            兜底条目.0[落处档位] += 1;
         }
     }
     let 兜底字符: usize = 归类桶.iter().sum();

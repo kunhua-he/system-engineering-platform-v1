@@ -58,9 +58,9 @@ pub struct 配额账本 {
 
 impl 配额账本 {
     /// 新建一本账本。上限/窗口由调用方按实例给定（默认值取本 crate 的常量）。
-    pub fn 新建(上限: u32, 窗口毫秒: u64) -> Self {
+    pub fn 新建(配额上限值: u32, 窗口毫秒: u64) -> Self {
         Self {
-            上限,
+            上限: 配额上限值,
             窗口毫秒,
             起点: Instant::now(),
             记录: Mutex::new(BTreeMap::new()),
