@@ -11,6 +11,7 @@ from . import 常量
 from .常量 import 检查名, 契约目录名
 from .打印 import 打印验证结果, 打印缺口
 from .承重证明 import 承重证明
+from .编译自检 import 编译自检
 from .自测 import 跑自测
 from .退出码 import 算退出码
 from .验证 import 跑全量判据
@@ -50,6 +51,8 @@ def 入口函数(参数: list) -> int:
         return 跑自测(仓根)
     if "--承重证明" in 参数:
         return 承重证明(仓根)
+    if "--编译自检" in 参数:
+        return 编译自检(仓根)
     只跑集 = None
     if "--只跑" in 参数:
         只跑集, 错误 = 解析只跑(参数[参数.index("--只跑") + 1].split(","))
