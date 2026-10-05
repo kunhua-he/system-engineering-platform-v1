@@ -37,6 +37,8 @@ def 记条款(字段表: dict) -> int:
 
     **正文两形**：`--正文` 走 `记规则.解析参数`（空白折成单空格 —— 适合一行小结）；**散文**
     （多段落）用 `--正文文件 <仓内相对路径>`，逐字节读入（**保住换行**，条款正文都是这种）。
+    `--文档路径` / `--正文文件` 都过仓内相对路径闸（空 / 绝对 / `..` ⇒ 拒）；正文文件读不到
+    是**结构化拒**（退出码 2），不是 traceback。
     """
     文档路径 = (字段表.get("文档路径") or "").strip()
     序号 = (字段表.get("序号") or "").strip()
@@ -44,10 +46,25 @@ def 记条款(字段表: dict) -> int:
     正文文件 = (字段表.get("正文文件") or "").strip()
     正文 = (字段表.get("正文") or "").strip()
     权威档 = (字段表.get("权威档") or "").strip()
-    if 正文文件:
-        正文 = (仓根 / 正文文件).read_text(encoding="utf-8").strip()
-    if not 文档路径 or not 序号.isdigit() or not 正文:
+    if not 文档路径 or not 序号.isdigit() or not (正文 or 正文文件):
         print(用法文本, file=sys.stderr)
+        return 2
+    if Path(文档路径).is_absolute() or ".." in Path(文档路径).parts:
+        print(f"拒：`--文档路径 {文档路径}` 该是仓内相对路径（不许绝对路径 / `..`）。",
+              file=sys.stderr)
+        return 2
+    if 正文文件:
+        if Path(正文文件).is_absolute() or ".." in Path(正文文件).parts:
+            print(f"拒：`--正文文件 {正文文件}` 该是仓内相对路径（不许绝对路径 / `..`）。",
+                  file=sys.stderr)
+            return 2
+        try:
+            正文 = (仓根 / 正文文件).read_text(encoding="utf-8").strip()
+        except OSError as 错误:
+            print(f"拒：读 `--正文文件 {正文文件}` 失败 —— {错误}", file=sys.stderr)
+            return 2
+    if not 正文:
+        print("拒：正文是空的（`--正文` 空串 / `--正文文件` 抽出空）。", file=sys.stderr)
         return 2
     if (仓根 / 文档路径).is_file():
         print(f"拒：`{文档路径}` 在盘上还有源件（md）—— 那份 md 才是权威，"
@@ -63,4 +80,6 @@ def 记条款(字段表: dict) -> int:
     finally:
         连接.close()
     print(f"记条款：{文档路径} §{序号} · {标题}")
+    print("★ 库变了 ⇒ 收口前记得 `v1_task` 功能=6 记账"
+          "（`源件` = `开发工具/信息核心/信息核心.db`），否则释放的越界检测会拒")
     return 0
