@@ -48,7 +48,7 @@ const 跑命令超时毫秒: u64 = 5_000;
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum 命令错误 {
     /// 进程起不来（件不存在 / 没有执行权限 / PATH 找不到）。
-    起不来 { 程序: String, 说明: String },
+    起不来 { 程序: String, 说明文字: String },
     /// 进程在 [`跑命令超时毫秒`] 内没退出，已被杀掉。
     超时 { 程序: String, 上限毫秒: u64 },
 }
@@ -66,7 +66,7 @@ impl 命令错误 {
 impl std::fmt::Display for 命令错误 {
     fn fmt(&self, 格式器: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::起不来 { 程序, 说明 } => write!(格式器, "起不了 {程序}：{说明}"),
+            Self::起不来 { 程序, 说明文字 } => write!(格式器, "起不了 {程序}：{说明文字}"),
             Self::超时 { 程序, 上限毫秒 } => {
                 write!(格式器, "跑命令超时：{程序} 在 {上限毫秒} 毫秒内没退出（已杀）")
             }
@@ -109,7 +109,7 @@ pub fn 跑命令(程序: &Path, 参数: &[&str], 工作目录: &Path) -> Result<
         .spawn()
         .map_err(|错误| 命令错误::起不来 {
             程序: 程序.display().to_string(),
-            说明: 错误.to_string(),
+            说明文字: 错误.to_string(),
         })?;
     // 管道**并发抽干**：不抽的话子进程写满管道缓冲就阻塞，超时会被误报成「挂住」。
     let 抽输出 = 子进程.stdout.take().map(|管道| std::thread::spawn(move || 抽干(管道)));
@@ -125,7 +125,7 @@ pub fn 跑命令(程序: &Path, 参数: &[&str], 工作目录: &Path) -> Result<
                 let _ = 子进程.wait();
                 return Err(命令错误::起不来 {
                     程序: 程序.display().to_string(),
-                    说明: 错误.to_string(),
+                    说明文字: 错误.to_string(),
                 });
             }
         }

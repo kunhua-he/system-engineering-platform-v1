@@ -34,22 +34,22 @@ use v1_adapter::数据槽;
 pub struct 请求形状错误 {
     /// 出在 `值` 数组的第几位（`None` = 不在数组里）。
     pub 位次: Option<usize>,
-    pub 说明: String,
+    pub 说明文字: String,
 }
 
 impl 请求形状错误 {
-    pub fn 新建(位次: Option<usize>, 说明: impl Into<String>) -> Self {
+    pub fn 新建(位次: Option<usize>, 说明文字: impl Into<String>) -> Self {
         Self {
             位次,
-            说明: 说明.into(),
+            说明文字: 说明文字.into(),
         }
     }
 
     /// 一句话说明（协议错误的返回体用它）。
     pub fn 可读说明(&self) -> String {
         match self.位次 {
-            Some(序号) => format!("值[{序号}]：{}", self.说明),
-            None => self.说明.clone(),
+            Some(序号) => format!("值[{序号}]：{}", self.说明文字),
+            None => self.说明文字.clone(),
         }
     }
 }
@@ -156,7 +156,7 @@ pub fn 由协议值(待处理值: &协议值, 位次: usize) -> Result<槽源, �
                 请求形状错误::新建(位置, "类型标签 5（字节集）的值必须是 base64 字符串")
             })?;
             let 字节 = base64解码(文本)
-                .map_err(|错误| 请求形状错误::新建(位置, format!("字节集不是合法 base64：{}", 错误.说明)))?;
+                .map_err(|错误| 请求形状错误::新建(位置, format!("字节集不是合法 base64：{}", 错误.说明文字)))?;
             Ok(槽源::字节(字节))
         }
         类型标签::句柄 => {

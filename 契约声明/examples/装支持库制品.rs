@@ -28,8 +28,8 @@ use v1_contract::容器;
 fn main() -> ExitCode {
     let 命令行参数 = match 解析命令行参数() {
         Ok(命令行参数) => 命令行参数,
-        Err(说明) => {
-            eprintln!("装支持库制品：{说明}");
+        Err(说明文字) => {
+            eprintln!("装支持库制品：{说明文字}");
             eprintln!("用法：--能力码 <cdylib> --接口说明 <段文件> --输出 <制品>");
             return ExitCode::from(2);
         }
