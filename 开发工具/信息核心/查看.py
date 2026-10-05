@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""信息核心 · 查看 —— 一个只读页面端口（默认 43130）。
+"""信息核心 · 查看 —— 一个只读页面端口（默认 43130；连接层 `mode=ro`，查询口只放 select / with）。
 
 华哥 2026-09-28：「你给所有权威的定义，单独开一个端口，然后放 html 页面。」·「这个端口，
 主页是整个内核的咬合流程图。只需要实时流程图，内核延展出来，他连接什么，和什么连在一起。
@@ -301,15 +301,34 @@ def 查询页(连接, sql: str) -> bytes:
               "<button>跑</button></form>")
     表名 = [一项[0] for 一项 in 连接.execute(
         "select name from sqlite_master where type='table' order by name")]
-    正文 = f"<h2>查询（只读 select）</h2>{输入框}<p class=\"灰\">表：{html.escape(' · '.join(表名))}</p>"
+    正文 = f"<h2>查询（只读：select / with）</h2>{输入框}<p class=\"灰\">表：{html.escape(' · '.join(表名))}</p>"
     if sql.strip():
-        if not sql.strip().lower().startswith(("select", "with", "pragma")):
-            return 页面壳("查询", 正文 + "<p class=\"红\">只许 select / with / pragma。</p>")
+        # 守卫判**整条语句的形状**，不是首词：先剥注释与引号里的字面量成骨架，再看首词与写动词。
+        形状 = re.sub(r"""--[^\n]*|/\*.*?\*/|'(?:[^']|'')*'|"(?:""|[^"])*"|`[^`]*`|\[[^\]]*\]""",
+                    " ", sql, flags=re.S).lstrip().lower()
+        匹配 = re.match(r"[a-z_]+", 形状)
+        关键词 = 匹配.group(0) if 匹配 else ""
+        if 关键词 not in ("select", "with"):
+            正文 += "<p class=\"红\">只许 select / with 这两种只读语句（pragma 有写形状，一并拒）。</p>"
+            return 页面壳("查询", 正文)
+        if 关键词 == "with":
+            for 候选词 in ("insert", "update", "delete", "replace", "drop", "alter", "create",
+                        "attach", "detach", "pragma", "vacuum", "reindex", "analyze",
+                        "begin", "commit", "rollback", "savepoint", "release"):
+                if re.search(r"\b%s\b" % 候选词, 形状):
+                    理由 = f"with 里出现写动词 `{候选词}` —— 只许 with … select。"
+                    正文 += f"<p class=\"红\">{html.escape(理由)}</p>"
+                    return 页面壳("查询", 正文)
         try:
             游标 = 连接.execute(sql)
-            列名 = tuple(一列[0] for 一列 in 游标.description)
-            数据行 = 游标.fetchall()[:500]
-            正文 += f"<p>{len(数据行)} 行（最多 500）</p>" + 表格(列名, 数据行)
+            if 游标.description is None:
+                # 无结果集（写语句 / 无返回的 pragma）—— 连接层 `mode=ro` 已让它物理失败；
+                # 这里如实回，不再 `tuple(None)` 崩栈（旧码在此抛 TypeError、请求线程断连）。
+                正文 += "<p class=\"红\">这条语句没有结果集 —— 查询口只回结果集，不执行写。</p>"
+            else:
+                列名 = tuple(一列[0] for 一列 in 游标.description)
+                数据行 = 游标.fetchall()[:500]
+                正文 += f"<p>{len(数据行)} 行（最多 500）</p>" + 表格(列名, 数据行)
         except sqlite3.Error as 错误:
             正文 += f"<p class=\"红\">SQL 错：{html.escape(str(错误))}</p>"
     return 页面壳("查询", 正文)
