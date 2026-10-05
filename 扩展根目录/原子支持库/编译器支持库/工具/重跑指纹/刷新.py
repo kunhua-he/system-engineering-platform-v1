@@ -4,7 +4,7 @@ import json
 import os
 from datetime import datetime, timezone, timedelta
 
-from .常量 import 扩展根, 指纹件, 重跑指纹命令, 说明, 指纹范围, 指纹缺口
+from .常量 import 扩展根, 指纹件, 重跑指纹命令, 生成说明, 指纹范围, 指纹缺口
 from .收集 import 相对路径, 算指纹表, 读旧指纹表
 
 
@@ -12,7 +12,7 @@ def 刷新指纹():
     项表 = 算指纹表()
     时刻 = datetime.now(timezone(timedelta(hours=8))).strftime("%Y-%m-%d %H:%M:%S %z")
     指纹文档 = {
-        "说明": 说明,
+        "说明": 生成说明,
         "算法": "sha256",
         "生成时刻": 时刻,
         # 产物自称（判据 ⑩ 的产物头标）；JSON 装不下 `//` 注释 ⇒ 用 JSON 键承载同义声明。
@@ -32,7 +32,7 @@ def 刷新指纹():
     return 0
 
 
-def 检查():
+def 检查指纹():
     新指纹表 = 算指纹表()
     旧指纹表 = 读旧指纹表()
     if 旧指纹表 is None:
