@@ -48,7 +48,7 @@ def 查不覆盖(判据名: str, 单元: str):
     return None
 
 
-def 校验登记(单元表: list, 登记=None, 仓根: str = None, 范围: list = None) -> list:
+def 校验登记(单元表: list, 登记=None, 仓根: str = None, 扫描范围: list = None) -> list:
     """fail-closed：登记表长霉即红。返回失败明细（`判定` = 失败）。
 
     `登记` 只为自测注入而设（默认用本文件那张唯一表）——「清空表 ⇒ ③f 那半边回到未判」
@@ -69,9 +69,9 @@ def 校验登记(单元表: list, 登记=None, 仓根: str = None, 范围: list 
     # 把它并进 `有效单元` ⇒ 循环体与原先逐字相同（判定口径不动，只多这一句集合运算）。
     # 不放宽的两种仍照红：① 单元在本次范围内却没扫到 ② 单元在范围外且仓里不存在。
     有效单元 |= {
-        一条["单元"]
-        for 一条 in (不覆盖登记表 if 登记 is None else 登记)
-        if 单元在本次范围外但存在(一条["单元"], 仓根, 范围)
+        登记条["单元"]
+        for 登记条 in (不覆盖登记表 if 登记 is None else 登记)
+        if 单元在本次范围外但存在(登记条["单元"], 仓根, 扫描范围)
     }
     输出缓冲 = []
     for 登记序, 登记条 in enumerate(不覆盖登记表 if 登记 is None else 登记):
@@ -97,27 +97,27 @@ def 校验登记(单元表: list, 登记=None, 仓根: str = None, 范围: list 
     return 输出缓冲
 
 
-def 单元在本次范围外但存在(单元: str, 仓根, 范围) -> bool:
+def 单元在本次范围外但存在(单元: str, 仓根, 扫描范围) -> bool:
     """这个登记的单元是否「落在本次范围之外、却在仓里确实存在」。
 
     两个条件缺一不可：① 单元不在 `范围` 里（否则它就该被扫描面看见，看不见才是长霉）；
     ② 仓根给定了，且 `仓根/单元` 在盘上是个目录（否则是悬空登记，仍要报红）。
     """
-    if 仓根 is None or 范围 is None:
+    if 仓根 is None or 扫描范围 is None:
         return False
-    在范围内 = any(单元 == 前缀 or 单元.startswith(前缀.rstrip("/") + "/") for 前缀 in 范围)
+    在范围内 = any(单元 == 前缀 or 单元.startswith(前缀.rstrip("/") + "/") for 前缀 in 扫描范围)
     if 在范围内:
         return False
     return (Path(仓根) / 单元).is_dir()
 
 
-def 登记表自洽元记录(单元表: list, 仓根: str = None, 范围: list = None) -> list:
+def 登记表自洽元记录(单元表: list, 仓根: str = None, 扫描范围: list = None) -> list:
     """登记表自洽的元记录：**只在长霉时出现**（干净时返回空，不参与常规读数）。
 
     `仓根` / `范围` 只为「按范围过滤」用（见 `校验登记`）——窄范围（扩展专属档）
     不该因底座单元的登记而报假红。
     """
-    明细 = 校验登记(单元表, 仓根=仓根, 范围=范围)
+    明细 = 校验登记(单元表, 仓根=仓根, 扫描范围=扫描范围)
     if not 明细:
         return []
     return [

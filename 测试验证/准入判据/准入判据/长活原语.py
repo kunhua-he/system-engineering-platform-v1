@@ -162,7 +162,7 @@ def 跑长活原语考题(根目录: Path) -> int:
     测果 = 解测果(结果.stdout + 结果.stderr)
     行表 = []
     失败 = 0
-    for 测名, 号值 in sorted(测名到判据.items(), key=lambda 一项: 一项[1]):
+    for 测名, 号值 in sorted(测名到判据.items(), key=lambda 排序项: 排序项[1]):
         过了 = 测果.get(测名)
         if 过了 is None:
             行表.append((号值, "未判", f"考题里没有这条测试：{测名}"))

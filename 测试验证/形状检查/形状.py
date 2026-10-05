@@ -126,7 +126,7 @@ def 扫案例(根目录: Path) -> tuple:
     报告 = []
     未判 = 0
     有案例 = False
-    for 目录 in sorted(一个 for 一个 in 根目录.iterdir() if 一个.is_dir()):
+    for 目录 in sorted(目录项 for 目录项 in 根目录.iterdir() if 目录项.is_dir()):
         期望路径 = 目录 / "期望.json"
         if not 期望路径.is_file():
             continue  # 非案例目录（`跑案例/` 那类）

@@ -77,8 +77,8 @@ def 连账本() -> sqlite3.Connection:
     """开账本（第一次用就建表）。"""
     连接 = sqlite3.connect(str(开工账本路径()))
     连接.row_factory = sqlite3.Row
-    for 一条 in 建表语句:
-        连接.execute(一条)
+    for 建表语句行 in 建表语句:
+        连接.execute(建表语句行)
     _补列(连接)
     连接.commit()
     return 连接
@@ -121,12 +121,12 @@ def 读开工(连接, 开工号: str):
     return dict(源码行) if 源码行 else None
 
 
-def 列开工(连接, 上限: int = 20) -> list:
+def 列开工(连接, 结果上限: int = 20) -> list:
     return [dict(数据行) for 数据行 in 连接.execute(
-        "select * from 开工 order by 开工号 desc limit ?", (上限,))]
+        "select * from 开工 order by 开工号 desc limit ?", (结果上限,))]
 
 
-def 搜开工(连接, 关键词: str, 上限: int = 20) -> list:
+def 搜开工(连接, 关键词: str, 结果上限: int = 20) -> list:
     """按关键词搜历史：面 = 工作内容 + 认领路径 + 改动路径（**不含 diff**，见文件头）。"""
     匹配模式 = "%" + 关键词 + "%"
     return [dict(数据行) for 数据行 in 连接.execute(
@@ -134,7 +134,7 @@ def 搜开工(连接, 关键词: str, 上限: int = 20) -> list:
         "left join 认领 on 认领.开工号 = 开工.开工号 "
         "left join 改动 on 改动.开工号 = 开工.开工号 "
         "where 开工.工作内容 like ? or 认领.路径 like ? or 改动.路径 like ? "
-        "order by 开工.开工号 desc limit ?", (匹配模式, 匹配模式, 匹配模式, 上限))]
+        "order by 开工.开工号 desc limit ?", (匹配模式, 匹配模式, 匹配模式, 结果上限))]
 
 
 def 置状态(连接, 开工号: str, 状态: str) -> None:

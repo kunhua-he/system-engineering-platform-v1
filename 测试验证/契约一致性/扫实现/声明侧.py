@@ -41,16 +41,16 @@ def 读声明侧(件表: dict) -> dict:
             continue
         if not isinstance(数据, dict):
             continue
-        一项 = 根表.setdefault(
+        根目录条目 = 根表.setdefault(
             根目录, {"能力声明": {}, "错误码表": {}, "类型声明": {}, "包": None}
         )
         尾部 = 键名[len(根目录) + 1 :]
         if 尾部 == "包声明.json" or 尾部 == "平台声明.json":
-            一项["包"] = (数据, 键名)
+            根目录条目["包"] = (数据, 键名)
         elif 尾部.startswith("能力声明/") and 尾部.endswith(".json"):
-            一项["能力声明"][键名] = (数据, 键名)
+            根目录条目["能力声明"][键名] = (数据, 键名)
         elif 尾部.startswith("错误码表/") and 尾部.endswith(".json"):
-            一项["错误码表"][键名] = (数据, 键名)
+            根目录条目["错误码表"][键名] = (数据, 键名)
         elif 尾部.startswith("类型声明/") and 尾部.endswith(".json"):
-            一项["类型声明"][键名] = (数据, 键名)
+            根目录条目["类型声明"][键名] = (数据, 键名)
     return 根表

@@ -81,22 +81,22 @@ impl JSON值 {
 
 /// 解析。错误信息带**字节位置**——案例文件写错时要能直接找到那一处。
 pub fn 解析JSON值(来源: &str) -> Result<JSON值, String> {
-    let mut 读器 = 读器 { 字节: 来源.as_bytes(), 位: 0 };
-    读器.跳空白();
-    let 文本缓冲 = 读器.取值()?;
-    读器.跳空白();
-    if 读器.位 != 读器.字节.len() {
-        return Err(format!("第 {} 字节起有多余内容（JSON 只许一个顶层值）", 读器.位));
+    let mut 位读游标 = 位读游标 { 字节: 来源.as_bytes(), 位: 0 };
+    位读游标.跳空白();
+    let 文本缓冲 = 位读游标.取值()?;
+    位读游标.跳空白();
+    if 位读游标.位 != 位读游标.字节.len() {
+        return Err(format!("第 {} 字节起有多余内容（JSON 只许一个顶层值）", 位读游标.位));
     }
     Ok(文本缓冲)
 }
 
-struct 读器<'a> {
+struct 位读游标<'a> {
     字节: &'a [u8],
     位: usize,
 }
 
-impl 读器<'_> {
+impl 位读游标<'_> {
     fn 跳空白(&mut self) {
         while matches!(self.字节.get(self.位), Some(b' ' | b'\t' | b'\n' | b'\r')) {
             self.位 += 1;
@@ -325,15 +325,15 @@ mod 测试 {
     #[test]
     fn 干净输入逐字段读得对() {
         let 待处理值 = 解析JSON(r#"{"案例名":"反解","步骤":[{"能力编号":1105}],"结果":true,"无":null,"数":1568}"#);
-        assert_eq!(待处理值.取成员("案例名").and_then(|一项| 一项.取字符串()), Some("反解"));
-        assert_eq!(待处理值.取成员("步骤").and_then(|一项| 一项.取数组()).map(<[JSON值]>::len), Some(1));
+        assert_eq!(待处理值.取成员("案例名").and_then(|成员值| 成员值.取字符串()), Some("反解"));
+        assert_eq!(待处理值.取成员("步骤").and_then(|成员值| 成员值.取数组()).map(<[JSON值]>::len), Some(1));
         assert_eq!(
-            待处理值.取成员("步骤").and_then(|步骤值| 步骤值.取数组()).and_then(|步骤值| 步骤值.first()).and_then(|步骤值| 步骤值.取成员("能力编号")).and_then(|一项| 一项.取整数()),
+            待处理值.取成员("步骤").and_then(|步骤值| 步骤值.取数组()).and_then(|步骤值| 步骤值.first()).and_then(|步骤值| 步骤值.取成员("能力编号")).and_then(|成员值| 成员值.取整数()),
             Some(1105)
         );
-        assert_eq!(待处理值.取成员("结果").and_then(|一项| 一项.真假()), Some(true));
+        assert_eq!(待处理值.取成员("结果").and_then(|成员值| 成员值.真假()), Some(true));
         assert!(matches!(待处理值.取成员("无"), Some(JSON值::空值)));
-        assert_eq!(待处理值.取成员("数").and_then(|一项| 一项.取整数()), Some(1568));
+        assert_eq!(待处理值.取成员("数").and_then(|成员值| 成员值.取整数()), Some(1568));
     }
 
     /// 反向样本：坏输入必须报错（不是静默给一个空值）。

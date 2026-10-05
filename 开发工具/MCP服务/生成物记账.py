@@ -94,7 +94,7 @@ def 记生成物账(仓根, 开工号: str, 生成器: str, 命令行参数) -> 
             return 2, "`生成器` 只认仓内相对 `.py` 路径（不许绝对路径 / 不许 `..`）：%r" % 相对
         if not (工作树 / 相对).is_file():
             return 1, "生成器不在工作树里：%s" % 相对
-        命令行参数 = ([str(一项) for 一项 in 命令行参数] if isinstance(命令行参数, (list, tuple))
+        命令行参数 = ([str(参数项) for 参数项 in 命令行参数] if isinstance(命令行参数, (list, tuple))
             else ([] if not 命令行参数 else [str(命令行参数)]))
 
         跑前 = 脏件指纹(工作树)

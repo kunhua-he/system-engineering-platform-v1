@@ -63,8 +63,8 @@ def _解可抛错误码(单元: dict, 原文, 符号表: dict, 本表: dict):
     if 抛码表项 is None:
         return None
     结果 = []
-    for 一项 in 拆顶层项(抛码表项.get("内文") or ""):
-        待处理值 = 解符号(一项, 符号表, 本表)
+    for 顶层项 in 拆顶层项(抛码表项.get("内文") or ""):
+        待处理值 = 解符号(顶层项, 符号表, 本表)
         if 待处理值 is None:
             return None
         结果.append(待处理值)
@@ -78,8 +78,8 @@ def _按编号找命令(单元: dict, 编号) -> object:
     return None
 
 
-def _参数表名(一条: dict) -> object:
-    原文 = 一条["字段"].get("参数表", {}).get("原文")
+def _参数表名(实现条目: dict) -> object:
+    原文 = 实现条目["字段"].get("参数表", {}).get("原文")
     if 原文 is None:
         return None
     匹配 = re.match(r"([^\s.]+)", 原文.strip())

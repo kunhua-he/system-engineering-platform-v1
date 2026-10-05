@@ -70,23 +70,23 @@ def 比对口径(解析路: Path, 子目录路: Path, python路: Path) -> list:
     真源口径 = 抽真源口径(解析路.read_text(encoding="utf-8"), 子目录路.read_text(encoding="utf-8"))
     镜像口径 = 抽镜像口径(python路.read_text(encoding="utf-8"))
     输出缓冲 = []
-    for 一项 in 七项口径字段名:
-        if 真源口径[一项] is None:
-            输出缓冲.append("%s：Rust 源里抽不到（Rust 那边改了？）" % 一项)
-        elif 镜像口径[一项] is None:
-            输出缓冲.append("%s：Python 源里抽不到" % 一项)
-        elif tuple(真源口径[一项] if isinstance(真源口径[一项], tuple) else (真源口径[一项],)) != tuple(
-            镜像口径[一项] if isinstance(镜像口径[一项], tuple) else (镜像口径[一项],)
+    for 口径字段名 in 七项口径字段名:
+        if 真源口径[口径字段名] is None:
+            输出缓冲.append("%s：Rust 源里抽不到（Rust 那边改了？）" % 口径字段名)
+        elif 镜像口径[口径字段名] is None:
+            输出缓冲.append("%s：Python 源里抽不到" % 口径字段名)
+        elif tuple(真源口径[口径字段名] if isinstance(真源口径[口径字段名], tuple) else (真源口径[口径字段名],)) != tuple(
+            镜像口径[口径字段名] if isinstance(镜像口径[口径字段名], tuple) else (镜像口径[口径字段名],)
         ):
-            输出缓冲.append("%s：Rust=%r ≠ Python=%r" % (一项, 真源口径[一项], 镜像口径[一项]))
+            输出缓冲.append("%s：Rust=%r ≠ Python=%r" % (口径字段名, 真源口径[口径字段名], 镜像口径[口径字段名]))
     return 输出缓冲
 
 
-def 改坏口径项(文本: str, 一项: str, 假值) -> str:
+def 改坏口径项(文本: str, 口径字段名: str, 假值) -> str:
     """把 Python 源文本里某一项改成假值（反向样本用）。"""
     元组项 = ("四类子目录名", "苹果基片段", "利努克斯退回片段")
-    变量 = "子目录名" if 一项 == "四类子目录名" else 一项
-    if 一项 in 元组项:
+    变量 = "子目录名" if 口径字段名 == "四类子目录名" else 口径字段名
+    if 口径字段名 in 元组项:
         待处理值 = "(%s)" % ", ".join('"%s"' % 号段 for 号段 in 假值)
     else:
         待处理值 = '"%s"' % 假值
@@ -108,11 +108,11 @@ def 跑反向样本(临时样本根: Path) -> int:
     """逐项改坏一份副本 ⇒ 每一项都必须被判红；有一项漏 ⇒ 退出码 1。"""
     原文 = 镜像源.read_text(encoding="utf-8")
     漏判项表 = []
-    for 一项, 待处理值 in 假值表.items():
+    for 口径字段名, 待处理值 in 假值表.items():
         路径 = 临时样本根 / "坏.py"
-        路径.write_text(改坏口径项(原文, 一项, 待处理值), encoding="utf-8")
+        路径.write_text(改坏口径项(原文, 口径字段名, 待处理值), encoding="utf-8")
         if not 比对口径(真源解析路径, 真源子目录路径, 路径):
-            漏判项表.append(一项)
+            漏判项表.append(口径字段名)
     if 漏判项表:
         print("反向样本失败：改坏这些项却没判红 ⇒ %s" % " · ".join(漏判项表))
         return 1
@@ -125,8 +125,8 @@ def 跑一遍(解析路: Path, 子目录路: Path, python路: Path) -> int:
     输出缓冲 = 比对口径(解析路, 子目录路, python路)
     if 输出缓冲:
         print("一致性判据失败（%d 项不一致）：" % len(输出缓冲))
-        for 一条 in 输出缓冲:
-            print("  ✗ " + 一条)
+        for 缓冲行 in 输出缓冲:
+            print("  ✗ " + 缓冲行)
         return 1
     print("一致性判据通过：Python 镜像与 Rust 那份逐项一致（%s）" % python路)
     return 0
