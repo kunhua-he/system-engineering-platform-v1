@@ -15,6 +15,8 @@ MCP 的 stdio 传输就是换行分隔的 JSON-RPC：不需要 SDK。本件只�
 """
 
 import json
+import os
+import select
 import sys
 
 from .服务指纹 import 过期提示行
@@ -23,6 +25,10 @@ from .服务指纹 import 过期提示行
 服务名 = "v1-devkit"
 服务显示名 = "V1 开发工具"
 服务版本 = "0.2.0"
+
+# 自愈重启的停等秒：空闲时每这么久醒一次比对服务指纹（阻塞 `readline` 察觉不到「空闲期改的件」）。
+# 0.2 秒 = 「改完件后下一次调用」就落到新码上；一次比对约 0.7 毫秒 ⇒ 开销可忽略。
+停等秒 = 0.2
 
 服务提示词 = """本仓（系统工程平台V1） 开发所使用提效的开发工具。
 在你做任意事情之前，先看看 mcp 的工具是否能使用。
@@ -86,10 +92,57 @@ def 派发(方法, 参数, 仓根, 工具表):
 
 
 def 跑主循环(仓根, 工具表, 输入=None, 输出=None):
-    """跑 stdio 主循环（**永不返回** —— 它是「结构边界：永不返回」，见 入口白名单.json）。"""
+    """跑 stdio 主循环（**永不返回** —— 它是「结构边界：永不返回」，见 入口白名单.json）。
+
+    ★ 自愈重启（2026-10-05）：每轮回「读下一帧之前」比对服务指纹，过期就 `os.execv` 重放自身
+    —— 同一对 stdio 管道，客户端察觉不到，改了 `MCP服务/**` 不必再重启 ZCode。三处必须：
+      · **逐行读，且 exec 只在「手上没有已读入的字节」时发生**：真服务走 `os.read` + 自带的行缓冲
+        —— `readline()` 会把后续帧**预读进 Python 缓冲**（实测：连写两帧，第二帧落在缓冲里），
+        那样 exec 会丢帧、`select` 也看不见它而**挂住**；注入的内存流（测试 / `--自检`）走
+        `readline()`。读到 EOF 照旧 `return 0`。
+      · **绝不在「已读进请求、还没回响应」时 exec**：顺序是「回完 → 回到循环顶 → 检查 → exec」。
+      · **空闲期与「帧刚到」两处都查**：空闲靠 `select` 停等唤醒；帧已到但**尚未读入**时再查一次
+        —— 过期就 exec（帧留在管道里，新进程照读）⇒ 改完件后的**下一帧就是新码**。
+    自愈只对**真服务**（真 stdio）生效：注入的内存流（测试 / `--自检`）不 exec；exec 失败兜住
+    （`兜底`）⇒ 不再重试、继续用旧码，绝不让失败把进程带走。
+    """
     输入 = 输入 or sys.stdin
     输出 = 输出 or sys.stdout
-    for 源码行 in 输入:
+    可自愈 = 输入 is sys.stdin
+    兜底 = False
+    缓冲 = b""
+    while True:
+        if 可自愈 and not 兜底 and not 缓冲:
+            过期行 = 过期提示行()
+            if 过期行:
+                print("★ 服务代码已变 ⇒ 自愈重启（同一 stdio 管道，下一帧即新码）", file=sys.stderr)
+                sys.stderr.flush()
+                try:
+                    os.execv(sys.executable, [sys.executable] + sys.argv)
+                except OSError as 错误:
+                    print("★ 自愈重启失败：%s ⇒ 继续用旧码" % (错误,), file=sys.stderr)
+                    兜底 = True
+                    continue               # 不再重试 ⇒ 回顶正常读帧（旧码）
+            if not select.select([输入], [], [], 停等秒)[0]:
+                continue                   # 空闲超时 ⇒ 回顶再比一次指纹
+            if 过期提示行():
+                continue                   # 帧已到但**未读** ⇒ 回顶 exec（帧留在管道，不丢）
+        if 可自愈:
+            while b"\n" not in 缓冲:
+                字节 = os.read(输入.fileno(), 65536)
+                if not 字节:
+                    if not 缓冲:
+                        return 0           # EOF
+                    源码行, 缓冲 = 缓冲.decode("utf-8"), b""
+                    break                  # 末行无换行符，照旧当一帧
+                缓冲 += 字节
+            else:
+                源码行, 缓冲 = 缓冲.split(b"\n", 1)
+                源码行 = 源码行.decode("utf-8")
+        else:
+            源码行 = 输入.readline()
+            if 源码行 == "":
+                return 0                   # EOF
         if not 源码行.strip():
             continue
         try:
