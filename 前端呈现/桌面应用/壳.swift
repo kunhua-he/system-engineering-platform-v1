@@ -12,7 +12,7 @@ import AppKit
 import WebKit
 
 /// 最小壳：一个窗口 + 一个 WKWebView，窗口一关就退出。
-final class 壳: NSObject, NSApplicationDelegate {
+final class 桌面壳: NSObject, NSApplicationDelegate {
     var 窗口: NSWindow!
     var 视图: WKWebView!
     let 地址: String
@@ -23,10 +23,10 @@ final class 壳: NSObject, NSApplicationDelegate {
     }
 
     func applicationDidFinishLaunching(_ 通知: Notification) {
-        let 框 = NSRect(x: 0, y: 0, width: 1180, height: 840)
-        视图 = WKWebView(frame: 框)
+        let 窗口框 = NSRect(x: 0, y: 0, width: 1180, height: 840)
+        视图 = WKWebView(frame: 窗口框)
         窗口 = NSWindow(
-            contentRect: 框,
+            contentRect: 窗口框,
             styleMask: [.titled, .closable, .miniaturizable, .resizable],
             backing: .buffered,
             defer: false
@@ -59,7 +59,7 @@ guard let 地址 = 参数.first else {
 }
 
 let 应用实例 = NSApplication.shared
-let 应用代理 = 壳(地址: 地址)
+let 应用代理 = 桌面壳(地址: 地址)
 应用实例.delegate = 应用代理
 应用实例.setActivationPolicy(.regular)
 应用实例.run()
