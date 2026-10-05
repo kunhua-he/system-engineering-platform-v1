@@ -91,7 +91,7 @@ fn 导出符号_恰好四个且不含接缝() {
     assert_eq!(去重, 允许, "导出符号恰好这四个，一个不多一个不少");
 
     assert!(
-        !名称.iter().any(|一项| 一项 == "GetPlatformInfo"),
+        !名称.iter().any(|名称项| 名称项 == "GetPlatformInfo"),
         "接缝是**反方向**（扩展 → 宿主），本边界不许导出它"
     );
     for (文件, 文本) in 生产源 {
@@ -111,7 +111,7 @@ pub extern "C" fn 多余() -> usize { 0 }"#;
     let 注入接缝 = r#"#[unsafe(export_name = "GetPlatformInfo")]
 pub extern "C" fn 取() {}"#;
     assert!(
-        扫导出名(注入接缝).iter().any(|一项| 一项 == "GetPlatformInfo"),
+        扫导出名(注入接缝).iter().any(|导出名项| 导出名项 == "GetPlatformInfo"),
         "反向样本：接缝符号也必须被扫出来（否则「不含 GetPlatformInfo」是空话）"
     );
 

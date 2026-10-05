@@ -67,7 +67,7 @@ fn 造生命周期扩展(通知: unsafe extern "C" fn(v1_contract::通知号, us
         编号: v1_contract::能力号::新建(1000),
         可抛错误码: 表段::空实例(),
     }]));
-    let 函数表: &'static [执行函数] = Box::leak(Box::new([演示执行 as 执行函数]));
+    let 执行函数表: &'static [执行函数] = Box::leak(Box::new([演示执行 as 执行函数]));
     Box::leak(Box::new(平台信息 {
         声明格式号: v1_contract::声明格式号,
         目标字宽: v1_contract::声明数据::底座目标字宽,
@@ -81,7 +81,7 @@ fn 造生命周期扩展(通知: unsafe extern "C" fn(v1_contract::通知号, us
         状态位: 0,
         类型表: 表段::空实例(),
         命令表: 表段::新建(命令表.as_ptr(), 1),
-        函数表: 函数表.as_ptr(),
+        函数表: 执行函数表.as_ptr(),
         常量表: 表段::空实例(),
         通知函数: Some(通知),
         依赖清单: 表段::空实例(),

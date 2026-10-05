@@ -53,7 +53,7 @@ pub fn base64编码(来源: &[u8]) -> String {
 
 /// 一位 base64 字符 → 6 位值。`=` 与表外字符都算不合法。
 fn 取值(字符表: u8, 位置: usize) -> Result<u32, 转码错误> {
-    match base64字母表.iter().position(|一项| *一项 == 字符表) {
+    match base64字母表.iter().position(|字母项| *字母项 == 字符表) {
         Some(序号) => Ok(序号 as u32),
         None => Err(转码错误 {
             位置: 位置,
@@ -177,7 +177,7 @@ mod 转码测试 {
 
     #[test]
     fn base64_往返一致且形状合规() {
-        for 样本 in [
+        for 原文 in [
             &b""[..],
             &b"f"[..],
             &b"fo"[..],
@@ -187,9 +187,9 @@ mod 转码测试 {
             &b"foobar"[..],
             &[0u8, 255, 128, 1, 2, 3, 4, 5][..],
         ] {
-            let 编码 = base64编码(样本);
+            let 编码 = base64编码(原文);
             assert_eq!(编码.len() % 4, 0, "长度必须是 4 的倍数");
-            assert_eq!(base64解码(&编码).expect("自身的编码必须解得回来"), 样本);
+            assert_eq!(base64解码(&编码).expect("自身的编码必须解得回来"), 原文);
         }
         assert_eq!(base64编码(b"foobar"), "Zm9vYmFy");
         assert_eq!(base64编码(b"foob"), "Zm9vYg==");

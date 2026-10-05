@@ -91,12 +91,12 @@ def 该层号段(声明根, 类别):
     if not isinstance(占用, list) or not 占用:
         return None, "%s 的 %s 缺失或为空（该层占哪几段没有来源）" % (声明路径.name, 键名)
     号段 = []
-    for 一条 in 占用:
-        if not isinstance(一条, dict) or not (_是整数(一条.get("起")) and _是整数(一条.get("止"))):
+    for 占用段 in 占用:
+        if not isinstance(占用段, dict) or not (_是整数(占用段.get("起")) and _是整数(占用段.get("止"))):
             return None, "%s 的 %s 形状不对（每段要 {起, 止}）" % (声明路径.name, 键名)
-        if 一条["起"] > 一条["止"]:
-            return None, "%s 的 %s 有一段 起 > 止：%r" % (声明路径.name, 键名, 一条)
-        号段.append((一条["起"], 一条["止"]))
+        if 占用段["起"] > 占用段["止"]:
+            return None, "%s 的 %s 有一段 起 > 止：%r" % (声明路径.name, 键名, 占用段)
+        号段.append((占用段["起"], 占用段["止"]))
     return sorted(号段), "%s 的 %s %s" % (声明路径.name, 键名, 占用)
 
 
@@ -133,13 +133,13 @@ def 作废号(声明根, 类别):
     条目 = 数据.get("作废") if isinstance(数据, dict) else None
     作废号集 = set()
     if isinstance(条目, list):
-        for 一条 in 条目:
+        for 作废条目 in 条目:
             if (
-                isinstance(一条, dict)
-                and 一条.get("号空间") == 空间
-                and _是整数(一条.get("编号"))
+                isinstance(作废条目, dict)
+                and 作废条目.get("号空间") == 空间
+                and _是整数(作废条目.get("编号"))
             ):
-                作废号集.add(int(一条["编号"]))
+                作废号集.add(int(作废条目["编号"]))
     return 作废号集
 
 
@@ -167,14 +167,14 @@ def 层标签(声明根, 类别, 编号):
         return ""
     if 类别 == "错误码":
         位置 = 编号 // 1000
-        for 一条 in 项表:
-            if isinstance(一条, dict) and 一条.get("段位") == 位置:
-                return str(一条.get("归属", ""))
+        for 号段项 in 项表:
+            if isinstance(号段项, dict) and 号段项.get("段位") == 位置:
+                return str(号段项.get("归属", ""))
         return ""
-    for 一条 in 项表:
-        if isinstance(一条, dict) and _是整数(一条.get("起")) and _是整数(一条.get("止")):
-            if 一条["起"] <= 编号 <= 一条["止"]:
-                return str(一条.get("归属", ""))
+    for 号段项 in 项表:
+        if isinstance(号段项, dict) and _是整数(号段项.get("起")) and _是整数(号段项.get("止")):
+            if 号段项["起"] <= 编号 <= 号段项["止"]:
+                return str(号段项.get("归属", ""))
     return ""
 
 
