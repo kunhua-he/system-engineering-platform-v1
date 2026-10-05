@@ -4,6 +4,8 @@
 
 **为什么要有它**：钩子住在**用户级配置**（`~/.zcode/cli/config.json`）—— 版本库外。
 不把「怎么装」版本化，别人 clone 下来钩子闸等于不存在（同 `装门禁.sh` 的理由）。
+**★ 用户级 ⇒ 拦本机所有项目**：`matcher` 只认工具名、**零路径逻辑** ⇒ 在**任何项目**里用 Edit/Write
+都被 `exit 2` 拦，不止本仓（**拦全机是有意的**：提示里写本仓口径，但不按项目分流）。
 
 **钩子闸的形状：零逻辑 · 一张名单**。名单写在 `matcher` 里（大小写敏感的正则，匹配工具名），
 钩子体只做一件事：打印「该走哪个工具」然后 `exit 2`（MCP 协议：2 = 拦）。
@@ -22,8 +24,8 @@ from pathlib import Path
 配置文件路径 = Path.home() / ".zcode" / "cli" / "config.json"
 自家标记 = "V1 开工闸"                    # 认它做幂等：命令串里带这个标记就是自家那条
 拦的工具 = "Edit|Write|MultiEdit|NotebookEdit"
-钩子命令 = (f"printf '%s\\n' '[{自家标记}] 改代码只能走 MCP：请调 v1_edit"
-        "（先用 v1_task 功能=1 登记拿开工ID，再功能=2 认领文件）' >&2; exit 2")
+钩子命令 = (f"printf '%s\\n' '[{自家标记}] 用户级钩子：本机所有项目的 Edit/Write 都被拦。"
+        "本仓改代码走 MCP：请调 v1_edit（先用 v1_task 功能=1 登记拿开工ID，再功能=2 认领文件）' >&2; exit 2")
 
 
 def _读配置() -> dict:
@@ -65,6 +67,7 @@ def 装钩子() -> int:
     配置文件路径.write_text(json.dumps(数据, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print("装钩子：已写进 %s" % 配置文件路径)
     print("        拦：%s（其余工具一律放行，含 Bash / Read / Grep）" % 拦的工具)
+    print("        ★ 钩子写进**用户级配置** ⇒ **拦本机所有项目**的 Edit/Write，不止本仓（有意如此）。")
     print("        拦下时打印「该调哪个工具」并 exit 2 —— 报错必须带解法。")
     print("        别人的钩子一条没动；重复跑不叠加（认标记 `%s`）。" % 自家标记)
     print("        ★ 装完要**重启 ZCode** 才生效（钩子在会话启动时装载）。")
