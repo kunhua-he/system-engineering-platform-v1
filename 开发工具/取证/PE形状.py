@@ -117,7 +117,7 @@ class PE:
             raise 解析错误("0x%x 处的字符串没有 NUL 结尾" % 绝对址)
         return self.原始字节[文偏移:尾部].decode("gbk", "replace")
 
-    def 导出(self):
+    def 解导出表(self):
         """读导出表 ⇒ `[(名, 序号, RVA)…]`；无导出目录就抛。"""
         目录 = struct.unpack_from("<II", self.原始字节, self.PE头偏移 + 24 + 96)
         if 目录[0] == 0:
