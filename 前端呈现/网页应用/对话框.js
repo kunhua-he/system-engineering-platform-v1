@@ -15,7 +15,7 @@ const 类样式 = { BUTTON: "钮", EDIT: "编", STATIC: "静", LISTBOX: "列", C
 export function 装对话框(取元素) {
   const 选中 = 取元素("对话框选");
   const 台容器 = 取元素("对话框台");
-  const 读器 = 取元素("对话框读数");
+  const 读数元素 = 取元素("对话框读数");
 
   for (const 对话框项 of 对话框) {
     const 选项元素 = document.createElement("option");
@@ -48,7 +48,7 @@ export function 装对话框(取元素) {
       对话框件.append(控件件);
     }
     台容器.replaceChildren(对话框件);
-    读器.textContent = "对话框 " + 对话框项.编号 + " · " + 对话框项.标题 + " · 字体 " + 对话框项.字体 + " " + 对话框项.字号
+    读数元素.textContent = "对话框 " + 对话框项.编号 + " · " + 对话框项.标题 + " · 字体 " + 对话框项.字体 + " " + 对话框项.字号
       + "pt · 尺寸 " + 对话框项.cx + "×" + 对话框项.cy + " 对话框单位 · 控件 " + 对话框项.控件数
       + " · 可达命令 " + 对话框项.依据 + " · 只摆样子，未接动作";
   };

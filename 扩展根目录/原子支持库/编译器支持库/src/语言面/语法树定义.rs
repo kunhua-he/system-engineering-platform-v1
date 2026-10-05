@@ -103,12 +103,12 @@ impl 语法树 {
     /// 到底，再 +1。用循环而非递归，避免深树爆栈；步数上限为节点数，超出即返回 `None`（防环）。
     /// 这正是 [`语法树::直接子`] 跳过一个兄弟的那一步。
     pub fn 子树止(&self, 起于: u32) -> Option<u32> {
-        let 上限 = self.节点表.len() as u32;
+        let 节点数上限 = self.节点表.len() as u32;
         let mut 当前 = 起于;
         let mut 步序 = 0u32;
         loop {
             步序 += 1;
-            if 步序 > 上限 {
+            if 步序 > 节点数上限 {
                 return None;
             }
             let 本节点 = self.节点表.get(当前 as usize)?;

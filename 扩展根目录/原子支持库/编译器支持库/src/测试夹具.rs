@@ -62,13 +62,13 @@ pub(crate) fn 读语料(路径: &Path) -> String {
 
 /// 首个不一致字节偏移（逐字节比；先到头的那份长度为界）。
 pub(crate) fn 首个不一致(原文: &[u8], 产物: &[u8]) -> u64 {
-    let 上限 = 原文.len().min(产物.len());
-    for 位置 in 0..上限 {
+    let 较短长度 = 原文.len().min(产物.len());
+    for 位置 in 0..较短长度 {
         if 原文[位置] != 产物[位置] {
             return 位置 as u64;
         }
     }
-    上限 as u64
+    较短长度 as u64
 }
 
 /// 大小写不敏感地认 `.e` / `.ec`。

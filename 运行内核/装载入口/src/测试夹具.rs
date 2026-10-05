@@ -173,7 +173,7 @@ pub(crate) fn 钉段位表(段位s: &[u32]) -> 表段<u32> {
 
 /// 把一张依赖清单钉成 `'static`（按字节串给，标识串就是字节）。
 pub(crate) fn 钉依赖表(项s: &[&'static [u8]]) -> 表段<*const u8> {
-    let 泄漏 = Box::leak(项s.iter().map(|一项| 一项.as_ptr()).collect::<Vec<_>>().into_boxed_slice());
+    let 泄漏 = Box::leak(项s.iter().map(|标识串| 标识串.as_ptr()).collect::<Vec<_>>().into_boxed_slice());
     表段::新建(泄漏.as_ptr(), 泄漏.len() as u32)
 }
 

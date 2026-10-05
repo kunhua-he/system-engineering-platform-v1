@@ -56,15 +56,15 @@ fn 支持库引用_按分隔符切段再拼回原文() {
     ]
     .join(&引用分隔符);
 
-    let 一条 = 支持库引用 { 字段: 切引用字段(&字节串) };
-    assert_eq!(一条.字段数(), 5);
-    assert_eq!(一条.库文件名(), Some(b"KRNLN".as_slice()));
-    assert_eq!(一条.取GUID(), Some(b"d09f2340818511d396f6aaf844c7e325".as_slice()));
-    assert_eq!(一条.首版本(), Some(b"4".as_slice()));
-    assert_eq!(一条.次版本(), Some(b"2".as_slice()));
-    assert_eq!(一条.中文名(), Some(GBK系统核心支持库));
-    assert_eq!(一条.串长(), 字节串.len());
-    assert_eq!(一条.原文(), 字节串, "切段再拼回必须逐字节相同");
+    let 引用记录 = 支持库引用 { 字段: 切引用字段(&字节串) };
+    assert_eq!(引用记录.字段数(), 5);
+    assert_eq!(引用记录.库文件名(), Some(b"KRNLN".as_slice()));
+    assert_eq!(引用记录.取GUID(), Some(b"d09f2340818511d396f6aaf844c7e325".as_slice()));
+    assert_eq!(引用记录.首版本(), Some(b"4".as_slice()));
+    assert_eq!(引用记录.次版本(), Some(b"2".as_slice()));
+    assert_eq!(引用记录.中文名(), Some(GBK系统核心支持库));
+    assert_eq!(引用记录.串长(), 字节串.len());
+    assert_eq!(引用记录.原文(), 字节串, "切段再拼回必须逐字节相同");
 
     // 边界：空串切成 1 段、尾分隔符切成 2 段，都能拼回原文。
     assert_eq!(切引用字段(b"").len(), 1);
@@ -72,11 +72,11 @@ fn 支持库引用_按分隔符切段再拼回原文() {
     assert_eq!(切引用字段(b"a\r").len(), 2);
     assert_eq!(支持库引用 { 字段: 切引用字段(b"a\r") }.原文(), b"a\r");
     // 6 段（.npk 类库）不做猜测：命名取值为 None，但拼回仍逐字节相同。
-    let 六段 = b"wmp9.npk\r{GUID}##0\r1\r0\rWindows\r0,{A}".to_vec();
-    let 一条六段 = 支持库引用 { 字段: 切引用字段(&六段) };
+    let 六字段样例 = b"wmp9.npk\r{GUID}##0\r1\r0\rWindows\r0,{A}".to_vec();
+    let 一条六段 = 支持库引用 { 字段: 切引用字段(&六字段样例) };
     assert_eq!(一条六段.字段数(), 6);
     assert_eq!(一条六段.中文名(), None);
-    assert_eq!(一条六段.原文(), 六段);
+    assert_eq!(一条六段.原文(), 六字段样例);
 }
 
 /// 反向样本：段数据不足 56 字节。

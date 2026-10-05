@@ -232,8 +232,8 @@ impl 语义分析器<'_> {
 
     fn 跑一遍(&mut self) -> Result<(), 语义错误> {
         let mut 工作栈: Vec<工作项> = vec![工作项::跑一遍 { 下标: 0, 角色: 角色::不定号 }];
-        while let Some(一项) = 工作栈.pop() {
-            let (下标, 角色) = match 一项 {
+        while let Some(工作条目) = 工作栈.pop() {
+            let (下标, 角色) = match 工作条目 {
                 工作项::出到 { 深 } => {
                     self.层栈.truncate(深);
                     continue;

@@ -72,8 +72,8 @@ fn 语料往返逐字节一致() {
         失败.len(),
         文件表.len()
     );
-    for (序号, 一条) in 失败.iter().take(10).enumerate() {
-        println!("  失败样例 {}：{一条}", 序号 + 1);
+    for (序号, 失败样例) in 失败.iter().take(10).enumerate() {
+        println!("  失败样例 {}：{失败样例}", 序号 + 1);
     }
 
     assert!(
