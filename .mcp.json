@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "v1-devkit": {
+      "command": "python3",
+      "args": [
+        "-m",
+        "开发工具.MCP服务.协议"
+      ],
+      "cwd": "/Users/hekunhua/Documents/Agent/PHP/系统工程平台V1"
+    }
+  }
+}
