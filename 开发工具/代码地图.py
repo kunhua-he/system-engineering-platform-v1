@@ -50,8 +50,9 @@ from 代码地图 import (  # noqa: E402
 
 
 def 入口函数(argv=None):
+    # 无参 = 没给子命令 ⇒ 落到末尾印用法并退 2（原先静默默认 `状态` = 声明与行为不符）
     命令行参数 = list(sys.argv[1:] if argv is None else argv)
-    子命令 = 命令行参数[0] if 命令行参数 else "状态"
+    子命令 = 命令行参数[0] if 命令行参数 else ""
 
     if 子命令 == "建":
         if not 找索引器命令():

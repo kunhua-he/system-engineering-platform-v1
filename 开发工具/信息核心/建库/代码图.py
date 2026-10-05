@@ -12,10 +12,22 @@ import 表定义  # noqa: E402
 _拓扑缓存: dict = {}
 
 
+def _拒重抽(索引: Path) -> None:
+    """索引不在 ⇒ **拒重抽**（fail-closed）：源为空就重抽会把派生表静默清空。
+
+    为何不能回 `[]`：`装表` 对派生表恒 `delete` + `insert` ⇒ 回空表 = 把已有行洗掉。
+    `代码名` / `节点` / `连接` 的源是 `.codegraph/codegraph.db`（gitignore，不进版本库）——
+    新克隆 / 每条工作树都可能没有它 ⇒ 必须报、不许静默清。
+    """
+    if not 索引.is_file():
+        raise ValueError(
+            f"代码地图索引不在（{索引}）⇒ 拒重抽（源为空就重抽会把 `代码名` / `节点` / "
+            f"`连接` 静默清空）。先跑：python3 开发工具/代码地图.py 建")
+
+
 def 装代码名(根目录: Path) -> list:
     索引 = 根目录 / 库目录名 / 库文件名
-    if not 索引.is_file():
-        return []
+    _拒重抽(索引)
     索引库 = sqlite3.connect(索引)
     输出行 = 索引库.execute(
         "select id, name, kind, language, qualified_name, file_path, start_line from nodes"
@@ -46,9 +58,7 @@ def _拓扑表(根目录: Path) -> tuple:
     if 根目录 in _拓扑缓存:
         return _拓扑缓存[根目录]
     索引 = 根目录 / 库目录名 / 库文件名
-    if not 索引.is_file():
-        _拓扑缓存[根目录] = ([], [])
-        return _拓扑缓存[根目录]
+    _拒重抽(索引)
     索引库 = sqlite3.connect(索引)
     文件到节点, 节点集 = {}, {}
     for (文件路径,) in 索引库.execute("select distinct file_path from nodes where file_path is not null"):
