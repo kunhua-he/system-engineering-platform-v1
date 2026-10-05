@@ -211,7 +211,7 @@ def 干净合成仓() -> dict:
         "运行内核/装载入口/src/lib.rs": (
             "use v1_contract::平台信息;\n"
             "pub struct 静态声明(pub 平台信息);\n"
-            "pub fn 载入(声明: &'static 平台信息) { let _ = 声明; }\n"
+            "pub fn 载入声明(声明: &'static 平台信息) { let _ = 声明; }\n"
             "pub fn 取平台信息() -> *const 平台信息 { core::ptr::null() }\n"
             '#[unsafe(export_name = "GetPlatformInfo")]\n'
             "pub extern \"C\" fn 导出底座() -> *const 平台信息 { 取平台信息() }\n"
@@ -254,10 +254,10 @@ def 干净合成仓() -> dict:
         ),
         "跨语言适配/适配器实现/Cargo.toml": '[package]\nname = "v1-adapter"\nversion = "0.1.0"\n',
         "跨语言适配/适配器实现/src/lib.rs": (
-            "use v1_loader::载入;\n"
+            "use v1_loader::载入声明;\n"
             # 准入判据 ⑤ 要的「装载声明根把申报的 通知函数 登记成端点」（同一函数里加一行，
             # 不新增顶层项 ⇒ 不撞合成仓行数基线的「入口有实现 处数」）。
-            "pub fn 装载(声明: &'static v1_loader::平台信息) { 载入(声明); 通知.通道.注册通知端点(声明.标识串, 函数); }\n"
+            "pub fn 装载(声明: &'static v1_loader::平台信息) { 载入声明(声明); 通知.通道.注册通知端点(声明.标识串, 函数); }\n"
             '#[unsafe(export_name = "平台_取接口描述")]\n'
             'pub extern "C" fn 取接口描述() -> *const u8 { core::ptr::null() }\n'
             '#[unsafe(export_name = "平台_调用")]\n'

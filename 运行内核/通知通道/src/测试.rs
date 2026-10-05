@@ -37,7 +37,7 @@ unsafe extern "C" fn 延迟释放端点(
     _参数一: usize,
     _参数二: usize,
 ) -> isize {
-    if 通知号 == 生命周期通知::卸载 {
+    if 通知号 == 生命周期通知::卸载扩展 {
         通知返回::延迟释放
     } else {
         通知返回::成功
@@ -50,7 +50,7 @@ unsafe extern "C" fn 卸载失败端点(
     _参数一: usize,
     _参数二: usize,
 ) -> isize {
-    if 通知号 == 生命周期通知::卸载 {
+    if 通知号 == 生命周期通知::卸载扩展 {
         通知返回::失败
     } else {
         通知返回::成功
@@ -67,7 +67,7 @@ unsafe extern "C" fn 协商端点(
     _参数一: usize,
     _参数二: usize,
 ) -> isize {
-    if matches!(通知号, 生命周期通知::卸载 | 生命周期通知::延迟释放)
+    if matches!(通知号, 生命周期通知::卸载扩展 | 生命周期通知::延迟释放应答)
         && 协商_引用清零开关.load(Ordering::SeqCst) == 0
     {
         通知返回::延迟释放

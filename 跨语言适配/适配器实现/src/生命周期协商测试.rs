@@ -33,7 +33,7 @@ static 收到通知数: AtomicUsize = AtomicUsize::new(0);
 /// 「按指针」那条测试的通知函数：`2001 卸载` / `2003 延迟释放` 时，若还有在飞引用 ⇒ 回 `2015` 拒绝。
 unsafe extern "C" fn 扩展通知(通知号: v1_contract::通知号, _参数一: usize, _参数二: usize) -> isize {
     收到通知数.fetch_add(1, Ordering::SeqCst);
-    if matches!(通知号, 生命周期通知::卸载 | 生命周期通知::延迟释放)
+    if matches!(通知号, 生命周期通知::卸载扩展 | 生命周期通知::延迟释放应答)
         && 在飞引用计数.load(Ordering::SeqCst) == 0
     {
         通知返回::延迟释放

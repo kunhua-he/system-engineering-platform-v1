@@ -11,7 +11,7 @@ use v1_adapter::{适配器, 转发结果, 数据槽, 调度错误, 派发结果}
 use v1_contract::声明数据::类型标签_4294967295;
 
 use crate::案例::{self as 案例件, 实参来源, 步骤, 案例};
-use crate::错误码::{登记, 登记表, 段位到层};
+use crate::错误码::{错误码登记, 登记表, 段位到层};
 
 // ════════════════════════════════════════════════════════════════════════════
 // 观测：把一次调用的结果翻成「层 + 层内位置 + 错误码 + 产物」
@@ -31,7 +31,7 @@ pub(crate) struct 观测 {
     pub(crate) 结果: &'static str,
     pub(crate) 死在哪一层: Option<String>,
     pub(crate) 死在哪一步: Option<String>,
-    pub(crate) 错误码: Option<登记>,
+    pub(crate) 错误码: Option<错误码登记>,
     pub(crate) 能力名: Option<String>,
     pub(crate) 产物: 观测产物,
     /// 通知步骤的派发结果名；能力步骤恒 `None`。
