@@ -82,9 +82,9 @@ impl<'a> 游标<'a> {
             Some(b'{') => self.取对象(深度),
             Some(b'[') => self.取数组(深度),
             Some(b'"') => self.取文本().map(协议值::文本),
-            Some(b't') => self.取字面(b"true", 协议值::真),
-            Some(b'f') => self.取字面(b"false", 协议值::假),
-            Some(b'n') => self.取字面(b"null", 协议值::空值),
+            Some(b't') => self.取字面(b"true", 协议值::真值),
+            Some(b'f') => self.取字面(b"false", 协议值::假值),
+            Some(b'n') => self.取字面(b"null", 协议值::空值项),
             Some(b'-' | b'0'..=b'9') => self.取数(),
             Some(_) => Err(self.报错("这里不是一个 JSON 值")),
             None => Err(self.报错("值没写完就到头了")),
@@ -277,9 +277,9 @@ mod 解析测试 {
 
     #[test]
     fn 基本形状_都解析得出来() {
-        assert!(matches!(解析协议值("null"), Ok(协议值::空值)));
-        assert!(matches!(解析协议值(" true "), Ok(协议值::真)));
-        assert!(matches!(解析协议值("false"), Ok(协议值::假)));
+        assert!(matches!(解析协议值("null"), Ok(协议值::空值项)));
+        assert!(matches!(解析协议值(" true "), Ok(协议值::真值)));
+        assert!(matches!(解析协议值("false"), Ok(协议值::假值)));
         assert!(matches!(解析协议值("-12"), Ok(协议值::整数(-12))));
         // 超出 i64 但仍在 u64 内：单列一支，不许静默改写。
         assert!(matches!(

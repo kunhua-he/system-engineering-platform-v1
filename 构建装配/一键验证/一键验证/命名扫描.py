@@ -122,21 +122,21 @@ def 剥Python(文本: str) -> str:
             continue
         命中 = _Python三引号.match(文本, 游标)
         if 命中:
-            引号 = 命中.group(1)
-            区间终点 = 文本.find(引号, 命中.end())
-            区间终点 = 长度 if 区间终点 < 0 else 区间终点 + len(引号)
+            引号符 = 命中.group(1)
+            区间终点 = 文本.find(引号符, 命中.end())
+            区间终点 = 长度 if 区间终点 < 0 else 区间终点 + len(引号符)
             _抹成空格(文本, 输出缓冲, 游标, 区间终点)
             游标 = 区间终点
             continue
         命中 = _Python引号.match(文本, 游标)
         if 命中:
-            引号 = 命中.group(1)
+            引号符 = 命中.group(1)
             步序 = 命中.end()
             while 步序 < 长度:
                 if 文本[步序] == "\\":
                     步序 += 2
                     continue
-                if 文本[步序] == 引号:
+                if 文本[步序] == 引号符:
                     步序 += 1
                     break
                 if 文本[步序] == "\n":

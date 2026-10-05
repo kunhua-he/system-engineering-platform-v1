@@ -20,9 +20,9 @@
 
 /// 接口描述用得到的值形状。**六种就是六种**。
 pub enum JSON值 {
-    空值,
-    真,
-    假,
+    空值项,
+    真值,
+    假值,
     整数(i64),
     文本(String),
     数组(Vec<JSON值>),
@@ -51,9 +51,9 @@ pub fn 写缩进(输出缓冲: &mut String, 层级: usize) {
 
 fn 写一个值(输出缓冲: &mut String, 待处理值: &JSON值, 层级: usize) {
     match 待处理值 {
-        JSON值::空值 => 输出缓冲.push_str("null"),
-        JSON值::真 => 输出缓冲.push_str("true"),
-        JSON值::假 => 输出缓冲.push_str("false"),
+        JSON值::空值项 => 输出缓冲.push_str("null"),
+        JSON值::真值 => 输出缓冲.push_str("true"),
+        JSON值::假值 => 输出缓冲.push_str("false"),
         JSON值::整数(数) => 输出缓冲.push_str(&数.to_string()),
         JSON值::文本(文) => 写JSON文本(输出缓冲, 文),
         JSON值::数组(项) => {
@@ -78,14 +78,14 @@ fn 写一个值(输出缓冲: &mut String, 待处理值: &JSON值, 层级: usize
                 return;
             }
             输出缓冲.push('{');
-            for (序, (键, 一)) in 成员.iter().enumerate() {
+            for (序, (键, 成员值)) in 成员.iter().enumerate() {
                 if 序 > 0 {
                     输出缓冲.push(',');
                 }
                 写缩进(输出缓冲, 层级 + 1);
                 写JSON文本(输出缓冲, 键);
                 输出缓冲.push_str(": ");
-                写一个值(输出缓冲, 一, 层级 + 1);
+                写一个值(输出缓冲, 成员值, 层级 + 1);
             }
             写缩进(输出缓冲, 层级);
             输出缓冲.push('}');

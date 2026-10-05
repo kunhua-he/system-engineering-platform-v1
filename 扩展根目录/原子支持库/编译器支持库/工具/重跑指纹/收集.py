@@ -28,8 +28,8 @@ def 收集指纹文件():
             for 名称 in sorted(os.listdir(根目录)):
                 if 名称.endswith(".json"):
                     文件.append(os.path.join(根目录, 名称))
-    src = os.path.join(扩展根路径, "src")
-    for 当前, _子目录s, 名s in os.walk(src):
+    源码目录 = os.path.join(扩展根路径, "src")
+    for 当前, _子目录s, 名s in os.walk(源码目录):
         for 名称 in 名s:
             if 名称.endswith(".rs"):
                 文件.append(os.path.join(当前, 名称))

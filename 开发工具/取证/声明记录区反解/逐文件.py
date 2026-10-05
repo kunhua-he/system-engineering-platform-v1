@@ -45,7 +45,7 @@ def 单件读数(路径) -> dict:
     逐件读数只装「能加起来的量」+ 原始区长表（区长表用来在全语料层算 min/中位/max）。
     耗时也记进来：它是**实测值**，切分拿它做均衡（拿读数做均衡，不拿猜测）。
     """
-    t0 = time.monotonic()
+    起始时刻 = time.monotonic()
     读数 = 新读数()
     读数["键"] = 取缓存键(路径)
     try:
@@ -54,11 +54,11 @@ def 单件读数(路径) -> dict:
         区表 = 取声明记录区(数据)
     except 解析错误 as ex:
         读数["坏"] = str(ex)
-        读数["毫秒"] = int((time.monotonic() - t0) * 1000)
+        读数["毫秒"] = int((time.monotonic() - 起始时刻) * 1000)
         return 读数
     except OSError as ex:
         读数["坏"] = "读盘失败：{}".format(ex)
-        读数["毫秒"] = int((time.monotonic() - t0) * 1000)
+        读数["毫秒"] = int((time.monotonic() - 起始时刻) * 1000)
         return 读数
     for _, _, _, 段体, _ in 区表:
         读数["段数"] += 1
@@ -72,7 +72,7 @@ def 单件读数(路径) -> dict:
             读数["计"][记录条目["种类"]] = 读数["计"].get(记录条目["种类"], 0) + 1
         读数["未解"] += 未解
         读数["字节"] += len(段体)
-    读数["毫秒"] = int((time.monotonic() - t0) * 1000)
+    读数["毫秒"] = int((time.monotonic() - 起始时刻) * 1000)
     return 读数
 
 

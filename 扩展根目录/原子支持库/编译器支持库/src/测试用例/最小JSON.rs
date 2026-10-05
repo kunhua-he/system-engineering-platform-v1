@@ -16,9 +16,9 @@
 
 #[derive(Debug, Clone, PartialEq)]
 pub(crate) enum JSON值 {
-    空值,
-    真,
-    假,
+    空值项,
+    真值,
+    假值,
     数值(f64),
     字符串(String),
     数组(Vec<JSON值>),
@@ -42,7 +42,7 @@ impl JSON值 {
 
     pub(crate) fn 取字符串(&self) -> Option<&str> {
         match self {
-            JSON值::字符串(串) => Some(串),
+            JSON值::字符串(内层串) => Some(内层串),
             _ => None,
         }
     }
@@ -57,8 +57,8 @@ impl JSON值 {
     /// JSON 的 `true` / `false`。
     pub(crate) fn 真假(&self) -> Option<bool> {
         match self {
-            JSON值::真 => Some(true),
-            JSON值::假 => Some(false),
+            JSON值::真值 => Some(true),
+            JSON值::假值 => Some(false),
             _ => None,
         }
     }
@@ -97,9 +97,9 @@ impl<'a> 顺序读器<'a> {
             b'{' => self.对象(),
             b'[' => self.数组(),
             b'"' => Some(JSON值::字符串(self.读JSON串()?)),
-            b't' => self.吃字面量(b"true", JSON值::真),
-            b'f' => self.吃字面量(b"false", JSON值::假),
-            b'n' => self.吃字面量(b"null", JSON值::空值),
+            b't' => self.吃字面量(b"true", JSON值::真值),
+            b'f' => self.吃字面量(b"false", JSON值::假值),
+            b'n' => self.吃字面量(b"null", JSON值::空值项),
             _ => self.读数值(),
         }
     }

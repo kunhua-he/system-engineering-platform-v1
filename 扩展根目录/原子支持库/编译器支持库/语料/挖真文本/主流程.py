@@ -40,26 +40,26 @@ def 入口函数():
                 if 段长 < 16 or 锚点 + 段长 > len(字节流):
                     continue
                 raw = 字节流[锚点:锚点 + 段长]
-                val = raw.rstrip(b"\x00")
-                ok, probs, nb, blk = 检查候选文本(val)
-                ver = sum(1 for ln in val.split(b"\n") if ln.startswith(版本行首))
-                nd, kc = 声明行数(val)
+                候选字节 = raw.rstrip(b"\x00")
+                ok, probs, nb, blk = 检查候选文本(候选字节)
+                ver = sum(1 for ln in 候选字节.split(b"\n") if ln.startswith(版本行首))
+                nd, kc = 声明行数(候选字节)
                 if not (ok and ver >= 1 and nd >= 最少声明行数):
                     continue
                 st = 偏移所属段(tab, 锚点)
                 cn = 取常量名(字节流, 锚点)
-                covered.append((锚点, 锚点 + len(val)))
+                covered.append((锚点, 锚点 + len(候选字节)))
                 hard.append({
-                    "file": rel, "anchor": 锚点, "end": 锚点 + len(val), "bytes": len(val),
-                    "declared_len": 段长, "trailing_nul": len(raw) - len(val),
+                    "file": rel, "anchor": 锚点, "end": 锚点 + len(候选字节), "bytes": len(候选字节),
+                    "declared_len": 段长, "trailing_nul": len(raw) - len(候选字节),
                     "lines": nb + blk, "nonblank": nb,
                     "version_lines": ver, "decl_lines": nd, "decl_kinds": kc,
                     "seg_type": st[1] if st else None, "seg_name": st[2] if st else None,
                     "seg_start": st[0] if st else None,
                     "const_name": cn[1] if cn else None,
                     "const_off": cn[0] if cn else None,
-                    "sha12": hashlib.sha256(val).hexdigest()[:12],
-                    "text": val,
+                    "sha12": hashlib.sha256(候选字节).hexdigest()[:12],
+                    "text": 候选字节,
                 })
             # 弱证据：白名单文件 + 行形状扩张
             if rel in 弱证据白名单:
@@ -67,23 +67,23 @@ def 入口函数():
                     if any(段起 <= 锚点 < 段止 for 段起, 段止 in covered):
                         continue
                     段起, 段止 = 扩张边界(字节流, 锚点)
-                    val = 字节流[段起:段止]
-                    ok, probs, nb, blk = 检查候选文本(val)
-                    ver = sum(1 for ln in val.split(b"\n") if ln.startswith(版本行首))
-                    nd, kc = 声明行数(val)
+                    候选字节 = 字节流[段起:段止]
+                    ok, probs, nb, blk = 检查候选文本(候选字节)
+                    ver = sum(1 for ln in 候选字节.split(b"\n") if ln.startswith(版本行首))
+                    nd, kc = 声明行数(候选字节)
                     if not (ok and ver >= 1 and nd >= 最少声明行数):
                         weak_json.append({"file": rel, "anchor": 锚点, "bytes": 段止 - 段起,
                                           "reason": "非良构/声明不足", "problems": probs[:4]})
                         continue
                     weak_ev.append({
-                        "file": rel, "anchor": 段起, "end": 段止, "bytes": len(val),
+                        "file": rel, "anchor": 段起, "end": 段止, "bytes": len(候选字节),
                         "declared_len": None, "trailing_nul": 0,
                         "lines": nb + blk, "nonblank": nb,
                         "version_lines": ver, "decl_lines": nd, "decl_kinds": kc,
                         "seg_type": None, "seg_name": None, "seg_start": None,
                         "const_name": None, "const_off": None,
-                        "sha12": hashlib.sha256(val).hexdigest()[:12],
-                        "text": val,
+                        "sha12": hashlib.sha256(候选字节).hexdigest()[:12],
+                        "text": 候选字节,
                     })
 
     # 去重：同文件内被更大范围完全包含的锚点
@@ -144,7 +144,7 @@ def 入口函数():
             manifest.append(name)
         return manifest
 
-    m1 = 落盘真文本(hard, "硬")
+    硬文本落点 = 落盘真文本(hard, "硬")
     m2 = 落盘真文本(plain, "硬文本")
     m3 = 落盘真文本(weak_ev, "弱")
 

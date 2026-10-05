@@ -114,11 +114,11 @@ def 切记号(text):
                 列尾 = 游标
                 while 列尾 < code_end and 标识符字符.match(line[列尾]):
                     列尾 += 1
-                word = line[游标:列尾]
-                if 游标 == line_start and word in 规格裸关键字:
-                    toks.append(("关键字", li, 游标, word, fi, line_kind))
+                词元 = line[游标:列尾]
+                if 游标 == line_start and 词元 in 规格裸关键字:
+                    toks.append(("关键字", li, 游标, 词元, fi, line_kind))
                 else:
-                    toks.append(("标识符", li, 游标, word, fi, line_kind))
+                    toks.append(("标识符", li, 游标, 词元, fi, line_kind))
                 游标 = 列尾
                 continue
             unknown.append((li, 游标, 字符, line, fi, line_kind))

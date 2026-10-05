@@ -12,10 +12,10 @@ def GBK合规(原文):
         return False
 
 
-def 检查候选文本(val):
+def 检查候选文本(候选字节):
     probs = []
     nb = blk = 0
-    for 序号, ln in enumerate(val.split(b"\n")):
+    for 序号, ln in enumerate(候选字节.split(b"\n")):
         if ln.endswith(b"\r"):
             ln = ln[:-1]
         if len(ln) > 最大行长:
@@ -31,9 +31,9 @@ def 检查候选文本(val):
     return (not probs), probs, nb, blk
 
 
-def 声明行数(val):
-    声明数, cnt = 0, {}
-    for ln in val.split(b"\n"):
+def 声明行数(候选字节):
+    声明数, 分组声明数 = 0, {}
+    for ln in 候选字节.split(b"\n"):
         if ln.endswith(b"\r"):
             ln = ln[:-1]
         if not GBK合规(ln):
@@ -41,8 +41,8 @@ def 声明行数(val):
         匹配 = 声明行正则.match(ln.decode("gbk"))
         if 匹配:
             声明数 += 1
-            cnt[匹配.group(1)] = cnt.get(匹配.group(1), 0) + 1
-    return 声明数, cnt
+            分组声明数[匹配.group(1)] = 分组声明数.get(匹配.group(1), 0) + 1
+    return 声明数, 分组声明数
 
 
 def 行分类(raw):
@@ -79,10 +79,10 @@ def 扩张边界(字节流, 锚点):
     start = ls if 字节流[ls:ls + len(版本锚)] == 版本锚 else 锚点
     end = nxt
     while end < len(字节流):
-        _, le2, nxt2 = 定位行(字节流, end)
-        if 行分类(字节流[end:le2]) == "OTHER":
+        _, 行尾, 下一行起 = 定位行(字节流, end)
+        if 行分类(字节流[end:行尾]) == "OTHER":
             break
-        end = nxt2
+        end = 下一行起
     if start == ls:
         while start >= 2:
             pls, ple, _ = 定位行(字节流, start - 2)
