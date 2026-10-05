@@ -25,7 +25,7 @@ def 表格块(块行表: list) -> str:
         数据行表.append(单元格表)
     if not 数据行表:
         return ""
-    表头行 = "".join(f"<th>{行内(单元格值)}</th>" for 单元格值 in 数据行表[0])
+    表头行 = "".join(f'<th onclick="排序(this)">{行内(单元格值)}</th>' for 单元格值 in 数据行表[0])
     表体行 = "".join("<tr>" + "".join(f"<td>{行内(单元格值)}</td>" for 单元格值 in 单元格表)
                      + "</tr>" for 单元格表 in 数据行表[1:])
     return f"<table><tr>{表头行}</tr>{表体行}</table>"
@@ -60,6 +60,16 @@ def 渲染(正文行表: list) -> str:
     return "".join(段落表)
 
 
+排序脚本 = ("<script>function 排序(头){const 表=头.closest('table'),列=[...头.parentNode.children].indexOf(头);"
+           "const 向=头.dataset.向==='升'?'降':'升';"
+           "[...头.parentNode.children].forEach(x=>{delete x.dataset.向;x.textContent=x.textContent.replace(/[▲▼]$/,'')});"
+           "头.dataset.向=向;头.textContent+=(向==='升'?'▲':'▼');"
+           "const 行=[...表.rows].slice(1);"
+           "行.sort((a,b)=>{const x=a.cells[列].textContent,y=b.cells[列].textContent;"
+           "return (向==='升'?1:-1)*x.localeCompare(y,'zh');});"
+           "行.forEach(r=>表.tBodies[0].appendChild(r));}</script>")
+
+
 def 命名定义表页(连接) -> bytes:
     """读运行数据根 `临时件/命名定义_表结构设计.md`，**原样渲染**成网页。"""
     from 查看 import 页面壳
@@ -70,4 +80,4 @@ def 命名定义表页(连接) -> bytes:
         return 页面壳("命名定义表",
                       f"<p class=\"红\">找不到草案件：<code>{html.escape(str(草稿件))}</code></p>")
     正文行表 = 草稿件.read_text(encoding="utf-8").splitlines()
-    return 页面壳("命名定义表", 渲染(正文行表))
+    return 页面壳("命名定义表", 渲染(正文行表) + 排序脚本)
