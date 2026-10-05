@@ -99,7 +99,7 @@ def 连规则库(根目录):
 #   华哥 2026-09-29：「之前的老规则，全部移除掉」。
 源表 = ("规则", "条款", "未完成", "命名例外",
        # ★ 2026-10-05：命名新体系三表（核心字典 · 已登记 · 出现面）的源表 —— 库是它们的唯一存本。
-       "命名字典", "命名登记", "命名出现",
+       "命名字典", "命名泛名", "命名登记", "命名出现",
        "行数基线", "运行数据基线", "引用基线", "引用未判基线", "十干基线",
        "台账号基线", "底座扩展名基线", "禁译名基线",
        "硬写能力号基线")
@@ -151,8 +151,8 @@ def 连规则库(根目录):
     "create table if not exists 条款(文档路径 text not null, 序号 integer not null, 标题 text, 正文 text not null, 权威档 text, primary key(文档路径, 序号))",
     "create index if not exists 条款标题 on 条款(标题)",
     "create table if not exists 未完成(号 integer primary key, 缺什么 text not null, 落点 text, 验证命令 text)",
-    # 语言 / 协议 / 工具强加的名（不在命名管辖内）—— 一张只有一列的表。
-    "create table if not exists 命名例外(名 text primary key)",
+    # 语言 / 协议 / 工具强加的名（不在命名管辖内）—— 名字 + 说明（**为什么不归命名纪律管**）。
+    "create table if not exists 命名例外(名字 TEXT PRIMARY KEY, 说明 TEXT)",
     # 判据 ⑲ 的**存量清单**（三类：超行数 / 入口超行数 / 入口有实现）。
     "create table if not exists 行数基线(类别 text not null, 路径 text not null, 处数 integer not null, primary key(类别, 路径))",
     # 判据 ㉕ 的**存量清单**（键 = (路径, 形)）。
@@ -171,8 +171,12 @@ def 连规则库(根目录):
     "create table if not exists 禁译名基线(件 text not null primary key, 处数 integer not null)",
     # 判据 ㊻ 的**存量清单**（键 = (件, 号)；号按十进制文本存 —— 与报出的 `件::号` 同形）。
     "create table if not exists 硬写能力号基线(件 text not null, 号 text not null, 处数 integer not null, primary key(件, 号))",
-    # 命名字典：核心命名字典（名字 → 分组 / 说明）—— 命名候选的**名册**（源表，库是唯一存本）。
-    "create table if not exists 命名字典(编号 INTEGER PRIMARY KEY AUTOINCREMENT, 名字 TEXT UNIQUE NOT NULL, 分组 TEXT NOT NULL, 说明 TEXT NOT NULL, 创建时间 TEXT DEFAULT (datetime('now', 'localtime')))",
+    # 命名字典：**词表**（名字 → 分组 / 说明）—— 只装 `动作`（结构校验用的动作词）与 `参考`（词面参考）。
+    # ★ 2026-10-06 开表：原先一张表塞了四类名单（动作 / 参考 / 泛名 / 外部），表名与内容已不匹配 ——
+    #   泛名黑名单搬到 `命名泛名`，外部豁免并进 `命名例外`，本表收回到「词表」本义。
+    "create table if not exists 命名字典(名字 TEXT PRIMARY KEY, 分组 TEXT NOT NULL CHECK(分组 IN ('动作', '参考')), 说明 TEXT NOT NULL, 创建时间 TEXT DEFAULT (datetime('now', 'localtime')))",
+    # 命名泛名：**泛名黑名单**（名字 → 说明）—— 禁止形状之一「泛名」的判定名单（源表，库是唯一存本）。
+    "create table if not exists 命名泛名(名字 TEXT PRIMARY KEY, 说明 TEXT NOT NULL, 创建时间 TEXT DEFAULT (datetime('now', 'localtime')))",
     # 命名登记：已登记的命名（名字 → 语义 / 模式 / 来源 / 状态）—— 命名规则的**唯一存本**（源表）。
     "create table if not exists 命名登记(名字 TEXT PRIMARY KEY, 语义 TEXT NOT NULL, 模式 TEXT NOT NULL CHECK(模式 IN ('动作+对象', '对象+说明')), 来源 TEXT NOT NULL CHECK(来源 IN ('核心字典', '新定义')), 状态 TEXT NOT NULL CHECK(状态 IN ('合格', '待改名')), 出现次数 INTEGER DEFAULT 0, 创建时间 TEXT DEFAULT (datetime('now', 'localtime')))",
     # 命名出现：某个名字在哪些文件 / 行出现过（外键指向 `命名登记`）—— 登记名的**出现面**（源表）。
