@@ -134,9 +134,9 @@ pub(super) fn 读JSON件(路径: &Path) -> Result<协议值, String> {
 
 /// 列一个目录下的**子目录名**，按名排序（顺序确定 ⇒ 读数可比）。
 pub(super) fn 列子目录(目录: &Path) -> Result<Vec<String>, String> {
-    let 读器 = std::fs::read_dir(目录).map_err(|错误| format!("读不到目录 {}：{错误}", 目录.display()))?;
+    let 目录读器 = std::fs::read_dir(目录).map_err(|错误| format!("读不到目录 {}：{错误}", 目录.display()))?;
     let mut 输出缓冲 = Vec::new();
-    for 目录项 in 读器 {
+    for 目录项 in 目录读器 {
         let 目录项 = 目录项.map_err(|错误| format!("列目录 {} 失败：{错误}", 目录.display()))?;
         if !目录项.path().is_dir() {
             continue;

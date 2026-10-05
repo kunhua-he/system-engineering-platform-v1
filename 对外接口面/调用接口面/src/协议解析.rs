@@ -135,19 +135,19 @@ impl<'a> 游标<'a> {
 
     fn 取数组(&mut self, 深度: usize) -> Result<协议值, 解析错误> {
         self.位 += 1; // '['
-        let mut 一项: Vec<协议值> = Vec::new();
+        let mut 数组项: Vec<协议值> = Vec::new();
         self.跳空白();
         if self.取当前字节() == Some(b']') {
             self.位 += 1;
-            return Ok(协议值::数组(一项));
+            return Ok(协议值::数组(数组项));
         }
         loop {
             self.跳空白();
-            一项.push(self.取值(深度 + 1)?);
+            数组项.push(self.取值(深度 + 1)?);
             self.跳空白();
             match self.前进一字节() {
                 Some(b',') => continue,
-                Some(b']') => return Ok(协议值::数组(一项)),
+                Some(b']') => return Ok(协议值::数组(数组项)),
                 _ => return Err(self.报错("数组里缺少逗号或右方括号")),
             }
         }

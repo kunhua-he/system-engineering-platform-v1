@@ -27,10 +27,10 @@ pub const 库后缀: [&str; 3] = [".dylib", ".so", ".dll"];
 
 /// 取一个目录下的直接子目录，**按名字排序**（装载顺序即依赖序，不许随文件系统飘）。
 pub fn 列子目录(目录: &Path) -> Vec<PathBuf> {
-    let Ok(读器) = fs::read_dir(目录) else { return Vec::new() };
-    let mut 输出缓冲: Vec<PathBuf> = 读器
-        .filter_map(|一项| 一项.ok())
-        .map(|一项| 一项.path())
+    let Ok(目录读器) = fs::read_dir(目录) else { return Vec::new() };
+    let mut 输出缓冲: Vec<PathBuf> = 目录读器
+        .filter_map(|目录项| 目录项.ok())
+        .map(|目录项| 目录项.path())
         .filter(|路径| 路径.is_dir())
         .collect();
     输出缓冲.sort();
@@ -61,8 +61,8 @@ pub const RTLD_NOW: c_int = 2;
 pub fn 取扩展声明(扩展目录: &Path) -> Result<&'static 平台信息, String> {
     let 库文件: Vec<PathBuf> = fs::read_dir(扩展目录)
         .map_err(|错误| format!("读不到目录：{错误}"))?
-        .filter_map(|一项| 一项.ok())
-        .map(|一项| 一项.path())
+        .filter_map(|目录项| 目录项.ok())
+        .map(|目录项| 目录项.path())
         .filter(|路径| 是可装载库(路径))
         .collect();
     if 库文件.len() != 1 {

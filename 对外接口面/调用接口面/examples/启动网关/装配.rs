@@ -32,7 +32,7 @@ fn 说清启动失败(错误: &启动失败) -> String {
 
 fn 取值(名称: &str) -> Option<String> {
     let 参数: Vec<String> = env::args().collect();
-    参数.iter().position(|一项| 一项 == 名称).and_then(|位置| 参数.get(位置 + 1).cloned())
+    参数.iter().position(|参数项| 参数项 == 名称).and_then(|位置| 参数.get(位置 + 1).cloned())
 }
 
 /// 跑完整条链。命令行参数、端口与日志输出**逐字不变**（上线切换靠 `监听 127.0.0.1:<端口>` 一行拿端口）。

@@ -99,7 +99,7 @@ impl 读数 {
 ///
 /// 失败分两种（[`命令错误`]）：**起不来**（件不存在 / 没有执行权限）与**超时**，
 /// 调用方要能分开 —— 「跑者不存在」「跑了但超时」「跑了但退出码非零」是三件事。
-pub fn 跑命令(程序: &Path, 参数: &[&str], 工作目录: &Path) -> Result<读数, 命令错误> {
+pub fn 跑命令取读数(程序: &Path, 参数: &[&str], 工作目录: &Path) -> Result<读数, 命令错误> {
     let mut 子进程 = Command::new(程序)
         .args(参数)
         .current_dir(工作目录)
@@ -168,7 +168,7 @@ mod 测试 {
     #[test]
     fn 跑命令_长活超时即拒() {
         let 起点 = Instant::now();
-        let 结局 = 跑命令(Path::new("/bin/sleep"), &["30"], Path::new("."));
+        let 结局 = 跑命令取读数(Path::new("/bin/sleep"), &["30"], Path::new("."));
         let 耗时 = 起点.elapsed();
         match 结局 {
             Err(命令错误::超时 { 上限毫秒, .. }) => assert_eq!(上限毫秒, 跑命令超时毫秒),
@@ -181,7 +181,7 @@ mod 测试 {
     /// 正向样本：一条短命令正常跑完，读数带退出码与输出（超时路不许把正常路弄坏）。
     #[test]
     fn 跑命令_短活正常返回() {
-        let 读数 = 跑命令(Path::new("/bin/echo"), &["好"], Path::new(".")).expect("echo 该跑得成");
+        let 读数 = 跑命令取读数(Path::new("/bin/echo"), &["好"], Path::new(".")).expect("echo 该跑得成");
         assert_eq!(读数.退出码, 0);
         assert_eq!(读数.标准输出, "好");
     }
