@@ -62,8 +62,8 @@ def 引用面(上层读数: dict) -> dict:
     if 键名 in 引用面缓存:
         return 引用面缓存[键名]
     扫描面 = {}
-    for 路径, 一项 in 上层读数["文件"].items():
-        文本 = 一项.get("文本")
+    for 路径, 文件项 in 上层读数["文件"].items():
+        文本 = 文件项.get("文本")
         if 文本 is None or not 路径.endswith(引用后缀):
             continue
         if any(片段 in "/" + 路径 for 片段 in _排除路径片段):

@@ -80,8 +80,8 @@ def 检查14_元判据(上层读数: dict) -> list:
             continue
         前缀表 = 扫描面 if isinstance(扫描面, (list, tuple)) else [扫描面]
         实际 = 0
-        for 一条 in 前缀表:
-            头部 = 一条.split("{", 1)[0].split("*", 1)[0].rstrip("/")
+        for 扫描前缀 in 前缀表:
+            头部 = 扫描前缀.split("{", 1)[0].split("*", 1)[0].rstrip("/")
             if not 头部:
                 continue
             if 头部.endswith(".json"):

@@ -10,7 +10,7 @@ import os
 import struct
 from pathlib import Path
 
-from .命令 import 跑命令
+from .命令 import 跑子进程
 from .常量 import 仓根, 构建缓存, 底座依赖名
 
 
@@ -53,16 +53,16 @@ def 建扩展产物(扩展: dict) -> None:
     """**只编不找** —— 环境步（`--预构建`）用。产物落 `构建缓存/扩展/release/deps`。"""
     清单 = 扩展["落点"] / "Cargo.toml"
     缓存 = 构建缓存 / "扩展"
-    环境 = dict(os.environ, CARGO_TARGET_DIR=str(缓存))
-    跑命令(["cargo", "build", "--locked", "--offline", "--release", "--manifest-path", str(清单)], cwd=仓根, env=环境)
+    子进程环境 = dict(os.environ, CARGO_TARGET_DIR=str(缓存))
+    跑子进程(["cargo", "build", "--locked", "--offline", "--release", "--manifest-path", str(清单)], cwd=仓根, env=子进程环境)
     rlibs = sorted((缓存 / "release" / "deps").glob("lib{}*.rlib".format(底座依赖名)))
     if not rlibs:
         raise SystemExit("找不到底座依赖的 rlib：{}".format(缓存 / "release" / "deps"))
-    跑命令(
+    跑子进程(
         ["cargo", "rustc", "--locked", "--offline", "--release", "--manifest-path", str(清单), "--",
          "--crate-type", "cdylib", "--extern", "{}={}".format(底座依赖名, rlibs[0])],
         cwd=仓根,
-        env=环境,
+        env=子进程环境,
     )
     # ★ 容器写：把编出的 cdylib 字节包成 `.支持库制品`（落点照 `扩展装载/后缀表.json`）。
     打包支持库制品(扩展)
@@ -114,7 +114,7 @@ def 打包支持库制品(扩展: dict) -> Path:
     段文件.parent.mkdir(parents=True, exist_ok=True)
     段文件.write_bytes(编接口说明段(扩展["落点"]))
     制品 = 扩展["落点"] / "{}.支持库制品".format(扩展["名"])
-    跑命令(
+    跑子进程(
         [str(装支持库制品入口()), "--能力码", str(动态库), "--接口说明", str(段文件), "--输出", str(制品)],
         cwd=仓根,
     )
@@ -168,9 +168,9 @@ def _编一条接口说明(声明: dict, 错误码目录: Path) -> bytes:
         # （标志 / 保留 / 长度 在能力声明里无源 ⇒ 写 0；非空槽需指针时另裁）。
         缓冲 += struct.pack("<IHHQQ", 默认值.get("类型标签", 0), 0, 0, 0, 默认值.get("值", 0))
     缓冲 += struct.pack("<I", 声明["返回类型"])
-    错误码表 = 声明.get("可抛错误码", [])
-    缓冲 += struct.pack("<I", len(错误码表))
-    for 错误码号 in 错误码表:
+    可抛错误码表 = 声明.get("可抛错误码", [])
+    缓冲 += struct.pack("<I", len(可抛错误码表))
+    for 错误码号 in 可抛错误码表:
         缓冲 += _编错误项(错误码号, 错误码目录)
     return bytes(缓冲)
 

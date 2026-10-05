@@ -43,4 +43,4 @@ def 流量端口() -> int:
     if os.environ.get("V1_GATEWAY_PORT"):
         return int(os.environ["V1_GATEWAY_PORT"])
     项表 = json.loads((仓根 / "契约声明" / "常量表.json").read_text(encoding="utf-8"))
-    return int(next(一条["值"] for 一条 in 项表["常量"] if 一条["名"] == "接口端口"))
+    return int(next(常量项["值"] for 常量项 in 项表["常量"] if 常量项["名"] == "接口端口"))

@@ -74,11 +74,11 @@ def 启动读数(文本: str) -> dict:
     if 匹配结果:
         输出缓冲["声明根份数"], 输出缓冲["能力清单条数"] = int(匹配结果.group(1)), int(匹配结果.group(2))
     for 源码行 in 文本.splitlines():
-        一条 = 源码行.strip()
-        if 一条.startswith("装上 /"):
-            输出缓冲["装上行"].append(一条[len("装上 "):])
-        elif 一条.startswith("剔除 /"):
-            输出缓冲["剔除行"].append(一条[len("剔除 "):])
+        行文本 = 源码行.strip()
+        if 行文本.startswith("装上 /"):
+            输出缓冲["装上行"].append(行文本[len("装上 "):])
+        elif 行文本.startswith("剔除 /"):
+            输出缓冲["剔除行"].append(行文本[len("剔除 "):])
     return 输出缓冲
 
 

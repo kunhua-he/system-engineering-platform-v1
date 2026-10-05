@@ -163,7 +163,7 @@ def 扫引用(件表: dict, 自身算: bool = True, 任一候选: bool = True, �
                 号值 = int(数码) if 数码.isdigit() else 中表.get(数码)
                 if 号值 is None:
                     continue
-                前导 = [一项 for 一项 in 锚表 if 一项[0] <= 命中.start()]
+                前导 = [锚项 for 锚项 in 锚表 if 锚项[0] <= 命中.start()]
                 if not 前导:
                     continue
                 if 要求紧邻 and not set(行文本[前导[-1][0]:命中.start()]) <= _允许间隙:

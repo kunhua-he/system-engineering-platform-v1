@@ -104,9 +104,9 @@ def 底座扩展面(上层读数: dict) -> dict:
     }
     扩展名 = sorted(目录名 | 契约声明扩展名(文件))
     扫描件源 = [
-        (键名, 一项["文本"])
-        for 键名, 一项 in 文件.items()
-        if 一项["文本"] is not None
+        (键名, 文件项["文本"])
+        for 键名, 文件项 in 文件.items()
+        if 文件项["文本"] is not None
         and 键名.endswith(代码后缀)
         and 键名.split("/")[0] in 底座代码树
         and not 键名.startswith(底座代码面排除)

@@ -5,8 +5,8 @@ import subprocess
 from .常量 import 仓根, 回执相对路径
 
 
-def 跑命令(命令, **附加):
-    """跑一条命令；失败即抛，**不吞输出**。"""
+def 跑子进程(命令, **附加):
+    """跑一个子进程；失败即抛，**不吞输出**。"""
     运行结果 = subprocess.run(命令, capture_output=True, text=True, **附加)
     if 运行结果.returncode != 0:
         raise SystemExit(
@@ -18,14 +18,14 @@ def 跑命令(命令, **附加):
 
 
 def 工具链版本() -> str:
-    return 跑命令(["rustc", "--version"], cwd=仓根).stdout.strip()
+    return 跑子进程(["rustc", "--version"], cwd=仓根).stdout.strip()
 
 
 def 提交哈希() -> tuple:
-    运行结果 = 跑命令(["git", "rev-parse", "--short=12", "HEAD"], cwd=仓根).stdout.strip()
+    运行结果 = 跑子进程(["git", "rev-parse", "--short=12", "HEAD"], cwd=仓根).stdout.strip()
     脏行 = [
         源码行
-        for 源码行 in 跑命令(["git", "status", "--porcelain"], cwd=仓根).stdout.splitlines()
+        for 源码行 in 跑子进程(["git", "status", "--porcelain"], cwd=仓根).stdout.splitlines()
         if 源码行.strip() and 源码行[3:].strip().strip('"') != 回执相对路径
     ]
     是否脏 = bool(脏行)
