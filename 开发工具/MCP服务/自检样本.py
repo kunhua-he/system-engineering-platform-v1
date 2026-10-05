@@ -44,13 +44,18 @@ def _跑夹具(临时根: Path, 仓根, 工具表, 文件指纹, 批量改名, �
     件 = 树 / "临时区" / "样例.py"
     内容 = "旧样例名 = 1\nprint(旧样例名)\n"
     件.write_text(内容, encoding="utf-8")
+    # 第三条样本用：对象字面量的键 + 对应的 `.名` 读取（上一轮「改键不改读、产出悬空引用」的场景）。
+    字段件 = 树 / "临时区" / "字段样例.js"
+    字段内容 = "const 对象 = { 旧字段名: 1 };\nconsole.log(对象.旧字段名);\n"
+    字段件.write_text(字段内容, encoding="utf-8")
     库 = 树 / "开发工具" / "信息核心" / "信息核心.db"
     库.parent.mkdir(parents=True)
     规则 = sqlite3.connect(str(库))
     规则.execute("create table 命名登记(名字 text primary key, 语义 text, 模式 text, 来源 text, 状态 text)")
     规则.execute("create table 命名例外(名字 text primary key, 说明 text)")
     规则.executemany("insert into 命名登记 values (?,?,?,?,?)",
-                 [(名, 名, "对象+说明", "新定义", "合格") for 名 in ("旧样例名", "新样例名")])
+                 [(名, 名, "对象+说明", "新定义", "合格")
+                  for 名 in ("旧样例名", "新样例名", "旧字段名", "新字段名")])
     规则.commit()
     规则.close()
     账本路径 = 临时根 / "账本.db"
@@ -60,8 +65,9 @@ def _跑夹具(临时根: Path, 仓根, 工具表, 文件指纹, 批量改名, �
     账.execute("insert into 开工 (开工号, 工作内容, 分支名, 工作树, 状态, 开工时间) "
              "values (?,?,?,?,?,?)",
              ("v1-自检样本", "自检", "自检", str(树), 开工账本.状态_进行中, "2026-10-06"))
-    账.execute("insert into 认领 (开工号, 路径, 指纹) values (?,?,?)",
-             ("v1-自检样本", "临时区/样例.py", 文件指纹(str(件))))
+    账.executemany("insert into 认领 (开工号, 路径, 指纹) values (?,?,?)",
+              [("v1-自检样本", "临时区/样例.py", 文件指纹(str(件))),
+               ("v1-自检样本", "临时区/字段样例.js", 文件指纹(str(字段件)))])
     账.commit()
     账.close()
 
@@ -94,6 +100,19 @@ def _跑夹具(临时根: Path, 仓根, 工具表, 文件指纹, 批量改名, �
                 出.append(("v1_task 功能=9 %s：退出码 %d（期望 %d，闸 fail-closed）· 件%s被动"
                         % (说明, 退出码, 期望码, "没" if 没改 else "****"),
                         退出码 == 期望码 and 没改))
+        # 第三条：改一个**有 `.名` 读取引用**的字段 —— 键与读取必须**同步**改（否则悬空引用）。
+        字段件.write_text(字段内容, encoding="utf-8")
+        退出码, 回执 = 工具表["v1_task"][0](
+            {"功能": 9, "开工ID": "v1-自检样本", "路径范围": ["临时区"],
+             "改名对": [{"旧名": "旧字段名", "新名": "新字段名"}]}, 仓根)
+        改后 = 字段件.read_text(encoding="utf-8")
+        键同步 = "{ 新字段名: 1 }" in 改后
+        读同步 = "对象.新字段名" in 改后
+        无残留 = "旧字段名" not in 改后
+        出.append(("v1_task 功能=9 正向（含 `.名` 读取的字段）：退出码 %d · 键%s同步 · 读取%s同步 · 旧名%s残留"
+                % (退出码, "" if 键同步 else "**没**", "" if 读同步 else "**没**",
+                   "" if 无残留 else "**有**"),
+                退出码 == 0 and 键同步 and 读同步 and 无残留 and "Traceback" not in 回执))
     finally:
         开工账本.连账本, 批量改名.同步索引 = 真连, 真索引
     return 出

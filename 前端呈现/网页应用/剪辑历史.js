@@ -18,7 +18,7 @@ export function 记流水(类别, 文本) {
   const 当前时刻 = new Date();
   const 补两位 = (个数) => String(个数).padStart(2, "0");
   流水表.push({
-    时: 补两位(当前时刻.getHours()) + ":" + 补两位(当前时刻.getMinutes()) + ":" + 补两位(当前时刻.getSeconds()),
+    时刻: 补两位(当前时刻.getHours()) + ":" + 补两位(当前时刻.getMinutes()) + ":" + 补两位(当前时刻.getSeconds()),
     类: 类别,
     文: 文本,
   });
@@ -39,7 +39,7 @@ function 画流水() {
   // 新的在上：一眼看到刚发生的那一条。
   for (const 流水条 of [...流水表].reverse()) {
     const 源码行 = 建元素("div", "史行");
-    源码行.append(建元素("span", "史时", 流水条.时), 建元素("span", "史类", 流水条.类), 建元素("span", "文", 流水条.文));
+    源码行.append(建元素("span", "史时", 流水条.时刻), 建元素("span", "史类", 流水条.类), 建元素("span", "文", 流水条.文));
     列表.append(源码行);
   }
   if (状态) 状态.textContent = 流水表.length + " 行";
