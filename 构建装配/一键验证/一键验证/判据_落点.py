@@ -36,7 +36,7 @@ from pathlib import Path
 
 from .判据元数据 import 判据元数据
 from .小工具 import 判不了, 违规
-from .常量 import 仓根目录, 检查名
+from .常量 import 仓根, 检查名
 from .冻结形状 import 抽符号声明文本
 
 
@@ -133,7 +133,6 @@ def 检查26_判据落点不悬空(上层读数: dict) -> list:
         return 输出缓冲
 
     # 判据器的落点按**判据自身所在的仓**判（被扫的仓可以是合成夹具，夹具里没有这些落点）。
-    仓根 = 仓根目录
     for 名称, 一条, 是什么, 期望 in 判据落点表(元数据):
         if not 落点存在(仓根, 一条, 期望):
             输出缓冲.append(

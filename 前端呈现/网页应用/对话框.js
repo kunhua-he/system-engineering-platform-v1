@@ -18,10 +18,10 @@ export function 装对话框(取元素) {
   const 读器 = 取元素("对话框读数");
 
   for (const 对话框项 of 对话框) {
-    const 一项 = document.createElement("option");
-    一项.value = 对话框项.编号;
-    一项.textContent = 对话框项.编号 + " · " + 对话框项.标题 + "（" + 对话框项.控件数 + " 控件）";
-    选中.append(一项);
+    const 选项元素 = document.createElement("option");
+    选项元素.value = 对话框项.编号;
+    选项元素.textContent = 对话框项.编号 + " · " + 对话框项.标题 + "（" + 对话框项.控件数 + " 控件）";
+    选中.append(选项元素);
   }
 
   const 摆对话框 = (编号) => {

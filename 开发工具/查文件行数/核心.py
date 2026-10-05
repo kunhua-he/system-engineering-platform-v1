@@ -153,7 +153,7 @@ def 报读数(仓根, 结果):
     print(f"汇总：① {len(超行数)} 个 · ② {len(入口超行数)} 个 · ③ {len(入口有实现)} 个")
 
 
-def 自测():
+def 跑自测():
     """反向样本：造超限文件，断言判据抓得住；再造合规文件，断言不误报。"""
     with tempfile.TemporaryDirectory(prefix="查行数自测_") as 临时:
         def 造文件(相对路, 内容):

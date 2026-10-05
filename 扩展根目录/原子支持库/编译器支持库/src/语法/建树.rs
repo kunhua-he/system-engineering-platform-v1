@@ -345,19 +345,19 @@ impl 建树器<'_> {
     pub(super) fn 建头带体(
         &mut self,
         行表: &[源码行],
-        头: usize,
-        末: usize,
+        头行下标: usize,
+        末行下标: usize,
         种类: 节点种类,
         有体: bool,
     ) -> u32 {
-        let 此行 = 行表[头];
+        let 此行 = 行表[头行下标];
         let 区间起点 = 此行.关键字.map(|关键字对| 关键字对.0).unwrap_or(此行.内容起);
-        let 区间终点 = 行表.get(末).map(|行项| 行项.字节起).unwrap_or(self.全文长());
+        let 区间终点 = 行表.get(末行下标).map(|行项| 行项.字节起).unwrap_or(self.全文长());
         let mut 子节点表 = self.声明字段(&此行);
         子节点表.extend(self.尾叶(&此行));
         if 有体 {
             self.深度 += 1;
-            子节点表.extend(self.建体(行表, 头 + 1, 末));
+            子节点表.extend(self.建体(行表, 头行下标 + 1, 末行下标));
             self.深度 -= 1;
         }
         self.草稿.节点(种类, (区间起点, 区间终点), 子节点表)

@@ -103,7 +103,7 @@ fn 不变量_兄弟不得重叠_正反样本() {
     let mut 兄弟对 = 0u32;
     for 输出流 in 全部夹具() {
         let 语法树 = 建树(&输出流).expect("合法记号流必须建得出树");
-        for (节点下标, _n) in 语法树.节点表.iter().enumerate() {
+        for (节点下标, _节点) in 语法树.节点表.iter().enumerate() {
             let mut 前一止: Option<u32> = None;
             for 子下标 in 语法树.直接子(节点下标 as u32) {
                 let 子节点 = &语法树.节点表[子下标 as usize];
@@ -137,7 +137,7 @@ fn 不变量_必须是一棵树_正反样本() {
         let 语法树 = 建树(&输出流).expect("合法记号流必须建得出树");
         let 节点数 = 语法树.节点表.len();
         let mut 父数 = vec![0u32; 节点数];
-        for (节点下标, _n) in 语法树.节点表.iter().enumerate() {
+        for (节点下标, _节点) in 语法树.节点表.iter().enumerate() {
             for 子下标 in 语法树.直接子(节点下标 as u32) {
                 父数[子下标 as usize] += 1;
             }

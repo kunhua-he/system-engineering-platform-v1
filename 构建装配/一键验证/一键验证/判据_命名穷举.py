@@ -35,7 +35,7 @@ def _取信息核心件(件名: str):
     """
     import sys as _sys
 
-    根目录 = str(常量.仓根目录 / "开发工具" / "信息核心")
+    根目录 = str(常量.仓根 / "开发工具" / "信息核心")
     if 根目录 not in _sys.path:
         _sys.path.insert(0, 根目录)
     return __import__(件名)

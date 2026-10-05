@@ -33,15 +33,15 @@ from 构建装配.门禁 import 自门禁  # noqa: E402
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from 形状检查 import 案例根, 查根, 自测, 跑样本  # noqa: E402
+from 形状检查 import 案例根, 查根, 跑自测, 跑样本  # noqa: E402
 
-__all__ = ["案例根", "查根", "自测", "跑样本"]
+__all__ = ["案例根", "查根", "跑自测", "跑样本"]
 
 
 def 入口函数(参数: list) -> int:
     """命令行入口：分发到 `形状检查` 的公开面。阈值与注入只从 `构建装配/门禁/` 取。"""
     if "--自测" in 参数:
-        return 自测()
+        return 跑自测()
     if "--样本" in 参数:
         return 跑样本()
     根目录 = 案例根

@@ -7,7 +7,7 @@ from .常量 import 取证器路径, 样本路径, 源码根
 from .跑取证 import 跑取证, 断言
 
 
-def 自测(失败集):
+def 跑自测(失败集):
     if not os.path.isfile(取证器路径):
         print("  ✗ 取证器路径不在：%s" % 取证器路径)
         失败集.append("取证器缺失")

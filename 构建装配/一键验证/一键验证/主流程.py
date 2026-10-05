@@ -11,7 +11,7 @@ from . import 常量
 from .常量 import 检查名, 契约目录名
 from .打印 import 打印验证结果, 打印缺口
 from .承重证明 import 承重证明
-from .自测 import 自测
+from .自测 import 跑自测
 from .退出码 import 算退出码
 from .验证 import 跑全量判据
 
@@ -39,7 +39,7 @@ def 解析只跑(词表: list) -> tuple:
 
 def 找仓根() -> Path:
     """仓根：本验证器在 构建装配/一键验证/ 下 ⇒ 由 `常量.仓根目录` 给出（上溯三级）。"""
-    return 常量.仓根目录
+    return 常量.仓根
 
 def 入口函数(参数: list) -> int:
     仓根 = 找仓根()
@@ -47,7 +47,7 @@ def 入口函数(参数: list) -> int:
         print(f"定位不到仓根：{仓根} 下没有 {契约目录名}/", file=sys.stderr)
         return 1
     if "--自测" in 参数:
-        return 自测(仓根)
+        return 跑自测(仓根)
     if "--承重证明" in 参数:
         return 承重证明(仓根)
     只跑集 = None

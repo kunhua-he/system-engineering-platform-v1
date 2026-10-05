@@ -6,7 +6,7 @@ import sys
 
 from .报告 import 出报告
 from .全语料 import 扫全部, 扫一片
-from .自测 import 自测
+from .自测 import 跑自测
 
 
 def 建解析器():
@@ -30,7 +30,7 @@ def 建解析器():
 def 入口函数(命令行参数):
     选项 = 建解析器().parse_args(命令行参数)
     if 选项.自测:
-        return 自测(选项.样本)
+        return 跑自测(选项.样本)
     if 选项.建议分片数:
         from .分片 import 建议分片数
         from .运行数据根 import 缓存目录

@@ -46,12 +46,12 @@ export function 装调试(取元素) {
 
   function 取调用体文() {
     const 编号 = 取元素("调用编号").value.trim();
-    const 一项 = [...取元素("值行容器").querySelectorAll(".值行")].map((源码行) => {
+    const 值行表 = [...取元素("值行容器").querySelectorAll(".值行")].map((源码行) => {
       const 标签 = 源码行.querySelector(".标签").value.trim();
       const 待处理值 = 源码行.querySelector(".值").value.trim();
       return '{"类型标签":' + 标签 + ',"值":' + 待处理值 + "}";
     });
-    return '{"编号":' + 编号 + ',"值":[' + 一项.join(",") + "]}";
+    return '{"编号":' + 编号 + ',"值":[' + 值行表.join(",") + "]}";
   }
 
   function 刷调用预览() {

@@ -3,8 +3,8 @@
 import os
 
 # 本件 = <扩展根>/工具/重跑指纹/常量.py ⇒ 上溯三层 = <扩展根>/（与拆分前同值）。
-扩展根 = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-指纹件 = os.path.join(扩展根, "指纹.json")
+扩展根路径 = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+指纹件 = os.path.join(扩展根路径, "指纹.json")
 
 # 重跑指纹命令（写进 指纹.json 的那条，必须**可跑**：从仓根执行）。
 重跑指纹命令 = "python3 扩展根目录/原子支持库/编译器支持库/工具/重跑指纹.py"

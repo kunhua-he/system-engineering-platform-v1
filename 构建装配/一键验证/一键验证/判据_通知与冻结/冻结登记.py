@@ -279,7 +279,7 @@ def 检查9_冻结登记(上层读数: dict) -> list:
         新增 = 段登记.get("新增")
         占号 = set()
         if isinstance(已占用, dict):
-            for _族, 号表 in 已占用.items():
+            for _族名, 号表 in 已占用.items():
                 if isinstance(号表, list):
                     占号.update(int(号值) for 号值 in 号表 if isinstance(号值, int))
         # 容器形状的**声明值集**：扫扩展目录下**含 `pub enum 段类型` 的那一件**（按符号找，
