@@ -101,10 +101,10 @@ def 读目录全部源文件(目录: Path) -> str:
 
 def _码文(根目录: Path, 号值: str) -> str:
     """一条错误码的 `名称` + `说明`（锚点两条都要能命中），读不到给空串。"""
-    一条 = 读JSON件(根目录 / f"契约声明/错误码表/{号值}.json") or {}
-    if not isinstance(一条, dict):
+    错误码条目 = 读JSON件(根目录 / f"契约声明/错误码表/{号值}.json") or {}
+    if not isinstance(错误码条目, dict):
         return ""
-    return f"{一条.get('名称', '')} {一条.get('说明', '')}"
+    return f"{错误码条目.get('名称', '')} {错误码条目.get('说明', '')}"
 
 
 def 读件与包(根目录: Path, 相对: str) -> str:
@@ -196,8 +196,8 @@ class 判读世界:
         return self.扩展目录() / "指纹.json"
 
     def 指纹脚本(self) -> Path:
-        生成命令 = (读JSON件(self.指纹件()) or {}).get("生成命令", "")
+        指纹生成命令 = (读JSON件(self.指纹件()) or {}).get("生成命令", "")
         # 生成命令形如 "python3 扩展根目录/…/重跑指纹.py"（仓库根相对）
-        命令分词 = 生成命令.split()
+        命令分词 = 指纹生成命令.split()
         参数 = [参项 for 参项 in 命令分词 if 参项.endswith(".py")]
         return self.仓根 / 参数[0] if 参数 else self.仓根 / "__缺__"

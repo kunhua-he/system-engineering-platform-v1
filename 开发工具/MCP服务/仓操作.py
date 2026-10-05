@@ -28,18 +28,18 @@ from 代码地图 import 文件指纹  # noqa: E402  —— 指纹只此一份�
 禁终端提示环境 = {"GIT_TERMINAL_PROMPT": "0"}
 
 
-def 跑命令(命令表: list, cwd, 超时秒数=超时秒, 输入文本=None, 环境=None) -> tuple:
+def 跑命令(命令表: list, cwd, 超时秒数=超时秒, 输入文本=None, 子进程环境=None) -> tuple:
     """跑一条命令 ⇒ `(退出码, 合并输出)`。超时给 `-1`（**不许当成通过**）。
 
     `超时秒数=None` ⇒ **不设超时**（环境步：建工作树 · 建索引 —— 一趟就是它自身的长度）。
     `输入文本` 给了就从 stdin 喂进去（`git commit -F -` 用 —— 免得为一条提交信息落临时件）。
-    `环境` 给的键**并进**当前环境（不是替换）。git 的 push/commit 必须带 `GIT_TERMINAL_PROMPT=0`：
+    `子进程环境` 给的键**并进**当前环境（不是替换）。git 的 push/commit 必须带 `GIT_TERMINAL_PROMPT=0`：
     不设超时 + 远端要认证 ⇒ git 会**等着人敲密码**，那是一个没有上限的挂起。
     """
     import os
     环境表 = dict(os.environ)
-    if 环境:
-        环境表.update(环境)
+    if 子进程环境:
+        环境表.update(子进程环境)
     try:
         回执 = subprocess.run(命令表, cwd=str(cwd), capture_output=True, text=True,
                             input=输入文本, timeout=超时秒数, env=环境表)
@@ -85,8 +85,8 @@ def 找工作树(仓根, 开工号: str):
 
 def 建工作树(仓根, 开工号: str) -> tuple:
     """调 `并行工作树.sh 新建 <开工号>`（**一处实现**：它还建那棵树的构建缓存与 venv）。"""
-    脚本 = Path(仓根) / "开发工具" / "并行工作树.sh"
-    return 跑命令(["sh", str(脚本), "新建", 开工号], cwd=仓根, 超时秒数=None)
+    脚本路径 = Path(仓根) / "开发工具" / "并行工作树.sh"
+    return 跑命令(["sh", str(脚本路径), "新建", 开工号], cwd=仓根, 超时秒数=None)
 
 
 def 建工作树索引(工作树: Path) -> tuple:
@@ -110,13 +110,13 @@ def 清工作树(仓根, 开工号: str) -> tuple:
     支线在 = 支线在吗(仓根, 开工号)
     if not 工作树在 and not 支线在:
         return 0, "无物可清（工作树与支线都不在）"
-    脚本 = Path(仓根) / "开发工具" / "并行工作树.sh"
+    脚本路径 = Path(仓根) / "开发工具" / "并行工作树.sh"
     码一 = 码二 = 0
     说明表 = []
     if 工作树在:
         # 环境步同建树口径（`超时秒数=None`）：移除带构建缓存的大树可能 >5s，默认 5 秒会把
         # 它误报成「工作树没移除掉（退出码 -1）」（2026-10-05 修 · 与建树 `:89` 对齐）。
-        码一, 出一 = 跑命令(["sh", str(脚本), "移除", 开工号], cwd=仓根, 超时秒数=None)
+        码一, 出一 = 跑命令(["sh", str(脚本路径), "移除", 开工号], cwd=仓根, 超时秒数=None)
         if 码一 == 0:
             说明表.append("工作树已移除")
         else:

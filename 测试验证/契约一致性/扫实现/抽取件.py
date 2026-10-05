@@ -98,9 +98,9 @@ def 抽本文件整数常量(掩码文本: str) -> dict:
                 掩码文本,
             )
             if m3:
-                一项 = 拆顶层项(m3.group(1))
-                if 序号 < len(一项):
-                    内层 = re.search(r"\(\s*(\d+)\s*,\s*(\d+)\s*\)", 一项[序号])
+                顶层项 = 拆顶层项(m3.group(1))
+                if 序号 < len(顶层项):
+                    内层 = re.search(r"\(\s*(\d+)\s*,\s*(\d+)\s*\)", 顶层项[序号])
                     if 内层:
                         项表[名称] = int(内层.group(2)) + 加数
     return 项表
@@ -193,9 +193,9 @@ def 抽参数表(掩码文本: str, 键名: str, 符号表: dict) -> dict:
         if 区间终点 < 0:
             continue
         内层 = 掩码文本[区间起点 + 1 : 区间终点]
-        一项 = 拆顶层项(内层)
+        顶层项 = 拆顶层项(内层)
         标签 = []
-        for 条目 in 一项:
+        for 条目 in 顶层项:
             t2 = 条目.split("{", 1)[1] if "{" in 条目 else 条目
             mm = re.search(r"类型标签\s*:\s*([^,}]+)", t2)
             标签.append(mm.group(1).strip() if mm else None)

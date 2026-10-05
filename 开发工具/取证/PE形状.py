@@ -125,11 +125,11 @@ class PE:
         文偏移 = self.转偏移(目录[0])
         if 文偏移 + 40 > len(self.原始字节):
             raise 解析错误("导出目录越界")
-        _, _, _, _, _, 基序, 函数数, 名字数, 函数表, 名字表, 序号表 = struct.unpack_from(
+        _, _, _, _, _, 基序, 函数数, 名字数, 函数表址, 名字表, 序号表 = struct.unpack_from(
             "<IIHHIIIIIII", self.原始字节, 文偏移)
         if 函数数 == 0:
             raise 解析错误("导出函数数为 0")
-        函数表项 = struct.unpack_from("<%dI" % 函数数, self.原始字节, self.转偏移(函数表))
+        函数表项 = struct.unpack_from("<%dI" % 函数数, self.原始字节, self.转偏移(函数表址))
         结果 = []
         for 序号 in range(名字数):
             串起 = self.转偏移(self.读四字节(self.转偏移(名字表) + 4 * 序号))

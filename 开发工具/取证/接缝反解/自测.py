@@ -11,8 +11,8 @@ from PE形状 import PE, 解析错误
 from .反解 import 反解接缝
 
 
-def 跑自测(样本="/tmp/易语言源码/lib/shellEx.fne"):
-    合格样本 = open(样本, "rb").read()
+def 跑自测(样本路径="/tmp/易语言源码/lib/shellEx.fne"):
+    合格样本 = open(样本路径, "rb").read()
     坏样本表 = [("空文件", b""), ("只有 DOS 头 0x40", 合格样本[:0x40]), ("截断到 PE 头中间", 合格样本[:0xC8]), ("截断到节表中间", 合格样本[:0x1A0]),
           ("整份砍掉后半", 合格样本[:len(合格样本) // 2]), ("随机字节流", bytes(range(256)) * 4), ("无 MZ 签名", b"ZZ" + 合格样本[2:])]
     try:
@@ -43,7 +43,7 @@ def 跑自测(样本="/tmp/易语言源码/lib/shellEx.fne"):
         except (struct.error, IndexError, ValueError, OverflowError, TypeError) as ex:
             print("  ✗ %-26s 抛了非解析错误（%s: %s）" % (名称, type(ex).__name__, ex)); 失败 += 1
     try:
-        print("  ✓ 正向样本 %s 解析成功（命令 %d 条）" % (os.path.basename(样本), len(反解接缝(样本)["命令"])))
+        print("  ✓ 正向样本 %s 解析成功（命令 %d 条）" % (os.path.basename(样本路径), len(反解接缝(样本路径)["命令"])))
     except 解析错误 as ex:
         print("  ✗ 正向样本反而失败：%s" % ex); 失败 += 1
     print("自测结论：%s（失败 %d）" % ("通过" if 失败 == 0 else "不通过", 失败))

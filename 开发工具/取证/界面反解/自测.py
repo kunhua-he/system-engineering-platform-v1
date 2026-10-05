@@ -9,8 +9,8 @@ from PE形状 import PE, 解析错误
 from .资源树 import 走资源树
 
 
-def 跑自测(样本="/tmp/易语言源码/e.exe"):
-    合格样本 = open(样本, "rb").read()
+def 跑自测(样本路径="/tmp/易语言源码/e.exe"):
+    合格样本 = open(样本路径, "rb").read()
     坏样本表 = [("空文件", b""), ("只有 DOS 头 0x40", 合格样本[:0x40]), ("截断到 PE 头中间", 合格样本[:0x104]),
           ("无 MZ 签名", b"ZZ" + 合格样本[2:]), ("整份砍掉后半", 合格样本[:len(合格样本) // 2]),
           ("随机字节流", bytes(range(256)) * 8)]
@@ -65,9 +65,9 @@ def 跑自测(样本="/tmp/易语言源码/e.exe"):
             print("  ✗ %-34s 抛了非解析错误（%s: %s）" % (名称, type(ex).__name__, str(ex)[:40]))
             失败 += 1
     try:
-        读数 = 反解界面(样本)
+        读数 = 反解界面(样本路径)
         print("  ✓ 正向样本 %s 解析成功（菜单 %d 项 · 对话框 %d 个 · 控件 %d 个 · 字符串 %d 条）"
-              % (os.path.basename(样本), sum(len(表值[1]) for 表值 in 读数["菜单"].values()), len(读数["对话框"]),
+              % (os.path.basename(样本路径), sum(len(表值[1]) for 表值 in 读数["菜单"].values()), len(读数["对话框"]),
                  sum(len(表值[1]["控件"]) for 表值 in 读数["对话框"].values()),
                  sum(1 for 表值 in 读数["字符串"].values() for 串条 in 表值[1] if 串条)))
     except 解析错误 as ex:

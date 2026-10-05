@@ -108,13 +108,13 @@ def 建索引(仓根: Path) -> tuple:
                     "`npm i -g @colbymchenry/codegraph`" % 索引器命令)
     库文件 = Path(仓根) / 库目录名 / 库文件名
     动作 = "index" if 库文件.is_file() else "init"
-    开始时刻 = time.monotonic()
+    计时起点 = time.monotonic()
     try:
         回执 = subprocess.run([命令, 动作, str(仓根)], cwd=str(仓根),
                             capture_output=True, text=True)     # 不设超时，见 `索引器命令` 上方
     except OSError as 起不来的原因:
         return -2, 0, "代码地图：起不了索引器：%r" % (起不来的原因,)
-    墙钟毫秒 = int((time.monotonic() - 开始时刻) * 1000)
+    墙钟毫秒 = int((time.monotonic() - 计时起点) * 1000)
     if 回执.returncode != 0:
         return 回执.returncode, 墙钟毫秒, "代码地图：索引器退出码 %d ⇒ %s" % (
             回执.returncode, (回执.stderr or 回执.stdout or "").strip()[-400:])
@@ -314,12 +314,12 @@ def _源件路径(动态库: sqlite3.Connection, 来源: str) -> str:
     return 源码行[0] if 源码行 else ""
 
 
-def 出现位(键名: str, 上限: int = 0, 库路径=None) -> dict:
+def 出现位(键名: str, 结果上限: int = 0, 库路径=None) -> dict:
     """该符号的全部出现位置 ⇒ `{"位置": [(路径, 行, 列)…], "总数": n, "口径": "…"}`。
 
     **口径**：先按 `限定名` **全等**找（精确）；一条都没有才退回按 `名字` 全等
     （名字级 —— 会混进同名不同符号）。用的是哪一种，如实写在 `口径` 里。
-    `上限=0` 表示不限（`替换` 要全量 —— 截断会让它漏改）。
+    `结果上限=0` 表示不限（`替换` 要全量 —— 截断会让它漏改）。
 
     ★ 引用面比编译器索引少约 7%（见本件顶部）⇒ 调用方**必须**拿编译兜底，别当它全。
     """
@@ -350,8 +350,8 @@ def 出现位(键名: str, 上限: int = 0, 库路径=None) -> dict:
                         if 源件:
                             位置表.append((源件, 边行, 边列))
                 去重表 = sorted(set(位置表))
-                if 上限:
-                    去重表 = 去重表[:上限]
+                if 结果上限:
+                    去重表 = 去重表[:结果上限]
                 return {"位置": 去重表, "总数": len(set(位置表)), "口径": 口径说明}
             return {"位置": [], "总数": 0, "口径": "没找到"}
         except sqlite3.Error as 原因:

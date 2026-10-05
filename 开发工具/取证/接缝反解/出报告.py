@@ -20,14 +20,14 @@ def 出报告(读数):
     print("   静态结构 RVA 0x%x（文件偏移 0x%x）；原始字节：" % (读数["结构rva"], 文件偏移))
     print("     " + pe.原始字节[文件偏移:文件偏移 + 库信息大小].hex(" "))
     print("② LIB_INFO 逐字段（偏移 · 宽 · 名 · 值 · 可读）：")
-    for 偏移, 宽度, 名称, 类别, 待处理值, 读器 in 读数["字段"]:
-        print("   +0x%02x %2d  %-24s 0x%08x  %s" % (偏移, 宽度, 名称, 待处理值 & 0xFFFFFFFF, 读器))
+    for 偏移, 宽度, 名称, 类别, 待处理值, 可读串 in 读数["字段"]:
+        print("   +0x%02x %2d  %-24s 0x%08x  %s" % (偏移, 宽度, 名称, 待处理值 & 0xFFFFFFFF, 可读串))
     print("   m_dwState=0x%08x → %s" % (字典["m_dwState"], " · ".join(
         表值 for 键名, 表值 in 库状态位.items() if 字典["m_dwState"] & (1 << 键名)) or "（0，无位）"))
     print("③ 字符串表（结构里的 str 类指针指向的串）：")
-    for 偏移, 宽度, 名称, 类别, 待处理值, 读器 in 读数["字段"]:
+    for 偏移, 宽度, 名称, 类别, 待处理值, 可读串 in 读数["字段"]:
         if 类别 == "str" and 待处理值:
-            print("   +0x%02x  %-22s 0x%08x  %s" % (偏移, 名称, 待处理值, 读器.split("→", 1)[-1].strip()))
+            print("   +0x%02x  %-22s 0x%08x  %s" % (偏移, 名称, 待处理值, 可读串.split("→", 1)[-1].strip()))
     if 字典["m_nCategoryCount"]:
         文偏移, 类别 = pe.转偏移(pe.取址(字典["m_szzCategory"])), []
         for _ in range(字典["m_nCategoryCount"]):
@@ -46,8 +46,8 @@ def 出报告(读数):
         for 位次, _, 组读数 in 解结构表(pe, 字段项["m_nArgCount"][0], 字段项["m_pBeginArgInfo"][0], 参数项大小, 参数字段):
             print("        参数%d %-12s type=0x%08x state=0x%08x default=%d"
                   % (位次, 组读数["m_szName"][1], 组读数["m_dtType"][0], 组读数["m_dwState"][0], 组读数["m_nDefault"][0]))
-    for 序号, _, 读器 in 读数["物理槽"][1]:
-        print("   ⚠ 声明数与物理槽数不齐：表外第 %d 槽仍是命令项：%s" % (序号, 读器))
+    for 序号, _, 可读串 in 读数["物理槽"][1]:
+        print("   ⚠ 声明数与物理槽数不齐：表外第 %d 槽仍是命令项：%s" % (序号, 可读串))
     print("⑤ 常量表：声明数 m_nLibConstCount=%d" % 字典["m_nLibConstCount"])
     for 序号, _, 组读数 in 解结构表(pe, 字典["m_nLibConstCount"], 字典["m_pLibConst"], 常量项大小, 常量字段):
         print("   [%d] name=%s reserved=%s type=%s text=%s value=%s" % (
