@@ -24,7 +24,7 @@ use std::path::Path;
 use std::process::Command;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use crate::错误码::登记;
+use crate::错误码::错误码登记;
 
 /// 回执文件名。住在案例根下，与案例目录并列。
 ///
@@ -56,7 +56,7 @@ pub struct 步骤读数 {
     pub 符合期望: bool,
     pub 死在哪一层: Option<String>,
     pub 死在哪一步: Option<String>,
-    pub 错误码: Option<登记>,
+    pub 错误码: Option<错误码登记>,
     pub 耗时微秒: u128,
     /// 一句话读数（人读；机器只读上面那些字段）。
     pub 说明: String,
@@ -71,7 +71,7 @@ pub struct 回执 {
     pub 结果: String,
     pub 死在哪一层: Option<String>,
     pub 死在哪一步: Option<String>,
-    pub 错误码: Option<登记>,
+    pub 错误码: Option<错误码登记>,
     pub 耗时微秒: u128,
     pub 跑的时间: String,
     pub 说明: String,
@@ -264,7 +264,7 @@ mod 测试 {
             结果: "失败".to_owned(),
             死在哪一层: Some("内核".to_owned()),
             死在哪一步: Some("调度".to_owned()),
-            错误码: Some(登记 {
+            错误码: Some(错误码登记 {
                 码: 1,
                 段位: 0,
                 名称: "提供者未载入".to_owned(),

@@ -33,7 +33,7 @@ use v1_loader::读契约串;
 
 /// 一条错误码登记。**结构化的六项 + 一个暴露缺口的旁路项**。
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct 登记 {
+pub struct 错误码登记 {
     pub 码: u32,
     pub 段位: u32,
     pub 名称: String,
@@ -45,7 +45,7 @@ pub struct 登记 {
     pub 已登记: bool,
 }
 
-impl 登记 {
+impl 错误码登记 {
     /// 未登记时的成形：码留着（它是事实），名称留空，三项一律 `false`。
     pub fn 未登记(错误码: u32) -> Self {
         Self {
@@ -76,7 +76,7 @@ impl 登记 {
 /// 错误码登记表：码 → 登记。**当场建，不缓存到磁盘。**
 #[derive(Debug, Default)]
 pub struct 登记表 {
-    项: BTreeMap<u32, 登记>,
+    项: BTreeMap<u32, 错误码登记>,
 }
 
 impl 登记表 {
@@ -89,7 +89,7 @@ impl 登记表 {
                 continue;
             };
             for 错误码 in 契约.可抛错误码 {
-                项表.追加一条(登记 {
+                项表.追加一条(错误码登记 {
                     码: 错误码.码,
                     段位: 错误码.码 / 号段类宽度,
                     名称: 错误码.名称,
@@ -108,7 +108,7 @@ impl 登记表 {
     pub fn 从生成物() -> Self {
         let mut 项表 = Self::default();
         for 错误码 in v1_contract::声明数据::错误码信息表.iter() {
-            项表.追加一条(登记 {
+            项表.追加一条(错误码登记 {
                 码: 错误码.码,
                 段位: 错误码.段位,
                 // SAFETY: 契约保证一切串都是静态只读 NUL 结尾串。
@@ -122,7 +122,7 @@ impl 登记表 {
         项表
     }
 
-    fn 追加一条(&mut self, 一条: 登记) {
+    fn 追加一条(&mut self, 一条: 错误码登记) {
         // 同一码在两处登记：**不许互相盖**。只在「后到的已登记、先到的未登记」时补上。
         match self.项.get(&一条.码) {
             Some(旧登记) if 旧登记.已登记 => {}
@@ -132,23 +132,23 @@ impl 登记表 {
         }
     }
 
-    pub fn 按码(&self, 错误码: u32) -> 登记 {
-        self.项.get(&错误码).cloned().unwrap_or_else(|| 登记::未登记(错误码))
+    pub fn 按码(&self, 错误码: u32) -> 错误码登记 {
+        self.项.get(&错误码).cloned().unwrap_or_else(|| 错误码登记::未登记(错误码))
     }
 
     /// 按**名称**取登记。这是把 `调度错误` / `载入错误` 的变体名换成码的**唯一**办法：
     /// 那两套枚举的变体**不带码**，适配器也没有「段位 → 错误码」这个口（缺口，见回执说明）。
     /// 名字对不上 ⇒ `None` ⇒ 调用方如实记「未登记」，**不猜一个码**。
-    pub fn 按名(&self, 名称: &str) -> Option<登记> {
+    pub fn 按名(&self, 名称: &str) -> Option<错误码登记> {
         self.项.values().find(|一项| 一项.名称 == 名称).cloned()
     }
 
-    pub fn 由调度错误(&self, 错误: 调度错误) -> 登记 {
-        self.按名(调度错误名(错误)).unwrap_or_else(|| 登记::未登记(0))
+    pub fn 由调度错误(&self, 错误: 调度错误) -> 错误码登记 {
+        self.按名(调度错误名(错误)).unwrap_or_else(|| 错误码登记::未登记(0))
     }
 
-    pub fn 由载入错误(&self, 错误: &载入错误) -> 登记 {
-        self.按名(载入错误名(错误)).unwrap_or_else(|| 登记::未登记(0))
+    pub fn 由载入错误(&self, 错误: &载入错误) -> 错误码登记 {
+        self.按名(载入错误名(错误)).unwrap_or_else(|| 错误码登记::未登记(0))
     }
 }
 

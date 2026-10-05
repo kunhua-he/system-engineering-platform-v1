@@ -170,10 +170,10 @@ fn 首处差异(实到: &[u8], 期望: &[u8], 路径: &Path) -> String {
 mod 测试 {
     use super::*;
     use crate::案例::错误码期望;
-    use crate::错误码::登记;
+    use crate::错误码::错误码登记;
     use std::path::PathBuf;
 
-    fn 造观测(结果: &'static str, 层级: Option<&str>, 错误码: Option<登记>, 产物: 观测产物) -> 观测 {
+    fn 造观测(结果: &'static str, 层级: Option<&str>, 错误码: Option<错误码登记>, 产物: 观测产物) -> 观测 {
         观测 {
             结果,
             死在哪一层: 层级.map(str::to_owned),
@@ -186,8 +186,8 @@ mod 测试 {
         }
     }
 
-    fn 码一的登记() -> 登记 {
-        登记 {
+    fn 码一的登记() -> 错误码登记 {
+        错误码登记 {
             码: 1,
             段位: 0,
             名称: "提供者未载入".to_owned(),

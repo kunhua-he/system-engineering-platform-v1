@@ -89,7 +89,7 @@ impl 夹具黑盒 {
 }
 
 impl 黑盒体 for 夹具黑盒 {
-    fn 调用(&self, 操作号: u32, 输入槽表: &[数据槽], 输出槽表: &mut Vec<数据槽>) -> 黑盒结果 {
+    fn 调用操作(&self, 操作号: u32, 输入槽表: &[数据槽], 输出槽表: &mut Vec<数据槽>) -> 黑盒结果 {
         self.跑过.fetch_add(1, Ordering::Relaxed);
         // 夹具只造单入参的声明 ⇒ 记第一个入参槽的类型标签（§七 那条测试要它）。
         if let Some(数据槽) = 输入槽表.first() {
