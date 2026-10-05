@@ -100,7 +100,7 @@ def 取健康读数(端口: int) -> tuple:
     """
     路径 = urllib.parse.quote("/接口")
     try:
-        with urllib.request.urlopen("http://127.0.0.1:{}{}".format(端口, 路径), timeout=5) as 造应答:
+        with urllib.request.urlopen("http://127.0.0.1:{}{}".format(端口, 路径), timeout=健康超时秒) as 造应答:
             文本 = 造应答.read().decode("utf-8")
             状态码 = 造应答.status
     except (urllib.error.URLError, socket.timeout, ConnectionError) as 错误:
