@@ -50,9 +50,9 @@ def _写响应报文(输出, 码, 结果=None, 错误=None):
 def 派发(方法, 参数, 仓根, 工具表):
     """把一个请求派到 MCP 的四个方法上 ⇒ `(结果, 错误)`。"""
     if 方法 == "initialize":
-        请求版本 = 参数.get("protocolVersion")
+        # MCP 口径：回**服务端支持**的版本 —— 不原样回显客户端请求的版本（原样回显 = 声称支持所有版本）。
         return {
-            "protocolVersion": 请求版本 or 协议版本,
+            "protocolVersion": 协议版本,
             "capabilities": {"tools": {}},
             "serverInfo": {"name": 服务名, "title": 服务显示名, "version": 服务版本},
             "instructions": 服务提示词,
@@ -69,8 +69,14 @@ def 派发(方法, 参数, 仓根, 工具表):
         名称 = 参数.get("name")
         if 名称 not in 工具表:
             return None, {"code": -32602, "message": "没有这个工具：%r" % (名称,)}
+        实参 = 参数.get("arguments")
+        if 实参 is None:
+            实参 = {}
+        if not isinstance(实参, dict):
+            return None, {"code": -32602,
+                          "message": "arguments 必须是对象，收到：%s" % type(实参).__name__}
         实现 = 工具表[名称][0]
-        退出码, 输出文本 = 实现(参数.get("arguments") or {}, 仓根)
+        退出码, 输出文本 = 实现(实参, 仓根)
         # ⑤ 服务代码过期自查：MCP 是长驻进程，改了 `MCP服务/**` 不重启就跑旧码 ⇒ 回执头如实报一行。
         过期行 = 过期提示行()
         if 过期行:
@@ -90,9 +96,26 @@ def 跑主循环(仓根, 工具表, 输入=None, 输出=None):
             请求 = json.loads(源码行)
         except ValueError:
             continue                       # 解不了的帧直接丢（不编一个假响应）
+        # ★ 边界帧必须回**结构化错误**，绝不抛出循环：MCP 是长驻进程，一帧畸形输入 = 进程死 =
+        #   四个工具从模型侧全部消失，直到重启 ZCode。依据：库 `规则` 安全边界-1（fail-closed）。
+        if not isinstance(请求, dict):
+            _写响应报文(输出, None, None,
+                      {"code": -32700,
+                       "message": "请求必须是 JSON 对象，收到：%s" % type(请求).__name__})
+            continue
         错误码 = 请求.get("id")
         if 错误码 is None:
             continue                       # 通知：不回应
-        结果, 错误 = 派发(请求.get("method"), 请求.get("params") or {}, 仓根, 工具表)
+        参数 = 请求.get("params")
+        if 参数 is None:
+            参数 = {}
+        if not isinstance(参数, dict):
+            _写响应报文(输出, 错误码, None,
+                      {"code": -32602, "message": "params 必须是对象，收到：%s" % type(参数).__name__})
+            continue
+        try:
+            结果, 错误 = 派发(请求.get("method"), 参数, 仓根, 工具表)
+        except Exception:                  # 实现层任何异常都不许抛出循环
+            结果, 错误 = None, {"code": -32603, "message": "内部错误：%s" % (sys.exc_info()[1],)}
         _写响应报文(输出, 错误码, 结果, 错误)
     return 0
