@@ -14,7 +14,7 @@ pub fn 切分合法输入(原文: &str) -> Vec<(记号种类, String)> {
     let 输出流 = 切记号(原文).expect("切分合法输入只喂合法输入（引号配对）");
     (0..输出流.记号表.len())
         .map(|位次| {
-            let 片段 = 输出流.切片(位次).expect("区间必在界内（J6）");
+            let 片段 = 输出流.记号原文切片(位次).expect("区间必在界内（J6）");
             (输出流.记号表[位次].种类, String::from_utf8_lossy(片段).into_owned())
         })
         .collect()

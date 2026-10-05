@@ -11,7 +11,7 @@ use super::形状::{
 };
 
 /// 生成：结构 → 容器字节。**必须与 `反解` 构成往返一致**。
-pub fn 生成(容器: &容器) -> Result<Vec<u8>, 生成错误> {
+pub fn 生成容器字节(容器: &容器) -> Result<Vec<u8>, 生成错误> {
     let 预估 = 文件头魔数.len()
         + 容器.段表.len().saturating_mul(段头长度)
         + 容器.段表.iter().map(|号段| 号段.数据.len()).sum::<usize>();

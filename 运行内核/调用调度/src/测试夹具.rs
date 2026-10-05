@@ -27,15 +27,15 @@ pub(crate) static 拒绝命令被调次数: AtomicUsize = AtomicUsize::new(0);
 /// 契约类型里带裸指针（`*const u8` 等），裸指针不实现 `Sync`，而 `static` 必须 `Sync`。
 /// 表在编译期冻结且只读，别处拿到的只会是共享引用，故安全。
 /// **真实扩展的静态声明必须做同一件事**，这里顺手把这条路走通。
-pub(crate) struct 静态<项类型>(pub(crate) 项类型);
+pub(crate) struct 静态项<项类型>(pub(crate) 项类型);
 // SAFETY: 只读、无内部可变性，跨线程共享不产生数据竞争。
-unsafe impl Sync for 静态<[参数信息; 2]> {}
+unsafe impl Sync for 静态项<[参数信息; 2]> {}
 // SAFETY: 同上。
-unsafe impl Sync for 静态<[命令信息; 4]> {}
+unsafe impl Sync for 静态项<[命令信息; 4]> {}
 // SAFETY: 同上。
-unsafe impl Sync for 静态<命令信息> {}
+unsafe impl Sync for 静态项<命令信息> {}
 // SAFETY: 同上。
-unsafe impl Sync for 静态<平台信息> {}
+unsafe impl Sync for 静态项<平台信息> {}
 
 /// 零参命令：把 42 写进返回槽。
 pub(crate) unsafe extern "C" fn 零参命令(
@@ -97,7 +97,7 @@ pub(crate) unsafe extern "C" fn 慢命令(
 }
 
 /// 两参命令的参数表（**行序即契约**，测试里只为占位）。
-pub(crate) static 参数表_两参命令: 静态<[参数信息; 2]> = 静态([
+pub(crate) static 参数表_两参命令: 静态项<[参数信息; 2]> = 静态项([
     参数信息 {
         名称: c"首项".as_ptr().cast::<u8>(),
         说明: c"第一个入参".as_ptr().cast::<u8>(),
@@ -118,7 +118,7 @@ pub(crate) static 参数表_两参命令: 静态<[参数信息; 2]> = 静态([
 ///
 /// 编号是**显式字段**（`命令信息.编号`），且必须落在本声明申报的能力号段内 ——
 /// 故这里取号段的 `起`，不写字面量（口径：`项目文档/决策记录/2026-09-27_接缝反解与1对1的边界.md` §二 裁决 5）。
-pub(crate) static 命令表_测试: 静态<[命令信息; 4]> = 静态([
+pub(crate) static 命令表_测试: 静态项<[命令信息; 4]> = 静态项([
     命令信息 {
         名称: c"零参".as_ptr().cast::<u8>(),
         说明: c"测试用最小命令".as_ptr().cast::<u8>(),
@@ -200,7 +200,7 @@ pub(crate) const 测试错误码: [v1_contract::错误码信息; 1] = [v1_contra
 pub(crate) static 函数表_测试: [执行函数; 4] = [零参命令, 两参命令, 零参命令, 零参命令];
 
 /// 一张最小的平台声明：只为把公开入口 `调用` 真跑一遍。
-pub(crate) static 平台_测试: 静态<平台信息> = 静态(平台信息 {
+pub(crate) static 平台_测试: 静态项<平台信息> = 静态项(平台信息 {
     声明格式号,
     目标字宽: 64,
     保留: 0,
