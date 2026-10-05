@@ -8,7 +8,7 @@
 
 import sys
 
-from .逐行 import 带
+from .逐行 import 带高逐行
 
 
 def 入口函数(argv):
