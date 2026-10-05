@@ -48,8 +48,8 @@ export function 装菜单栏(取元素, 编辑, 依赖 = {}) {
 
   const 合上 = () => {
     if (!开着的) return;
-    开着的.盒.hidden = true;
-    开着的.钮.setAttribute("aria-expanded", "false");
+    开着的.下拉盒.hidden = true;
+    开着的.按钮.setAttribute("aria-expanded", "false");
     开着的 = null;
   };
 
@@ -145,13 +145,13 @@ export function 装菜单栏(取元素, 编辑, 依赖 = {}) {
     const 容器盒 = 摆层(顶层.项, 0);
     按钮.addEventListener("click", (事件) => {
       事件.stopPropagation();
-      if (开着的 && 开着的.钮 === 按钮) { 合上(); return; }
+      if (开着的 && 开着的.按钮 === 按钮) { 合上(); return; }
       合上();
       容器盒.hidden = false;
       按钮.setAttribute("aria-expanded", "true");
-      开着的 = { 盒: 容器盒, 钮: 按钮 };
+      开着的 = { 下拉盒: 容器盒, 按钮: 按钮 };
     });
-    按钮.addEventListener("mouseenter", () => { if (开着的 && 开着的.钮 !== 按钮) 按钮.click(); });
+    按钮.addEventListener("mouseenter", () => { if (开着的 && 开着的.按钮 !== 按钮) 按钮.click(); });
     const 顶层包 = document.createElement("div");
     顶层包.className = "易顶层包";
     顶层包.append(按钮, 容器盒);
