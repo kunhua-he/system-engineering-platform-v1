@@ -55,7 +55,7 @@ use crate::适配器;
 /// **文本**（HTTP 请求体里那串十六进制）。本索引是「文本 → 指针」的翻译表，
 /// **不是第二份端点表** —— 端点表的权威仍在 `通知通道` 里，本表只做查找。
 pub(crate) struct 通知标识项 {
-    pub(crate) 标识串: String,
+    pub(crate) 本扩展标识串: String,
     pub(crate) 指针: *const u8,
 }
 

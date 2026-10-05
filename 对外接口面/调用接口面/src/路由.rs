@@ -74,7 +74,7 @@ pub enum 拒绝 {
 
 impl 拒绝 {
     /// 协议错误的可读说明。
-    pub fn 说明(&self) -> String {
+    pub fn 说明文字(&self) -> String {
         match self {
             拒绝::路径不存在 => "路径不在端点表里（GET /接口 给出全部端点）".to_owned(),
             拒绝::路径解码失败 => "路径的百分号编码不是合法 UTF-8".to_owned(),

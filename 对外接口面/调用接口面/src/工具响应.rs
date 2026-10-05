@@ -129,7 +129,7 @@ pub(super) fn 取相对路径(工具根: &Path, 路径: &Path) -> String {
 pub(super) fn 读JSON件(路径: &Path) -> Result<协议值, String> {
     let 文本 = std::fs::read_to_string(路径).map_err(|错误| format!("读不到 {}：{错误}", 路径.display()))?;
     crate::协议解析::解析协议值(&文本)
-        .map_err(|错误| format!("{} 不是合法 JSON：{}（第 {} 字节）", 路径.display(), 错误.说明, 错误.位置))
+        .map_err(|错误| format!("{} 不是合法 JSON：{}（第 {} 字节）", 路径.display(), 错误.说明文字, 错误.位置))
 }
 
 /// 列一个目录下的**子目录名**，按名排序（顺序确定 ⇒ 读数可比）。

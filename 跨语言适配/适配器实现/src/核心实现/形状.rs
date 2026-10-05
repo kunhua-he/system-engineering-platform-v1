@@ -58,7 +58,7 @@ pub struct 参数摘要 {
 pub struct 错误码摘要 {
     pub 码: u32,
     pub 名称: String,
-    pub 说明: String,
+    pub 说明文字: String,
     pub 可重试: bool,
     pub 可自愈: bool,
     pub 需人工: bool,
@@ -69,7 +69,7 @@ pub struct 错误码摘要 {
 pub struct 能力契约 {
     pub 编号: u32,
     pub 名称: String,
-    pub 说明: String,
+    pub 说明文字: String,
     /// **行序即契约**：调用方按本向量的顺序填 `参数`。
     pub 参数表: Vec<参数摘要>,
     /// 返回类型标签；`0` = 无返回值。
