@@ -150,9 +150,35 @@ cd "$ROOT" || exit 1
 # ① 闸 0（声明侧 + 实现侧）—— 实测 2.4 s 级，进得去 5 秒硬顶 ⇒ 与案例同进每提交路径。
 #    先跑它：它比案例快得多，坏了当场拒，不必等编译。
 #    注：本步只跑 python3，不依赖下面的 构建环境/进入.sh。
-python3 构建装配/一键验证/闸0.py
+#    ★ 子进程加 5 秒 timeout（2026-10-05 修 · 审计 B-7）：原先只事后量、无 timeout ⇒ 卡死即挂死。
+#    ★ 瞬时超顶自动复跑一次（2026-10-05 修 · 审计 B-10）：并发腿抢 CPU 会把闸 0 顶过 5 秒
+#      （实测 5578/5793/6688 ms），那是读数被污染、不是代码坏了 ⇒ 复跑一次，仍超才红。
+run_gate0() {
+  python3 -c '
+import subprocess, sys
+try:
+    sys.exit(subprocess.run([sys.executable, "构建装配/一键验证/闸0.py"], timeout=5).returncode)
+except subprocess.TimeoutExpired:
+    sys.stderr.write("门禁：闸 0 超时（> 5 s）—— 五秒硬顶无例外\n")
+    sys.exit(3)
+'
+}
+GATE0_OUT=$(run_gate0 2>&1)
 CODE=$?
 if [ "$CODE" -ne 0 ]; then
+  case "$GATE0_OUT" in
+    *超顶*|*超时*)
+      echo "门禁：闸 0 瞬时超顶（并发腿抢 CPU 的可能）—— 自动复跑一次…" >&2
+      GATE0_OUT=$(run_gate0 2>&1)
+      CODE=$?
+      if [ "$CODE" -eq 0 ]; then
+        echo "门禁：闸 0 瞬时超顶（已复跑）⇒ 通过" >&2
+      fi
+      ;;
+  esac
+fi
+if [ "$CODE" -ne 0 ]; then
+  printf '%s\n' "${GATE0_OUT}" >&2
   echo "门禁：闸 0 不过（退出码 ${CODE}）⇒ 拒提交" >&2
   exit 1
 fi
