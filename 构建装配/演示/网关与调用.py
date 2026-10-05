@@ -137,7 +137,7 @@ def 停网关(进程) -> dict:
         time.sleep(0.02)
     try:
         进程.kill()
-        进程.wait(timeout=2.0)
+        进程.wait(timeout=停等秒)
     except (OSError, subprocess.TimeoutExpired) as 错误:
         return {"读法": "poll", "结果": "强杀没收住", "原因": str(错误)}
     return {"读法": "poll", "结果": "已停", "停法": "强杀（SIGKILL）", "退出码": 进程.returncode}
@@ -212,7 +212,7 @@ def 跑主链(壳起表=None) -> int:
         清了的 = 清扫残部()
         if 清了的:
             打印文本("   清掉早先残部：{}".format(" · ".join(清了的)))
-        网关件 = 备网关产物([本次扩展])
+        网关件 = 备网关产物()
         打印文本("   网关产物 {}（{} 字节{}）".format(
             网关件["路径"], 网关件["字节数"], "，现编" if 网关件["现编"] else ""))
         暂存 = 搭暂存(动态库)

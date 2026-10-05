@@ -5,6 +5,7 @@ import os
 from pathlib import Path
 
 from .常量 import 仓根, 制品落点
+from 构建制品.制品 import 检查制品  # 制品不可变判据的唯一实现（装配侧写清单 / --检查 同一条）
 
 
 def 制品目录(标识: str) -> Path:
@@ -25,19 +26,14 @@ def 列制品() -> list:
 
 
 def 制品不可变读数(标识: str) -> tuple:
-    """重算制品清单里的每个文件指纹（判据：0 处不符 · 0 个清单外文件 · 0 个缺件）。"""
-    import hashlib
+    """重算制品清单里的每个文件指纹（判据：0 处不符 · 0 个清单外文件 · 0 个缺件）。
 
-    目录 = 制品目录(标识)
-    记的 = 读清单(标识).get("文件清单", {})
-    现在 = {}
-    for 路径 in sorted(目录.rglob("*")):
-        if 路径.is_file() and 路径.name != "制品清单.json":
-            现在[路径.relative_to(目录).as_posix()] = hashlib.sha256(路径.read_bytes()).hexdigest()
-    不符 = [键名 for 键名, 待处理值 in 记的.items() if 现在.get(键名) != 待处理值]
-    多余 = [键名 for 键名 in 现在 if 键名 not in 记的]
-    缺件 = [键名 for 键名 in 记的 if 键名 not in 现在]
-    return 不符, 多余, 缺件
+    实现**只有一份**：`构建装配/上线切换/构建制品/制品.py::检查制品`（装配侧写清单、装配档
+    `--检查`、装载前校验都走它）。本件不再自留 `rglob` 一套 —— 两套的差别正是「跳过目录
+    （`__pycache__` / `target` 等）过不过滤」：rglob 那套对含跳过目录的制品会给出与装配侧相反的
+    结论（`--检查` 绿而 `装载` 拒），违「同一职责一套实现」（第 4 轮审计点名）。
+    """
+    return 检查制品(制品目录(标识))
 
 
 def 流量端口() -> int:
