@@ -100,6 +100,19 @@ def 读范围(参数, 工作树) -> tuple:
     return 范围表, ""
 
 
+def 读文件范围(参数, 工作树) -> tuple:
+    """`文件范围` 参数 ⇒ `(仓内相对路径集合, 错误)`。留空 ⇒ `(None, "")`（= 不按件收窄）。"""
+    if 参数 is None or (isinstance(参数, list) and not 参数):
+        return None, ""
+    if not isinstance(参数, list):
+        return None, "`文件范围` 要是路径表（仓内相对路径），收到 %s" % type(参数).__name__
+    件范围 = {str(路径).strip() for 路径 in 参数 if str(路径 or "").strip()}
+    不在 = sorted(路径 for 路径 in 件范围 if not (工作树 / 路径).is_file())
+    if 不在:
+        return None, "这些件在工作树里不是文件：%s" % " · ".join(不在)
+    return 件范围, ""
+
+
 # 走树读件的面：代码件后缀 · 整枝跳过的目录（与 `命名校验` 同一套口径）。
 代码后缀 = (".rs", ".py", ".js", ".ts", ".vue")
 跳过目录 = (".git", "__pycache__", ".codegraph", "只读参考", "node_modules")
@@ -231,6 +244,9 @@ def 派发(参数表: dict, 仓根) -> tuple:
         范围表, 错误 = 读范围(参数表.get("路径范围"), 工作树)
         if 错误:
             return 2, 错误
+        件范围, 错误 = 读文件范围(参数表.get("文件范围"), 工作树)
+        if 错误:
+            return 2, 错误
 
         # 闸 ④ 新名登记（fail-closed）：名册读不动 ⇒ 拒，绝不当空名册放行。
         try:
@@ -251,6 +267,10 @@ def 派发(参数表: dict, 仓根) -> tuple:
         待改表, 越区表 = {}, {}
         for 路径, 次数表 in 命中表.items():
             (待改表 if 路径.split("/", 1)[0] in 范围表 else 越区表)[路径] = 次数表
+        件外表 = {}
+        if 件范围 is not None:
+            for 路径 in [路径 for 路径 in 待改表 if 路径 not in 件范围]:
+                件外表[路径] = 待改表.pop(路径)
         if 越区表 and not bool(参数表.get("越区确认")):
             return 3, ("**拒**（越区闸）：旧名在给定范围 %s **之外**也出现 ⇒ 要么把那些顶层区加进"
                      " `路径范围`，要么显式 `越区确认` = 真（只改范围内、范围外留着）：\n%s"
@@ -310,6 +330,10 @@ def 派发(参数表: dict, 仓根) -> tuple:
         if 退出码 != 0:
             输出行表.append("**索引没刷上（退出码 %d）** ⇒ 索引没跟上，下次 `v1_symbol` 会读到旧行号；"
                         "修法：`python3 开发工具/代码地图.py 建`" % 退出码)
+        if 件外表:
+            输出行表.append("★ `文件范围` 外**没改**（有意留着的那一半语义群）：%s" % " · ".join(
+                "%s（%s）" % (路径, " · ".join("%s×%d" % (项名, 处数) for 项名, 处数 in sorted(次数表.items())))
+                for 路径, 次数表 in sorted(件外表.items())))
         if 越区表:
             输出行表.append("★ 范围外**没改**（已显式确认）：%s" % " · ".join(
                 "%s（%s）" % (路径, " · ".join("%s×%d" % (名目, 处数) for 名目, 处数 in sorted(次数表.items())))
