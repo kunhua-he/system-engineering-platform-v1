@@ -32,6 +32,10 @@
     python3 构建装配/一键验证/闸0.py
 
 退出码：两条闸都 0 ⇒ 0；任一非 0 ⇒ 1。两条闸的读数逐行并排打印；失败的那条把明细透传。
+
+★ **全量 `闸0.py` ≠ 提交放行**（2026-10-05 补 · 审计 B-10）：pre-commit 钩子（`测试验证/案例/装门禁.sh`）
+在闸 0 之外**另跑**判据自测（`一键验证.py --自测`，实测 6.4 s，装不进 5 秒硬顶）与全部案例（cargo），
+任一红即拒提交 ⇒ 「闸 0 绿」是提交放行的**必要一环**，不是全部（全量 `v1_gate` 亦只跑闸 0）。
 """
 import re
 import subprocess
@@ -60,10 +64,19 @@ def 入口函数(参数: list) -> int:
     print("")
     # **串行**（不并发）：并发会让闸 1 的 ⑱ 读到被抢 CPU 的墙钟 ⇒ 假红（见文件头）。
     for 名称, 相对 in 闸表:
-        结果 = subprocess.run(
-            [sys.executable, str(仓根 / 相对)],
-            cwd=str(仓根), capture_output=True, text=True,
-        )
+        # ★ 子进程 5 秒 timeout（2026-10-05 修 · 审计 B-7）：原先只**事后量**、子进程无 timeout
+        #   ⇒ CLI / pre-commit 路径一旦卡死就挂死（MCP 侧已有 `timeout=5`）。超时 = 判红并报「超时」。
+        try:
+            结果 = subprocess.run(
+                [sys.executable, str(仓根 / 相对)],
+                cwd=str(仓根), capture_output=True, text=True, timeout=5,
+            )
+        except subprocess.TimeoutExpired:
+            全过 = False
+            print(f"  {名称} ｜ {相对}")
+            print("    退出码 超时 ｜ （超时：本闸 > 5 s 未返回 —— 五秒硬顶无例外）")
+            明细.append((名称, 相对, "超时：%s 未在 5 s 内返回" % 相对))
+            continue
         命中 = 读数行模式.search(结果.stdout or "")
         读数 = 命中.group(0).strip() if 命中 else "（没有读出「通过 …」那一行）"
         全过 = 全过 and (结果.returncode == 0)

@@ -98,7 +98,9 @@ usage() {
 
   sh 开发工具/并行工作树.sh 新建 <腿名>    建一条腿的工作树（独立检出 + 独立构建缓存）
   sh 开发工具/并行工作树.sh 列出           列出所有工作树与各自的构建缓存占用
-  sh 开发工具/并行工作树.sh 移除 <腿名>    移除一条腿的工作树（先确认它已收工）
+  sh 开发工具/并行工作树.sh 移除 <腿名> [强制]
+                                           移除一条腿的工作树（脏树拒；显式「强制」才丢未提交改动）
+  sh 开发工具/并行工作树.sh 路径 <腿名>    打印该腿工作树的绝对路径（不建、不删）
   sh 开发工具/并行工作树.sh 自检           检查本机制是否真的隔离（不靠看，靠量）
 
 腿名用 ASCII（分支名要能进 git ref）：字母 · 数字 · 短横线。
@@ -151,9 +153,35 @@ case "${1:-}" in
     ;;
   移除)
     leg="${2:-}"
+    FORCE="${3:-}"
     if [ -z "$leg" ]; then echo "缺腿名。" >&2; exit 1; fi
-    git worktree remove --force "$TREES/$leg"
+    # ★ 脏就拒（2026-10-05 修 · 审计 B-6）：原先无条件 `--force` ⇒ 未提交的改动被静默删、无提示。
+    #   `git status --porcelain` 尊重 .gitignore（构建缓存 / venv / .codegraph 不算脏）。
+    # ★ 变量名一律 ASCII —— bash 3.2 不认非 ASCII 变量名（见本文件顶部三条实测）。
+    DIRTY=$(git -C "$TREES/$leg" status --porcelain 2>/dev/null) || DIRTY=''
+    if [ -n "$DIRTY" ]; then
+      NDIRTY=$(printf '%s\n' "$DIRTY" | grep -c . || true)
+      if [ "$FORCE" != "强制" ] && [ "$FORCE" != "--强制" ]; then
+        echo "移除：$TREES/$leg 有 ${NDIRTY} 件未提交的改动 ⇒ **拒绝移除**（这些改动会丢）。" >&2
+        echo "      先提交 / 用 功能=3 释放；确认要丢就显式：sh 开发工具/并行工作树.sh 移除 $leg 强制" >&2
+        printf '%s\n' "$DIRTY" >&2
+        exit 1
+      fi
+      echo "移除：$TREES/$leg 有 ${NDIRTY} 件未提交的改动 —— **显式强制**，连同未提交改动一起删。" >&2
+    fi
+    if [ "$FORCE" = "强制" ] || [ "$FORCE" = "--强制" ]; then
+      git worktree remove --force "$TREES/$leg"
+    else
+      git worktree remove "$TREES/$leg"
+    fi
     echo "已移除 $TREES/${leg}（分支 腿/$leg 保留，便于查它的提交）"
+    ;;
+  路径)
+    leg="${2:-}"
+    if [ -z "$leg" ]; then echo "缺腿名。" >&2; exit 1; fi
+    # 打印该腿工作树的绝对路径（供 开工.py 在**建树之前**占住账本行 —— 目录名的唯一定义仍在本件）。
+    mkdir -p "$TREES"
+    echo "$(cd "$TREES" && pwd)/$leg"
     ;;
   自检)
     # 判据：**不靠看，靠量**——两条腿的构建缓存目录必须是两个不同的物理目录。
