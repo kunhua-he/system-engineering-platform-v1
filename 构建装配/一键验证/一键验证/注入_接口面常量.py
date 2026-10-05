@@ -8,6 +8,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from .常量 import 命令行件, 接口面件
+from .判据_网页端点 import 网页面件
 
 
 def 注入_接口面常量不一致(临根: Path) -> str:
@@ -37,3 +38,17 @@ def 注入_案例布局不一致(临根: Path) -> str:
     assert 改后 != 文本, "样本前置条件不成立：夹具后端件里没有 `案例回执件 = \"运行回执.jsonl\"`"
     路径.write_text(改后, encoding="utf-8")
     return 接口面件
+
+
+def 注入_网页端点漂移(临根: Path) -> str:
+    """把合成仓**网页件**的 `路径_调用` 改一个字 ⇒ 判据 ㊾ 当场红（权威侧仍是原值）。
+
+    专证这条判据不是空转：网页应用与接口面各写一份端点路径，漂了必须有人抓。改的是
+    **网页**那一侧（接口面 `常量.rs` 是权威，网页跟着它走）。
+    """
+    路径 = 临根 / 网页面件
+    文本 = 路径.read_text(encoding="utf-8")
+    改后 = 文本.replace('const 路径_调用 = "/接口/调用";', 'const 路径_调用 = "/接口/调用错";', 1)
+    assert 改后 != 文本, "样本前置条件不成立：夹具网页件里没有 `const 路径_调用 = \"/接口/调用\";`"
+    路径.write_text(改后, encoding="utf-8")
+    return 网页面件
