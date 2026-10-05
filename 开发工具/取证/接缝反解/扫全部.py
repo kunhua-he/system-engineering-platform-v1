@@ -17,7 +17,7 @@ def 扫全部(目录):
     for 样本路径 in sorted(glob.glob(os.path.join(目录, "**", "*.fne"), recursive=True)):
         总件数 += 1
         try:
-            ex = PE(open(样本路径, "rb").read(), 样本路径).导出(); 分布[len(ex)] = 分布.get(len(ex), 0) + 1
+            ex = PE(open(样本路径, "rb").read(), 样本路径).解导出表(); 分布[len(ex)] = 分布.get(len(ex), 0) + 1
             读数 = 反解接缝(样本路径); 声明数 = 读数["字典"]["m_nCmdCount"]; 槽数, 多 = 读数["物理槽"]; 判词 = 计数判定(读数)
             print("%-24s %5d %6d %8s  %s" % (os.path.basename(样本路径), len(ex), 声明数, "不适用" if 槽数 is None else 槽数, 判词))
             if 判词 == "不齐":

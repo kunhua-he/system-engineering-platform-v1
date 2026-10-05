@@ -55,7 +55,7 @@ impl JSON值 {
     }
 
     /// 非负整数：`3.0` 算整数，`3.5` 不算（**不截断**——截断会把写错的数当对的用）。
-    pub fn 整数(&self) -> Option<u64> {
+    pub fn 取整数(&self) -> Option<u64> {
         let 数值 = self.取数值()?;
         if 数值 < 0.0 || 数值.fract() != 0.0 || 数值 > u64::MAX as f64 {
             return None;
@@ -328,12 +328,12 @@ mod 测试 {
         assert_eq!(待处理值.取成员("案例名").and_then(|一项| 一项.取字符串()), Some("反解"));
         assert_eq!(待处理值.取成员("步骤").and_then(|一项| 一项.取数组()).map(<[JSON值]>::len), Some(1));
         assert_eq!(
-            待处理值.取成员("步骤").and_then(|步骤值| 步骤值.取数组()).and_then(|步骤值| 步骤值.first()).and_then(|步骤值| 步骤值.取成员("能力编号")).and_then(|一项| 一项.整数()),
+            待处理值.取成员("步骤").and_then(|步骤值| 步骤值.取数组()).and_then(|步骤值| 步骤值.first()).and_then(|步骤值| 步骤值.取成员("能力编号")).and_then(|一项| 一项.取整数()),
             Some(1105)
         );
         assert_eq!(待处理值.取成员("结果").and_then(|一项| 一项.真假()), Some(true));
         assert!(matches!(待处理值.取成员("无"), Some(JSON值::空值)));
-        assert_eq!(待处理值.取成员("数").and_then(|一项| 一项.整数()), Some(1568));
+        assert_eq!(待处理值.取成员("数").and_then(|一项| 一项.取整数()), Some(1568));
     }
 
     /// 反向样本：坏输入必须报错（不是静默给一个空值）。
@@ -356,9 +356,9 @@ mod 测试 {
     /// 反向样本：`3.5` 不是整数（截断会把写错的数当对的用）。
     #[test]
     fn 小数不算整数() {
-        assert_eq!(解析JSON("3.5").整数(), None);
-        assert_eq!(解析JSON("3.0").整数(), Some(3));
-        assert_eq!(解析JSON("-1").整数(), None);
+        assert_eq!(解析JSON("3.5").取整数(), None);
+        assert_eq!(解析JSON("3.0").取整数(), Some(3));
+        assert_eq!(解析JSON("-1").取整数(), None);
     }
 
     #[test]

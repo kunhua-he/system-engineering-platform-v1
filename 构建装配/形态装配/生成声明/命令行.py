@@ -6,7 +6,7 @@ import os
 import sys
 
 from .路径形状 import 仓根, 生成器相对路径, 生成失败, 默认声明根
-from .检查 import 报提醒, 检查
+from .检查 import 报提醒, 检查声明
 from .生成流程 import 建声明根, 生成声明, 落盘件表
 from .渲染接缝 import 接缝路径, 渲染接缝, 读导出目标
 
@@ -106,7 +106,7 @@ def 入口函数(参数):
         if 接缝模式:
             return 出接缝(根目录, 检查模式)
         if 检查模式:
-            return 检查(根目录)
+            return 检查声明(根目录)
         新件, 计数, 提醒 = 生成声明(根目录)
         总字节 = 0
         for 相对 in 落盘件表(根目录):
