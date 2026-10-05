@@ -27,6 +27,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import 表定义  # noqa: E402
 import 验证  # noqa: E402
+from 命名定义表页 import 命名定义表页  # noqa: E402
 
 页面样式 = """
 body{font:13px/1.7 -apple-system,"Songti SC",serif;margin:0;color:#000;background:#fff}
@@ -51,7 +52,7 @@ th{background:#ececec;position:sticky;top:0}
 """
 
 导航栏 = """<header><b>信息核心</b>
-<a href="/">内核咬合图</a><a href="/命名">命名</a><a href="/规则">规则</a>
+<a href="/">内核咬合图</a><a href="/命名">命名</a><a href="/命名定义表">命名定义表</a><a href="/规则">规则</a>
 <a href="/条款">条款</a><a href="/文档">文档账本</a><a href="/未完成">未完成</a>
 <a href="/接口">接口</a><a href="/查询">查询</a></header>"""
 
@@ -335,7 +336,8 @@ def 查询页(连接, sql: str) -> bytes:
 
 
 # ── 路由 ──────────────────────────────────────────────────────────
-路由表 = {"/": 内核咬合图页, "/命名": 命名页, "/规则": 规则页, "/文档": 文档页,
+路由表 = {"/": 内核咬合图页, "/命名": 命名页,
+        "/命名定义表": lambda 连接: 命名定义表页(连接), "/规则": 规则页, "/文档": 文档页,
         "/条款": lambda 连接: 条款页(连接, ""), "/未完成": 未完成页, "/接口": 接口页}
 
 
@@ -373,3 +375,4 @@ def 起页面(端口: int = 表定义.默认端口) -> None:
     服务 = ThreadingHTTPServer(("127.0.0.1", 端口), 页面处理器)
     print(f"信息核心页面：http://127.0.0.1:{端口}/　（Ctrl-C 退）")
     服务.serve_forever()
+
