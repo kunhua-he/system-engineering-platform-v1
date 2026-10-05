@@ -57,14 +57,14 @@ from 构建装配.门禁 import 自门禁  # noqa: E402
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from 准入判据.报告 import 跑单条判据, 扫一遍, 打印报告, 打印清单  # noqa: E402
-from 准入判据.样本 import 自测  # noqa: E402
+from 准入判据.样本 import 跑自测  # noqa: E402
 from 准入判据.世界 import 判读世界, 找仓根  # noqa: E402
 
 
 def 入口函数(参数) -> int:
     根目录 = 找仓根()
     if "--自测" in 参数:
-        return 自测()
+        return 跑自测()
     if "--清单" in 参数:
         打印清单()
         return 0

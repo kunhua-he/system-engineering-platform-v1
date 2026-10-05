@@ -32,7 +32,7 @@ def 比扩展自洽(结果: dict, 声明根表: dict) -> None:
         if not 能力:
             continue
         登记 = set()
-        for _键, (声明值, _) in (声明根表[根目录].get("错误码表") or {}).items():
+        for _键名, (声明值, _) in (声明根表[根目录].get("错误码表") or {}).items():
             错误码 = 声明值.get("码")
             if 是整数(错误码):
                 登记.add(错误码)

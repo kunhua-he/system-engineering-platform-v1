@@ -22,7 +22,7 @@ use crate::语言面::{节点, 节点种类, 语法树};
 pub(crate) struct 草稿 {
     pub 种类: 节点种类,
     pub 取片段字节区间: (u32, u32),
-    pub 子: Vec<u32>,
+    pub 子节点下标表: Vec<u32>,
 }
 
 /// 草稿表（建树期间的临时容器）。
@@ -33,12 +33,12 @@ pub(crate) struct 草稿表 {
 
 impl 草稿表 {
     pub(crate) fn 追加叶节点(&mut self, 种类: 节点种类, 区间起点: u32, 区间终点: u32) -> u32 {
-        self.表.push(草稿 { 种类, 取片段字节区间: (区间起点, 区间终点), 子: Vec::new() });
+        self.表.push(草稿 { 种类, 取片段字节区间: (区间起点, 区间终点), 子节点下标表: Vec::new() });
         (self.表.len() - 1) as u32
     }
 
-    pub(crate) fn 节点(&mut self, 种类: 节点种类, 取片段字节区间: (u32, u32), 子: Vec<u32>) -> u32 {
-        self.表.push(草稿 { 种类, 取片段字节区间, 子 });
+    pub(crate) fn 节点(&mut self, 种类: 节点种类, 取片段字节区间: (u32, u32), 子节点下标表: Vec<u32>) -> u32 {
+        self.表.push(草稿 { 种类, 取片段字节区间, 子节点下标表 });
         (self.表.len() - 1) as u32
     }
 
@@ -55,7 +55,7 @@ impl 草稿表 {
     }
 
     pub(crate) fn 取子节点(&self, 下标: u32) -> &[u32] {
-        &self.表[下标 as usize].子
+        &self.表[下标 as usize].子节点下标表
     }
 
     /// 扁平化成先序节点表：**每个子节点都带着它的整棵子树**（见文件头）。
@@ -73,7 +73,7 @@ impl 草稿表 {
             输出缓冲.push(节点::叶节点(草稿节点.种类, 草稿节点.取片段字节区间));
             输出缓冲[位置 as usize].子节点区间 = 语法树::先序子区间(位置, 大小[节点位 as usize] - 1);
             // 逆序入栈 ⇒ 出栈即先序。
-            待展开栈.extend(草稿节点.子.iter().rev().copied());
+            待展开栈.extend(草稿节点.子节点下标表.iter().rev().copied());
         }
         输出缓冲
     }
@@ -87,7 +87,7 @@ impl 草稿表 {
         let mut 大小 = vec![0u32; self.表.len()];
         let mut 待结算栈: Vec<(u32, usize)> = vec![(根目录, 0)];
         while let Some((节点位, 子序)) = 待结算栈.pop() {
-            let 子节点表 = &self.表[节点位 as usize].子;
+            let 子节点表 = &self.表[节点位 as usize].子节点下标表;
             match 子节点表.get(子序) {
                 Some(&子下标) => {
                     待结算栈.push((节点位, 子序 + 1));

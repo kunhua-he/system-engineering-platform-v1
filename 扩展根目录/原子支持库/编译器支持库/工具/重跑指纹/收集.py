@@ -4,11 +4,11 @@ import hashlib
 import json
 import os
 
-from .常量 import 扩展根, 指纹件
+from .常量 import 扩展根路径, 指纹件
 
 
 def 相对路径(路径):
-    return os.path.relpath(路径, 扩展根).replace(os.sep, "/")
+    return os.path.relpath(路径, 扩展根路径).replace(os.sep, "/")
 
 
 def 收集指纹文件():
@@ -16,19 +16,19 @@ def 收集指纹文件():
     文件 = []
     顶层声明 = ("包声明.json",)
     for 名称 in 顶层声明:
-        路径 = os.path.join(扩展根, 名称)
+        路径 = os.path.join(扩展根路径, 名称)
         if os.path.isfile(路径):
             文件.append(路径)
-    实现 = os.path.join(扩展根, "Cargo.toml")
+    实现 = os.path.join(扩展根路径, "Cargo.toml")
     if os.path.isfile(实现):
         文件.append(实现)
     for 目录 in ("能力声明", "错误码表", "类型声明"):
-        根目录 = os.path.join(扩展根, 目录)
+        根目录 = os.path.join(扩展根路径, 目录)
         if os.path.isdir(根目录):
             for 名称 in sorted(os.listdir(根目录)):
                 if 名称.endswith(".json"):
                     文件.append(os.path.join(根目录, 名称))
-    src = os.path.join(扩展根, "src")
+    src = os.path.join(扩展根路径, "src")
     for 当前, _子目录s, 名s in os.walk(src):
         for 名称 in 名s:
             if 名称.endswith(".rs"):
@@ -45,7 +45,7 @@ def 算指纹(路径):
 
 
 def 算指纹表():
-    return {相对路径: 算指纹(os.path.join(扩展根, 相对路径)) for 相对路径 in 收集指纹文件()}
+    return {相对路径: 算指纹(os.path.join(扩展根路径, 相对路径)) for 相对路径 in 收集指纹文件()}
 
 
 def 读旧指纹表():

@@ -32,7 +32,7 @@ from .退出码 import 自检_退出码语义
 from .验证 import 跑全量判据
 
 
-def 自测(源仓根: Path) -> int:
+def 跑自测(源仓根: Path) -> int:
     """逐条判据跑「反向样本 + 正向样本」，并给出每条的身份证。"""
     import tempfile
 

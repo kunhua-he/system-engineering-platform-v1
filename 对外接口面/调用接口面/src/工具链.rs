@@ -112,8 +112,8 @@ pub fn 跑命令(程序: &Path, 参数: &[&str], 工作目录: &Path) -> Result<
             说明文字: 错误.to_string(),
         })?;
     // 管道**并发抽干**：不抽的话子进程写满管道缓冲就阻塞，超时会被误报成「挂住」。
-    let 抽输出 = 子进程.stdout.take().map(|管道| std::thread::spawn(move || 抽干(管道)));
-    let 抽错误 = 子进程.stderr.take().map(|管道| std::thread::spawn(move || 抽干(管道)));
+    let 抽输出 = 子进程.stdout.take().map(|管道| std::thread::spawn(move || 抽干管道(管道)));
+    let 抽错误 = 子进程.stderr.take().map(|管道| std::thread::spawn(move || 抽干管道(管道)));
     let 超时上限 = Duration::from_millis(跑命令超时毫秒);
     let 起点 = Instant::now();
     let 退出码 = loop {
@@ -148,7 +148,7 @@ pub fn 跑命令(程序: &Path, 参数: &[&str], 工作目录: &Path) -> Result<
 }
 
 /// 抽干一个子进程管道到字节集（读到 EOF 为止；坏字节不丢）。
-fn 抽干(mut 管道: impl Read) -> Vec<u8> {
+fn 抽干管道(mut 管道: impl Read) -> Vec<u8> {
     let mut 缓冲 = Vec::new();
     let _ = 管道.read_to_end(&mut 缓冲);
     缓冲

@@ -125,7 +125,7 @@ export function 装支持库树(取元素, 钩子) {
     const 根盒 = 建元素("div", "树子");
     for (const 段项 of 号段) {
       const 数据槽 = 枝表.get(段项.名);
-      const 条数 = 数据槽.直挂.length + [...数据槽.扩.values()].reduce((累加和, 一项) => 累加和 + 一项.能.length, 0);
+      const 条数 = 数据槽.直挂.length + [...数据槽.扩.values()].reduce((累加和, 扩展条目) => 累加和 + 扩展条目.能.length, 0);
       总数 += 条数;
       const 段行 = 建行(0, 段项.名 + "（" + 段项.起 + "–" + 段项.止 + "）", "段",
         条数 ? "▾" : "", 条数 + " 条");
@@ -133,12 +133,12 @@ export function 装支持库树(取元素, 钩子) {
       根盒.append(段行);
       if (!条数) continue;
       const 段盒 = 建元素("div", "树子");
-      for (const 一项 of 数据槽.扩.values()) {
-        const 扩行 = 建行(1, 一项.扩.名 + "（" + 一项.扩.起 + "–" + 一项.扩.止 + "）", "模块",
-          "▾", 一项.能.length + " 条");
-        扩行.title = 种类说明(一项.扩.种类);
+      for (const 扩展条目 of 数据槽.扩.values()) {
+        const 扩行 = 建行(1, 扩展条目.扩.名 + "（" + 扩展条目.扩.起 + "–" + 扩展条目.扩.止 + "）", "模块",
+          "▾", 扩展条目.能.length + " 条");
+        扩行.title = 种类说明(扩展条目.扩.种类);
         const 扩盒 = 建元素("div", "树子");
-        for (const 能力 of 一项.能) 扩盒.append(建叶(2, 能力));
+        for (const 能力 of 扩展条目.能) 扩盒.append(建叶(2, 能力));
         接折标(扩行, 扩盒);
         段盒.append(扩行);
         段盒.append(扩盒);

@@ -47,10 +47,10 @@ def 印失败(状态行: str, 应答体: dict) -> int:
     elif isinstance(应答体.get("校验"), list):
         # `POST /接口/声明` 的失败形状（§四）：逐条「项 · 缺什么 · 为什么不能自愈」。
         print("  校验（{} 条）：".format(len(应答体["校验"])))
-        for 序号, 一条 in enumerate(应答体["校验"], 1):
-            print("   {}. 项：{}".format(序号, 一条.get("项")))
-            print("      缺什么：{}".format(一条.get("缺什么")))
-            print("      为什么不能自愈：{}".format(一条.get("为什么不能自愈")))
+        for 序号, 校验条目 in enumerate(应答体["校验"], 1):
+            print("   {}. 项：{}".format(序号, 校验条目.get("项")))
+            print("      缺什么：{}".format(校验条目.get("缺什么")))
+            print("      为什么不能自愈：{}".format(校验条目.get("为什么不能自愈")))
     elif "协议错误" in 应答体:
         print("  协议错误：{}".format(应答体["协议错误"]))
     else:

@@ -111,10 +111,10 @@ export function 装编辑器(取元素) {
   const 选中 = 取元素("示例选");
   const 状态 = 取元素("工具状态");
   示例表.forEach(([标签], 位置) => {
-    const 一项 = document.createElement("option");
-    一项.value = String(位置);
-    一项.textContent = 标签;
-    选中.append(一项);
+    const 选项元素 = document.createElement("option");
+    选项元素.value = String(位置);
+    选项元素.textContent = 标签;
+    选中.append(选项元素);
   });
 
   // 工具条的「打开」也走这里，所以只写一份（载入示例）。

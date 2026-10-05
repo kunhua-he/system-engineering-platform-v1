@@ -77,7 +77,7 @@ def _行数工具(上层读数: dict):
     import importlib
     import sys as _sys
 
-    根目录 = str(常量.仓根目录 / "开发工具")
+    根目录 = str(常量.仓根 / "开发工具")
     if 根目录 not in _sys.path:
         _sys.path.insert(0, 根目录)
     import 查文件行数.核心 as 核心

@@ -21,29 +21,29 @@ const 编译族 = new Set(["0x8053", "0x8090", "0x808f", "0x80d4",
   "0x80d9", "0x80da", "0x80db", "0x80dc", "0x80e1", "0x80e4", "0x80e5", "0x808d"]);
 
 /** 助记字加下划线：`&` 只是标记，资源里真正显示的是「下一个字带下划线」。 */
-function 摆文字(一项) {
+function 摆文字(菜单项) {
   const 容器盒 = document.createElement("span");
-  if (一项.助记位 < 0) {
-    容器盒.textContent = 一项.文字;
+  if (菜单项.助记位 < 0) {
+    容器盒.textContent = 菜单项.文字;
     return 容器盒;
   }
-  容器盒.append(一项.文字.slice(0, 一项.助记位));
+  容器盒.append(菜单项.文字.slice(0, 菜单项.助记位));
   const 下划线 = document.createElement("u");
-  下划线.textContent = 一项.文字[一项.助记位];
-  容器盒.append(下划线, 一项.文字.slice(一项.助记位 + 1));
+  下划线.textContent = 菜单项.文字[菜单项.助记位];
+  容器盒.append(下划线, 菜单项.文字.slice(菜单项.助记位 + 1));
   return 容器盒;
 }
 
 export function 装菜单栏(取元素, 编辑, 依赖 = {}) {
   const 菜单栏 = 取元素("易菜单栏");
   // 菜单读数原来住「中带」，现在住最底下那条状态条（参考图 y=742..754 那一条）。
-  const 一条 = 取元素("条_菜单");
+  const 菜单状态条 = 取元素("条_菜单");
   const 切页签 = 依赖.切页签;
   let 开着的 = null;
 
   const 报状态 = (文本, 颜色) => {
-    一条.textContent = 文本;
-    一条.className = "格" + (颜色 === "好" ? " 好" : 颜色 === "坏" ? " 坏" : "");
+    菜单状态条.textContent = 文本;
+    菜单状态条.className = "格" + (颜色 === "好" ? " 好" : 颜色 === "坏" ? " 坏" : "");
   };
 
   const 合上 = () => {
@@ -57,7 +57,7 @@ export function 装菜单栏(取元素, 编辑, 依赖 = {}) {
    * 非编译族：把命令编号发去 `POST /接口/菜单命令`，把结构化回执摆到「提示」栏。
    * 本页**不预判**这条命令落没落 —— 后端此刻一律回 `9001`，将来落了地本页不用改一行。
    */
-  const 问后端 = async (一项, 头部) => {
+  const 问后端 = async (菜单项, 头部) => {
     const 状态 = 取元素("菜单命令状态");
     const 结果 = 取元素("菜单命令果");
     if (切页签) 切页签("提示");
@@ -66,12 +66,12 @@ export function 装菜单栏(取元素, 编辑, 依赖 = {}) {
       return;
     }
     清空容器(结果);
-    写状态(状态, "问后端 " + 一项.编号 + " …");
+    写状态(状态, "问后端 " + 菜单项.编号 + " …");
     try {
-      const 造应答 = await 发菜单命令(一项.编号);
+      const 造应答 = await 发菜单命令(菜单项.编号);
       摆应答(结果, 造应答);
       const 摘要结果 = 取应答摘要(造应答.体);
-      写状态(状态, "命令 " + 一项.编号 + " · HTTP " + 造应答.状态 + " · " + 摘要结果.词,
+      写状态(状态, "命令 " + 菜单项.编号 + " · HTTP " + 造应答.状态 + " · " + 摘要结果.词,
         摘要结果.类 === "好" ? true : 摘要结果.类 === "坏" ? false : undefined);
       报状态(头部 + " · 已问后端（POST /接口/菜单命令）：HTTP " + 造应答.状态 + " · " + 摘要结果.词
         + " —— 结构化回执见「提示」栏", 摘要结果.类 === "好" ? "好" : "坏");
@@ -83,52 +83,52 @@ export function 装菜单栏(取元素, 编辑, 依赖 = {}) {
     }
   };
 
-  const 点叶子 = (一项) => {
+  const 点叶子 = (菜单项) => {
     合上();
-    const 头部 = "命令 " + 一项.编号 + " · " + 一项.文字 + (一项.快捷键 ? " " + 一项.快捷键 : "");
-    if (编译族.has(一项.编号)) {
+    const 头部 = "命令 " + 菜单项.编号 + " · " + 菜单项.文字 + (菜单项.快捷键 ? " " + 菜单项.快捷键 : "");
+    if (编译族.has(菜单项.编号)) {
       报状态(头部 + " · 已接线：真调 `GET /接口` 实时给的编译链（逐级读数见「提示」栏）", "好");
       跑编译(取元素, 编辑);
       return;
     }
-    问后端(一项, 头部);
+    问后端(菜单项, 头部);
   };
 
   const 摆层 = (项表, 深度) => {
     const 容器盒 = document.createElement("div");
     容器盒.className = "易弹出";
     容器盒.hidden = true;
-    for (const 一项 of 项表) {
-      if (一项.分隔) {
+    for (const 菜单项 of 项表) {
+      if (菜单项.分隔) {
         const 分隔件 = document.createElement("div");
         分隔件.className = "易分隔";
         容器盒.append(分隔件);
         continue;
       }
       const 源码行 = document.createElement("div");
-      源码行.className = "易项" + (一项.灰化 ? " 灰" : "");
-      源码行.append(摆文字(一项));
-      if (一项.项) {
+      源码行.className = "易项" + (菜单项.灰化 ? " 灰" : "");
+      源码行.append(摆文字(菜单项));
+      if (菜单项.项) {
         const 箭头 = document.createElement("span");
         箭头.className = "角";
         箭头.textContent = "▸";
-        const 子层 = 摆层(一项.项, 深度 + 1);
+        const 子层 = 摆层(菜单项.项, 深度 + 1);
         源码行.append(箭头, 子层);
         源码行.addEventListener("mouseenter", () => { 子层.hidden = false; });
         源码行.addEventListener("mouseleave", () => { 子层.hidden = true; });
       } else {
-        if (一项.快捷键) {
+        if (菜单项.快捷键) {
           const 键名 = document.createElement("span");
           键名.className = "键";
-          键名.textContent = 一项.快捷键;
+          键名.textContent = 菜单项.快捷键;
           源码行.append(键名);
         }
-        if (一项.灰化) {
+        if (菜单项.灰化) {
           // 资源里带 MF_GRAYED 位：照它的做派，灰化项点不动（不是「点了没反应」，是禁用项）。
           源码行.setAttribute("aria-disabled", "true");
           源码行.title = "资源里带 MF_GRAYED 位（实测 181 项里只有这一项）—— 在易语言里也是点不动的";
         } else {
-          源码行.addEventListener("click", (事件) => { 事件.stopPropagation(); 点叶子(一项); });
+          源码行.addEventListener("click", (事件) => { 事件.stopPropagation(); 点叶子(菜单项); });
         }
       }
       容器盒.append(源码行);

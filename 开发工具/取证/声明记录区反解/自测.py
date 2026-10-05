@@ -100,7 +100,7 @@ def _缓存与分片(样本, 失败: list) -> None:
         shutil.rmtree(临时语料, ignore_errors=True)
 
 
-def 自测(样本="/tmp/易语言源码/lib/krnln/samples/第一个程序.e"):
+def 跑自测(样本="/tmp/易语言源码/lib/krnln/samples/第一个程序.e"):
     with open(样本, "rb") as fh:
         合格样本 = fh.read()
     号段 = 反解容器(合格样本)

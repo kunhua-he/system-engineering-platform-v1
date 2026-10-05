@@ -292,7 +292,7 @@ def 索引陈旧读数(仓根: Path, 件表: dict) -> tuple:
         return False, "合成索引（按当场件表现造）"
     import sys as _sys
 
-    根目录 = str(常量.仓根目录 / "开发工具")
+    根目录 = str(常量.仓根 / "开发工具")
     if 根目录 not in _sys.path:
         _sys.path.insert(0, 根目录)
     import 代码地图.索引库 as 索引库

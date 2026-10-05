@@ -39,7 +39,7 @@ def 入口函数(argv=None):
     解析器.add_argument("--自测", action="store_true", help="反向样本自测")
     命令行参数 = 解析器.parse_args(argv)
     if 命令行参数.自测:
-        return 核心.自测()
+        return 核心.跑自测()
     return 核心.跑一遍(命令行参数.仓根 or os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 

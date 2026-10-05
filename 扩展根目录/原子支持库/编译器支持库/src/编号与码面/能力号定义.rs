@@ -11,6 +11,6 @@ pub mod 能力号 {
     pub const 语义分析: u32 = 1103;
     pub const 生成容器: u32 = 1104;
     pub const 反解容器: u32 = 1105;
-    pub const 编译: u32 = 1106;
+    pub const 编译执行: u32 = 1106;
     pub const 诊断: u32 = 1107;
 }

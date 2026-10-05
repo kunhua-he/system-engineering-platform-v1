@@ -29,10 +29,10 @@ from __future__ import annotations
 import sys
 
 from .小工具 import 判不了, 违规
-from .常量 import 仓根目录, 检查名
+from .常量 import 仓根, 检查名
 
 # 判法的唯一落点：独立 runner 的包根（**判据自身所在仓**，不是被扫的仓）。
-_准入包根 = str(仓根目录 / "测试验证" / "准入判据")
+_准入包根 = str(仓根 / "测试验证" / "准入判据")
 _判据模块 = None
 
 

@@ -6,7 +6,7 @@ from pathlib import Path
 
 
 # 前缀**拆开拼**：本件自身也在扫描面内（形①②③ 扫全仓）—— 整字连写会被自身抓到。
-_台账 = "台" "账"
+台账词 = "台" "账"
 
 
 def 注入_台账号引用(临根: Path) -> str:
@@ -21,7 +21,7 @@ def 注入_台账号引用(临根: Path) -> str:
     路径.parent.mkdir(parents=True, exist_ok=True)
     路径.write_text(
         f"# 样例（反向样本）\n\n"
-        f"同一条扫描规则两处实现（{_台账} " f"#" f"241）。\n\n"
+        f"同一条扫描规则两处实现（{台账词} " f"#" f"241）。\n\n"
         f"另：两侧分界见 #241 那张表。\n",
         encoding="utf-8",
     )

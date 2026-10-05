@@ -204,9 +204,9 @@ fn 种类覆盖_33种节点种类全部建到() {
             }
         }
     }
-    let 全部: Vec<节点种类> = (0u16..=63).filter_map(节点种类::自号).collect();
-    assert_eq!(全部.len(), 33, "节点种类共 33 种");
-    let 未建: Vec<&str> = 全部
+    let 全部节点种类: Vec<节点种类> = (0u16..=63).filter_map(节点种类::自号).collect();
+    assert_eq!(全部节点种类.len(), 33, "节点种类共 33 种");
+    let 未建: Vec<&str> = 全部节点种类
         .iter()
         .filter(|种类| !已见种类表.contains(种类))
         .map(|种类| 种类名(*种类))

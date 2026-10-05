@@ -25,15 +25,15 @@ import sys
 from pathlib import Path
 
 from .小工具 import 违规
-from .常量 import 仓根目录, 检查名
+from .常量 import 仓根, 检查名
 
 
 def 检查48_MCP工具面自检(上层读数: dict) -> list:
     """跑 MCP 工具面自检（子进程）⇒ 退出码非 0 即红。"""
-    仓根 = Path(上层读数["仓根"])
-    候选 = 仓根 / "开发工具" / "MCP服务.py"
-    入口件 = 候选 if 候选.is_file() else 仓根目录 / "开发工具" / "MCP服务.py"
-    工作目录 = 仓根 if 候选.is_file() else 仓根目录
+    被扫仓根 = Path(上层读数["仓根"])
+    候选 = 被扫仓根 / "开发工具" / "MCP服务.py"
+    入口件 = 候选 if 候选.is_file() else 仓根 / "开发工具" / "MCP服务.py"
+    工作目录 = 被扫仓根 if 候选.is_file() else 仓根
     try:
         子进程 = subprocess.run(
             [sys.executable, str(入口件), "--自检"],

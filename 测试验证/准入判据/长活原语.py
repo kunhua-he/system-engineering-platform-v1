@@ -21,13 +21,13 @@ from 构建装配.门禁 import 报告环境步, 自门禁  # noqa: E402
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from 准入判据.长活原语 import 跑长活原语考题, 找仓根, 自测, 预编译考题  # noqa: E402
+from 准入判据.长活原语 import 跑长活原语考题, 找仓根, 跑自测, 预编译考题  # noqa: E402
 
 
 def 入口函数(参数: list) -> int:
     """命令行入口：分发到 `长活原语` 的公开面。阈值与注入只从 `构建装配/门禁/` 取。"""
     if "--自测" in 参数:
-        return 自测()
+        return 跑自测()
     if "--预编译考题" in 参数:
         return 预编译考题(找仓根())
     return 跑长活原语考题(找仓根())
