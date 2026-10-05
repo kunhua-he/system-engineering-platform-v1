@@ -1,0 +1,99 @@
+# -*- coding: utf-8 -*-
+r"""自检样本 —— MCP 工具面自检里**要动盘**的那一类样本（临时夹具，跑完即删）。
+
+`MCP服务.py --自检` 的绝大多数样本是只读的（内存流 / 纯函数 / 缺参即拒 / 只走查询路），
+但 `v1_task` 功能 = 9（批量改名）**只有真跑一遍才知道闸通不通、改名生不生效** ⇒ 它的样本单开一件，
+放这里而不放进 `MCP服务.py`（那是**入口**：上限 120 行 · 零实现，判据 ⑲）。
+
+**夹具全在系统临时目录**：一棵迷你工作树（一个源件 + 一个迷你规则库）+ 一本临时账本。
+账本连口与索引器两处**走替身** —— 前者指向临时账本（⇒ **不碰真账本**），后者空操作
+（索引器在临时夹具里必然失败，那不是本样本要测的东西）⇒ **仓一个字节都不改**。
+
+**为什么要有它**：功能 = 9 这条路径原先**零覆盖** —— `批量改名.py` 引用已退场的 `命名穷举`
+整个 `ImportError`，闸 0 与 `--自检` 都没看见（第九批 MCP 审计 C-3 的同类：工具面零反向样本）。
+"""
+from pathlib import Path
+
+
+def 批量改名样本(仓根, 工具表) -> list:
+    """`v1_task` 功能 = 9 的**正向 + 反向**两条样本 ⇒ 样本表（跑完把临时夹具删净）。
+
+    正向：新名**已登记** ⇒ 退出码 0 · 源件里那个名**真的换掉了** · 回执说「改了 1/1 件」。
+    反向：新名**没登记** ⇒ 闸 fail-closed（退出码 5）· 源件**一个字节没动**。
+    """
+    import shutil
+    import sqlite3
+    import tempfile
+
+    from 代码地图 import 文件指纹
+    from MCP服务 import 批量改名, 开工账本
+
+    临时根 = Path(tempfile.mkdtemp(prefix="v1批量改名自检-"))
+    try:
+        return _跑夹具(临时根, 仓根, 工具表, 文件指纹, 批量改名, 开工账本)
+    finally:
+        shutil.rmtree(临时根, ignore_errors=True)
+
+
+def _跑夹具(临时根: Path, 仓根, 工具表, 文件指纹, 批量改名, 开工账本) -> list:
+    """夹具本体：搭迷你工作树 + 迷你规则库 + 临时账本 ⇒ 跑正反两条样本。"""
+    import sqlite3
+
+    树 = 临时根 / "工作树"
+    (树 / "临时区").mkdir(parents=True)
+    件 = 树 / "临时区" / "样例.py"
+    内容 = "旧样例名 = 1\nprint(旧样例名)\n"
+    件.write_text(内容, encoding="utf-8")
+    库 = 树 / "开发工具" / "信息核心" / "信息核心.db"
+    库.parent.mkdir(parents=True)
+    规则 = sqlite3.connect(str(库))
+    规则.execute("create table 命名登记(名字 text primary key, 语义 text, 模式 text, 来源 text, 状态 text)")
+    规则.execute("create table 命名例外(名字 text primary key, 说明 text)")
+    规则.executemany("insert into 命名登记 values (?,?,?,?,?)",
+                 [(名, 名, "对象+说明", "新定义", "合格") for 名 in ("旧样例名", "新样例名")])
+    规则.commit()
+    规则.close()
+    账本路径 = 临时根 / "账本.db"
+    账 = sqlite3.connect(str(账本路径))
+    for 建表行 in 开工账本.建表语句:
+        账.execute(建表行)
+    账.execute("insert into 开工 (开工号, 工作内容, 分支名, 工作树, 状态, 开工时间) "
+             "values (?,?,?,?,?,?)",
+             ("v1-自检样本", "自检", "自检", str(树), 开工账本.状态_进行中, "2026-10-06"))
+    账.execute("insert into 认领 (开工号, 路径, 指纹) values (?,?,?)",
+             ("v1-自检样本", "临时区/样例.py", 文件指纹(str(件))))
+    账.commit()
+    账.close()
+
+    def 开账():
+        """每次调用开**一条新连接**（`派发` 用完会 close ⇒ 不能给同一条）。"""
+        连接 = sqlite3.connect(str(账本路径))
+        连接.row_factory = sqlite3.Row
+        return 连接
+
+    真连, 真索引 = 开工账本.连账本, 批量改名.同步索引
+    开工账本.连账本 = 开账
+    批量改名.同步索引 = lambda _根: (0, "自检样本：索引器跳过")
+    出 = []
+    try:
+        for 说明, 新名, 期望码 in (("正向（新名已登记）", "新样例名", 0),
+                                ("反向（新名没登记）", "没登记的名", 5)):
+            件.write_text(内容, encoding="utf-8")
+            退出码, 回执 = 工具表["v1_task"][0](
+                {"功能": 9, "开工ID": "v1-自检样本", "路径范围": ["临时区"],
+                 "改名对": [{"旧名": "旧样例名", "新名": 新名}]}, 仓根)
+            if 期望码 == 0:
+                改成 = 件.read_text(encoding="utf-8") == 内容.replace("旧样例名", "新样例名")
+                出.append(("v1_task 功能=9 %s：退出码 %d · 改名%s生效 · 回执说「改了 1/1 件」%s"
+                        % (说明, 退出码, "" if 改成 else "**没**",
+                           "是" if "改了 1/1 件" in 回执 else "否"),
+                        退出码 == 期望码 and 改成 and "改了 1/1 件" in 回执
+                        and "Traceback" not in 回执))
+            else:
+                没改 = 件.read_text(encoding="utf-8") == 内容
+                出.append(("v1_task 功能=9 %s：退出码 %d（期望 %d，闸 fail-closed）· 件%s被动"
+                        % (说明, 退出码, 期望码, "没" if 没改 else "****"),
+                        退出码 == 期望码 and 没改))
+    finally:
+        开工账本.连账本, 批量改名.同步索引 = 真连, 真索引
+    return 出
