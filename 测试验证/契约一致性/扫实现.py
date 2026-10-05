@@ -60,8 +60,8 @@ def 入口函数(参数: list) -> int:
         return 跑自测()
     区间起点 = time.perf_counter()
     结果 = 扫实现(仓根, 扫描范围)
-    毫秒 = int((time.perf_counter() - 区间起点) * 1000)
-    打印比对结果(结果, 耗时毫秒=毫秒)
+    毫秒数 = int((time.perf_counter() - 区间起点) * 1000)
+    打印比对结果(结果, 耗时毫秒=毫秒数)
     if "--读数" in 参数:
         print("")
         打印读数(结果)

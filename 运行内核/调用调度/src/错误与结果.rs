@@ -11,7 +11,7 @@ use v1_contract::能力号;
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum 调度错误 {
     /// 超时（口径唯一，来自本 crate 的常量）。
-    超时 { 毫秒: u64 },
+    超时 { 毫秒数: u64 },
     /// 配额用尽。
     配额用尽,
     /// 被调用的扩展未载入 —— **这是明确的错误段位，不是崩溃**。

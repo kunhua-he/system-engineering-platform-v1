@@ -203,8 +203,8 @@ def 剥行(一行: str, 后缀: str = "") -> str:
     """
     for 规则 in (Rust规则 if 后缀 == ".rs" else 单行串):
         一行 = 规则.sub(" ", 一行)
-    切 = 行注释表.get(后缀, 行注释表[".js"]).search(一行)
-    return 数字字面量.sub(" ", 一行[:切.start()] if 切 else 一行)
+    注释符命中 = 行注释表.get(后缀, 行注释表[".js"]).search(一行)
+    return 数字字面量.sub(" ", 一行[:注释符命中.start()] if 注释符命中 else 一行)
 
 
 def 是仓内(路径: Path) -> bool:

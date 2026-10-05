@@ -44,12 +44,12 @@ def 禁改原因(路径: str, 全文: str) -> str:
         return "只读参考（`只读参考/` 只读 —— 不许写、不许 import、不许读）"
     if 是制品产物(路径):
         return "制品产物（被 git 忽略的生成物快照）—— 要改就改源再重出，别手改快照"
-    头部, 引号, 状态 = [], "", False
+    头部, 引号符, 状态 = [], "", False
     for 一行 in 全文.splitlines()[:60]:
         一行 = 一行.strip()
         if 状态:
             头部.append(一行)
-            if 引号 in 一行:
+            if 引号符 in 一行:
                 状态 = False
             continue
         if not 一行:
@@ -60,9 +60,9 @@ def 禁改原因(路径: str, 全文: str) -> str:
             continue
         if 一行[:3] in ('"""', "'''") or 一行[:4] in ('r"""', "r'''", 'u"""', "u'''",
                                                    'b"""', "b'''", 'f"""', "f'''"):
-            引号 = '"""' if '"""' in 一行 else "'''"
+            引号符 = '"""' if '"""' in 一行 else "'''"
             头部.append(一行)
-            if 一行.count(引号) < 2:
+            if 一行.count(引号符) < 2:
                 状态 = True
             continue
         break  # 第一个代码行 ⇒ 件头到此为止

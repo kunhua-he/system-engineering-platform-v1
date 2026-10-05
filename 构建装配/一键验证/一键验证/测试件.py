@@ -69,11 +69,11 @@ def 建测试文件集(文件: dict) -> set:
             # `#[path = "…"]` 可以写在 cfg 之前，也可以写在 cfg 之后（属性顺序不影响语义）
             窗起 = _属性窗口起(净文本, 命中.start())
             for 路命 in re.finditer(r"#\[\s*path\b", 净文本[窗起:区间终点]):
-                引号 = 原文.find('"', 窗起 + 路命.end(), 区间终点)
-                if 引号 >= 0:
-                    终引 = 原文.find('"', 引号 + 1)
-                    if 终引 > 引号:
-                        路径 = 原文[引号 + 1 : 终引]
+                引号符 = 原文.find('"', 窗起 + 路命.end(), 区间终点)
+                if 引号符 >= 0:
+                    终引 = 原文.find('"', 引号符 + 1)
+                    if 终引 > 引号符:
+                        路径 = 原文[引号符 + 1 : 终引]
                         break
             if 路径 is None:
                 路径 = 名配.group(1) + ".rs"
@@ -90,19 +90,19 @@ def 建测试文件集(文件: dict) -> set:
             待定 = [备选路径]
             if 备选路径 not in 文件 and 备选路径.endswith(".rs"):
                 待定.append(备选路径[:-3] + "/mod.rs")
-            for 备2 in 待定:
-                if 备2 not in 文件 or not 备2.endswith(".rs"):
+            for 候选件 in 待定:
+                if 候选件 not in 文件 or not 候选件.endswith(".rs"):
                     continue
-                if 备2.rsplit("/", 1)[-1][:-3] in ("lib", "mod", "main"):
+                if 候选件.rsplit("/", 1)[-1][:-3] in ("lib", "mod", "main"):
                     continue  # 包根不是夹具（`mod lib;` 不是 Rust 能编的形状）
                 # 内联 `mod 名 { … }`（`备2 == 父角色` = 自挂）只有在**文件自身在测试面**
                 # （路径段含 `tests`，= cargo 集成测试目标）时才算整份夹具 ——
                 # 实测 `对外接口面/调用接口面/tests/整条HTTP.rs` 自挂，必须收；
                 # 而生产件里的内联同名 mod **不许**把该件整份算作夹具（否则真代码从实现面消失）。
                 # `;` 引出的外部夹具文件不受这条限制（那才是真的挂载）。
-                if 备2 == 父角色 and "tests" not in 备2.split("/"):
+                if 候选件 == 父角色 and "tests" not in 候选件.split("/"):
                     continue
-                新内容.add(备2)
+                新内容.add(候选件)
         if not 新内容 - 整份:
             break
         整份 |= 新内容

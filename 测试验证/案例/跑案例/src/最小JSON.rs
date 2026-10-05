@@ -22,9 +22,9 @@ use std::fmt::Write as _;
 /// 一个 JSON 值。
 #[derive(Debug, Clone, PartialEq)]
 pub enum JSON值 {
-    空值,
-    真,
-    假,
+    空值项,
+    真值,
+    假值,
     数值(f64),
     字符串(String),
     数组(Vec<JSON值>),
@@ -72,8 +72,8 @@ impl JSON值 {
 
     pub fn 真假(&self) -> Option<bool> {
         match self {
-            JSON值::真 => Some(true),
-            JSON值::假 => Some(false),
+            JSON值::真值 => Some(true),
+            JSON值::假值 => Some(false),
             _ => None,
         }
     }
@@ -138,9 +138,9 @@ impl 位读游标<'_> {
             Some(b'{') => self.取对象(),
             Some(b'[') => self.取数组(),
             Some(b'"') => self.取串().map(JSON值::字符串),
-            Some(b't') => self.取字面("true").map(|()| JSON值::真),
-            Some(b'f') => self.取字面("false").map(|()| JSON值::假),
-            Some(b'n') => self.取字面("null").map(|()| JSON值::空值),
+            Some(b't') => self.取字面("true").map(|()| JSON值::真值),
+            Some(b'f') => self.取字面("false").map(|()| JSON值::假值),
+            Some(b'n') => self.取字面("null").map(|()| JSON值::空值项),
             Some(_) => self.取数(),
         }
     }
@@ -332,7 +332,7 @@ mod 测试 {
             Some(1105)
         );
         assert_eq!(待处理值.取成员("结果").and_then(|成员值| 成员值.真假()), Some(true));
-        assert!(matches!(待处理值.取成员("无"), Some(JSON值::空值)));
+        assert!(matches!(待处理值.取成员("无"), Some(JSON值::空值项)));
         assert_eq!(待处理值.取成员("数").and_then(|成员值| 成员值.取整数()), Some(1568));
     }
 

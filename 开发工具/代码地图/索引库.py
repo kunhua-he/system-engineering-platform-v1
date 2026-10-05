@@ -340,19 +340,19 @@ def 出现位(键名: str, 结果上限: int = 0, 库路径=None) -> dict:
                     % 匹配列, (键名,)))
                 if not 节点行表:
                     continue
-                位置表 = []
+                命中位置表 = []
                 for 标识, 名字, 件路径, 行号, 起始列 in 节点行表:
-                    位置表.append((件路径, 行号, 名字所在列(件路径, 行号, 名字, 起始列)))
+                    命中位置表.append((件路径, 行号, 名字所在列(件路径, 行号, 名字, 起始列)))
                     for 来源, 边行, 边列 in 动态库.execute(
                             "select source, line, col from edges "
                             "where target=? and kind<>'contains' and line is not null", (标识,)):
                         源件 = _源件路径(动态库, 来源)
                         if 源件:
-                            位置表.append((源件, 边行, 边列))
-                去重表 = sorted(set(位置表))
+                            命中位置表.append((源件, 边行, 边列))
+                去重表 = sorted(set(命中位置表))
                 if 结果上限:
                     去重表 = 去重表[:结果上限]
-                return {"位置": 去重表, "总数": len(set(位置表)), "口径": 口径说明}
+                return {"位置": 去重表, "总数": len(set(命中位置表)), "口径": 口径说明}
             return {"位置": [], "总数": 0, "口径": "没找到"}
         except sqlite3.Error as 原因:
             return {"位置": [], "总数": 0,

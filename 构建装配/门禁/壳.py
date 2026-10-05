@@ -37,13 +37,13 @@ def 注入人为慢() -> int:
     if not 待处理值:
         return 0
     try:
-        毫秒 = float(待处理值)
+        毫秒数 = float(待处理值)
     except ValueError:
         return 0
-    if 毫秒 <= 0:
+    if 毫秒数 <= 0:
         return 0
-    time.sleep(毫秒 / 1000.0)
-    return int(毫秒)
+    time.sleep(毫秒数 / 1000.0)
+    return int(毫秒数)
 
 
 def 自门禁(区间起点: float, 错误码: int, 尾巴余量毫秒: int, 修法: str, 输出流=None) -> int:

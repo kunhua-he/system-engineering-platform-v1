@@ -14,9 +14,9 @@
 /// 同一条请求两次的结果必须逐字段相同）。
 #[derive(Debug, Clone, PartialEq)]
 pub enum 协议值 {
-    空值,
-    真,
-    假,
+    空值项,
+    真值,
+    假值,
     整数(i64),
     /// 超出 `i64::MAX` 但仍在 64 位无符号范围内的整数。
     ///
@@ -39,7 +39,7 @@ impl 协议值 {
                 .iter()
                 .find(|(名称, _)| 名称 == 键名)
                 .map(|(_, 待处理值)| 待处理值)
-                .filter(|待处理值| !matches!(待处理值, 协议值::空值)),
+                .filter(|待处理值| !matches!(待处理值, 协议值::空值项)),
             _ => None,
         }
     }
@@ -53,7 +53,7 @@ impl 协议值 {
     }
 
     pub fn 是空值(&self) -> bool {
-        matches!(self, 协议值::空值)
+        matches!(self, 协议值::空值项)
     }
 
     pub fn 取文本(&self) -> Option<&str> {
