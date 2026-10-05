@@ -58,7 +58,8 @@ def 连库(库路径=None) -> sqlite3.Connection:
     `库路径` 给了就连那一个库 —— 一开工一工作树时，要查的必须是**那条树**的索引
     （不带就查主树）。**不许**靠改模块级状态来切库：那是隐式第二来源。
     """
-    return sqlite3.connect("file:%s?mode=ro" % (库路径 or 默认库路径()), uri=True)
+    return sqlite3.connect("file:%s?mode=ro" % (Path(库路径) if 库路径 is not None else 默认库路径()),
+                           uri=True)
 
 
 def 找索引器命令() -> str:
@@ -67,20 +68,29 @@ def 找索引器命令() -> str:
 
 
 def 库读数(库路径=None) -> dict:
-    """库里的节点 / 边 / 件数（库不在 ⇒ 全 0）。"""
-    if not (库路径 or 默认库路径()).is_file():
+    """库里的节点 / 边 / 件数（库不在 ⇒ 全 0；库读不动 ⇒ 全 0 ＋ `错误` 一行可读说明）。"""
+    库件 = Path(库路径 or 默认库路径())
+    if not 库件.is_file():
         return {"节点": 0, "边": 0, "件": 0, "索引器版本": ""}
-    动态库 = 连库(库路径)
     try:
-        读数 = {"节点": 动态库.execute("select count(*) from nodes").fetchone()[0],
-               "边": 动态库.execute("select count(*) from edges").fetchone()[0],
-               "件": 动态库.execute("select count(*) from files").fetchone()[0],
-               "索引器版本": ""}
-        元数据行 = 动态库.execute(
-            "select value from project_metadata where key='indexed_with_version'").fetchone()
-        if 元数据行:
-            读数["索引器版本"] = 元数据行[0]
-        return 读数
+        动态库 = 连库(库路径)
+    except sqlite3.Error as 原因:
+        return {"节点": 0, "边": 0, "件": 0, "索引器版本": "",
+                "错误": "索引库读不动（%s）：%s ⇒ 先跑 `python3 开发工具/代码地图.py 建`" % (库件, 原因)}
+    try:
+        try:
+            读数 = {"节点": 动态库.execute("select count(*) from nodes").fetchone()[0],
+                   "边": 动态库.execute("select count(*) from edges").fetchone()[0],
+                   "件": 动态库.execute("select count(*) from files").fetchone()[0],
+                   "索引器版本": ""}
+            元数据行 = 动态库.execute(
+                "select value from project_metadata where key='indexed_with_version'").fetchone()
+            if 元数据行:
+                读数["索引器版本"] = 元数据行[0]
+            return 读数
+        except sqlite3.Error as 原因:
+            return {"节点": 0, "边": 0, "件": 0, "索引器版本": "",
+                    "错误": "索引库读不动（%s）：%s ⇒ 先跑 `python3 开发工具/代码地图.py 建`" % (库件, 原因)}
     finally:
         动态库.close()
 
@@ -212,14 +222,21 @@ _节点字段 = ("n.id, n.kind, n.name, n.qualified_name, n.file_path, n.start_l
 
 
 def 全部定义(库路径=None) -> list:
-    """定义面上的全部节点（见 `非标识符种类`）⇒ 定义表。库不在 ⇒ 空表（调用方据此报「先建」）。"""
-    if not (库路径 or 默认库路径()).is_file():
+    """定义面上的全部节点（见 `非标识符种类`）⇒ 定义表。库不在 / 读不动 ⇒ 空表（调用方据此报「先建」）。"""
+    库件 = Path(库路径 or 默认库路径())
+    if not 库件.is_file():
         return []
-    动态库 = 连库(库路径)
     try:
-        return [节点记录(一行) for 一行 in 动态库.execute(
-            "select %s from nodes n where n.kind <> ? and n.kind <> ?" % _节点字段,
-            非标识符种类)]
+        动态库 = 连库(库路径)
+    except sqlite3.Error:
+        return []
+    try:
+        try:
+            return [节点记录(一行) for 一行 in 动态库.execute(
+                "select %s from nodes n where n.kind <> ? and n.kind <> ?" % _节点字段,
+                非标识符种类)]
+        except sqlite3.Error:
+            return []
     finally:
         动态库.close()
 
@@ -271,13 +288,20 @@ def 索引陈旧(仓根, 件表) -> tuple:
 
 def 出现数(标识: str, 库路径=None) -> int:
     """该符号的**出现数** = 定义本身 1 处 ＋ 指向它的引用边（`contains` 不算 —— 那是「件包含它」）。"""
-    if not (库路径 or 默认库路径()).is_file():
+    库件 = Path(库路径 or 默认库路径())
+    if not 库件.is_file():
         return 0
-    动态库 = 连库(库路径)
     try:
-        引用数 = 动态库.execute(
-            "select count(*) from edges where target=? and kind<>'contains'", (标识,)).fetchone()[0]
-        return 引用数 + 1
+        动态库 = 连库(库路径)
+    except sqlite3.Error:
+        return 0
+    try:
+        try:
+            引用数 = 动态库.execute(
+                "select count(*) from edges where target=? and kind<>'contains'", (标识,)).fetchone()[0]
+            return 引用数 + 1
+        except sqlite3.Error:
+            return 0
     finally:
         动态库.close()
 
@@ -299,30 +323,39 @@ def 出现位(键名: str, 上限: int = 0, 库路径=None) -> dict:
 
     ★ 引用面比编译器索引少约 7%（见本件顶部）⇒ 调用方**必须**拿编译兜底，别当它全。
     """
-    if not (库路径 or 默认库路径()).is_file():
+    库件 = Path(库路径 or 默认库路径())
+    if not 库件.is_file():
         return {"位置": [], "总数": 0, "口径": "没有索引"}
-    动态库 = 连库(库路径)
     try:
-        for 匹配列, 口径说明 in (("qualified_name", "限定名（精确）"),
-                                ("name", "名字（同名不同符号会混进来）")):
-            节点行表 = list(动态库.execute(
-                "select id, name, file_path, start_line, start_column from nodes where %s = ?"
-                % 匹配列, (键名,)))
-            if not 节点行表:
-                continue
-            位置表 = []
-            for 标识, 名字, 件路径, 行号, 起始列 in 节点行表:
-                位置表.append((件路径, 行号, 名字所在列(件路径, 行号, 名字, 起始列)))
-                for 来源, 边行, 边列 in 动态库.execute(
-                        "select source, line, col from edges "
-                        "where target=? and kind<>'contains' and line is not null", (标识,)):
-                    源件 = _源件路径(动态库, 来源)
-                    if 源件:
-                        位置表.append((源件, 边行, 边列))
-            去重表 = sorted(set(位置表))
-            if 上限:
-                去重表 = 去重表[:上限]
-            return {"位置": 去重表, "总数": len(set(位置表)), "口径": 口径说明}
-        return {"位置": [], "总数": 0, "口径": "没找到"}
+        动态库 = 连库(库路径)
+    except sqlite3.Error as 原因:
+        return {"位置": [], "总数": 0,
+                "口径": "索引库读不动：%s ⇒ 先跑 `python3 开发工具/代码地图.py 建`" % 原因}
+    try:
+        try:
+            for 匹配列, 口径说明 in (("qualified_name", "限定名（精确）"),
+                                    ("name", "名字（同名不同符号会混进来）")):
+                节点行表 = list(动态库.execute(
+                    "select id, name, file_path, start_line, start_column from nodes where %s = ?"
+                    % 匹配列, (键名,)))
+                if not 节点行表:
+                    continue
+                位置表 = []
+                for 标识, 名字, 件路径, 行号, 起始列 in 节点行表:
+                    位置表.append((件路径, 行号, 名字所在列(件路径, 行号, 名字, 起始列)))
+                    for 来源, 边行, 边列 in 动态库.execute(
+                            "select source, line, col from edges "
+                            "where target=? and kind<>'contains' and line is not null", (标识,)):
+                        源件 = _源件路径(动态库, 来源)
+                        if 源件:
+                            位置表.append((源件, 边行, 边列))
+                去重表 = sorted(set(位置表))
+                if 上限:
+                    去重表 = 去重表[:上限]
+                return {"位置": 去重表, "总数": len(set(位置表)), "口径": 口径说明}
+            return {"位置": [], "总数": 0, "口径": "没找到"}
+        except sqlite3.Error as 原因:
+            return {"位置": [], "总数": 0,
+                    "口径": "索引库读不动：%s ⇒ 先跑 `python3 开发工具/代码地图.py 建`" % 原因}
     finally:
         动态库.close()
