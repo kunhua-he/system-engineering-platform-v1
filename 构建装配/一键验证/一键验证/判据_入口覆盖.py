@@ -178,11 +178,11 @@ def 读入口白名单(仓根: Path) -> tuple:
     except Exception as 错误:
         return {}, f"白名单解析不了（{type(错误).__name__}）"
     项表 = {}
-    for 一条 in 数据.get("白名单") or []:
+    for 白名单项 in 数据.get("白名单") or []:
         try:
-            项表[str(一条["路径"])] = (str(一条["类"]), str(一条["理由"]))
+            项表[str(白名单项["路径"])] = (str(白名单项["类"]), str(白名单项["理由"]))
         except (KeyError, TypeError):
-            return {}, f"白名单条目形状不对（{一条!r}）—— 要 路径/类/理由 三键"
+            return {}, f"白名单条目形状不对（{白名单项!r}）—— 要 路径/类/理由 三键"
     return 项表, None
 
 

@@ -127,10 +127,10 @@ def 建上下文(仓根: Path) -> dict:
 def 建包到层映射(文件: dict) -> dict:
     """Cargo 包名 → 层。包名里的 `-` 换成 `_`（Rust 的 `use` 用下划线）。"""
     项表 = {}
-    for 键名, 一项 in 文件.items():
-        if not 键名.endswith("Cargo.toml") or 一项["文本"] is None:
+    for 键名, 文件项 in 文件.items():
+        if not 键名.endswith("Cargo.toml") or 文件项["文本"] is None:
             continue
-        名配 = re.search(r"^\s*name\s*=\s*\"([^\"]+)\"", 一项["文本"], re.M)
+        名配 = re.search(r"^\s*name\s*=\s*\"([^\"]+)\"", 文件项["文本"], re.M)
         if not 名配:
             continue
         层级 = 路径到层(键名)
@@ -145,8 +145,8 @@ def 路径到层(键名: str) -> str:
 
 
 def 取文件键值(文件: dict, 键名: str):
-    一项 = 文件.get(键名)
-    return None if 一项 is None else 一项["数据"]
+    文件项 = 文件.get(键名)
+    return None if 文件项 is None else 文件项["数据"]
 
 
 # ════════════════════════════════════════════════════════════════════════════

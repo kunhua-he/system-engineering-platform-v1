@@ -118,9 +118,9 @@ def 运行数据面(上层读数: dict) -> dict:
     if 键名 in _运行数据面缓存:
         return _运行数据面缓存[键名]
     件表 = [
-        (键_件, 一项["文本"])
-        for 键_件, 一项 in 上层读数["文件"].items()
-        if 一项.get("文本") is not None
+        (键_件, 文件项["文本"])
+        for 键_件, 文件项 in 上层读数["文件"].items()
+        if 文件项.get("文本") is not None
         and 键_件.endswith(代码后缀)
         and 键_件.rsplit("/", 1)[-1] not in 判据自身件
     ]

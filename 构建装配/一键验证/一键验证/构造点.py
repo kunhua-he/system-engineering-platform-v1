@@ -123,7 +123,7 @@ def 找构造点(文本: str) -> list:
     return 点表
 
 
-def _抽版本三元组(文本: str, 常量名: str):
+def _抽版本三元组(文本: str, 常量标识名: str):
     """抽 `const 名: v1_contract::(版本三元组|版本要求) = v1_contract::\1::新建(…);` → `'主.次[.构建]'`。
 
     **两型两种段数**（拉齐参照实现，见 `契约声明/基础形状.rs`）：
@@ -131,7 +131,7 @@ def _抽版本三元组(文本: str, 常量名: str):
     故断言 **2–4** 段都收：段数与型对不对由另一边（渲染侧）保证，本件只负责把数抽出来对拍。
     """
     格式器 = re.compile(
-        r"const\s+" + re.escape(常量名)
+        r"const\s+" + re.escape(常量标识名)
         + r"\s*:\s*v1_contract::(版本三元组|版本要求)\s*=\s*v1_contract::\1::新建\s*\("
         r"((?:\s*\d+\s*,)*\s*\d+)\s*,?\s*\)"
     )
@@ -157,9 +157,9 @@ def 跑生成器检查(仓根: Path, 生成器: Path) -> tuple:
     return 结果.returncode, 输出.replace("\n", " ／ ")[:400]
 
 
-def _抽字节串常量(文本: str, 常量名: str):
+def _抽字节串常量(文本: str, 常量标识名: str):
     格式器 = re.compile(
-        r"const\s+" + re.escape(常量名) + r'\s*:\s*[^=]+=\s*(?:b)?"((?:[^"\\]|\\.)*)"',
+        r"const\s+" + re.escape(常量标识名) + r'\s*:\s*[^=]+=\s*(?:b)?"((?:[^"\\]|\\.)*)"',
         re.S,
     )
     命中 = 格式器.search(文本)
@@ -185,9 +185,9 @@ def _解Rust转义(原文: str) -> str:
     return "".join(输出缓冲).rstrip("\0")
 
 
-def _抽整数常量(文本: str, 常量名: str, 类型名: str):
+def _抽整数常量(文本: str, 常量标识名: str, 类型名: str):
     格式器 = re.compile(
-        r"const\s+" + re.escape(常量名) + r"\s*:\s*" + 类型名 + r"\s*=\s*([0-9_]+)"
+        r"const\s+" + re.escape(常量标识名) + r"\s*:\s*" + 类型名 + r"\s*=\s*([0-9_]+)"
     )
     命中 = 格式器.search(文本)
     if not 命中:

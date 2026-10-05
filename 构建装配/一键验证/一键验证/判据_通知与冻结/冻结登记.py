@@ -39,20 +39,20 @@ def 检查9_冻结登记(上层读数: dict) -> list:
             )
         )
     else:
-        for 序号, 一项 in enumerate(冻结项):
+        for 序号, 冻结条目 in enumerate(冻结项):
             项位置 = f"{位置}:冻结项[{序号}]"
-            if not isinstance(一项, dict):
+            if not isinstance(冻结条目, dict):
                 输出缓冲.append(
                     违规(
                         检查名[8],
                         项位置,
-                        f"不是对象（是 {type(一项).__name__}）",
+                        f"不是对象（是 {type(冻结条目).__name__}）",
                         f"冻结项是 {{名称,内容,落点}} 三键对象；不是对象就读不出落点，"
                         f"「冻结的东西还在不在」判不了 ⇒ 只能由声明方补",
                     )
                 )
                 continue
-            缺失项 = [键名 for 键名 in ("名称", "内容", "落点") if 键名 not in 一项]
+            缺失项 = [键名 for 键名 in ("名称", "内容", "落点") if 键名 not in 冻结条目]
             if 缺失项:
                 输出缓冲.append(
                     违规(
@@ -65,7 +65,7 @@ def 检查9_冻结登记(上层读数: dict) -> list:
                     )
                 )
                 continue
-            落点 = str(一项["落点"])
+            落点 = str(冻结条目["落点"])
             # README 第八节定死了 落点 的形状：**单个**落点，写法二选一
             #   `相对路径` 或 `相对路径::符号名`；**不许复合**（不许 `首件.md · 次目录`）。
             期望形状错 = None
@@ -156,7 +156,7 @@ def 检查9_冻结登记(上层读数: dict) -> list:
                 # ── 形状指纹比对（裁决 §十）──
                 # 冻结的是**形状**（字段与顺序与类型），`内容` 是散文、散文判不了它。
                 # 指纹口径：声明文本去注释、压空白后 sha256 前 16 位（`冻结形状.py`）。
-                登记指纹 = 一项.get("形状指纹")
+                登记指纹 = 冻结条目.get("形状指纹")
                 实得, 形状 = 算落点指纹(文本, 符号)
                 if not isinstance(登记指纹, str) or not 登记指纹:
                     输出缓冲.append(
@@ -209,19 +209,19 @@ def 检查9_冻结登记(上层读数: dict) -> list:
                 )
             )
             continue
-        for 序号, 一条 in enumerate(条目表):
+        for 序号, 条目项 in enumerate(条目表):
             条位置 = f"{位置}:{键名}[{序号}]"
-            if not isinstance(一条, dict):
+            if not isinstance(条目项, dict):
                 输出缓冲.append(
                     违规(
                         检查名[8],
                         条位置,
-                        f"不是对象（是 {type(一条).__name__}）",
+                        f"不是对象（是 {type(条目项).__name__}）",
                         f"{哪一份} 的形状是多键对象；不是对象就读不出内容 ⇒ 只能由声明方补",
                     )
                 )
                 continue
-            缺失项 = [键名 for 键名 in 必填 if 键名 not in 一条]
+            缺失项 = [键名 for 键名 in 必填 if 键名 not in 条目项]
             if 缺失项:
                 输出缓冲.append(
                     违规(
@@ -234,7 +234,7 @@ def 检查9_冻结登记(上层读数: dict) -> list:
                 )
                 continue
             if 键名 == "旁路":
-                日期 = str(一条.get("日期", ""))
+                日期 = str(条目项.get("日期", ""))
                 if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", 日期):
                     输出缓冲.append(
                         违规(

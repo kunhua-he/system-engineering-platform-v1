@@ -72,11 +72,11 @@ def 检查21_时间口径(上层读数: dict) -> list:
     """
     输出缓冲 = []
     件表 = {
-        键名: 一项["文本"]
-        for 键名, 一项 in 上层读数["文件"].items()
+        键名: 文件项["文本"]
+        for 键名, 文件项 in 上层读数["文件"].items()
         if 键名.endswith(".rs")
         and any(键名.startswith(扫描面 + "/") for 扫描面 in 时间口径面)
-        and 一项.get("文本") is not None
+        and 文件项.get("文本") is not None
     }
     if not 件表:
         判不了(

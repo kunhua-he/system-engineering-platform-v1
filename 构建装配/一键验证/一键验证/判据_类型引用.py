@@ -255,9 +255,9 @@ def 检查7_可抛错误码都在错误码表登记(上层读数: dict) -> list:
                 )
                 continue
             段位图集 = {
-                一条.get("段位")
-                for 一条 in ((上层读数["号段图"] or {}).get("错误码段位图") or [])
-                if isinstance(一条, dict)
+                段位项.get("段位")
+                for 段位项 in ((上层读数["号段图"] or {}).get("错误码段位图") or [])
+                if isinstance(段位项, dict)
             }
             if 段位图集 and 段位 not in 段位图集:
                 输出缓冲.append(
