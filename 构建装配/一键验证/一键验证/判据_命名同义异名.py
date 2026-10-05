@@ -22,7 +22,7 @@ def 读索引定义面(上层读数: dict) -> list:
     from .读文件 import 索引路径
     from .判据_命名穷举 import 命名件表
 
-    根目录 = str(常量.仓根目录 / "开发工具")
+    根目录 = str(常量.仓根 / "开发工具")
     if 根目录 not in sys.path:
         sys.path.insert(0, 根目录)
     import 代码地图.索引库 as 索引库
