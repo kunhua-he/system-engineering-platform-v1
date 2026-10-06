@@ -62,31 +62,60 @@ def 查不覆盖(判据名: str, 扫描单元: str):
 # ＋ 本闸 ③k（扩展声明自洽，同一次运行内已判这份声明）。
 
 
-def 按种类不覆盖(根目录: str, 件表: dict):
-    """这个声明根是否属于**按设计没有 Rust 实现面**的种类；是则返回 `(种类名, 默认目录)`。
+def 读种类表(件表: dict) -> list:
+    """必备件清单 → `[(种类名, 默认目录, 要不要 Rust 实现面)]`。
 
-    **fail-closed**：读不到必备件清单 / 形状不对 ⇒ 返回 `None`（退回「未判」，绝不放宽）。
+    **fail-closed**：读不到清单 / 形状不对 ⇒ `[]`（调用方退回「未判」，绝不放宽）。
+    事实的落点是 `扩展装载/开发标准/必备件.json`，本件只读、不复述。
     """
     源文本 = 件表.get(必备件相对路径)
     if not 源文本:
-        return None
+        return []
     try:
         清单 = json.loads(源文本)
     except json.JSONDecodeError:
-        return None
+        return []
     if not isinstance(清单, dict):
-        return None
+        return []
     实现标志条 = {}
     for 必备件条 in 清单.get("必备件") or []:
         if isinstance(必备件条, dict) and 必备件条.get("文件") == 实现件文件名:
             实现标志条 = 必备件条
             break
+    种类表 = []
     for 种类条 in 清单.get("三类扩展") or []:
         if not isinstance(种类条, dict):
             continue
         种类名 = 种类条.get("种类")
         默认目录 = (种类条.get("默认目录") or "").rstrip("/")
-        if not 种类名 or not 默认目录 or 实现标志条.get(种类名, True):
+        if not 种类名 or not 默认目录:
+            continue
+        种类表.append((种类名, 默认目录, 实现标志条.get(种类名, True) is True))
+    return 种类表
+
+
+def 声明根种类(根目录: str, 件表: dict):
+    """这个声明根属哪个种类；返回 `(种类名, 要不要 Rust 实现面)`，认不出 ⇒ `None`。"""
+    for 种类名, 默认目录, 要实现 in 读种类表(件表):
+        if 根目录 == 默认目录 or 根目录.startswith(默认目录 + "/"):
+            return (种类名, 要实现)
+    return None
+
+
+def 按种类不覆盖(根目录: str, 件表: dict):
+    """这个声明根是否属于**按设计没有 Rust 实现面**的种类；是则返回 `(种类名, 默认目录)`。
+
+    ★ **支持库不在内 —— 这是裁过的，不是漏的**：必备件清单里 `src/ + Cargo.toml` 对支持库是
+    true ⇒ 该种类**按设计必须有实现单元** ⇒「声明先行、实现后补」对它是**真的缺实现**，
+    ③a 报「未判」是判据在正常工作。给它开口子 = 把「声明了没实现」这件事永远放过去
+    （那正是 ③a 存在的理由）。过渡期请把产物落**暂存区**（不在闸的扫描范围内），
+    上架 = 声明 + 实现一起落。依据：库 `条款`
+    `项目文档/决策记录/2026-10-06_闸2支持库声明根覆盖面.md`。
+
+    **fail-closed**：读不到必备件清单 / 形状不对 ⇒ 返回 `None`（退回「未判」，绝不放宽）。
+    """
+    for 种类名, 默认目录, 要实现 in 读种类表(件表):
+        if 要实现:
             continue
         if 根目录 == 默认目录 or 根目录.startswith(默认目录 + "/"):
             return (种类名, 默认目录)
