@@ -42,20 +42,20 @@ impl 草稿表 {
         (self.表.len() - 1) as u32
     }
 
-    pub(crate) fn 种类(&self, 下标: u32) -> 节点种类 {
-        self.表[下标 as usize].种类
+    pub(crate) fn 种类(&self, 节点位序: u32) -> 节点种类 {
+        self.表[节点位序 as usize].种类
     }
 
-    pub(crate) fn 取原文起点(&self, 下标: u32) -> u32 {
-        self.表[下标 as usize].取片段字节区间.0
+    pub(crate) fn 取原文起点(&self, 节点位序: u32) -> u32 {
+        self.表[节点位序 as usize].取片段字节区间.0
     }
 
-    pub(crate) fn 取原文终点(&self, 下标: u32) -> u32 {
-        self.表[下标 as usize].取片段字节区间.1
+    pub(crate) fn 取原文终点(&self, 节点位序: u32) -> u32 {
+        self.表[节点位序 as usize].取片段字节区间.1
     }
 
-    pub(crate) fn 取子节点(&self, 下标: u32) -> &[u32] {
-        &self.表[下标 as usize].子节点下标表
+    pub(crate) fn 取子节点(&self, 节点位序: u32) -> &[u32] {
+        &self.表[节点位序 as usize].子节点下标表
     }
 
     /// 扁平化成先序节点表：**每个子节点都带着它的整棵子树**（见文件头）。

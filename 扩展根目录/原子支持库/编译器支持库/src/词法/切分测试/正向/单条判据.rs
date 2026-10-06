@@ -21,7 +21,7 @@ fn 切分_注释不吞行尾换行() {
         let 输出流 = 切记号(原文).expect("切分");
         for 记号 in &输出流.记号表 {
             if 记号.种类 == 注释 {
-                let 片段 = &输出流.原文[记号.起 as usize..记号.止 as usize];
+                let 片段 = &输出流.原文[记号.区间起点 as usize..记号.止 as usize];
                 assert!(
                     !片段.contains(&b'\r') && !片段.contains(&b'\n'),
                     "{原文:?} 的注释记号吞了行尾换行"
@@ -61,7 +61,7 @@ fn 切分_注释到行尾不含任何行尾字节_CRLF归换行记号() {
         let 输出流 = 切记号(原文).expect("切分");
         for 记号 in &输出流.记号表 {
             if 记号.种类 == 注释 {
-                let 片段 = &输出流.原文[记号.起 as usize..记号.止 as usize];
+                let 片段 = &输出流.原文[记号.区间起点 as usize..记号.止 as usize];
                 assert!(
                     !片段.contains(&b'\r') && !片段.contains(&b'\n'),
                     "{原文:?} 的注释吞了行尾字节"
@@ -130,7 +130,7 @@ fn 切分_兜底字符只落在具名容器里() {
                 continue;
             }
             let 位置 = 位置 as u32;
-            let 落处 = 输出流.记号表.iter().find(|记号| 记号.起 <= 位置 && 位置 < 记号.止);
+            let 落处 = 输出流.记号表.iter().find(|记号| 记号.区间起点 <= 位置 && 位置 < 记号.止);
             let 落处 = 落处.unwrap_or_else(|| panic!("{原文:?} 位置 {位置} 无归属"));
             assert!(
                 matches!(

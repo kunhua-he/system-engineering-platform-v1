@@ -54,14 +54,14 @@ def 出报告(读数):
             序号, 组读数["m_szName"][1], 组读数["m_shtReserved"][1], 组读数["m_shtType"][1], 组读数["m_szText"][1], 组读数["m_dbValue"][1]))
     print("⑥ 类型表：声明数 m_nDataTypeCount=%d" % 字典["m_nDataTypeCount"])
     for 序号, _, 组读数 in 解结构表(pe, 字典["m_nDataTypeCount"], 字典["m_pDataType"], 类型项大小, 类型字段):
-        下标 = []
+        命令下标 = []
         if 组读数["m_pnCmdsIndex"][0] and 组读数["m_nCmdCount"][0]:
             try:
-                下标 = list(struct.unpack_from("<%di" % 组读数["m_nCmdCount"][0], pe.原始字节,
+                命令下标 = list(struct.unpack_from("<%di" % 组读数["m_nCmdCount"][0], pe.原始字节,
                             pe.转偏移(pe.取址(组读数["m_pnCmdsIndex"][0]))))
             except 解析错误:
-                下标 = ["<指向不合法>"]
+                命令下标 = ["<指向不合法>"]
         print("   [%d] %s eg=%s state=0x%08x 成员命令下标=%s 事件=%d 属性=%d 元素=%d"
-              % (序号, 组读数["m_szName"][1], 组读数["m_szEgName"][1], 组读数["m_dwState"][0], 下标,
+              % (序号, 组读数["m_szName"][1], 组读数["m_szEgName"][1], 组读数["m_dwState"][0], 命令下标,
                  组读数["m_nEventCount"][0], 组读数["m_nPropertyCount"][0], 组读数["m_nElementCount"][0]))
     print()

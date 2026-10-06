@@ -118,18 +118,18 @@ impl 记号种类 {
 pub struct 记号 {
     pub(crate) 种类: 记号种类,
     /// 覆盖的原文字节区间 `[起, 止)`。
-    pub(crate) 起: u32,
+    pub(crate) 区间起点: u32,
     pub(crate) 止: u32,
 }
 
 impl 记号 {
     pub fn 新建(种类: 记号种类, 区间起点: u32, 区间终点: u32) -> Self {
-        Self { 种类, 起: 区间起点, 止: 区间终点 }
+        Self { 种类, 区间起点: 区间起点, 止: 区间终点 }
     }
 
     /// 区间宽度（字节）。
     pub fn 取区间宽度(&self) -> u32 {
-        self.止.saturating_sub(self.起)
+        self.止.saturating_sub(self.区间起点)
     }
 }
 

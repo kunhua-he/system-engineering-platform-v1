@@ -28,7 +28,7 @@ pub fn 编码记号流(输出流: &记号流) -> Vec<u8> {
     输出缓冲.extend_from_slice(&(输出流.记号表.len() as u32).to_le_bytes());
     for 一枚记号 in &输出流.记号表 {
         输出缓冲.push(一枚记号.种类.取号值());
-        输出缓冲.extend_from_slice(&一枚记号.起.to_le_bytes());
+        输出缓冲.extend_from_slice(&一枚记号.区间起点.to_le_bytes());
         输出缓冲.extend_from_slice(&一枚记号.止.to_le_bytes());
     }
     输出缓冲
@@ -78,9 +78,9 @@ pub fn 编码诊断结果(结果: Option<&形状错误>) -> Vec<u8> {
     输出缓冲.extend_from_slice(&crate::诊断::阶段号(错误).to_le_bytes());
     输出缓冲.extend_from_slice(&crate::形状错误码(错误).to_le_bytes());
     match crate::诊断::字节位置(错误) {
-        Some((起, 止)) => {
+        Some((区间起点, 止)) => {
             输出缓冲.extend_from_slice(&1u32.to_le_bytes());
-            输出缓冲.extend_from_slice(&起.to_le_bytes());
+            输出缓冲.extend_from_slice(&区间起点.to_le_bytes());
             输出缓冲.extend_from_slice(&止.to_le_bytes());
         }
         None => 输出缓冲.extend_from_slice(&0u32.to_le_bytes()),
