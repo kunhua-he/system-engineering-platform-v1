@@ -26,7 +26,7 @@ pub(crate) unsafe fn 取字节集(参数个数: u32, 参数表: *const 数据槽
     if !数据槽.是否引用() {
         return None;
     }
-    let 地址 = 数据槽.值 as *const u8;
+    let 地址 = 数据槽.槽值 as *const u8;
     if 地址.is_null() {
         return None;
     }
@@ -84,7 +84,7 @@ pub(crate) unsafe fn 取文本(参数个数: u32, 参数表: *const 数据槽, �
     if !数据槽.是否引用() {
         return None;
     }
-    let 地址 = 数据槽.值 as *const u8;
+    let 地址 = 数据槽.槽值 as *const u8;
     if 地址.is_null() {
         return None;
     }

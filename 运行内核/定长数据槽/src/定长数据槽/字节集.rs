@@ -39,7 +39,7 @@ pub fn 取出字节(数据槽: &数据槽) -> Result<&[u8], 槽错误> {
             // 零长度：不解引用，地址是否为 0 都合法。
             return Ok(&[]);
         }
-        if 数据槽.值 == 0 {
+        if 数据槽.槽值 == 0 {
             // 声明了非零长度却没有地址：坏槽，报长度不符（可用字节 0 个），不 panic、不静默。
             return Err(槽错误::长度不符 { 期望: 数据槽.长度, 实际: 0 });
         }
@@ -47,7 +47,7 @@ pub fn 取出字节(数据槽: &数据槽) -> Result<&[u8], 槽错误> {
         let 长度 = usize::try_from(数据槽.长度)
             .map_err(|_| 槽错误::长度不符 { 期望: usize::MAX as u64, 实际: 数据槽.长度 })?;
         // SAFETY: 由本函数的调用方保证：地址可读且有 长度 个连续字节、存活期内不被改写。
-        Ok(unsafe { core::slice::from_raw_parts(数据槽.值 as *const u8, 长度) })
+        Ok(unsafe { core::slice::from_raw_parts(数据槽.槽值 as *const u8, 长度) })
     } else {
         if 数据槽.长度 > 内联值域宽度 {
             // 内联值域只有 8 字节，比它长的数据只能走引用路径。
@@ -56,6 +56,6 @@ pub fn 取出字节(数据槽: &数据槽) -> Result<&[u8], 槽错误> {
         let 长度 = 数据槽.长度 as usize; // 已判 ≤ 8，任何目标字宽都装得下。
         // SAFETY: 起点取自 `&数据槽` 内的 `值` 字段（借来的、对齐的、非空的），
         // 长度 ≤ 8 不越出该字段；切片存活期受 `数据槽` 的借用期约束。
-        Ok(unsafe { core::slice::from_raw_parts((&数据槽.值 as *const u64).cast::<u8>(), 长度) })
+        Ok(unsafe { core::slice::from_raw_parts((&数据槽.槽值 as *const u64).cast::<u8>(), 长度) })
     }
 }

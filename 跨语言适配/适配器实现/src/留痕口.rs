@@ -97,7 +97,7 @@ impl 适配器 {
 fn 结果码(结果: &转发结果) -> i32 {
     match 结果 {
         转发结果::成功(槽) if 槽.类型标签 == 声明数据::类型标签_4294967295 => {
-            i32::try_from(u32::try_from(槽.值).unwrap_or(0)).unwrap_or(0)
+            i32::try_from(u32::try_from(槽.槽值).unwrap_or(0)).unwrap_or(0)
         }
         转发结果::成功(_) => 0,
         转发结果::失败(错) => i32::try_from(业务错误码(*错)).unwrap_or(0),

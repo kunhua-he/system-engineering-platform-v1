@@ -70,16 +70,16 @@ impl<'a> 顺序读器<'a> {
 
     pub(crate) fn 读数据槽(&mut self) -> Option<v1_contract::数据槽> {
         let 类型标签 = self.读四字节()?;
-        let 标志 = self.读双字节()?;
+        let 槽标志位 = self.读双字节()?;
         let 保留 = self.读双字节()?;
         let 长度 = self.读八字节()?;
         let 待处理值 = self.读八字节()?;
         Some(v1_contract::数据槽 {
             类型标签: v1_contract::类型标签::新建(类型标签),
-            标志,
+            槽标志位,
             保留,
             长度,
-            值: 待处理值,
+            槽值: 待处理值,
         })
     }
 }

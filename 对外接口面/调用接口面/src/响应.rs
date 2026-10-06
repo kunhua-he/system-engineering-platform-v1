@@ -244,7 +244,7 @@ fn 错误槽的码(数据槽: &v1_adapter::数据槽) -> Option<u32> {
     if 数据槽.类型标签 != crate::常量::类型标签::错误 {
         return None;
     }
-    Some(u32::try_from(数据槽.值).unwrap_or(0))
+    Some(u32::try_from(数据槽.槽值).unwrap_or(0))
 }
 
 /// `POST /接口/声明` → **未实现**（结构化错误，不硬凑一个落盘实现）。

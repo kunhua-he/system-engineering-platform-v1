@@ -90,15 +90,15 @@ pub(crate) fn 观测一步(
 /// 返回槽 → 产物。**三种形状照契约认**（错误标签 / 空 / 引用），其余如实记「其他」。
 fn 槽产物(数据槽: &数据槽) -> 观测产物 {
     if 数据槽.类型标签 == 类型标签_4294967295 {
-        return 观测产物::错误槽(u32::try_from(数据槽.值).unwrap_or(u32::MAX));
+        return 观测产物::错误槽(u32::try_from(数据槽.槽值).unwrap_or(u32::MAX));
     }
     if 数据槽.是否空() {
         return 观测产物::空槽;
     }
-    if 数据槽.是否引用() && 数据槽.值 != 0 {
+    if 数据槽.是否引用() && 数据槽.槽值 != 0 {
         // SAFETY: 引用槽按契约带指针与字节长度。
         let 片段 =
-            unsafe { core::slice::from_raw_parts(数据槽.值 as *const u8, usize::try_from(数据槽.长度).unwrap_or(0)) };
+            unsafe { core::slice::from_raw_parts(数据槽.槽值 as *const u8, usize::try_from(数据槽.长度).unwrap_or(0)) };
         return 观测产物::字节集(片段.to_vec());
     }
     观测产物::其他槽形态
@@ -153,7 +153,7 @@ fn 由返回槽(登记表: &登记表, 能力名: Option<String>, 数据槽: 数
             None,
             None,
             None,
-            format!("返回内联槽：类型标签 {} 值 {}", 数据槽.类型标签.取号值(), 数据槽.值),
+            format!("返回内联槽：类型标签 {} 值 {}", 数据槽.类型标签.取号值(), 数据槽.槽值),
         ),
     };
     观测 { 结果, 死在哪一层, 死在哪一步, 错误码, 能力名, 产物, 派发结果: None, 说明 }

@@ -82,7 +82,7 @@ fn 底座执行函数_把平台信息放进返回槽() {
     assert!(数据槽.是否引用());
     assert!(!数据槽.交出了所有权());
     assert_eq!(数据槽.长度, core::mem::size_of::<平台信息>() as u64);
-    assert_eq!(数据槽.值, 取平台信息() as u64);
+    assert_eq!(数据槽.槽值, 取平台信息() as u64);
 }
 
 #[test]

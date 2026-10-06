@@ -116,10 +116,10 @@ fn 写错误项(输出缓冲: &mut Vec<u8>, 错误: &接口错误项) {
 /// 将来槽加宽就会两处不同步。直接按冻结的那五个字段拼一遍是最少知识。
 fn 写槽(输出缓冲: &mut Vec<u8>, 数据槽: &v1_contract::数据槽) {
     输出缓冲.extend_from_slice(&数据槽.类型标签.取号值().to_le_bytes());
-    输出缓冲.extend_from_slice(&数据槽.标志.to_le_bytes());
+    输出缓冲.extend_from_slice(&数据槽.槽标志位.to_le_bytes());
     输出缓冲.extend_from_slice(&数据槽.保留.to_le_bytes());
     输出缓冲.extend_from_slice(&数据槽.长度.to_le_bytes());
-    输出缓冲.extend_from_slice(&数据槽.值.to_le_bytes());
+    输出缓冲.extend_from_slice(&数据槽.槽值.to_le_bytes());
 }
 
 fn 读参数项(读游标: &mut 顺序读器) -> Option<接口参数项> {

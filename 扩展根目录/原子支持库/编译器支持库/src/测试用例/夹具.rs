@@ -61,7 +61,7 @@ pub(crate) unsafe fn 取返回字节(数据槽: &数据槽) -> Vec<u8> {
     assert_eq!(数据槽.类型标签, 类型标签_0005, "返回槽该是字节集");
     assert!(数据槽.是否引用(), "返回槽该是引用");
     // SAFETY: 由调用方保证数据槽是刚写出的引用槽。
-    unsafe { core::slice::from_raw_parts(数据槽.值 as *const u8, 数据槽.长度 as usize) }.to_vec()
+    unsafe { core::slice::from_raw_parts(数据槽.槽值 as *const u8, 数据槽.长度 as usize) }.to_vec()
 }
 
 /// 按「交出所有权」的契约释放返回槽里的字节集（测试里必须做，否则泄漏）。
@@ -69,8 +69,8 @@ pub(crate) unsafe fn 取返回字节(数据槽: &数据槽) -> Vec<u8> {
 /// # Safety
 /// 数据槽必须来自本模块执行函数写出的字节集槽。
 pub(crate) unsafe fn 释放返回字节(数据槽: &数据槽) {
-    if 数据槽.类型标签 == 类型标签_0005 && 数据槽.是否引用() && 数据槽.值 != 0 {
-        let 片段 = core::ptr::slice_from_raw_parts_mut(数据槽.值 as *mut u8, 数据槽.长度 as usize);
+    if 数据槽.类型标签 == 类型标签_0005 && 数据槽.是否引用() && 数据槽.槽值 != 0 {
+        let 片段 = core::ptr::slice_from_raw_parts_mut(数据槽.槽值 as *mut u8, 数据槽.长度 as usize);
         // SAFETY: 由调用方保证该指针来自 Box<[u8]>，且只释放一次。
         drop(unsafe { Box::from_raw(片段) });
     }
