@@ -35,6 +35,8 @@ pub mod 扫扩展根;
 pub mod 模块制品;
 #[path = "报文读写.rs"]
 mod 报文读写;
+#[path = "报文校验.rs"]
+mod 报文校验;
 #[path = "请求.rs"]
 mod 请求;
 #[path = "端点路由.rs"]
