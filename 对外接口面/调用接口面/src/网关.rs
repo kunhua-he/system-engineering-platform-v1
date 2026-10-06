@@ -45,7 +45,7 @@ use crate::端点路由;
 use crate::常量::{监听地址, 接口端口, 工具根默认, 静态根};
 use std::net::{TcpListener, TcpStream};
 use std::path::{Path, PathBuf};
-use std::sync::RwLock;
+use std::sync::{Arc, RwLock};
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::time::Duration;
 use v1_adapter::{版本三元组, 平台信息, 适配器, 丢弃策略, 留痕容量};
@@ -94,10 +94,11 @@ pub struct 契约身份 {
 /// `工具根` 是 §七 工具族的**部署事实**（案例库 · 扩展根声明 · 外部 CLI 的所在），
 /// 默认是进程工作目录（仓根口径，与 `静态根` 同一条约定），装配侧要换就调 [`服务::工具根`]。
 pub struct 服务 {
-    /// 适配器 + 一把 `RwLock`：读端点并发持**读锁**；**运行期装载**
-    /// （`POST /接口/生命周期` 动作=装载）要 `追加装载` 取 `&mut`，故持**写锁**
-    /// （台账 237）。
-    适配器: RwLock<适配器>,
+    /// 适配器 + 一把 `RwLock`，里面装的是 `Arc`：**读端点只在锁内取一次执行引用**
+    /// （`Arc` 克隆 = 路由快照），**锁外执行** ⇒ 长执行不再阻塞装载；
+    /// **运行期装载/卸载**（`POST /接口/生命周期`）持**写锁**，用 `Arc::make_mut` 换候选
+    /// （有在途引用时自动换新副本 ⇒ 旧链排空；台账 237）。
+    适配器: RwLock<Arc<适配器>>,
     契约身份: 契约身份,
     静态根: PathBuf,
     /// 运行期装载**重扫**的落点（扩展根声明路径）。**注入的部署事实**：与 `静态根` /
@@ -159,7 +160,7 @@ impl 服务 {
         let 监听 = TcpListener::bind((监听地址, 监听端口)).map_err(启动失败::绑定)?;
         let 监听端口 = 监听.local_addr().map_err(启动失败::绑定)?.port();
         Ok(Self {
-            适配器: RwLock::new(适配器),
+            适配器: RwLock::new(Arc::new(适配器)),
             契约身份,
             静态根: 托管根.into(),
             声明根: None,
@@ -226,9 +227,7 @@ impl 服务 {
     /// 必须在**共享出去之前**调（`&mut self`）；开与不开发影响的是
     /// `GET /接口/留痕` 有没有内容，不影响任何调用结果（留痕不进关键路径）。
     pub fn 启用留痕(&mut self, 容量: u32, 策略: v1_adapter::丢弃策略) {
-        self.适配器
-            .get_mut()
-            .unwrap_or_else(|中毒| 中毒.into_inner())
+        Arc::make_mut(self.适配器.get_mut().unwrap_or_else(|中毒| 中毒.into_inner()))
             .启用留痕(容量, 策略);
     }
 
@@ -243,10 +242,10 @@ impl 服务 {
         &self.静态根
     }
 
-    /// 唯一腿（验证面与装配用）。返回**读锁守卫**：`RwLock` 下不能借出裸 `&适配器`
-    /// （守卫活过借用期就保证读期间无写）。调用方按 `&*服务.适配器()` 取 `&适配器`。
-    pub fn 适配器(&self) -> std::sync::RwLockReadGuard<'_, 适配器> {
-        self.适配器.read().unwrap_or_else(|中毒| 中毒.into_inner())
+    /// 唯一腿（验证面与装配用）。返回**执行引用**（`Arc` 克隆）：锁内取、锁外可长活；
+    /// 调用方按 `&服务.适配器()` 取 `&适配器`（`Arc` 自动解引用）。
+    pub fn 适配器(&self) -> Arc<适配器> {
+        self.适配器.read().unwrap_or_else(|中毒| 中毒.into_inner()).clone()
     }
 
     /// 接受一个连接、处理一次、关闭。**一个连接一个请求**（不做连接管理）。
@@ -359,21 +358,25 @@ impl 服务 {
         } else {
             None
         };
-        // 生命周期 POST：**装载与卸载都改适配器状态**（`追加装载` / 完整卸载都取 `&mut`）
-        // ⇒ 由本层持**写锁**，把 `&mut 适配器` 交给 `生命周期响应`。其余端点一律**读锁**。
+        // 生命周期 POST：**装载与卸载都改适配器状态** ⇒ 由本层持**写锁**，用 `Arc::make_mut`
+        // 换候选（有在途引用时自动换新副本 ⇒ 旧链排空），把 `&mut 适配器` 交给 `生命周期响应`。
+        // 其余端点：**锁内取执行引用（`Arc` 克隆）→ 锁外执行** —— 长执行不再持读锁、不再阻塞装载。
         // 分发体在 `分发::处理生命周期动作`（本件行数已近硬数，搬出二十行）。
         if let crate::端点路由::端点::生命周期动作 = 落点 {
+            let mut 锁 = self.适配器.write().unwrap_or_else(|中毒| 中毒.into_inner());
             return crate::分发::处理生命周期动作(
-                &self.适配器,
+                Arc::make_mut(&mut 锁),
                 请求体.as_ref(),
                 self.声明根.as_deref(),
                 self.后缀表文本.as_deref(),
                 self.缓存根目录.as_deref(),
             );
         }
-        let 适配器 = self.适配器.read().unwrap_or_else(|中毒| 中毒.into_inner());
+        // 锁内取执行引用：克隆 `Arc`（路由快照），随即释放读锁。
+        let 执行引用 = self.适配器.read().unwrap_or_else(|中毒| 中毒.into_inner()).clone();
+        // 锁外执行：`执行引用` 是本次请求的快照，长执行不占锁。
         处理请求(
-            &适配器,
+            &执行引用,
             &self.契约身份,
             self.监听端口,
             &self.静态根,
