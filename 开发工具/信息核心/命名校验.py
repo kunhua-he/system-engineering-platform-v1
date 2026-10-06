@@ -380,7 +380,7 @@ def 落库(树根, 干跑: bool = False) -> dict:
         外来 = {名 for 名 in 新名 if 名.isascii() and 面数[名] == 0 and 全成员[名]}   # 别人家的名字
         判定 = [(名,) + 判状态(名, 泛名表, 动作词) for 名 in 新名 if 名 not in 外来]
         计数 = {"扫描出现": len(记录), "涉及名字": len({一条["名字"] for 一条 in 记录}), "新增": len(新名),
-               "其中外部强加": len(外来), "其中待改名": sum(1 for _, 态, _, _ in 判定 if 态 == "待改名")}
+               "其中外部强加": len(外来), "其中待改名": sum(1 for _, 本条状态, _, _ in 判定 if 本条状态 == "待改名")}
         if 干跑:
             return 计数
         连接.executemany("insert or ignore into 命名例外(名字, 说明) values(?,?)",

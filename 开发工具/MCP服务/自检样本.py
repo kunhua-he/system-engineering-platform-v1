@@ -48,9 +48,9 @@ def _跑夹具(临时根: Path, 仓根, 工具表, 文件指纹, 批量改名, �
     字段件 = 树 / "临时区" / "字段样例.js"
     字段内容 = "const 对象 = { 旧字段名: 1 };\nconsole.log(对象.旧字段名);\n"
     字段件.write_text(字段内容, encoding="utf-8")
-    库 = 树 / "开发工具" / "信息核心" / "信息核心.db"
-    库.parent.mkdir(parents=True)
-    规则 = sqlite3.connect(str(库))
+    规则库路径 = 树 / "开发工具" / "信息核心" / "信息核心.db"
+    规则库路径.parent.mkdir(parents=True)
+    规则 = sqlite3.connect(str(规则库路径))
     规则.execute("create table 命名登记(名字 text primary key, 语义 text, 模式 text, 来源 text, 状态 text)")
     规则.execute("create table 命名例外(名字 text primary key, 说明 text)")
     规则.executemany("insert into 命名登记 values (?,?,?,?,?)",

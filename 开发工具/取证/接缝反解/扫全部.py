@@ -18,10 +18,10 @@ def 扫全部(目录):
         总件数 += 1
         try:
             ex = PE(open(样本路径, "rb").read(), 样本路径).解导出表(); 分布[len(ex)] = 分布.get(len(ex), 0) + 1
-            读数 = 反解接缝(样本路径); 声明数 = 读数["字典"]["m_nCmdCount"]; 槽数, 多 = 读数["物理槽"]; 判词 = 计数判定(读数)
+            读数 = 反解接缝(样本路径); 声明数 = 读数["字典"]["m_nCmdCount"]; 槽数, 溢出槽表 = 读数["物理槽"]; 判词 = 计数判定(读数)
             print("%-24s %5d %6d %8s  %s" % (os.path.basename(样本路径), len(ex), 声明数, "不适用" if 槽数 is None else 槽数, 判词))
             if 判词 == "不齐":
-                不齐.append((os.path.basename(样本路径), 声明数, 槽数, 多[0][2]))
+                不齐.append((os.path.basename(样本路径), 声明数, 槽数, 溢出槽表[0][2]))
         except 解析错误 as ex:
             print("%-24s %5s %6s %8s  未判：%s" % (os.path.basename(样本路径), "?", "-", "-", str(ex)[:34]))
             未判.append(os.path.basename(样本路径))

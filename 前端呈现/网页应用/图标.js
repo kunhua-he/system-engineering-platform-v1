@@ -27,7 +27,7 @@ export const 图形表 = {
   重做: { 路径: "M13 7H6a3 3 0 000 6h3M13 7l-3-3M13 7l-3 3" },
   查找: { 路径: "M7 1a6 6 0 100 12A6 6 0 007 1zM11.5 11.5L15 15" },
   编译执行: { 路径: "M2 4l6-3 6 3v8l-6 3-6-3zM2 4l6 3 6-3M8 7v8" },
-  运行: { 路径: "M4 2l9 6-9 6z", 填: true },
+  运行: { 路径: "M4 2l9 6-9 6z", 是否填充: true },
   诊断: { 路径: "M8 1a7 7 0 100 14A7 7 0 008 1zM8 4v5M8 10.5v1.5" },
   清空: { 路径: "M2 4h12M6 4V1h4v3M4 4l1 11h6l1-11M6.5 7v5M9.5 7v5" },
   视图: { 路径: "M1 3h14v10H1zM1 6h14M3 4.5h1M5 4.5h1" },
@@ -76,7 +76,7 @@ export function 画图标(名称) {
   路径.setAttribute("stroke-width", "1");
   路径.setAttribute("stroke-linecap", "round");
   路径.setAttribute("stroke-linejoin", "round");
-  路径.setAttribute("fill", 图形项.填 ? "currentColor" : "none");
+  路径.setAttribute("fill", 图形项.是否填充 ? "currentColor" : "none");
   元素.append(路径);
   return 元素;
 }

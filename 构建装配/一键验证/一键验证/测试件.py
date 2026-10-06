@@ -50,10 +50,10 @@ def 建测试文件集(文件: dict) -> set:
         原文 = 文件项["文本"]
         父目录 = 父键.rsplit("/", 1)[0] if "/" in 父键 else ""
         for 命中 in _夹具挂载形.finditer(净文本):
-            属性 = _条件编译属性(净文本, 命中.start())
-            if 属性 is None:
+            条件编译属性 = _条件编译属性(净文本, 命中.start())
+            if 条件编译属性 is None:
                 continue
-            属性文本, 属止 = 属性
+            属性文本, 属止 = 条件编译属性
             if not re.search(r"\btest\b", 属性文本):
                 continue
             # 项头：从 cfg 属性之后扫到第一个 `{` 或 `;`（`{` 是内联块，照样算一条挂载声明）
