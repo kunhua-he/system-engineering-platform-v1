@@ -23,7 +23,7 @@ pub mod 生命周期通知 {
 #[derive(Clone, Copy)]
 pub struct 通知端点 {
     pub 标识串: *const u8,
-    pub 函数: 通知函数,
+    pub 端点函数: 通知函数,
 }
 
 /// 派发结果。

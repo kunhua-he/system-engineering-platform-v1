@@ -12,7 +12,7 @@
 from __future__ import annotations
 
 from .常量 import 判据名表, 底座声明根
-from .小工具 import 是整数
+from .扫实现小工具 import 是整数
 from .判据工具 import 记判据
 
 

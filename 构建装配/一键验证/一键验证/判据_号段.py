@@ -3,7 +3,7 @@
 
 from __future__ import annotations
 
-from .小工具 import 层级标签, 是整数, 段归属标签, 违规
+from .验证小工具 import 层级标签, 是整数, 段归属标签, 违规
 from .常量 import 占用段键, 号段图路径, 契约目录名, 布局段键, 检查名
 
 

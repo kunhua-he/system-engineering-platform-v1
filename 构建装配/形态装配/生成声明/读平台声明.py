@@ -8,7 +8,7 @@
 import os
 
 from .路径形状 import 仓根, 生成失败
-from .小工具 import 读JSON件, 取整, 取串, 取表, 版本三元组, 版本要求
+from .生成小工具 import 读JSON件, 取整, 取串, 取表, 版本三元组, 版本要求
 from .渲染接缝 import 校验导出目标
 
 

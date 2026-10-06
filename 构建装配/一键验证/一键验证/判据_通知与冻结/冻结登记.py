@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import re
 
-from ..小工具 import 判不了, 是整数, 违规
+from ..验证小工具 import 判不了, 是整数, 违规
 from ..冻结形状 import 算落点指纹
 from ..常量 import 契约目录名, 检查名
 

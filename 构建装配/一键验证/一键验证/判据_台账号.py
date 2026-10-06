@@ -42,7 +42,7 @@ from __future__ import annotations
 
 import re
 
-from .小工具 import 判不了, 违规
+from .验证小工具 import 判不了, 违规
 from .常量 import 检查名
 from .判据基线 import 读台账号基线, 库相对路径
 from .条款文本 import 读条款件

@@ -159,8 +159,8 @@ fn 默认位置不在源码树内_三条规则都推不出当前目录() {
 /// 反向样本：把两类写成同一个目录名（复制粘贴错），本用例当场红。
 #[test]
 fn 四类子目录_名字两两不同_次序与判别值一致() {
-    for (序号, 类别) in 子目录::全集.iter().enumerate() {
-        assert_eq!(*类别 as usize, 序号, "次序必须与判别值一致：{类别:?}");
+    for (序号, 子目录类别) in 子目录::全集.iter().enumerate() {
+        assert_eq!(*子目录类别 as usize, 序号, "次序必须与判别值一致：{子目录类别:?}");
     }
     for (前项序, 前项) in 子目录::全集.iter().enumerate() {
         for 后项 in &子目录::全集[前项序 + 1..] {
@@ -178,10 +178,10 @@ fn 确保子目录真建得出来() {
         std::process::id()
     ));
     let _ = std::fs::remove_dir_all(&根目录);
-    for 类别 in 子目录::全集 {
-        let 路径 = 确保子目录(&根目录, 类别).expect("建目录");
+    for 子目录类别 in 子目录::全集 {
+        let 路径 = 确保子目录(&根目录, 子目录类别).expect("建目录");
         assert!(路径.is_dir(), "必须真建出目录：{路径:?}");
-        assert!(路径.ends_with(类别.取名称()));
+        assert!(路径.ends_with(子目录类别.取名称()));
     }
     let _ = std::fs::remove_dir_all(&根目录);
 }

@@ -33,7 +33,7 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-from .小工具 import 判不了, 违规
+from .验证小工具 import 判不了, 违规
 from .常量 import 检查名, 排除目录
 # 排除的顶层目录名（口径书点名的四个）—— **段形态主人**是
 # `开发工具/代码地图/落点.py::排除目录`，本件与 `判据_引用.py` 都引它（2026-09-30 收口：

@@ -20,9 +20,9 @@ pub(crate) const 体上限: usize = 1 << 20;
 /// 一条已读完的 HTTP 请求。**只留形状**：方法 · 目标 · 体。
 #[derive(Debug, Clone)]
 pub struct 报文 {
-    pub 方法: String,
+    pub 请求方法: String,
     pub 请求目标: String,
-    pub 体: String,
+    pub 报文体: String,
 }
 
 /// 读一条请求。错误是**一句可读说明**（⇒ 400）。
@@ -55,7 +55,7 @@ pub(crate) fn 读报文(输出流: &mut TcpStream) -> Result<报文, String> {
     if 部件.len() != 3 {
         return Err("请求行必须是「方法 目标 版本」三段".to_owned());
     }
-    let (方法, 请求目标) = (部件[0].to_owned(), 部件[1].to_owned());
+    let (请求方法, 请求目标) = (部件[0].to_owned(), 部件[1].to_owned());
 
     let mut 内容长度 = 0usize;
     for 文本行 in 行迭代器 {
@@ -92,7 +92,7 @@ pub(crate) fn 读报文(输出流: &mut TcpStream) -> Result<报文, String> {
         体字节.extend_from_slice(&读缓冲[..读到]);
     }
     let 请求体 = String::from_utf8(体字节).map_err(|_| "请求体不是合法 UTF-8".to_owned())?;
-    Ok(报文 { 方法, 请求目标, 体: 请求体 })
+    Ok(报文 { 请求方法, 请求目标, 报文体: 请求体 })
 }
 
 /// 找 `\r\n\r\n` 的起始偏移（请求头与体的分界）。
@@ -113,10 +113,10 @@ pub(crate) fn 写响应(输出流: &mut TcpStream, 造应答: &造应答) -> std
         造应答.状态,
         原因短语(造应答.状态),
         造应答.内容类型,
-        造应答.体.len()
+        造应答.报文体.len()
     );
     输出流.write_all(头部.as_bytes())?;
-    输出流.write_all(&造应答.体)?;
+    输出流.write_all(&造应答.报文体)?;
     输出流.flush()
 }
 

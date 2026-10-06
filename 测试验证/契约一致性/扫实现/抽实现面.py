@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import re
 
-from .小工具 import 找配对界符, 拆顶层项, 行号
+from .扫实现小工具 import 找配对界符, 拆顶层项, 行号
 # 词法器只留一套：闸 2 直接引闸 1 的 `去字面量`（原 `掩码.py` 只是它的转口，已删）。
 from 构建装配.一键验证.一键验证.剥字面量 import 去字面量
 from .夹具判定 import 生产区文本

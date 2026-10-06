@@ -4,7 +4,7 @@
 from .号段归属 import 资源号段两段
 from .常量表 import 常量表落点
 from .推导比对 import 推导规则, 推导鲁棒性, 推导过程, 通知号段三段, 常量表落点描述
-from .小工具 import 注释行, 转字符串字面量
+from .生成小工具 import 注释行, 转字符串字面量
 
 
 def 渲染常量表(渲染器, 根目录, 常量表):

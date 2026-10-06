@@ -12,7 +12,7 @@ from pathlib import Path
 
 from . import 常量
 
-from .小工具 import 判不了, 是临时路径, 取相对路径
+from .验证小工具 import 判不了, 是临时路径, 取相对路径
 from .常量 import 临时目录前缀, 号段图路径, 契约目录名, 常量表路径, 并发度, 扫描后缀, 编号字段, 编号目录, 跳过目录, 顶层目录到层, 库目录名, 库文件名
 from .测试件 import 建测试文件集
 

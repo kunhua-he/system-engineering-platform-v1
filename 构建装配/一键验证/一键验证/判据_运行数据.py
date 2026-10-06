@@ -40,7 +40,7 @@ from __future__ import annotations
 
 import re
 
-from .小工具 import 判不了, 违规
+from .验证小工具 import 判不了, 违规
 from .常量 import 代码后缀, 检查名
 from .测试件 import 并行取生产区文本
 from .判据基线 import 读运行数据基线, 库相对路径

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import re
 
-from .小工具 import 拆顶层项
+from .扫实现小工具 import 拆顶层项
 from .符号解析 import 解符号, 末段
 
 

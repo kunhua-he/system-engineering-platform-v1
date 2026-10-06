@@ -10,7 +10,7 @@ from pathlib import Path
 from . import 常量
 
 from .合成仓 import 造干净仓
-from .小工具 import 取判据明细
+from .验证小工具 import 取判据明细
 from .常量 import 前端逻辑模式, 检查名
 from .判据_拓扑 import 前端命中
 from .测试件 import 生产区文本

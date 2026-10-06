@@ -26,17 +26,17 @@ fn 写一个值(输出缓冲: &mut String, 待处理值: &协议值, 层级: usi
         协议值::空值项 => 输出缓冲.push_str("null"),
         协议值::真值 => 输出缓冲.push_str("true"),
         协议值::假值 => 输出缓冲.push_str("false"),
-        协议值::整数项(数) => 输出缓冲.push_str(&数.to_string()),
-        协议值::无符号值(数) => 输出缓冲.push_str(&数.to_string()),
-        协议值::小数(数) => {
-            if 数.is_finite() {
-                输出缓冲.push_str(&数.to_string());
+        协议值::整数项(数值载荷) => 输出缓冲.push_str(&数值载荷.to_string()),
+        协议值::无符号值(数值载荷) => 输出缓冲.push_str(&数值载荷.to_string()),
+        协议值::小数(数值载荷) => {
+            if 数值载荷.is_finite() {
+                输出缓冲.push_str(&数值载荷.to_string());
             } else {
                 // 非有限值不是合法 JSON（见文件头）。
                 输出缓冲.push_str("null");
             }
         }
-        协议值::文本值(文) => 写JSON文本(输出缓冲, 文),
+        协议值::文本值(文本载荷) => 写JSON文本(输出缓冲, 文本载荷),
         协议值::数组值(数组项表) => {
             if 数组项表.is_empty() {
                 输出缓冲.push_str("[]");
@@ -59,12 +59,12 @@ fn 写一个值(输出缓冲: &mut String, 待处理值: &协议值, 层级: usi
                 return;
             }
             输出缓冲.push('{');
-            for (序, (键, 成员值)) in 对象成员.iter().enumerate() {
-                if 序 > 0 {
+            for (位序, (成员键, 成员值)) in 对象成员.iter().enumerate() {
+                if 位序 > 0 {
                     输出缓冲.push(',');
                 }
                 写缩进(输出缓冲, 层级 + 1);
-                写JSON文本(输出缓冲, 键);
+                写JSON文本(输出缓冲, 成员键);
                 输出缓冲.push_str(": ");
                 写一个值(输出缓冲, 成员值, 层级 + 1);
             }

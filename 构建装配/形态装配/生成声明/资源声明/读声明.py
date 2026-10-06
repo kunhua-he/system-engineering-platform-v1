@@ -10,7 +10,7 @@
 import os
 
 from ..路径形状 import 仓根, 生成失败
-from ..小工具 import 读JSON件, 源指纹
+from ..生成小工具 import 读JSON件, 源指纹
 from .路径与枚举 import (
     顶层键,
     操作键,

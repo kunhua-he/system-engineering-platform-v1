@@ -119,7 +119,7 @@ mod 整条HTTP {
 
     /// 发一条原始请求并收回应答（状态码 + 原始文本）。
     fn 发请求(服务: &服务, 请求: &str) -> (u16, String) {
-        let mut 输出流 = TcpStream::connect(("127.0.0.1", 服务.端口())).expect("必须连得上（监听已 bind）");
+        let mut 输出流 = TcpStream::connect(("127.0.0.1", 服务.监听端口())).expect("必须连得上（监听已 bind）");
         输出流.write_all(请求.as_bytes()).expect("写请求");
         输出流.flush().expect("刷请求");
         服务.处理一个连接().expect("服务必须处理一次");

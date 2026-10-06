@@ -7,7 +7,7 @@ from pathlib import Path
 
 from .Rust文本 import 漏传上下文调用
 from .判据元数据 import 判据元数据
-from .小工具 import 判不了, 违规
+from .验证小工具 import 判不了, 违规
 from .常量 import 检查名
 
 

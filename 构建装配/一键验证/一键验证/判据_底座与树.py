@@ -9,7 +9,7 @@ from pathlib import Path
 
 from . import 常量
 
-from .小工具 import 判不了, 取相对路径, 违规
+from .验证小工具 import 判不了, 取相对路径, 违规
 from .常量 import 临时目录前缀, 代码后缀, 底座代码树, 底座代码面排除, 扩展根三类, 检查名, 契约目录名
 from .测试件 import 并行取生产区文本, 去注释保串
 from .判据基线 import 读底座扩展名基线, 库相对路径

@@ -7,7 +7,7 @@ from .号段归属 import 号段归属表
 from .常量表 import 常量表落点, 读常量表
 from .推导比对 import 交叉比对常量表, 推导号段类
 from .路径形状 import 仓根, 声明根, 生成失败, 生成子件名
-from .小工具 import 列目录JSON件, 源指纹
+from .生成小工具 import 列目录JSON件, 源指纹
 from .读平台声明 import 判占用落在布局内, 读平台声明, 读号段图, 选声明文件
 from .读子表 import (
     读类型声明,

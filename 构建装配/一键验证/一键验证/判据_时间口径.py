@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import re
 
-from .小工具 import 判不了, 违规
+from .验证小工具 import 判不了, 违规
 from .常量 import 单位词表, 时间口径面, 检查名
 # 标识符正则**只有一份**（主人 = 本包剥器 `命名扫描.py::_标识符`）：本件原先自带一份逐字相同的
 # ⇒ 2026-09-30 收口，删掉本地那份、改引主人（同一职责不许两份）。

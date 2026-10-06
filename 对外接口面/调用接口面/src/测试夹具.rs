@@ -23,17 +23,17 @@ pub const 错误体六项: [&str; 6] = ["码", "段位", "名称", "可重试", 
 /// 收到的一条应答：状态码 + 头 + 体。
 pub struct 收到应答 {
     pub 状态: u16,
-    pub 头: String,
-    pub 体: String,
+    pub 报文头: String,
+    pub 报文体: String,
 }
 
 impl 收到应答 {
     /// 体解析成 JSON。**应答体必须是合法 JSON** —— 不是就当场挂（那是本面的缺陷）。
     pub fn 取协议值(&self) -> 协议值 {
-        crate::协议解析::解析协议值(&self.体).unwrap_or_else(|错误| {
+        crate::协议解析::解析协议值(&self.报文体).unwrap_or_else(|错误| {
             panic!(
                 "应答体必须是合法 JSON，却在第 {} 字节报「{}」：\n{}",
-                错误.出错位置, 错误.说明文字, self.体
+                错误.出错位置, 错误.说明文字, self.报文体
             )
         })
     }
@@ -41,7 +41,7 @@ impl 收到应答 {
     /// 取一个顶层键；**没有就挂**（要判「没有」请用 `找成员`）。
     pub fn 取成员(&self, 键名: &str) -> 协议值 {
         self.找成员(键名)
-            .unwrap_or_else(|| panic!("应答里没有「{键名}」：\n{}", self.体))
+            .unwrap_or_else(|| panic!("应答里没有「{键名}」：\n{}", self.报文体))
     }
 
     /// 找一个顶层键；没有给 `None`。
@@ -54,7 +54,7 @@ impl 收到应答 {
         match self.取成员(键名) {
             协议值::真值 => true,
             协议值::假值 => false,
-            其它 => panic!("「{键名}」应当是逻辑型，实际 {其它:?}：\n{}", self.体),
+            其余值 => panic!("「{键名}」应当是逻辑型，实际 {其余值:?}：\n{}", self.报文体),
         }
     }
 
@@ -63,7 +63,7 @@ impl 收到应答 {
         self.取成员(键名)
             .取文本()
             .map(str::to_owned)
-            .unwrap_or_else(|| panic!("「{键名}」应当是文本：\n{}", self.体))
+            .unwrap_or_else(|| panic!("「{键名}」应当是文本：\n{}", self.报文体))
     }
 
     /// 取顶层的一个数组键。
@@ -71,7 +71,7 @@ impl 收到应答 {
         self.取成员(键名)
             .取数组()
             .map(<[协议值]>::to_vec)
-            .unwrap_or_else(|| panic!("「{键名}」应当是数组：\n{}", self.体))
+            .unwrap_or_else(|| panic!("「{键名}」应当是数组：\n{}", self.报文体))
     }
 }
 
@@ -80,7 +80,7 @@ pub fn 取逻辑值(待处理值: &协议值, 键名: &str) -> bool {
     match 待处理值.取成员(键名) {
         Some(协议值::真值) => true,
         Some(协议值::假值) => false,
-        其它 => panic!("「{键名}」应当是逻辑型，实际 {其它:?}"),
+        其余值 => panic!("「{键名}」应当是逻辑型，实际 {其余值:?}"),
     }
 }
 
@@ -160,7 +160,7 @@ pub fn 交POST请求(路径: &str, 请求体: &str) -> String {
 ///
 /// 顺序固定：连上 → 写请求 → **服务处理一次** → 读应答。见文件头「为什么不必开线程」。
 pub fn 发请求(服务: &服务, 请求: &str) -> 收到应答 {
-    let mut 输出流 = TcpStream::connect((监听地址, 服务.端口())).expect("必须连得上（监听已 bind）");
+    let mut 输出流 = TcpStream::connect((监听地址, 服务.监听端口())).expect("必须连得上（监听已 bind）");
     输出流.write_all(请求.as_bytes()).expect("写请求");
     输出流.flush().expect("刷请求");
     服务.处理一个连接().expect("服务必须处理一次");
@@ -173,8 +173,8 @@ pub fn 发请求(服务: &服务, 请求: &str) -> 收到应答 {
 ///
 /// 给并发测试用：服务端由 `服务::跑并发` 的工作线程收连接，测试这一侧只能当客户端。
 /// 不能拿 [`发请求`] 代替 —— 它自带一次 `处理一个连接`，会与并发的服务端**抢同一个连接**。
-pub fn 发到端口(端口: u16, 请求: &str) -> 收到应答 {
-    let mut 输出流 = TcpStream::connect((监听地址, 端口)).expect("必须连得上（监听已 bind）");
+pub fn 发到端口(监听端口: u16, 请求: &str) -> 收到应答 {
+    let mut 输出流 = TcpStream::connect((监听地址, 监听端口)).expect("必须连得上（监听已 bind）");
     输出流.write_all(请求.as_bytes()).expect("写请求");
     输出流.flush().expect("刷请求");
     let mut 缓冲 = Vec::new();
@@ -196,7 +196,7 @@ fn 解析应答(字节: &[u8]) -> 收到应答 {
         .unwrap_or_else(|| panic!("应答首行必须是「HTTP/1.1 码 短语」：\n{源文本}"));
     收到应答 {
         状态,
-        头: 头部.to_owned(),
-        体: 应答体.to_owned(),
+        报文头: 头部.to_owned(),
+        报文体: 应答体.to_owned(),
     }
 }

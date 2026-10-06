@@ -54,7 +54,7 @@ fn 写一个值(输出缓冲: &mut String, 待处理值: &JSON值, 层级: usize
         JSON值::空值项 => 输出缓冲.push_str("null"),
         JSON值::真值 => 输出缓冲.push_str("true"),
         JSON值::假值 => 输出缓冲.push_str("false"),
-        JSON值::整数项(数) => 输出缓冲.push_str(&数.to_string()),
+        JSON值::整数项(整数值) => 输出缓冲.push_str(&整数值.to_string()),
         JSON值::文本值(文本载荷) => 写JSON文本(输出缓冲, 文本载荷),
         JSON值::数组值(数组项表) => {
             if 数组项表.is_empty() {

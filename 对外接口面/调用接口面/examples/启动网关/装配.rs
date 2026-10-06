@@ -39,7 +39,7 @@ fn 取值(名称: &str) -> Option<String> {
 pub(crate) fn 跑网关() -> Result<(), String> {
     let 声明根路径 =
         PathBuf::from(取值("--声明根").unwrap_or_else(|| "扩展装载/扩展根声明.json".to_owned()));
-    let 端口: Option<u16> = match 取值("--端口") {
+    let 监听端口: Option<u16> = match 取值("--端口") {
         Some(源文本) => Some(源文本.parse::<u16>().map_err(|_| format!("--端口 不是整数：{源文本}"))?),
         None => None,
     };
@@ -69,7 +69,7 @@ pub(crate) fn 跑网关() -> Result<(), String> {
     // 扫描规则（扫哪些目录 · 找什么 · 取接缝）都在 `v1_gateway::扫扩展根::读声明根`
     // （与装配侧 `构建装配/上线切换/构建制品/扩展.py::扫扩展` 同一条规则；启动装配与
     // 运行期装载同读一份）。本步只做「试装 + 剔除并报因」。
-    let mut 候选: Vec<&'static 平台信息> = vec![v1_adapter::底座声明()];
+    let mut 声明候选: Vec<&'static 平台信息> = vec![v1_adapter::底座声明()];
     let mut 装上的: Vec<String> = Vec::new();
     let mut 剔除的: Vec<(String, String)> = Vec::new();
     for 扩展根目录 in &声明根扫描.目录s {
@@ -80,15 +80,15 @@ pub(crate) fn 跑网关() -> Result<(), String> {
         for 子目录项 in 列子目录(扩展根目录) {
             let 落点 = 子目录项.display().to_string();
             match 取扩展声明(&子目录项) {
-                Err(原因) => 剔除的.push((落点, 原因)),
+                Err(失败原因) => 剔除的.push((落点, 失败原因)),
                 Ok(声明) => {
                     // 试装：拿**同一个** `适配器::装载声明根` 走一遍（与 `服务::绑定` 内部
                     // 用的是同一条装载路，不另写一套）。装得上才算这份声明根的一份。
-                    let mut 试装候选 = 候选.clone();
+                    let mut 试装候选 = 声明候选.clone();
                     试装候选.push(声明);
                     match 适配器::装载声明根(&试装候选) {
                         Ok(_) => {
-                            候选.push(声明);
+                            声明候选.push(声明);
                             装上的.push(落点);
                         }
                         Err(错误) => 剔除的.push((落点, 说清启动失败(&启动失败::装载(错误)))),
@@ -106,14 +106,14 @@ pub(crate) fn 跑网关() -> Result<(), String> {
     for 落点 in &装上的 {
         println!("  装上 {落点}");
     }
-    for (落点, 原因) in &剔除的 {
-        println!("  剔除 {落点}：{原因}");
+    for (落点, 失败原因) in &剔除的 {
+        println!("  剔除 {落点}：{失败原因}");
     }
 
     // ── 第三步：递给 服务::绑定（静态托管根给了就注入，见 `接口面形状.md` §五）────
-    let 服务 = match 端口 {
-        Some(号值) => 服务::绑定端口(&候选, 号值),
-        None => 服务::绑定默认端口(&候选),
+    let 服务 = match 监听端口 {
+        Some(号值) => 服务::绑定端口(&声明候选, 号值),
+        None => 服务::绑定默认端口(&声明候选),
     }
     .map_err(|错误| format!("起服务失败：{}", 说清启动失败(&错误)))?;
     // 声明根路径是运行期装载（`POST /接口/生命周期` 动作=装载）**重扫**的落点：
@@ -129,7 +129,7 @@ pub(crate) fn 跑网关() -> Result<(), String> {
     };
 
     // ── 第四步：起监听（这一行是给上线切换读的：它靠它拿实际端口）──────────
-    println!("监听 127.0.0.1:{}", 服务.端口());
+    println!("监听 127.0.0.1:{}", 服务.监听端口());
     println!("静态托管根 {}（`GET /` 从这里回 index.html）", 服务.静态根().display());
     println!("工具根 {}（§七 工具族的案例库 / 扩展根声明 / 外部 CLI 从这里取）", 服务.取工具根().display());
     println!(

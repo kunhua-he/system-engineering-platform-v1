@@ -35,7 +35,7 @@ r"""判据 ㊴：`路径 §节名` 引用可解析 —— 全树凡 `<名>.md §
 """
 from __future__ import annotations
 
-from .小工具 import 判不了, 违规
+from .验证小工具 import 判不了, 违规
 from .常量 import 检查名, 排除目录
 from .引用扫描 import 扫引用, 条款节集
 from .判据基线 import 读引用基线, 读条款标题, 库相对路径

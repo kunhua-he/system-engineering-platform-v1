@@ -76,11 +76,11 @@ def 搭暂存(动态库: Path) -> Path:
     来源 = json.loads(扩展根声明源.read_text(encoding="utf-8"))
     声明 = dict(来源)
     声明["说明"] = (
-        "演示暂存副本（在系统临时目录，仓内一字未改）：种类[].目录 改指本次暂存下编出的扩展，"
+        "演示暂存副本（在系统临时目录，仓内一字未改）：种类[].扩展落点 改指本次暂存下编出的扩展，"
         "形状与 扩展装载/扩展根声明.json 一致。生成器：构建装配/演示/起演示.py"
     )
     声明["种类"] = [
-        dict(扩展类别, 目录=str(扩展树 / Path(扩展类别.get("目录", "")).name)) for 扩展类别 in 来源.get("种类", [])
+        dict(扩展类别, 扩展落点=str(扩展树 / Path(扩展类别.get("扩展落点", "")).name)) for 扩展类别 in 来源.get("种类", [])
     ]
     (暂存 / "扩展根声明.json").write_text(
         json.dumps(声明, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"

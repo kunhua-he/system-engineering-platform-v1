@@ -131,7 +131,7 @@ export function 拼文本调用体(编号, 源文本, 参数个数) {
  */
 export async function 取静态件(路径) {
   const 造应答 = await fetch(路径, { headers: { Accept: "text/plain, */*" } });
-  return { 状态: 造应答.status, 文: await 造应答.text() };
+  return { 状态: 造应答.status, 应答文本: await 造应答.text() };
 }
 
 async function 取应答(路径) {
@@ -159,5 +159,5 @@ async function 收应答(造应答) {
     应答体 = null;
   }
   const 源文本 = await 造应答.text();
-  return { 状态: 造应答.status, 体: 应答体, 文: 源文本 };
+  return { 状态: 造应答.status, 报文体: 应答体, 应答文本: 源文本 };
 }

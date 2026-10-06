@@ -25,7 +25,7 @@ export function 装对话框(取元素) {
   }
 
   const 摆对话框 = (编号) => {
-    const 对话框项 = 对话框.find((候选) => 候选.编号 === 编号);
+    const 对话框项 = 对话框.find((候选项) => 候选项.编号 === 编号);
     const 对话框件 = document.createElement("div");
     对话框件.className = "易对话框";
     对话框件.style.width = 对话框项.cx + "px";
@@ -50,7 +50,7 @@ export function 装对话框(取元素) {
     台容器.replaceChildren(对话框件);
     读数元素.textContent = "对话框 " + 对话框项.编号 + " · " + 对话框项.标题 + " · 字体 " + 对话框项.字体 + " " + 对话框项.字号
       + "pt · 尺寸 " + 对话框项.cx + "×" + 对话框项.cy + " 对话框单位 · 控件 " + 对话框项.控件数
-      + " · 可达命令 " + 对话框项.依据 + " · 只摆样子，未接动作";
+      + " · 可达命令 " + 对话框项.命令依据 + " · 只摆样子，未接动作";
   };
 
   选中.addEventListener("change", () => 摆对话框(选中.value));

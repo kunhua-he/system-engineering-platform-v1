@@ -24,7 +24,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from .小工具 import 违规
+from .验证小工具 import 违规
 from .常量 import 仓根, 检查名
 
 

@@ -13,7 +13,7 @@ from . import 常量, 判据表
 from .判据元数据 import 判据元数据
 from .判据表 import 检查表
 from .合成仓 import 造干净仓
-from .小工具 import 取未判, 清未判, 违规
+from .验证小工具 import 取未判, 清未判, 违规
 from .常量 import 判据进程池上限, 并发度, 提速开关, 检查名, 进程池最小件数, 起始时刻
 from .自测用例 import 样本清单
 from .读文件 import 建上下文

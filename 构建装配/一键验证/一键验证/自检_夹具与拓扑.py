@@ -8,7 +8,7 @@ from pathlib import Path
 
 from .Rust文本 import 载入调用点
 from .合成仓 import 造干净仓
-from .小工具 import 取相对路径
+from .验证小工具 import 取相对路径
 from .常量 import 边界业务判断模式, 边界状态模式, 监听模式, 资源出入口形
 from .测试件 import 建测试文件集
 from .验证 import 跑全量判据

@@ -44,7 +44,7 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-from .小工具 import 判不了, 违规
+from .验证小工具 import 判不了, 违规
 from .常量 import 检查名, 排除目录
 from .命名面 import 取查名 as _查名
 from .判据基线 import 读禁译名基线, 库相对路径

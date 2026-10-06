@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from .常量 import 判据名表, 契约源目录, 底座声明根, 底座实现落点
-from .小工具 import 是整数
+from .扫实现小工具 import 是整数
 from .判据工具 import 记判据
 from .判据声明实现 import 比一声明根
 from .判据类型标签 import 比类型标签

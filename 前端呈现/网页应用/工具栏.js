@@ -72,11 +72,11 @@ export function 装工具栏(取元素, 钩子) {
         return;
       }
       const 造应答 = await 发程序文本("写", 路径, 钩子.编辑.value);
-      const 摘要结果 = 取应答摘要(造应答.体);
+      const 摘要结果 = 取应答摘要(造应答.报文体);
       if (摘要结果.判定档 === "好") {
         报状态("保存：已写入 " + 路径 + "（" + 钩子.编辑.value.length + " 字符）", true);
       } else {
-        const 错误码 = 造应答.体 && 造应答.体.错误 && 造应答.体.错误.码;
+        const 错误码 = 造应答.报文体 && 造应答.报文体.错误 && 造应答.报文体.错误.码;
         报状态("保存：写不进去 —— HTTP " + 造应答.状态 + (错误码 === undefined ? "" : " · 码 " + 错误码)
           + "（真读数，不是本页编的）", false);
       }
@@ -150,11 +150,11 @@ export function 装工具栏(取元素, 钩子) {
       源码行.append(分隔件);
       continue;
     }
-    const [图名, 提示, 名称] = 钮表项;
+    const [图名, 悬浮提示, 名称] = 钮表项;
     const 按钮 = 建元素("button", "图标钮");
     按钮.type = "button";
-    按钮.title = 提示;
-    按钮.setAttribute("aria-label", 提示);
+    按钮.title = 悬浮提示;
+    按钮.setAttribute("aria-label", 悬浮提示);
     按钮.append(画图标(图名));
     按钮.addEventListener("click", () => {
       const 动作返回 = 动作[名称]();

@@ -49,7 +49,7 @@ pub fn 是可装载库(路径: &Path) -> bool {
 
 unsafe extern "C" {
     fn dlopen(路径: *const c_char, 模式: c_int) -> *mut c_void;
-    fn dlsym(句柄: *mut c_void, 符号: *const c_char) -> *mut c_void;
+    fn dlsym(句柄: *mut c_void, 符号名: *const c_char) -> *mut c_void;
     fn dlerror() -> *mut c_char;
 }
 
@@ -77,12 +77,12 @@ pub fn 取扩展声明(扩展目录: &Path) -> Result<&'static 平台信息, Str
         return Err(format!("dlopen 失败：{}", 最近错误()));
     }
     // SAFETY: 句柄非空（上面已挡）；符号名是 ASCII 静态串。
-    let 符号 = unsafe { dlsym(句柄, c"GetPlatformInfo".as_ptr()) };
-    if 符号.is_null() {
+    let 符号指针 = unsafe { dlsym(句柄, c"GetPlatformInfo".as_ptr()) };
+    if 符号指针.is_null() {
         return Err(format!("取不到接缝符号 GetPlatformInfo（{}）", 最近错误()));
     }
     // SAFETY: 接缝形状由 `边界协议.md` §二 冻结：`const 平台信息* GetPlatformInfo(void)`。
-    let 取平台信息: extern "C" fn() -> *const 平台信息 = unsafe { core::mem::transmute(符号) };
+    let 取平台信息: extern "C" fn() -> *const 平台信息 = unsafe { core::mem::transmute(符号指针) };
     let 指针 = 取平台信息();
     if 指针.is_null() {
         return Err("GetPlatformInfo 返回空指针".to_owned());
@@ -111,7 +111,7 @@ pub fn 最近错误() -> String {
 pub struct 声明根扫描 {
     /// 声明里 `种类[]` 的条数（装配侧打印「种类 N 类」用）。
     pub 种类数: usize,
-    /// 要扫的目录：**全部** 种类[].目录（相对路径原样）。
+    /// 要扫的目录：**全部** 种类[].扩展落点（相对路径原样）。
     pub 目录s: Vec<PathBuf>,
 }
 
@@ -128,8 +128,8 @@ pub fn 读声明根(源文本: &str) -> Result<声明根扫描, String> {
         .and_then(|待处理值| 待处理值.取数组())
         .ok_or_else(|| "扩展根声明缺 `种类` 段".to_owned())?;
     let mut 目录s = Vec::new();
-    for 类别 in 扩展种类 {
-        let Some(扩展根目录) = 类别.取成员("目录").and_then(|待处理值| 待处理值.取文本()) else {
+    for 种类项 in 扩展种类 {
+        let Some(扩展根目录) = 种类项.取成员("扩展落点").and_then(|待处理值| 待处理值.取文本()) else {
             continue;
         };
         目录s.push(PathBuf::from(扩展根目录));

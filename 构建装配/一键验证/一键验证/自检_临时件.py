@@ -9,7 +9,7 @@ from pathlib import Path
 from . import 常量
 
 from .合成仓 import 造干净仓
-from .小工具 import 取判据明细
+from .验证小工具 import 取判据明细
 from .常量 import 检查名
 from .注入 import 注入_临时件落源码树
 from .验证 import 跑全量判据

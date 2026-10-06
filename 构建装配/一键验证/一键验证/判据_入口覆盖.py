@@ -44,7 +44,7 @@ import os
 import re
 from pathlib import Path
 
-from .小工具 import 判不了, 取相对路径, 违规
+from .验证小工具 import 判不了, 取相对路径, 违规
 from .常量 import 检查名, 排除目录
 from .命名扫描 import 剥后缀
 

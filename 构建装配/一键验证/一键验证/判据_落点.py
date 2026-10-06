@@ -35,7 +35,7 @@ import glob
 from pathlib import Path
 
 from .判据元数据 import 判据元数据
-from .小工具 import 判不了, 违规
+from .验证小工具 import 判不了, 违规
 from .常量 import 仓根, 检查名
 from .冻结形状 import 抽符号声明文本
 

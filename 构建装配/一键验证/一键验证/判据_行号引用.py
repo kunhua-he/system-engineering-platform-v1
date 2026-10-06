@@ -7,7 +7,7 @@ import re
 
 from . import 常量
 
-from .小工具 import 判不了, 违规
+from .验证小工具 import 判不了, 违规
 from .常量 import 检查名, 行号引用_L前缀, 行号引用_第几行, 行号引用_路径, 行号引用后缀, 语料后缀, 语料路径片段
 
 

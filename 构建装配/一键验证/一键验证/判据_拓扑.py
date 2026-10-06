@@ -37,7 +37,7 @@ from . import 常量
 
 from .Rust文本 import 载入调用点
 from .命名扫描 import 扫正则字面量
-from .小工具 import 判不了, 取相对路径, 违规
+from .验证小工具 import 判不了, 取相对路径, 违规
 from .常量 import Rust后缀, 代码后缀, 公共底层, 前端逻辑模式, 对外边界符号, 层序, 层相邻下层, 接缝符号, 检查名, 监听模式, 资源出入口形
 from .测试件 import 并行取生产区文本, 收集导出
 from .读文件 import 路径到层

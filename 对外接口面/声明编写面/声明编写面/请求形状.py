@@ -42,19 +42,19 @@ def 解析请求(请求):
     错误表 = []
     if not isinstance(请求, dict):
         return None, None, None, None, None, False, ["请求不是 JSON 对象（形状：{类别,编号,正文,确认}）"]
-    类别 = 请求.get("类别")
-    if 类别 not in 请求类别表:
+    声明类别 = 请求.get("类别")
+    if 声明类别 not in 请求类别表:
         错误表.append(
             "类别 必须是 %s 之一（收到 %r）；它是落哪个目录 · 编号字段叫什么 的唯一依据"
-            % (" · ".join(请求类别表), 类别)
+            % (" · ".join(请求类别表), 声明类别)
         )
-        return 类别, None, None, None, None, False, 错误表
-    类别目录, 字段 = 请求类别表[类别]
+        return 声明类别, None, None, None, None, False, 错误表
+    类别目录, 字段 = 请求类别表[声明类别]
 
     编号 = 请求.get("编号")
     if 编号 is not None and not _是整数(编号):
         错误表.append("编号 必须是整数或 null（收到 %r）；null 表示由面自动分配" % (编号,))
-    if 类别 == 作废类别 and 编号 is None:
+    if 声明类别 == 作废类别 and 编号 is None:
         错误表.append(
             "作废 的 编号 不许留空：作废登记指向一个**已存在**的号（号只增不复用），"
             "面不为它找空洞、不猜起始值 ⇒ 请显式给 编号"
@@ -69,8 +69,8 @@ def 解析请求(请求):
 
     确认 = 请求.get("确认") is True
     if 错误表:
-        return 类别, 类别目录, 字段, None, None, 确认, 错误表
-    return 类别, 类别目录, 字段, 编号, 正文, 确认, []
+        return 声明类别, 类别目录, 字段, None, None, 确认, 错误表
+    return 声明类别, 类别目录, 字段, 编号, 正文, 确认, []
 
 
 def 合成正文(正文, 字段, 编号):

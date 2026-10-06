@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import re
 
-from .小工具 import 找配对界符, 拆顶层项, 找顶层终止, 行号
+from .扫实现小工具 import 找配对界符, 拆顶层项, 找顶层终止, 行号
 from .符号解析 import 解整数, 解符号
 
 def 抽模块常量(掩码文本: str, 键名: str, 模块名: str) -> list:

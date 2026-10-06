@@ -14,7 +14,7 @@ from .常量 import 读上限字节, 契约目录名, 常量表相对路径, 判
 # 从**本件自身那棵树**取，不从被扫的仓取。
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "准入判据"))
 from 准入判据 import 世界  # noqa: E402
-from .小工具 import 取相对路径
+from .扫实现小工具 import 取相对路径
 # 词法器只留一套：闸 2 直接引闸 1 的 `去字面量`（原 `掩码.py` 只是它的转口，已删）。
 # 跨区 import 方向「测试验证 → 构建装配」已确立合法（同 `夹具判定.py` 引 `构造点`/`测试件`）。
 from 构建装配.一键验证.一键验证.剥字面量 import 去字面量

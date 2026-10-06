@@ -26,7 +26,7 @@
 
 use crate::常量::内容类型_JSON;
 use crate::协议值::协议值;
-use crate::路由::{拒绝, 端点};
+use crate::端点路由::{拒绝, 端点};
 use crate::请求;
 use crate::响应;
 use crate::工具响应;
@@ -44,7 +44,7 @@ use v1_adapter::适配器;
 pub struct 造应答 {
     pub 状态: u16,
     pub 内容类型: &'static str,
-    pub 体: Vec<u8>,
+    pub 报文体: Vec<u8>,
 }
 
 impl 造应答 {
@@ -53,7 +53,7 @@ impl 造应答 {
         Self {
             状态: 200,
             内容类型: 内容类型_JSON,
-            体: crate::协议写出::写协议值(待处理值).into_bytes(),
+            报文体: crate::协议写出::写协议值(待处理值).into_bytes(),
         }
     }
 
@@ -63,7 +63,7 @@ impl 造应答 {
         Self {
             状态,
             内容类型: 内容类型_JSON,
-            体: crate::协议写出::写协议值(&crate::错误形状::协议错误(说明文字)).into_bytes(),
+            报文体: crate::协议写出::写协议值(&crate::错误形状::协议错误(说明文字)).into_bytes(),
         }
     }
 
@@ -72,7 +72,7 @@ impl 造应答 {
         Self {
             状态: 200,
             内容类型: 静态件.内容类型,
-            体: 静态件.字节,
+            报文体: 静态件.字节,
         }
     }
 }

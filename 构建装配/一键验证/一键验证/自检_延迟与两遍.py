@@ -11,7 +11,7 @@ from pathlib import Path
 from . import 常量, 判据表
 
 from .合成仓 import 造干净仓
-from .小工具 import 取判据明细
+from .验证小工具 import 取判据明细
 from .常量 import 检查名, 硬顶毫秒, 起始时刻
 from .打印 import 打印验证结果
 from .注入 import 注入_常量重定义

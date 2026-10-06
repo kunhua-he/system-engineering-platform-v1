@@ -8,7 +8,7 @@ from pathlib import Path
 
 from . import 常量
 
-from .小工具 import 违规
+from .验证小工具 import 违规
 from .常量 import 尾巴余量毫秒, 检查名, 硬顶毫秒, 起始时刻
 from .判据基线 import 行数类别, 读行数基线, 库相对路径
 

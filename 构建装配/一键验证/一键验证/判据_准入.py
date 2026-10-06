@@ -28,7 +28,7 @@ from __future__ import annotations
 
 import sys
 
-from .小工具 import 判不了, 违规
+from .验证小工具 import 判不了, 违规
 from .常量 import 仓根, 检查名
 
 # 判法的唯一落点：独立 runner 的包根（**判据自身所在仓**，不是被扫的仓）。

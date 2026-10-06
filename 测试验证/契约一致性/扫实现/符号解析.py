@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 
 from .常量 import 生成物相对路径, 契约源相对路径, 契约源目录
-from .小工具 import 找配对界符
+from .扫实现小工具 import 找配对界符
 from 构建装配.一键验证.一键验证.剥字面量 import 去字面量
 
 
