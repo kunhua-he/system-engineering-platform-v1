@@ -13,9 +13,10 @@
 """
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
-from .常量 import 判据名表
+from .常量 import 判据名表, 必备件相对路径, 实现件文件名
 from .判据工具 import 记判据
 
 # 元判据名：登记表自洽这条检查自身的名字（它不在 `判据名表` 里 —— 它是判据面的自检，
@@ -45,6 +46,50 @@ def 查不覆盖(判据名: str, 扫描单元: str):
     for 登记条 in 不覆盖登记表:
         if 登记条["判据名"] == 判据名 and 登记条["单元"] == 扫描单元:
             return 登记条
+    return None
+
+
+# ── 规则式「按设计不覆盖」：按**种类**，不写扩展名 ─────────────────────────────
+# 为什么不能写成上面那张表的一条：那张表按「判据名 · 单元」定位，`单元` 是**路径**，
+# 而这类路径里含**扩展名** ⇒ 底座闸里写死扩展名 = 违 README 硬边界 1（判据 ⑯）。
+# 所以这一类按**规则**登记：规则的两端（种类名 · 该种类有没有 `src/ + Cargo.toml`）
+# 都读 `扩展装载/开发标准/必备件.json`，本件**不复述**那张表。
+#
+# 为什么记「不覆盖」而不是「未判」：模块的本体是 `.程序文本`（1106 编成制品）、技能的本体是 md
+# ⇒ 二者**按设计**没有 Rust 实现单元；③a–③d 的对照物（能力号常量 · 命令表 · 参数表）不在
+# `.rs` 里而在制品里。这不是「本该判却判不了」，是「本判据声明的范围之外」。
+# 覆盖者：载入期六步判定（`扩展装载/载入约定/载入判定.json`，实现 = `运行内核/装载入口`）
+# ＋ 本闸 ③k（扩展声明自洽，同一次运行内已判这份声明）。
+
+
+def 按种类不覆盖(根目录: str, 件表: dict):
+    """这个声明根是否属于**按设计没有 Rust 实现面**的种类；是则返回 `(种类名, 默认目录)`。
+
+    **fail-closed**：读不到必备件清单 / 形状不对 ⇒ 返回 `None`（退回「未判」，绝不放宽）。
+    """
+    源文本 = 件表.get(必备件相对路径)
+    if not 源文本:
+        return None
+    try:
+        清单 = json.loads(源文本)
+    except json.JSONDecodeError:
+        return None
+    if not isinstance(清单, dict):
+        return None
+    实现标志条 = {}
+    for 必备件条 in 清单.get("必备件") or []:
+        if isinstance(必备件条, dict) and 必备件条.get("文件") == 实现件文件名:
+            实现标志条 = 必备件条
+            break
+    for 种类条 in 清单.get("三类扩展") or []:
+        if not isinstance(种类条, dict):
+            continue
+        种类名 = 种类条.get("种类")
+        默认目录 = (种类条.get("默认目录") or "").rstrip("/")
+        if not 种类名 or not 默认目录 or 实现标志条.get(种类名, True):
+            continue
+        if 根目录 == 默认目录 or 根目录.startswith(默认目录 + "/"):
+            return (种类名, 默认目录)
     return None
 
 
