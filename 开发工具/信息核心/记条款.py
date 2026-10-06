@@ -27,7 +27,8 @@ import 表定义  # noqa: E402
 import 记规则  # noqa: E402  （复用它的参数解析 —— 不许写第二套）
 
 用法文本 = ("用法：信息核心.py 记条款 --文档路径 <仓内相对路径> --序号 <整数> "
-      "[--标题 <节标题>] [--正文 <散文> | --正文文件 <仓内相对路径>] [--权威档 <档位>]")
+      "[--标题 <节标题>] [--正文 <散文> | --正文文件 <仓内相对路径>] [--权威档 <档位>] "
+      "[--允许空正文]")
 
 
 def 记条款(字段表: dict) -> int:
@@ -46,7 +47,10 @@ def 记条款(字段表: dict) -> int:
     正文文件 = (字段表.get("正文文件") or "").strip()
     正文 = (字段表.get("正文") or "").strip()
     权威档 = (字段表.get("权威档") or "").strip()
-    if not 文档路径 or not 序号.isdigit() or not (正文 or 正文文件):
+    # ★ 空正文是**合法形**（`建库` 的 `拆节` 对「只有标题的节」就产空体；库里已有这类行）⇒
+    #   要写这类行得显式声明 `--允许空正文`，免得手滑把真正的空写当成正常写入。
+    允许空 = "允许空正文" in 字段表
+    if not 文档路径 or not 序号.isdigit() or not (正文 or 正文文件 or 允许空):
         print(用法文本, file=sys.stderr)
         return 2
     if Path(文档路径).is_absolute() or ".." in Path(文档路径).parts:
@@ -63,7 +67,7 @@ def 记条款(字段表: dict) -> int:
         except OSError as 错误:
             print(f"拒：读 `--正文文件 {正文文件}` 失败 —— {错误}", file=sys.stderr)
             return 2
-    if not 正文:
+    if not 正文 and not 允许空:
         print("拒：正文是空的（`--正文` 空串 / `--正文文件` 抽出空）。", file=sys.stderr)
         return 2
     if (仓根 / 文档路径).is_file():
