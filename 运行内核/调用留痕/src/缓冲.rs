@@ -25,7 +25,7 @@ struct 留痕槽 {
     就绪: AtomicU64,
     /// 正在写的写入序号；[`无序号`] = 空闲。同格写者靠它串行化。
     在写: AtomicU64,
-    实例: AtomicU64,
+    实例号: AtomicU64,
     /// 号空间存的都是内层 `u32`（原子量不认 newtype）——存取处用 `新` / `取` 一转，
     /// **号空间在类型层立住**（不是把记录退回裸 `u32`，只是原子字段存不了 newtype）。
     能力号: AtomicU32,
@@ -40,11 +40,11 @@ struct 留痕槽 {
 }
 
 impl 留痕槽 {
-    fn 新建() -> Self {
+    fn 构造() -> Self {
         Self {
             就绪: AtomicU64::new(无序号),
             在写: AtomicU64::new(无序号),
-            实例: AtomicU64::new(0),
+            实例号: AtomicU64::new(0),
             能力号: AtomicU32::new(0),
             入参指纹: AtomicU64::new(0),
             结果码: AtomicI32::new(0),
@@ -58,7 +58,7 @@ impl 留痕槽 {
 
     /// 落字段。发布由调用方在落完之后写 `就绪` 完成。
     fn 落字段(&self, 源留痕: &留痕) {
-        self.实例.store(源留痕.实例, Ordering::Relaxed);
+        self.实例号.store(源留痕.实例号, Ordering::Relaxed);
         self.能力号.store(源留痕.能力号.取号值(), Ordering::Relaxed);
         self.入参指纹.store(源留痕.入参指纹, Ordering::Relaxed);
         self.结果码.store(源留痕.结果码, Ordering::Relaxed);
@@ -72,8 +72,8 @@ impl 留痕槽 {
     /// 读字段。调用方须用 `就绪` 校验前后一致（顺序锁）。
     fn 读字段(&self) -> 留痕 {
         留痕 {
-            实例: self.实例.load(Ordering::Relaxed),
-            能力号: 能力号::新建(self.能力号.load(Ordering::Relaxed)),
+            实例号: self.实例号.load(Ordering::Relaxed),
+            能力号: 能力号::构造(self.能力号.load(Ordering::Relaxed)),
             入参指纹: self.入参指纹.load(Ordering::Relaxed),
             结果码: self.结果码.load(Ordering::Relaxed),
             耗时微秒: self.耗时微秒.load(Ordering::Relaxed),
@@ -84,8 +84,8 @@ impl 留痕槽 {
                 0 => 调用类::能力,
                 _ => 调用类::资源,
             },
-            资源号: 资源号::新建(self.资源号.load(Ordering::Relaxed)),
-            操作号: 操作号::新建(self.操作号.load(Ordering::Relaxed)),
+            资源号: 资源号::构造(self.资源号.load(Ordering::Relaxed)),
+            操作号: 操作号::构造(self.操作号.load(Ordering::Relaxed)),
         }
     }
 }
@@ -120,7 +120,7 @@ pub struct 留痕缓冲 {
 /// **实例字段 + 原子量**，模块里没有 `static mut`、没有单例、没有进程级计数
 /// ——「多个线程同时 `&留痕缓冲`」是它设计好的用法，调用方**不需要**自身加锁。
 const _: fn() = || {
-    fn 断言可跨线程<值: Send + Sync>() {}
+    fn 断言可跨线程<值类型: Send + Sync>() {}
     断言可跨线程::<留痕缓冲>();
     断言可跨线程::<留痕>();
     断言可跨线程::<调用类>();
@@ -130,8 +130,8 @@ impl 留痕缓冲 {
     /// `容量` 条。容量是契约里的常量，不是拍脑袋的数。
     ///
     /// 容量为 0 也合法：此后每条都计入 [`已丢弃`](Self::已丢弃)，[`取最近`](Self::取最近) 恒空。
-    pub fn 新建(容量: u32, 策略: 丢弃策略) -> Self {
-        let 槽表: Vec<留痕槽> = (0..容量).map(|_| 留痕槽::新建()).collect();
+    pub fn 构造(容量: u32, 策略: 丢弃策略) -> Self {
+        let 槽表: Vec<留痕槽> = (0..容量).map(|_| 留痕槽::构造()).collect();
         Self {
             容量,
             策略,
@@ -216,10 +216,10 @@ impl 留痕缓冲 {
     /// 取最近 `条数` 条。**按时间序**（旧在前、新在后）。
     ///
     /// 边界：`条数 = 0` 恒空；`条数 > 容量` 取全部有效条数。读者不取锁、不阻塞。
-    pub fn 取最近(&self, 条数: u32) -> Vec<留痕> {
+    pub fn 取最近(&self, 留痕条数: u32) -> Vec<留痕> {
         let 容量 = self.容量 as u64;
-        let 条数 = 条数 as u64;
-        if 容量 == 0 || 条数 == 0 {
+        let 留痕条数 = 留痕条数 as u64;
+        if 容量 == 0 || 留痕条数 == 0 {
             return Vec::new();
         }
 
@@ -228,25 +228,25 @@ impl 留痕缓冲 {
         if 有效 == 0 {
             return Vec::new();
         }
-        let 取条数 = 条数.min(有效);
+        let 取条数 = 留痕条数.min(有效);
 
         // 有效序号区间 [起, 止)：
         // 丢最新保历史 ⇒ 从 0 起；丢最旧覆盖 ⇒ 取最近 有效 条。
-        let (终点, 起点) = match self.策略 {
+        let (片段止位, 起点) = match self.策略 {
             丢弃策略::丢最新 => (有效, 有效 - 取条数),
             丢弃策略::丢最旧 => (写入总数, 写入总数 - 取条数),
         };
 
-        let mut 结果 = Vec::with_capacity(取条数 as usize);
-        for 序号 in 起点..终点 {
+        let mut 调用读数 = Vec::with_capacity(取条数 as usize);
+        for 序号 in 起点..片段止位 {
             let Some(留痕槽) = self.槽表.get((序号 % 容量) as usize) else {
                 continue;
             };
             if let Some(取回留痕) = Self::读一条(留痕槽, 序号) {
-                结果.push(取回留痕);
+                调用读数.push(取回留痕);
             }
         }
-        结果
+        调用读数
     }
 
     /// 有界重试地认领一格。成功即持有该格（须由调用方写 `在写 = 无序号` 释放）。

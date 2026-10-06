@@ -12,7 +12,7 @@ from .常量 import 导出名模式, 并发度
 from .构造点 import _条件编译属性, _夹具挂载形, _属性窗口起
 
 
-def 建测试文件集(文件: dict) -> set:
+def 建测试文件集(全仓件表: dict) -> set:
     """整文件都是测试的 .rs —— 口径：**路径在测试面即算**。
 
     判法：某份 .rs 被一条 `#[cfg(test)]`（可含别的 cfg 条件）属性引出的 `mod` 项挂进来
@@ -43,7 +43,7 @@ def 建测试文件集(文件: dict) -> set:
     # 一遍预扫：把每份 .rs 的挂载声明解析成「(父角色, 父目录, 相对父文件目录的目标路径)」。
     # 注意 `#[path = "…"]` 的值写在字符串里 ⇒ 去字面量会把它抹成空白，必须回**原文**取引号内内容。
     挂载 = []
-    for 父键, 文件项 in 文件.items():
+    for 父键, 文件项 in 全仓件表.items():
         if not 父键.endswith(".rs") or 文件项["文本"] is None:
             continue
         净文本 = 去字面量(文件项["文本"])
@@ -88,10 +88,10 @@ def 建测试文件集(文件: dict) -> set:
             备选路径 = f"{父目录}/{路径}" if 父目录 else 路径
             备选路径 = os.path.normpath(备选路径).replace("\\", "/")
             待定 = [备选路径]
-            if 备选路径 not in 文件 and 备选路径.endswith(".rs"):
+            if 备选路径 not in 全仓件表 and 备选路径.endswith(".rs"):
                 待定.append(备选路径[:-3] + "/mod.rs")
             for 候选件 in 待定:
-                if 候选件 not in 文件 or not 候选件.endswith(".rs"):
+                if 候选件 not in 全仓件表 or not 候选件.endswith(".rs"):
                     continue
                 if 候选件.rsplit("/", 1)[-1][:-3] in ("lib", "mod", "main"):
                     continue  # 包根不是夹具（`mod lib;` 不是 Rust 能编的形状）
@@ -109,7 +109,7 @@ def 建测试文件集(文件: dict) -> set:
     return 整份
 
 
-def 生产区文本(文本: str, 保串: bool = False) -> str:
+def 生产区文本(源文本: str, 保串: bool = False) -> str:
     """去注释 + 抹掉 `#[cfg(test)]` 区 ⇒ 只剩生产代码。
 
     `保串=真` 时**保留字符串字面量**——数导出符号名必须保串（符号名就写在字符串里；
@@ -122,18 +122,18 @@ def 生产区文本(文本: str, 保串: bool = False) -> str:
       （不是它的哈希）⇒ 没有碰撞风险，不会因为「哈希撞了」而假绿；同文本必然同输出。
       跨夹具：文本相同则结果本就该相同 ⇒ 复用是**逐字正确**的，不是近似。
     """
-    键名 = (保串, 文本)
+    键名 = (保串, 源文本)
     记住 = _生产区缓存.get(键名)
     if 记住 is not None:
         return 记住
-    净文本 = 去字面量(文本) if not 保串 else 去注释保串(文本)
+    净文本 = 去字面量(源文本) if not 保串 else 去注释保串(源文本)
     出区 = list(净文本)
-    for 区间起点, 区间终点 in 条件编译测试区(文本):
+    for 区间起点, 区间终点 in 条件编译测试区(源文本):
         for 游标 in range(区间起点, min(区间终点 + 1, len(出区))):
             出区[游标] = " "
-    结果 = "".join(出区)
-    _生产区缓存[键名] = 结果
-    return 结果
+    判定汇总 = "".join(出区)
+    _生产区缓存[键名] = 判定汇总
+    return 判定汇总
 
 
 # 生产区文本的记忆化表（纯函数 ⇒ 可缓存；见 `生产区文本`）。
@@ -141,18 +141,18 @@ def 生产区文本(文本: str, 保串: bool = False) -> str:
 _生产区缓存: dict = {}
 
 
-def 去注释保串(文本: str) -> str:
+def 去注释保串(源文本: str) -> str:
     """去注释（长度不变），**字符串字面量原样保留**。
 
     与 `去字面量` 共用同一个单次扫描器（`_剥注释与串`）——不许在这里另写一遍正则：
     早先这里也是「先 `/* */` 再 `//`」两遍，字符串里含 `//` 时会把收尾引号当注释剥掉
     （同 去字面量 的实测缺陷）⇒ 两条腿必须走同一个解析器。
     """
-    return _剥注释与串(文本, 保串=True)
+    return _剥注释与串(源文本, 保串=True)
 
 
 def 并行取生产区文本(件表: list, 测试文件集=frozenset(), 保串: bool = False) -> dict:
-    件表 = [(键名, 文本) for 键名, 文本 in 件表 if 文本 is not None]
+    件表 = [(键名, 源文本) for 键名, 源文本 in 件表 if 源文本 is not None]
     with ThreadPoolExecutor(max_workers=并发度) as 线程池:
         return dict(
             线程池.map(
@@ -168,14 +168,14 @@ def 并行取生产区文本(件表: list, 测试文件集=frozenset(), 保串: 
 def 收集导出(代码件: dict) -> dict:
     """导出符号名 → 出现处。`export_name` 取属性里的名字；`no_mangle` 取紧跟的 fn 名。"""
     输出缓冲 = {}
-    for 键名, 文本 in 代码件.items():
-        for 命中 in 导出名模式.finditer(文本):
-            行号 = 文本[: 命中.start()].count("\n") + 1
+    for 键名, 源文本 in 代码件.items():
+        for 命中 in 导出名模式.finditer(源文本):
+            行号 = 源文本[: 命中.start()].count("\n") + 1
             输出缓冲.setdefault(命中.group(1), []).append(f"{键名}:{行号}")
-        for 命中 in re.finditer(r"#\[no_mangle\]", 文本):
-            尾部 = 文本[命中.end() : 命中.end() + 400]
+        for 命中 in re.finditer(r"#\[no_mangle\]", 源文本):
+            尾部 = 源文本[命中.end() : 命中.end() + 400]
             名配 = re.search(r"\bfn[ \t]+([A-Za-z_]\w*)", 尾部)
             名称 = 名配.group(1) if 名配 else "（未标名）"
-            行号 = 文本[: 命中.start()].count("\n") + 1
+            行号 = 源文本[: 命中.start()].count("\n") + 1
             输出缓冲.setdefault(名称, []).append(f"{键名}:{行号}")
     return 输出缓冲

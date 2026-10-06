@@ -9,11 +9,11 @@
 // 就是成功 —— 没有任何一处写着「某个字段叫这个名字所以它表示那个意思」。
 
 /** 建一个节点。`文本` 走 textContent，**不当 HTML 用**（返回里带尖括号也不会被解释）。 */
-export function 建元素(标签, 类名, 文本) {
-  const 元素 = document.createElement(标签);
-  if (类名) 元素.className = 类名;
-  if (文本 !== undefined && 文本 !== null) 元素.textContent = String(文本);
-  return 元素;
+export function 建元素(标签, 类名, 源文本) {
+  const 界面元素 = document.createElement(标签);
+  if (类名) 界面元素.className = 类名;
+  if (源文本 !== undefined && 源文本 !== null) 界面元素.textContent = String(源文本);
+  return 界面元素;
 }
 
 /** 清空一个容器。 */
@@ -53,9 +53,9 @@ export function 摆值(容器, 待处理值, 深度 = 0) {
   if (Array.isArray(待处理值)) {
     const 项表 = 建元素("div", "表 数组");
     if (待处理值.length === 0) 项表.append(建元素("div", "空", "（空表）"));
-    待处理值.forEach((值项, 位置) => {
+    待处理值.forEach((值项, 位次) => {
       const 源码行 = 建元素("div", "数组项");
-      源码行.append(建元素("div", "位", "第 " + (位置 + 1) + " 项"));
+      源码行.append(建元素("div", "位", "第 " + (位次 + 1) + " 项"));
       const 内层 = 建元素("div", "内");
       摆值(内层, 值项, 深度 + 1);
       源码行.append(内层);
@@ -105,16 +105,16 @@ export function 摆行内(容器, 待处理值) {
  * **不读键名**，所以后端把字段改名也不影响它。
  */
 export function 取应答摘要(应答体) {
-  if (!是对象(应答体)) return { 词: "未知", 类: "灰" };
+  if (!是对象(应答体)) return { 状态词: "未知", 判定档: "灰" };
   let 见真 = false;
   let 见假 = false;
   for (const 键名 of Object.keys(应答体)) {
     if (应答体[键名] === true) 见真 = true;
     if (应答体[键名] === false) 见假 = true;
   }
-  if (见假) return { 词: "失败", 类: "坏" };
-  if (见真) return { 词: "成功", 类: "好" };
-  return { 词: "未知", 类: "灰" };
+  if (见假) return { 状态词: "失败", 判定档: "坏" };
+  if (见真) return { 状态词: "成功", 判定档: "好" };
+  return { 状态词: "未知", 判定档: "灰" };
 }
 
 /** 一条应答 → DOM：HTTP 状态 + 体 + 可展开的原文。 */
@@ -122,23 +122,23 @@ export function 摆应答(容器, 造应答) {
   清空容器(容器);
   const 头部 = 建元素("div", "应答头");
   头部.append(建元素("span", 造应答.状态 === 200 ? "状态 好" : "状态 坏", "HTTP " + 造应答.状态));
-  const 摘要结果 = 取应答摘要(造应答.体);
-  if (摘要结果.类 !== "灰") 头部.append(建元素("span", "徽标 " + 摘要结果.类, 摘要结果.词));
+  const 摘要结果 = 取应答摘要(造应答.报文体);
+  if (摘要结果.判定档 !== "灰") 头部.append(建元素("span", "徽标 " + 摘要结果.判定档, 摘要结果.状态词));
   容器.append(头部);
 
   const 体盒 = 建元素("div", "体盒");
-  if (造应答.体 === null) {
+  if (造应答.报文体 === null) {
     体盒.append(建元素("p", "提示", "这段原文不是 JSON（多半是同源托管没接上：静态服务把 /接口 当文件找了）。原文如下。"));
-    体盒.append(建元素("pre", "原文", 造应答.文));
+    体盒.append(建元素("pre", "原文", 造应答.应答文本));
   } else {
-    if (取应答摘要(造应答.体).类 === "坏") 体盒.classList.add("有假");
-    摆值(体盒, 造应答.体);
+    if (取应答摘要(造应答.报文体).判定档 === "坏") 体盒.classList.add("有假");
+    摆值(体盒, 造应答.报文体);
   }
   容器.append(体盒);
 
   const 原文详情 = 建元素("details", "原文盒");
   原文详情.append(建元素("summary", null, "应答原文"));
-  原文详情.append(建元素("pre", "原文", 造应答.文));
+  原文详情.append(建元素("pre", "原文", 造应答.应答文本));
   容器.append(原文详情);
 }
 
@@ -153,19 +153,19 @@ export function 摆静态件(容器, 路径, 节点件) {
   if (节点件.状态 !== 200) {
     体盒.append(建元素("p", "提示 坏", "取不到。同源静态托管那一侧没把这个路径交出来（接口面只实现四个端点，实测请求 / 回 404）—— 这是托管侧的缺口，不是本页能补的。"));
   }
-  体盒.append(建元素("pre", "原文", 节点件.文));
+  体盒.append(建元素("pre", "原文", 节点件.应答文本));
   容器.append(体盒);
 }
 
 /** 一段说明文字（用于网络层失败这类本页自身要报的事）。 */
-export function 摆消息(容器, 文本) {
+export function 摆消息(容器, 源文本) {
   清空容器(容器);
-  容器.append(建元素("p", "提示 坏", 文本));
+  容器.append(建元素("p", "提示 坏", 源文本));
 }
 
 /** 给一个状态节点写一句话。`是否好` 三态：true 绿 · false 红 · undefined 灰。 */
-export function 写状态(节点, 文本, 是否好) {
+export function 写状态(节点, 源文本, 是否好) {
   if (!节点) return;
-  节点.textContent = 文本 || "";
+  节点.textContent = 源文本 || "";
   节点.className = "状态" + (是否好 === undefined ? "" : 是否好 ? " 好" : " 坏");
 }

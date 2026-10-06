@@ -24,13 +24,13 @@ const 编译族 = new Set(["0x8053", "0x8090", "0x808f", "0x80d4",
 function 摆文字(菜单项) {
   const 容器盒 = document.createElement("span");
   if (菜单项.助记位 < 0) {
-    容器盒.textContent = 菜单项.文字;
+    容器盒.textContent = 菜单项.菜单文字;
     return 容器盒;
   }
-  容器盒.append(菜单项.文字.slice(0, 菜单项.助记位));
+  容器盒.append(菜单项.菜单文字.slice(0, 菜单项.助记位));
   const 下划线 = document.createElement("u");
-  下划线.textContent = 菜单项.文字[菜单项.助记位];
-  容器盒.append(下划线, 菜单项.文字.slice(菜单项.助记位 + 1));
+  下划线.textContent = 菜单项.菜单文字[菜单项.助记位];
+  容器盒.append(下划线, 菜单项.菜单文字.slice(菜单项.助记位 + 1));
   return 容器盒;
 }
 
@@ -41,8 +41,8 @@ export function 装菜单栏(取元素, 编辑, 依赖 = {}) {
   const 切页签 = 依赖.切页签;
   let 开着的 = null;
 
-  const 报状态 = (文本, 颜色) => {
-    菜单状态条.textContent = 文本;
+  const 报状态 = (源文本, 颜色) => {
+    菜单状态条.textContent = 源文本;
     菜单状态条.className = "格" + (颜色 === "好" ? " 好" : 颜色 === "坏" ? " 坏" : "");
   };
 
@@ -59,25 +59,25 @@ export function 装菜单栏(取元素, 编辑, 依赖 = {}) {
    */
   const 问后端 = async (菜单项, 头部) => {
     const 状态 = 取元素("菜单命令状态");
-    const 结果 = 取元素("菜单命令果");
+    const 结果盒 = 取元素("菜单命令果");
     if (切页签) 切页签("提示");
-    if (!状态 || !结果) {
+    if (!状态 || !结果盒) {
       报状态(头部 + " · 回执区不在页面上（缺 id：菜单命令状态 / 菜单命令果）", "坏");
       return;
     }
-    清空容器(结果);
+    清空容器(结果盒);
     写状态(状态, "问后端 " + 菜单项.编号 + " …");
     try {
       const 造应答 = await 发菜单命令(菜单项.编号);
-      摆应答(结果, 造应答);
-      const 摘要结果 = 取应答摘要(造应答.体);
-      写状态(状态, "命令 " + 菜单项.编号 + " · HTTP " + 造应答.状态 + " · " + 摘要结果.词,
-        摘要结果.类 === "好" ? true : 摘要结果.类 === "坏" ? false : undefined);
-      报状态(头部 + " · 已问后端（POST /接口/菜单命令）：HTTP " + 造应答.状态 + " · " + 摘要结果.词
-        + " —— 结构化回执见「提示」栏", 摘要结果.类 === "好" ? "好" : "坏");
-      记流水("菜单", 头部 + " · HTTP " + 造应答.状态 + " · " + 摘要结果.词);
+      摆应答(结果盒, 造应答);
+      const 摘要结果 = 取应答摘要(造应答.报文体);
+      写状态(状态, "命令 " + 菜单项.编号 + " · HTTP " + 造应答.状态 + " · " + 摘要结果.状态词,
+        摘要结果.判定档 === "好" ? true : 摘要结果.判定档 === "坏" ? false : undefined);
+      报状态(头部 + " · 已问后端（POST /接口/菜单命令）：HTTP " + 造应答.状态 + " · " + 摘要结果.状态词
+        + " —— 结构化回执见「提示」栏", 摘要结果.判定档 === "好" ? "好" : "坏");
+      记流水("菜单", 头部 + " · HTTP " + 造应答.状态 + " · " + 摘要结果.状态词);
     } catch (错误) {
-      摆消息(结果, "发不出去：" + 错误.message);
+      摆消息(结果盒, "发不出去：" + 错误.message);
       写状态(状态, "发不出去", false);
       报状态(头部 + " · 发不出去：" + 错误.message, "坏");
     }
@@ -85,7 +85,7 @@ export function 装菜单栏(取元素, 编辑, 依赖 = {}) {
 
   const 点叶子 = (菜单项) => {
     合上();
-    const 头部 = "命令 " + 菜单项.编号 + " · " + 菜单项.文字 + (菜单项.快捷键 ? " " + 菜单项.快捷键 : "");
+    const 头部 = "命令 " + 菜单项.编号 + " · " + 菜单项.菜单文字 + (菜单项.快捷键 ? " " + 菜单项.快捷键 : "");
     if (编译族.has(菜单项.编号)) {
       报状态(头部 + " · 已接线：真调 `GET /接口` 实时给的编译链（逐级读数见「提示」栏）", "好");
       跑编译(取元素, 编辑);
@@ -108,11 +108,11 @@ export function 装菜单栏(取元素, 编辑, 依赖 = {}) {
       const 源码行 = document.createElement("div");
       源码行.className = "易项" + (菜单项.灰化 ? " 灰" : "");
       源码行.append(摆文字(菜单项));
-      if (菜单项.项) {
+      if (菜单项.子项) {
         const 箭头 = document.createElement("span");
         箭头.className = "角";
         箭头.textContent = "▸";
-        const 子层 = 摆层(菜单项.项, 深度 + 1);
+        const 子层 = 摆层(菜单项.子项, 深度 + 1);
         源码行.append(箭头, 子层);
         源码行.addEventListener("mouseenter", () => { 子层.hidden = false; });
         源码行.addEventListener("mouseleave", () => { 子层.hidden = true; });
@@ -128,7 +128,7 @@ export function 装菜单栏(取元素, 编辑, 依赖 = {}) {
           源码行.setAttribute("aria-disabled", "true");
           源码行.title = "资源里带 MF_GRAYED 位（实测 181 项里只有这一项）—— 在易语言里也是点不动的";
         } else {
-          源码行.addEventListener("click", (事件) => { 事件.stopPropagation(); 点叶子(菜单项); });
+          源码行.addEventListener("click", (界面事件) => { 界面事件.stopPropagation(); 点叶子(菜单项); });
         }
       }
       容器盒.append(源码行);
@@ -142,9 +142,9 @@ export function 装菜单栏(取元素, 编辑, 依赖 = {}) {
     按钮.className = "易顶层";
     按钮.append(摆文字(顶层));
     按钮.setAttribute("aria-expanded", "false");
-    const 容器盒 = 摆层(顶层.项, 0);
-    按钮.addEventListener("click", (事件) => {
-      事件.stopPropagation();
+    const 容器盒 = 摆层(顶层.子项, 0);
+    按钮.addEventListener("click", (界面事件) => {
+      界面事件.stopPropagation();
       if (开着的 && 开着的.按钮 === 按钮) { 合上(); return; }
       合上();
       容器盒.hidden = false;
@@ -159,7 +159,7 @@ export function 装菜单栏(取元素, 编辑, 依赖 = {}) {
   }
 
   document.addEventListener("click", 合上);
-  document.addEventListener("keydown", (事件) => { if (事件.key === "Escape") 合上(); });
+  document.addEventListener("keydown", (界面事件) => { if (界面事件.key === "Escape") 合上(); });
 
   报状态("菜单结构 1:1 取自 e.exe 菜单资源 127（10 个顶层弹出 / 181 项）· 已接线 "
     + 编译族.size + " 项（编译族）· 其余点了问后端（POST /接口/菜单命令）取结构化回执");

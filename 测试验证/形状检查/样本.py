@@ -49,8 +49,8 @@ def 跑样本() -> int:
           else f"  ✗ 真案例被报违反：{[报告项 for 报告项 in 报告 if 报告项[2] == 判定_违反]}")
     print("")
     print("反向样本：把该例复制到 /tmp，**把断言写坏** ⇒ 必须报红。两种坏法各验一次：")
-    with tempfile.TemporaryDirectory() as 临时:
-        根目录 = Path(临时)
+    with tempfile.TemporaryDirectory() as 临时目录:
+        根目录 = Path(临时目录)
         # 坏法 A：比对目标不存在
         shutil.copytree(来源, 根目录 / 样本案例名)
         (根目录 / 样本案例名 / 样本比对目标).unlink()

@@ -51,7 +51,7 @@ pub struct 命令信息 {
     // ── 冻结区 ──
     pub 名称: *const u8,
     pub 说明: *const u8,
-    pub 类别: u16,
+    pub 类别号: u16,
     pub 状态位: u16,
     /// 返回类型标签；0 表示无返回值。
     pub 返回类型: 类型标签,

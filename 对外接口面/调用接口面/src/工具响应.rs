@@ -73,10 +73,10 @@ const 提示号: u32 = 0;
 // ════════════════════════════════════════════════════════════════════════════
 
 /// 造成功应答：`成功: true` + `数据` + `耗时微秒`。
-pub(super) fn 造成功应答(数据: 协议值, 区间起点: &Instant) -> 协议值 {
-    协议值::对象(vec![
+pub(super) fn 造成功应答(应答数据: 协议值, 区间起点: &Instant) -> 协议值 {
+    协议值::对象值(vec![
         ("成功".to_owned(), 协议值::真值),
-        ("数据".to_owned(), 数据),
+        ("数据".to_owned(), 应答数据),
         ("耗时微秒".to_owned(), 取耗时微秒(区间起点)),
     ])
 }
@@ -84,31 +84,31 @@ pub(super) fn 造成功应答(数据: 协议值, 区间起点: &Instant) -> 协�
 /// 业务失败：`成功: false` + `错误` 六项 + 可选的结构化回执 `数据` + `耗时微秒`。
 ///
 /// `数据` 给 `None` 时不出现这个键 —— 不编一个空对象出来（空对象与「没有回执」不可区分）。
-pub(super) fn 造失败应答(适配器: &适配器, 错误码: u32, 数据: Option<协议值>, 区间起点: &Instant) -> 协议值 {
-    let mut 成员 = vec![
+pub(super) fn 造失败应答(适配器: &适配器, 错误码: u32, 应答数据: Option<协议值>, 区间起点: &Instant) -> 协议值 {
+    let mut 对象成员 = vec![
         ("成功".to_owned(), 协议值::假值),
         (
             "错误".to_owned(),
             错误对象::由错误码(适配器, 提示号, 错误码).到协议值(),
         ),
     ];
-    if let Some(数据) = 数据 {
-        成员.push(("数据".to_owned(), 数据));
+    if let Some(应答数据) = 应答数据 {
+        对象成员.push(("数据".to_owned(), 应答数据));
     }
-    成员.push(("耗时微秒".to_owned(), 取耗时微秒(区间起点)));
-    协议值::对象(成员)
+    对象成员.push(("耗时微秒".to_owned(), 取耗时微秒(区间起点)));
+    协议值::对象值(对象成员)
 }
 
 fn 取耗时微秒(区间起点: &Instant) -> 协议值 {
     let 耗时微秒 = 区间起点.elapsed().as_micros().min(u128::from(u64::MAX)) as u64;
     match i64::try_from(耗时微秒) {
-        Ok(个数) => 协议值::整数(个数),
+        Ok(整数值) => 协议值::整数项(整数值),
         Err(_) => 协议值::无符号值(耗时微秒),
     }
 }
 
 pub(super) fn 造文本值(待处理值: &str) -> 协议值 {
-    协议值::文本(待处理值.to_owned())
+    协议值::文本值(待处理值.to_owned())
 }
 
 /// 一对「键 → 文本」。
@@ -127,17 +127,17 @@ pub(super) fn 取相对路径(工具根: &Path, 路径: &Path) -> String {
 
 /// 读一件 JSON。读不到 / 解不了都**原样带回**（不吞、不给默认值）。
 pub(super) fn 读JSON件(路径: &Path) -> Result<协议值, String> {
-    let 文本 = std::fs::read_to_string(路径).map_err(|错误| format!("读不到 {}：{错误}", 路径.display()))?;
-    crate::协议解析::解析协议值(&文本)
-        .map_err(|错误| format!("{} 不是合法 JSON：{}（第 {} 字节）", 路径.display(), 错误.说明文字, 错误.位置))
+    let 文本值 = std::fs::read_to_string(路径).map_err(|错误| format!("读不到 {}：{错误}", 路径.display()))?;
+    crate::协议解析::解析协议值(&文本值)
+        .map_err(|错误| format!("{} 不是合法 JSON：{}（第 {} 字节）", 路径.display(), 错误.说明文字, 错误.出错位置))
 }
 
 /// 列一个目录下的**子目录名**，按名排序（顺序确定 ⇒ 读数可比）。
-pub(super) fn 列子目录(目录: &Path) -> Result<Vec<String>, String> {
-    let 目录读器 = std::fs::read_dir(目录).map_err(|错误| format!("读不到目录 {}：{错误}", 目录.display()))?;
+pub(super) fn 列子目录(扩展根目录: &Path) -> Result<Vec<String>, String> {
+    let 目录读器 = std::fs::read_dir(扩展根目录).map_err(|错误| format!("读不到目录 {}：{错误}", 扩展根目录.display()))?;
     let mut 输出缓冲 = Vec::new();
     for 目录项 in 目录读器 {
-        let 目录项 = 目录项.map_err(|错误| format!("列目录 {} 失败：{错误}", 目录.display()))?;
+        let 目录项 = 目录项.map_err(|错误| format!("列目录 {} 失败：{错误}", 扩展根目录.display()))?;
         if !目录项.path().is_dir() {
             continue;
         }

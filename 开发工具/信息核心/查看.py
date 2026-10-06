@@ -68,9 +68,9 @@ def 表格(列名: tuple, 数据行: list, 红列: set = (), 原样: set = ()) -
     """`原样` 列不转义（该列的值已是 HTML，如一个链接）。"""
     表头 = "".join(f"<th>{html.escape(str(一列))}</th>" for 一列 in 列名)
     表体 = ""
-    for 一行 in 数据行:
+    for 文本行 in 数据行:
         单元格 = ""
-        for 列号, 单元值 in enumerate(一行):
+        for 列号, 单元值 in enumerate(文本行):
             类名 = ' class="红"' if 列号 in 红列 else ""
             文本值 = str(单元值 if 单元值 is not None else '')
             单元格 += f"<td{类名}>{文本值 if 列号 in 原样 else html.escape(文本值)}</td>"
@@ -94,9 +94,9 @@ def 内核咬合图页(连接) -> bytes:
     节点表 = list(连接.execute("select 名,层,职责 from 节点 order by 层,名"))
     边表 = list(连接.execute("select 起,止,条数 from 连接 order by 条数 desc"))
     入度, 出度 = {}, {}
-    for 起点, 终点, 条数 in 边表:
-        出度[起点] = 出度.get(起点, 0) + 条数
-        入度[终点] = 入度.get(终点, 0) + 条数
+    for 起点, 终点节点, 记录条数 in 边表:
+        出度[起点] = 出度.get(起点, 0) + 记录条数
+        入度[终点节点] = 入度.get(终点节点, 0) + 记录条数
     按层 = {}
     for 节点名, 层名, 职责 in 节点表:
         按层.setdefault(层名, []).append((节点名, 职责))
@@ -107,7 +107,7 @@ def 内核咬合图页(连接) -> bytes:
             层块 += (f"<点><a href=\"/节点?名={html.escape(节点名)}\">{html.escape(节点名)}</a>"
                     f"<边>出 {出度.get(节点名, 0)} · 入 {入度.get(节点名, 0)}</边></点>")
         图层 += 层块 + "</层>"
-    边行 = [(起点, 终点, 条数) for 起点, 终点, 条数 in 边表[:60]]
+    边行 = [(起点, 终点节点, 记录条数) for 起点, 终点节点, 记录条数 in 边表[:60]]
     正文 = (库现状(连接)
             + f"<h2>内核咬合图（节点 {len(节点表)} · 连接 {len(边表)}）</h2>"
             f"<div>{图层}</div>"
@@ -135,18 +135,18 @@ def 节点页(连接, 节点名: str) -> bytes:
 def 规则页(连接) -> bytes:
     数据行 = list(连接.execute("select 类,名,内容,依据 from 规则 order by 类,编号"))
     按类 = {}
-    for 类别, 规则名, 内容, 依据 in 数据行:
-        按类.setdefault(类别, []).append((规则名, 内容, 依据))
+    for 类别值, 规则名, 内容值, 规则依据 in 数据行:
+        按类.setdefault(类别值, []).append((规则名, 内容值, 规则依据))
     正文 = f"<h2>规则（{len(数据行)} 条，{len(按类)} 类）</h2>"
-    for 类别 in sorted(按类):
-        正文 += (f"<h2>{html.escape(类别)}（{len(按类[类别])}）</h2>"
-                 + 表格(("名", "内容", "依据"), 按类[类别]))
+    for 类别值 in sorted(按类):
+        正文 += (f"<h2>{html.escape(类别值)}（{len(按类[类别值])}）</h2>"
+                 + 表格(("名", "内容", "依据"), 按类[类别值]))
     return 页面壳("规则", 正文)
 
 
 def 文档页(连接) -> bytes:
     数据行 = list(连接.execute("select 路径,权威档,表达什么 from 文档 order by 权威档,路径"))
-    红列集 = {1} if any(一行[1] == "（未定义）" for 一行 in 数据行) else set()
+    红列集 = {1} if any(文本行[1] == "（未定义）" for 文本行 in 数据行) else set()
     return 页面壳("文档账本", f"<h2>文档账本（{len(数据行)} 份 md）</h2>"
               + 表格(("路径", "权威档", "表达什么"), 数据行, 红列=红列集))
 
@@ -171,16 +171,16 @@ def 接口页(连接) -> bytes:
     return 页面壳("接口", 正文)
 
 
-def 条款页(连接, 件: str) -> bytes:
-    if 件:
-        数据行 = list(连接.execute("select 序号,标题,正文 from 条款 where 文档路径=? order by 序号", (件,)))
+def 条款页(连接, 文件条目: str) -> bytes:
+    if 文件条目:
+        数据行 = list(连接.execute("select 序号,标题,正文 from 条款 where 文档路径=? order by 序号", (文件条目,)))
         if not 数据行:
-            return 页面壳("找不到", f"<p class=\"红\">库里没有这份文档：{html.escape(件)}</p>")
-        正文 = f"<h2>{html.escape(件)}（{len(数据行)} 节）</h2>"
+            return 页面壳("找不到", f"<p class=\"红\">库里没有这份文档：{html.escape(文件条目)}</p>")
+        正文 = f"<h2>{html.escape(文件条目)}（{len(数据行)} 节）</h2>"
         for _序号, 标题, 节正文 in 数据行:
             正文 += (f"<h3>{html.escape(标题 or '（无标题）')}</h3>"
                      f"<pre style=\"white-space:pre-wrap;font:12px/1.5 monospace\">{html.escape(节正文)}</pre>")
-        return 页面壳(件, 正文)
+        return 页面壳(文件条目, 正文)
     数据行 = list(连接.execute(
         "select 文档路径,权威档,count(*),sum(length(正文)) from 条款 group by 文档路径,权威档 "
         "order by 权威档,文档路径"))
@@ -203,8 +203,8 @@ def 查询页(连接, sql: str) -> bytes:
         # 守卫判**整条语句的形状**，不是首词：先剥注释与引号里的字面量成骨架，再看首词与写动词。
         形状 = re.sub(r"""--[^\n]*|/\*.*?\*/|'(?:[^']|'')*'|"(?:""|[^"])*"|`[^`]*`|\[[^\]]*\]""",
                     " ", sql, flags=re.S).lstrip().lower()
-        匹配 = re.match(r"[a-z_]+", 形状)
-        关键词 = 匹配.group(0) if 匹配 else ""
+        正则匹配 = re.match(r"[a-z_]+", 形状)
+        关键词 = 正则匹配.group(0) if 正则匹配 else ""
         if 关键词 not in ("select", "with"):
             正文 += "<p class=\"红\">只许 select / with 这两种只读语句（pragma 有写形状，一并拒）。</p>"
             return 页面壳("查询", 正文)
@@ -265,9 +265,9 @@ class 页面处理器(BaseHTTPRequestHandler):
         pass
 
 
-def 起页面(端口: int = 表定义.默认端口) -> None:
+def 起页面(监听端口: int = 表定义.默认端口) -> None:
     """起页面端口（**永不返回**）。端口由 `信息核心.py 查看 --端口 N` 传进来。"""
-    服务 = ThreadingHTTPServer(("127.0.0.1", 端口), 页面处理器)
-    print(f"信息核心页面：http://127.0.0.1:{端口}/　（Ctrl-C 退）")
+    服务 = ThreadingHTTPServer(("127.0.0.1", 监听端口), 页面处理器)
+    print(f"信息核心页面：http://127.0.0.1:{监听端口}/　（Ctrl-C 退）")
     服务.serve_forever()
 

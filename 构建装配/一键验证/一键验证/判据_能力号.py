@@ -33,7 +33,7 @@ import json
 import re
 from pathlib import Path
 
-from .小工具 import 判不了, 违规
+from .验证小工具 import 判不了, 违规
 from .常量 import 底座代码树, 检查名
 from .判据基线 import 读硬写能力号基线, 库相对路径
 
@@ -51,25 +51,25 @@ def 已声明能力号(上层读数: dict) -> set:
     ⇒ 从盘上现读（与判据 ⑰/⑳ 走树同一口径）。读不动/不是 JSON 就跳过（不是「能力号」）。
     """
     号集 = set()
-    for 键名, 记录 in 上层读数["文件"].items():
+    for 键名, 编号条目 in 上层读数["文件"].items():
         if not 键名.endswith(".json") or "/能力声明/" not in 键名:
             continue
-        号集.update(_抽编号(记录.get("数据")))
+        号集.update(_抽编号(编号条目.get("数据")))
     仓根 = Path(上层读数["仓根"])
     for 件路径 in sorted(仓根.glob("扩展根目录/*/*/能力声明/*.json")):
         try:
-            数据 = json.loads(件路径.read_text(encoding="utf-8"))
+            配置表 = json.loads(件路径.read_text(encoding="utf-8"))
         except (OSError, ValueError):
             continue
-        号集.update(_抽编号(数据))
+        号集.update(_抽编号(配置表))
     return 号集
 
 
-def _抽编号(数据) -> set:
+def _抽编号(配置表) -> set:
     """一条能力声明的 `编号`（≥ 1000 的整数）⇒ 单元素集或空集（两处取法共用）。"""
-    if not isinstance(数据, dict):
+    if not isinstance(配置表, dict):
         return set()
-    号值 = 数据.get("编号")
+    号值 = 配置表.get("编号")
     return {号值} if isinstance(号值, int) and 号值 >= 1000 else set()
 
 
@@ -84,9 +84,9 @@ def 扫硬写能力号(上层读数: dict) -> dict:
     """实测 ⇒ `{(件, 号): 处数}`（判定与冻结基线共用这一份 —— 不各写一套）。"""
     号集 = 已声明能力号(上层读数)
     实测 = {}
-    for 键名, 文本 in 底座代码面(上层读数).items():
+    for 键名, 源文本 in 底座代码面(上层读数).items():
         for 号值 in sorted(号集):
-            处数 = len(re.findall(r"(?<![0-9A-Za-z_])%d(?![0-9A-Za-z_])" % 号值, 文本))
+            处数 = len(re.findall(r"(?<![0-9A-Za-z_])%d(?![0-9A-Za-z_])" % 号值, 源文本))
             if 处数:
                 实测[(键名, 号值)] = 处数
     return 实测
@@ -153,13 +153,13 @@ def 检查46_底座不硬写能力号(上层读数: dict) -> list:
         "修法：把那个号换成端点/契约查得的实时值 ⇒ 只能由该件作者改"
     )
     for (键名, 号值), 实际处数 in sorted(实测.items()):
-        位置 = f"{键名}::{号值}"
+        落点 = f"{键名}::{号值}"
         登记 = 基线表.get((键名, str(号值)))
         if 登记 is None:
             输出缓冲.append(
                 违规(
                     检查名[45],
-                    位置,
+                    落点,
                     f"底座里硬写已声明能力号 `{号值}`（{实际处数} 处），基线里没有它 ⇒ **新增即红**",
                     口径,
                 )
@@ -168,7 +168,7 @@ def 检查46_底座不硬写能力号(上层读数: dict) -> list:
             输出缓冲.append(
                 违规(
                     检查名[45],
-                    位置,
+                    落点,
                     f"硬写能力号 `{号值}` 实测 {实际处数} 处 > 基线登记 {登记} 处 ⇒ **存量还在长**",
                     "基线是「存量不许再长」的闸，不是白名单（形状照判据 ㊵）⇒ 要么改回去，"
                     "要么同步登记 ⇒ 只能由该件作者处置",

@@ -145,7 +145,7 @@ pub struct 支持库表 {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct 记录流 {
     /// 段数据头（56 字节）。
-    pub 头: 段数据头,
+    pub 段头字段: 段数据头,
     /// 段体头。
     pub 体头: 段体头,
     /// 支持库表。
@@ -179,7 +179,7 @@ impl 记录流 {
 
     /// 按当前内容重算 `体长`（生成前自检用；`生成` 本来就会重算，故不是必需步骤）。
     pub fn 重算体长(&mut self) {
-        self.头.体长 = u32::try_from(体长实算(self)).unwrap_or(u32::MAX);
+        self.段头字段.体长 = u32::try_from(体长实算(self)).unwrap_or(u32::MAX);
     }
 }
 

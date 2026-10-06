@@ -71,14 +71,14 @@ def _拓扑表(根目录: Path) -> tuple:
         "join nodes n1 on n1.id = e.source join nodes n2 on n2.id = e.target "
         "where e.kind = 'imports'"
     ):
-        起点, 终点 = 文件到节点.get(源件), 文件到节点.get(目标件)
-        if not 起点 or not 终点 or 起点 == 终点:
+        起点, 终点节点 = 文件到节点.get(源件), 文件到节点.get(目标件)
+        if not 起点 or not 终点节点 or 起点 == 终点节点:
             continue
-        边表[(起点, 终点)] = 边表.get((起点, 终点), 0) + 1
+        边表[(起点, 终点节点)] = 边表.get((起点, 终点节点), 0) + 1
     索引库.close()
     _拓扑缓存[根目录] = (
         [(节点键, 所在层, "节点", 表定义.节点职责.get(节点键, ""))
          for 节点键, 所在层 in 节点集.items()],
-        [(起点, 终点, "imports", 条数) for (起点, 终点), 条数 in 边表.items()],
+        [(起点, 终点节点, "imports", 记录条数) for (起点, 终点节点), 记录条数 in 边表.items()],
     )
     return _拓扑缓存[根目录]

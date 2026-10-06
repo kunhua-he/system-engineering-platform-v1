@@ -20,27 +20,27 @@ pub(crate) const 体上限: usize = 1 << 20;
 /// 一条已读完的 HTTP 请求。**只留形状**：方法 · 目标 · 体。
 #[derive(Debug, Clone)]
 pub struct 报文 {
-    pub 方法: String,
-    pub 目标: String,
-    pub 体: String,
+    pub 请求方法: String,
+    pub 请求目标: String,
+    pub 报文体: String,
 }
 
 /// 读一条请求。错误是**一句可读说明**（⇒ 400）。
 pub(crate) fn 读报文(输出流: &mut TcpStream) -> Result<报文, String> {
     let mut 缓冲: Vec<u8> = Vec::with_capacity(1024);
-    let mut 临时 = [0u8; 4096];
+    let mut 读缓冲 = [0u8; 4096];
     let 头尾 = loop {
-        if let Some(位置) = 找头体分界(&缓冲) {
-            break 位置;
+        if let Some(字节位置) = 找头体分界(&缓冲) {
+            break 字节位置;
         }
         if 缓冲.len() > 头区上限 {
             return Err(format!("请求头超过 {头区上限} 字节"));
         }
-        let 读到 = 输出流.read(&mut 临时).map_err(|错误| format!("读请求失败：{错误}"))?;
+        let 读到 = 输出流.read(&mut 读缓冲).map_err(|错误| format!("读请求失败：{错误}"))?;
         if 读到 == 0 {
             return Err("连接在请求写完之前就断了".to_owned());
         }
-        缓冲.extend_from_slice(&临时[..读到]);
+        缓冲.extend_from_slice(&读缓冲[..读到]);
     };
 
     let 头部 = core::str::from_utf8(&缓冲[..头尾])
@@ -55,14 +55,14 @@ pub(crate) fn 读报文(输出流: &mut TcpStream) -> Result<报文, String> {
     if 部件.len() != 3 {
         return Err("请求行必须是「方法 目标 版本」三段".to_owned());
     }
-    let (方法, 目标) = (部件[0].to_owned(), 部件[1].to_owned());
+    let (请求方法, 请求目标) = (部件[0].to_owned(), 部件[1].to_owned());
 
     let mut 内容长度 = 0usize;
-    for 一行 in 行迭代器 {
-        let Some((名, 值)) = 一行.split_once(':') else {
+    for 文本行 in 行迭代器 {
+        let Some((名字, 值)) = 文本行.split_once(':') else {
             continue;
         };
-        let 名称 = 名.trim().to_ascii_lowercase();
+        let 名称 = 名字.trim().to_ascii_lowercase();
         let 待处理值 = 值.trim();
         if 名称 == "content-length" {
             内容长度 = 待处理值
@@ -82,17 +82,17 @@ pub(crate) fn 读报文(输出流: &mut TcpStream) -> Result<报文, String> {
     // 余料可能已经多于 Content-Length（pipelining）：多的部分**丢弃**，本面不做流水线。
     体字节.truncate(内容长度);
     while 体字节.len() < 内容长度 {
-        let 还差 = (内容长度 - 体字节.len()).min(临时.len());
+        let 还差 = (内容长度 - 体字节.len()).min(读缓冲.len());
         let 读到 = 输出流
-            .read(&mut 临时[..还差])
+            .read(&mut 读缓冲[..还差])
             .map_err(|错误| format!("读请求体失败：{错误}"))?;
         if 读到 == 0 {
             return Err("请求体没读完连接就断了".to_owned());
         }
-        体字节.extend_from_slice(&临时[..读到]);
+        体字节.extend_from_slice(&读缓冲[..读到]);
     }
     let 请求体 = String::from_utf8(体字节).map_err(|_| "请求体不是合法 UTF-8".to_owned())?;
-    Ok(报文 { 方法, 目标, 体: 请求体 })
+    Ok(报文 { 请求方法, 请求目标, 报文体: 请求体 })
 }
 
 /// 找 `\r\n\r\n` 的起始偏移（请求头与体的分界）。
@@ -113,10 +113,10 @@ pub(crate) fn 写响应(输出流: &mut TcpStream, 造应答: &造应答) -> std
         造应答.状态,
         原因短语(造应答.状态),
         造应答.内容类型,
-        造应答.体.len()
+        造应答.报文体.len()
     );
     输出流.write_all(头部.as_bytes())?;
-    输出流.write_all(&造应答.体)?;
+    输出流.write_all(&造应答.报文体)?;
     输出流.flush()
 }
 

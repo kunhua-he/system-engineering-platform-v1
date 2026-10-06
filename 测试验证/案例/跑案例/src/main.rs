@@ -42,9 +42,9 @@ mod 观测;
 #[path = "判定.rs"]
 mod 判定;
 #[path = "跑.rs"]
-mod 跑;
+mod 跑案例;
 
 fn main() {
-    std::process::exit(跑::跑案例入口());
+    std::process::exit(跑案例::跑案例入口());
 }
 

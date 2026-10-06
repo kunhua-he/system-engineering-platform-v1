@@ -8,7 +8,7 @@ from pathlib import Path
 
 from .Rust文本 import 载入调用点
 from .合成仓 import 造干净仓
-from .小工具 import 取相对路径
+from .验证小工具 import 取相对路径
 from .常量 import 边界业务判断模式, 边界状态模式, 监听模式, 资源出入口形
 from .测试件 import 建测试文件集
 from .验证 import 跑全量判据
@@ -46,7 +46,7 @@ def 自检_整份夹具跳过() -> list:
         键父: 造属性("cfg(test)") + "\n" + 造属性('path = "子/夹具.rs"') + "\nmod 取扩展声明;\n",
         键夹具: 夹具文,
     }
-    测试文件集 = 建测试文件集({键名: {"文本": 文本} for 键名, 文本 in 节点件.items()})
+    测试文件集 = 建测试文件集({键名: {"文本": 源文本} for 键名, 源文本 in 节点件.items()})
     输出缓冲.append(
         (
             "反向样本：被 `#[cfg(test)] #[path]` 挂进来的整份夹具 ⇒ 跳过",
@@ -58,19 +58,19 @@ def 自检_整份夹具跳过() -> list:
     import tempfile
 
     def 跑自检(是否挂: bool) -> dict:
-        with tempfile.TemporaryDirectory(prefix="一键验证夹具对照-") as 临时:
-            临根 = Path(临时) / "仓"
+        with tempfile.TemporaryDirectory(prefix="一键验证夹具对照-") as 临时目录:
+            临根 = Path(临时目录) / "仓"
             造干净仓(临根)
-            for 相对, 内容 in 节点件.items():
+            for 相对, 件内容 in 节点件.items():
                 if not 是否挂 and 相对 == 键父:
                     continue
                 路径 = 临根 / 相对
                 路径.parent.mkdir(parents=True, exist_ok=True)
-                路径.write_text(内容, encoding="utf-8")
+                路径.write_text(件内容, encoding="utf-8")
             return 跑全量判据(临根)
 
     挂了, 没挂 = 跑自检(True), 跑自检(False)
-    失败数 = lambda 结果: len([明细条 for 明细条 in 结果["失败"] if isinstance(明细条, str)])  # noqa: E731
+    失败数 = lambda 判定汇总: len([明细条 for 明细条 in 判定汇总["失败"] if isinstance(明细条, str)])  # noqa: E731
     输出缓冲.append(
         (
             "对照：不挂载 ⇒ 同一份文件被抓到（证明「跳过」不是空转）",

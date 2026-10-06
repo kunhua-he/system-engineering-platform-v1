@@ -75,7 +75,7 @@ impl 副作用集 {
 
     /// 逐项列出（**次序固定**，取 [`副作用::全部`] 的次序）。
     pub fn 逐项取副作用(&self) -> impl Iterator<Item = 副作用> + '_ {
-        副作用::全部副作用.into_iter().filter(move |项| self.包含(*项))
+        副作用::全部副作用.into_iter().filter(move |副作用值| self.包含(*副作用值))
     }
 }
 

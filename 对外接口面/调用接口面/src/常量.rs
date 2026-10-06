@@ -69,10 +69,10 @@ pub use v1_adapter::号段类宽度;
 /// 是协议翻译。未登记的标签一律 400（形状未定义，猜一个就是把语义改错）。
 pub mod 类型标签 {
     pub const 无值: u32 = 0;
-    pub const 整数: u32 = 1;
+    pub const 整数标签: u32 = 1;
     pub const 双精度: u32 = 2;
     pub const 逻辑型: u32 = 3;
-    pub const 文本: u32 = 4;
+    pub const 文本值: u32 = 4;
     pub const 字节集: u32 = 5;
     pub const 句柄: u32 = 6;
     /// 保留标签：内核错误用它把失败写进返回槽，值是错误段位。

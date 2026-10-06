@@ -25,7 +25,7 @@ export function 装对话框(取元素) {
   }
 
   const 摆对话框 = (编号) => {
-    const 对话框项 = 对话框.find((候选) => 候选.编号 === 编号);
+    const 对话框项 = 对话框.find((候选项) => 候选项.编号 === 编号);
     const 对话框件 = document.createElement("div");
     对话框件.className = "易对话框";
     对话框件.style.width = 对话框项.cx + "px";
@@ -37,20 +37,20 @@ export function 装对话框(取元素) {
     对话框件.style.fontSize = 对话框项.字号 + "pt";
     for (const 控项 of 对话框项.控件) {
       const 控件件 = document.createElement("div");
-      控件件.className = "易控件 " + (类样式[控项.类] || "他") + (控项.禁用 ? " 灰" : "");
-      控件件.style.left = 控项.左 + "px";
+      控件件.className = "易控件 " + (类样式[控项.控件类] || "他") + (控项.禁用 ? " 灰" : "");
+      控件件.style.left = 控项.左边距 + "px";
       控件件.style.top = 控项.上 + "px";
       控件件.style.width = 控项.cx + "px";
       控件件.style.height = 控项.cy + "px";
       控件件.textContent = 控项.标题;
-      控件件.title = "类 " + 控项.类 + " · id " + 控项.id + " · 样式 " + 控项.样式
+      控件件.title = "类 " + 控项.控件类 + " · id " + 控项.id + " · 样式 " + 控项.控件样式
         + (控项.禁用 ? " · WS_DISABLED" : "");
       对话框件.append(控件件);
     }
     台容器.replaceChildren(对话框件);
     读数元素.textContent = "对话框 " + 对话框项.编号 + " · " + 对话框项.标题 + " · 字体 " + 对话框项.字体 + " " + 对话框项.字号
       + "pt · 尺寸 " + 对话框项.cx + "×" + 对话框项.cy + " 对话框单位 · 控件 " + 对话框项.控件数
-      + " · 可达命令 " + 对话框项.依据 + " · 只摆样子，未接动作";
+      + " · 可达命令 " + 对话框项.命令依据 + " · 只摆样子，未接动作";
   };
 
   选中.addEventListener("change", () => 摆对话框(选中.value));

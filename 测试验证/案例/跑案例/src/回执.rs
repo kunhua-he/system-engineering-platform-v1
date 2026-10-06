@@ -40,9 +40,9 @@ pub const 回执相对路径: &str = "测试验证/案例/运行回执.jsonl";
 /// 一条步骤读数。
 #[derive(Debug, Clone)]
 pub struct 步骤读数 {
-    pub 名: String,
+    pub 名字: String,
     /// 步骤种类：`能力` / `通知`。通知步骤的 `能力编号` 恒 0（通知号另记在 `名` 与说明里）。
-    pub 种类: String,
+    pub 扩展种类: String,
     pub 能力编号: u32,
     /// 适配器当场取到的能力名；`None` = 这个号没被任何已装载声明认领。
     pub 能力名: Option<String>,
@@ -68,14 +68,14 @@ pub struct 回执 {
     pub 提交哈希: String,
     pub 工作区是否干净: bool,
     pub 案例名: String,
-    pub 结果: String,
+    pub 调用结局: String,
     pub 死在哪一层: Option<String>,
     pub 死在哪一步: Option<String>,
     pub 错误码: Option<错误码登记>,
     pub 耗时微秒: u128,
     pub 跑的时间: String,
     pub 说明: String,
-    pub 步骤: Vec<步骤读数>,
+    pub 案例步骤: Vec<步骤读数>,
 }
 
 impl 回执 {
@@ -88,7 +88,7 @@ impl 回执 {
         文本缓冲.push_str(",\"案例名\":");
         crate::最小JSON::写串(&mut 文本缓冲, &self.案例名);
         文本缓冲.push_str(",\"结果\":");
-        crate::最小JSON::写串(&mut 文本缓冲, &self.结果);
+        crate::最小JSON::写串(&mut 文本缓冲, &self.调用结局);
         文本缓冲.push_str(",\"死在哪一层\":");
         写可选串(&mut 文本缓冲, self.死在哪一层.as_deref());
         文本缓冲.push_str(",\"死在哪一步\":");
@@ -104,15 +104,15 @@ impl 回执 {
         文本缓冲.push_str(",\"说明\":");
         crate::最小JSON::写串(&mut 文本缓冲, &self.说明);
         文本缓冲.push_str(",\"步骤\":[");
-        for (序号, 步序) in self.步骤.iter().enumerate() {
+        for (序号, 步序) in self.案例步骤.iter().enumerate() {
             if 序号 > 0 {
                 文本缓冲.push(',');
             }
             文本缓冲.push('{');
             文本缓冲.push_str("\"名\":");
-            crate::最小JSON::写串(&mut 文本缓冲, &步序.名);
+            crate::最小JSON::写串(&mut 文本缓冲, &步序.名字);
             文本缓冲.push_str(",\"种类\":");
-            crate::最小JSON::写串(&mut 文本缓冲, &步序.种类);
+            crate::最小JSON::写串(&mut 文本缓冲, &步序.扩展种类);
             文本缓冲.push_str(&format!(",\"能力编号\":{},\"能力名\":", 步序.能力编号));
             写可选串(&mut 文本缓冲, 步序.能力名.as_deref());
             文本缓冲.push_str(",\"调用结果\":");
@@ -138,7 +138,7 @@ impl 回执 {
 
 fn 写可选串(文本缓冲: &mut String, 待处理值: Option<&str>) {
     match 待处理值 {
-        Some(文本) => crate::最小JSON::写串(文本缓冲, 文本),
+        Some(源文本) => crate::最小JSON::写串(文本缓冲, 源文本),
         None => 文本缓冲.push_str("null"),
     }
 }
@@ -172,11 +172,11 @@ pub fn 提交哈希(仓根: &Path) -> Result<String, String> {
             String::from_utf8_lossy(&文本缓冲.stderr).trim()
         ));
     }
-    let 哈希 = String::from_utf8_lossy(&文本缓冲.stdout).trim().to_owned();
-    if 哈希.len() < 40 {
-        return Err(format!("提交哈希不是完整值（{} 位）：`{哈希}`", 哈希.len()));
+    let 哈希值 = String::from_utf8_lossy(&文本缓冲.stdout).trim().to_owned();
+    if 哈希值.len() < 40 {
+        return Err(format!("提交哈希不是完整值（{} 位）：`{哈希值}`", 哈希值.len()));
     }
-    Ok(哈希)
+    Ok(哈希值)
 }
 
 /// 工作区是否干净：除**回执自身**之外的改动数为 0。
@@ -261,11 +261,11 @@ mod 测试 {
             提交哈希: "a".repeat(40),
             工作区是否干净: false,
             案例名: "首项\"次项".to_owned(),
-            结果: "失败".to_owned(),
+            调用结局: "失败".to_owned(),
             死在哪一层: Some("内核".to_owned()),
             死在哪一步: Some("调度".to_owned()),
             错误码: Some(错误码登记 {
-                码: 1,
+                码值: 1,
                 段位: 0,
                 名称: "提供者未载入".to_owned(),
                 可重试: true,
@@ -276,9 +276,9 @@ mod 测试 {
             耗时微秒: 7,
             跑的时间: 现在UTC(),
             说明: "换行\n也要转义".to_owned(),
-            步骤: vec![步骤读数 {
-                名: "首项".to_owned(),
-                种类: "能力".to_owned(),
+            案例步骤: vec![步骤读数 {
+                名字: "首项".to_owned(),
+                扩展种类: "能力".to_owned(),
                 能力编号: 1105,
                 能力名: Some("反解容器".to_owned()),
                 调用结果: "成功".to_owned(),

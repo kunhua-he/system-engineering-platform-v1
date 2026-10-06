@@ -24,7 +24,7 @@ from __future__ import annotations
 
 import subprocess
 
-from .小工具 import 判不了, 违规
+from .验证小工具 import 判不了, 违规
 from .常量 import 检查名
 
 
@@ -44,7 +44,7 @@ def 忽略条目(仓根) -> tuple:
     if 键名 in _忽略条目缓存:
         return _忽略条目缓存[键名]
     try:
-        结果 = subprocess.run(
+        判定汇总 = subprocess.run(
             ["git", "-C", 键名, "ls-files", "--others", "--ignored", "--exclude-standard"],
             capture_output=True, text=True, timeout=5,
         )
@@ -52,19 +52,19 @@ def 忽略条目(仓根) -> tuple:
         待处理值 = ([], f"跑不动 git（{type(错误).__name__}：{错误}）")
         _忽略条目缓存[键名] = 待处理值
         return 待处理值
-    if 结果.returncode != 0:
-        待处理值 = ([], f"git ls-files 退出码 {结果.returncode}：{结果.stderr.strip()[:200]}")
+    if 判定汇总.returncode != 0:
+        待处理值 = ([], f"git ls-files 退出码 {判定汇总.returncode}：{判定汇总.stderr.strip()[:200]}")
         _忽略条目缓存[键名] = 待处理值
         return 待处理值
-    待处理值 = ([源码行 for 源码行 in 结果.stdout.splitlines() if 源码行], None)
+    待处理值 = ([源码行 for 源码行 in 判定汇总.stdout.splitlines() if 源码行], None)
     _忽略条目缓存[键名] = 待处理值
     return 待处理值
 
 
 def 样本_忽略条目(上层读数: dict) -> int:
     """对象数：被 git 忽略的条目数（0 ⇒ 未判：读不出被忽略面，这条判据什么都没验）。"""
-    条目, _错误 = 忽略条目(上层读数["仓根"])
-    return len(条目)
+    忽略条目表, _错误 = 忽略条目(上层读数["仓根"])
+    return len(忽略条目表)
 
 
 def 检查23_散文不落被忽略目录(上层读数: dict) -> list:
@@ -74,7 +74,7 @@ def 检查23_散文不落被忽略目录(上层读数: dict) -> list:
     **失败** = 逐条报出那份散文；**未判** = 读不出被忽略面（非 git 仓 / git 不可用）。
     """
     输出缓冲 = []
-    条目, 错误 = 忽略条目(上层读数["仓根"])
+    忽略条目表, 错误 = 忽略条目(上层读数["仓根"])
     if 错误:
         判不了(
             检查名[22],
@@ -85,7 +85,7 @@ def 检查23_散文不落被忽略目录(上层读数: dict) -> list:
             "只能由环境（git 可用）或判据作者确认",
         )
         return 输出缓冲
-    if not 条目:
+    if not 忽略条目表:
         判不了(
             检查名[22],
             "git ls-files --others --ignored --exclude-standard",
@@ -96,7 +96,7 @@ def 检查23_散文不落被忽略目录(上层读数: dict) -> list:
         return 输出缓冲
 
     命中 = [
-        键名 for 键名 in 条目
+        键名 for 键名 in 忽略条目表
         if 键名.endswith(".md") and not 键名.startswith(被忽略散文排除前缀)
     ]
     for 键名 in sorted(命中):

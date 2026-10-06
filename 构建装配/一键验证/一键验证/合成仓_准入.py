@@ -63,10 +63,10 @@ def 准入夹具() -> dict:
             "pub fn 装(落点: &str) {\n"
             "    let mut 剔除的 = Vec::new();\n"
             "    match 取扩展声明(落点) {\n"
-            "        Err(原因) => 剔除的.push((落点, 原因)),\n"
+            "        Err(失败原因) => 剔除的.push((落点, 失败原因)),\n"
             "        Ok(_) => {}\n"
             "    }\n"
-            '    for (落点, 原因) in &剔除的 { println!("  剔除 {落点}：{原因}"); }\n'
+            '    for (落点, 失败原因) in &剔除的 { println!("  剔除 {落点}：{失败原因}"); }\n'
             "}\n"
             "pub fn 装配() {\n"
             '    let 符号 = unsafe { dlsym(core::ptr::null_mut(), c"GetPlatformInfo".as_ptr()) };\n'

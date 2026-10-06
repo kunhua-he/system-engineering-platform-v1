@@ -21,7 +21,7 @@ pub struct 分配器 {
 }
 
 impl 分配器 {
-    pub fn 新建() -> Self {
+    pub fn 构造() -> Self {
         Self { 活块: HashMap::new(), 已释放: HashSet::new() }
     }
 
@@ -39,20 +39,20 @@ impl 分配器 {
         }
         // 走到这里：1 <= 字节长度 <= u32::MAX，对齐固定 16。
         // 若目标平台的 usize 装不下（32 位下 size + align - 1 溢出），按超上限处理。
-        let 布局 = Layout::from_size_align(字节长度 as usize, 分配对齐 as usize)
+        let 内存布局 = Layout::from_size_align(字节长度 as usize, 分配对齐 as usize)
             .map_err(|_| 分配错误::超上限 { 请求: 字节长度, 上限: 单次分配上限 })?;
         // SAFETY: 布局已校验且非零长度，alloc_zeroed 对合法布局是安全的。
         // 用 alloc_zeroed 而非 alloc：交出去的内存先清零，跨语言读到的不是垃圾，
         // 确定性优先（README 第二节「要求确定性」）。
-        let 指针 = unsafe { alloc_zeroed(布局) };
+        let 指针 = unsafe { alloc_zeroed(内存布局) };
         if 指针.is_null() {
             return Err(分配错误::内存不足);
         }
-        let 地址 = 指针 as u64;
-        self.活块.insert(地址, 字节长度);
+        let 块地址 = 指针 as u64;
+        self.活块.insert(块地址, 字节长度);
         // 地址可能被底层复用：重新交出后就不再是"已释放"。
-        self.已释放.remove(&地址);
-        Ok(地址)
+        self.已释放.remove(&块地址);
+        Ok(块地址)
     }
 
     /// 释放。
@@ -62,29 +62,29 @@ impl 分配器 {
     /// # Safety
     /// `地址` 必须来自本分配器且尚未释放。本函数会校验这一点并拒绝非法地址，
     /// 但调用方仍不得把已释放的地址当有效指针使用（那是调用方的 UB，不是本函数能兜住的）。
-    pub unsafe fn 释放内存(&mut self, 地址: u64) -> Result<(), 释放错误> {
-        if 地址 == 0 {
+    pub unsafe fn 释放内存(&mut self, 块地址: u64) -> Result<(), 释放错误> {
+        if 块地址 == 0 {
             return Err(释放错误::空指针);
         }
-        let Some(长度) = self.活块.remove(&地址) else {
+        let Some(槽字节长度) = self.活块.remove(&块地址) else {
             // 交出过但已释放 ⇒ 重复释放；从没交出过 ⇒ 外来地址。两者都不许静默。
-            return Err(if self.已释放.contains(&地址) {
+            return Err(if self.已释放.contains(&块地址) {
                 释放错误::重复释放
             } else {
                 释放错误::非本分配器地址
             });
         };
         // SAFETY: 长度与对齐来自本分配器成功的一次分配，布局必然合法。
-        let 布局 = unsafe { Layout::from_size_align_unchecked(长度 as usize, 分配对齐 as usize) };
+        let 内存布局 = unsafe { Layout::from_size_align_unchecked(槽字节长度 as usize, 分配对齐 as usize) };
         // SAFETY: 地址由本分配器交出、尚未释放（刚从活块账上取下），且按同一布局分配。
-        unsafe { dealloc(地址 as *mut u8, 布局) };
-        self.已释放.insert(地址);
+        unsafe { dealloc(块地址 as *mut u8, 内存布局) };
+        self.已释放.insert(块地址);
         Ok(())
     }
 
     /// 查账：该地址当前在用块的字节长度（未在用返回 `None`）。
-    pub fn 块长(&self, 地址: u64) -> Option<u64> {
-        self.活块.get(&地址).copied()
+    pub fn 块长(&self, 块地址: u64) -> Option<u64> {
+        self.活块.get(&块地址).copied()
     }
 
     /// 当前在用块数（对外的计数一律 `u64`）。

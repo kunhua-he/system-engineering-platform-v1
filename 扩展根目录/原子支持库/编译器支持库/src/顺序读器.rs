@@ -18,22 +18,22 @@
 /// 顺序读器：每个 `取字节` 都查边界，越界给 `None`（不 panic）。
 pub(crate) struct 顺序读器<'a> {
     pub(crate) 字节: &'a [u8],
-    pub(crate) 位: usize,
+    pub(crate) 游标位: usize,
 }
 
 impl<'a> 顺序读器<'a> {
     /// 还没读的字节数。
     pub(crate) fn 取剩余长度(&self) -> usize {
-        self.字节.len().saturating_sub(self.位)
+        self.字节.len().saturating_sub(self.游标位)
     }
 
-    pub(crate) fn 取字节(&mut self, 个数: usize) -> Option<&'a [u8]> {
-        let 尾部 = self.位.checked_add(个数)?;
+    pub(crate) fn 取字节(&mut self, 字节个数: usize) -> Option<&'a [u8]> {
+        let 尾部 = self.游标位.checked_add(字节个数)?;
         if 尾部 > self.字节.len() {
             return None;
         }
-        let 片段 = &self.字节[self.位..尾部];
-        self.位 = 尾部;
+        let 片段 = &self.字节[self.游标位..尾部];
+        self.游标位 = 尾部;
         Some(片段)
     }
 
@@ -54,9 +54,9 @@ impl<'a> 顺序读器<'a> {
         Some(u64::from_le_bytes(self.取字节(8)?.try_into().ok()?))
     }
 
-    pub(crate) fn 文本(&mut self) -> Option<String> {
-        let 长度 = self.读四字节()? as usize;
-        let 片段 = self.取字节(长度)?;
+    pub(crate) fn 源文本(&mut self) -> Option<String> {
+        let 读取字节数 = self.读四字节()? as usize;
+        let 片段 = self.取字节(读取字节数)?;
         Some(core::str::from_utf8(片段).ok()?.to_owned())
     }
 
@@ -72,13 +72,13 @@ impl<'a> 顺序读器<'a> {
         let 类型标签 = self.读四字节()?;
         let 槽标志位 = self.读双字节()?;
         let 保留 = self.读双字节()?;
-        let 长度 = self.读八字节()?;
+        let 读取字节数 = self.读八字节()?;
         let 待处理值 = self.读八字节()?;
         Some(v1_contract::数据槽 {
-            类型标签: v1_contract::类型标签::新建(类型标签),
+            类型标签: v1_contract::类型标签::构造(类型标签),
             槽标志位,
             保留,
-            长度,
+            槽字节长度: 读取字节数,
             槽值: 待处理值,
         })
     }

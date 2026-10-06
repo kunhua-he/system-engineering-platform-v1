@@ -64,10 +64,10 @@ def 内容指纹(库路径) -> str:
         return ""
     连接 = _sqlite3.connect("file:%s?mode=ro" % 库件, uri=True)
     try:
-        文本 = "\n".join(连接.iterdump())
+        源文本 = "\n".join(连接.iterdump())
     finally:
         连接.close()
-    return hashlib.sha256(文本.encode("utf-8")).hexdigest()
+    return hashlib.sha256(源文本.encode("utf-8")).hexdigest()
 
 
 def 连规则库(根目录):

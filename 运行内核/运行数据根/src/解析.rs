@@ -16,7 +16,7 @@ pub struct 解析环境<'a> {
     ///
     /// 为什么变量名是 ASCII：`macOS` 的 `/bin/sh` 是 bash 3.2，**不认中文变量名**
     /// （`.git/hooks/pre-commit` 顶部同一条理由）—— 环境变量名一律 ASCII，值可以是任何路径。
-    pub 覆盖: Option<&'a str>,
+    pub 环境覆盖: Option<&'a str>,
     /// 家目录（`HOME`；Windows 上也有）。
     pub 家目录: Option<&'a str>,
     /// `XDG_DATA_HOME`（Linux 的 XDG 基线；**未设时按 XDG 规范退回 `~/.local/share`**）。
@@ -52,7 +52,7 @@ pub const 覆盖变量名: &str = "V1_RUN_DATA_ROOT";
 /// - 覆盖为空 / 缺 ⇒ 平台数据目录 + [`默认目录名`]；
 /// - 两条都拿不到 ⇒ [`解析失败::无位置`]。
 pub fn 解析运行数据根(解析环境: &解析环境, 目标平台: 目标平台) -> Result<PathBuf, 解析失败> {
-    if let Some(环境覆盖值) = 解析环境.覆盖
+    if let Some(环境覆盖值) = 解析环境.环境覆盖
         && !环境覆盖值.is_empty()
     {
         return Ok(PathBuf::from(环境覆盖值));
@@ -74,8 +74,8 @@ fn 默认基目录(解析环境: &解析环境, 目标平台: 目标平台) -> O
             .map(|家目录| PathBuf::from(家目录).join("Library").join("Application Support")),
         // Linux：`$XDG_DATA_HOME`，未设则按 XDG 规范退回 `~/.local/share`
         目标平台::Linux => {
-            if let Some(数据) = 解析环境.xdg数据目录.filter(|目录| !目录.is_empty()) {
-                return Some(PathBuf::from(数据));
+            if let Some(数据根配置) = 解析环境.xdg数据目录.filter(|数据根目录| !数据根目录.is_empty()) {
+                return Some(PathBuf::from(数据根配置));
             }
             解析环境
                 .家目录
@@ -85,7 +85,7 @@ fn 默认基目录(解析环境: &解析环境, 目标平台: 目标平台) -> O
         // Windows：`%APPDATA%`（家目录不是它 —— 两者别混）
         目标平台::Windows => 解析环境
             .应用数据目录
-            .filter(|目录| !目录.is_empty())
+            .filter(|数据根目录| !数据根目录.is_empty())
             .map(PathBuf::from),
     }
 }
@@ -97,7 +97,7 @@ pub fn 解析当前环境() -> Result<PathBuf, 解析失败> {
     let xdg = std::env::var("XDG_DATA_HOME").ok();
     let 应用 = std::env::var("APPDATA").ok();
     let 解析环境 = 解析环境 {
-        覆盖: 环境覆盖值.as_deref(),
+        环境覆盖: 环境覆盖值.as_deref(),
         家目录: 家目录.as_deref(),
         xdg数据目录: xdg.as_deref(),
         应用数据目录: 应用.as_deref(),

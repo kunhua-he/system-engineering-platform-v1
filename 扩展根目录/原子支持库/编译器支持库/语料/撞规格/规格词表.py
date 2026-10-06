@@ -40,18 +40,18 @@ import re
            "变量循环首", "变量循环尾", "判断循环首", "判断循环尾", "到循环尾", "跳出循环"}
 
 
-def 行首关键字(line):
-    行文 = line.lstrip()
+def 行首关键字(行文本):
+    行文 = 行文本.lstrip()
     if 行文.startswith("."):
-        匹配 = re.match(r"\.([0-9A-Za-z_\u4e00-\u9fff]+)", 行文)
-        if 匹配:
-            return 匹配.group(1)
+        正则匹配 = re.match(r"\.([0-9A-Za-z_\u4e00-\u9fff]+)", 行文)
+        if 正则匹配:
+            return 正则匹配.group(1)
     return None
 
 
-def 是备注字段(line, fi):
+def 是备注字段(行文本, fi):
     """该位置是不是「声明行的非结构自由文本字段」。"""
-    kw = 行首关键字(line)
+    kw = 行首关键字(行文本)
     if kw is None or kw in 语句关键字:
         return False
     return fi >= 结构字段数.get(kw, 99)
@@ -60,20 +60,20 @@ def 是备注字段(line, fi):
 ASCII标点 = set(r"!\"#$%'()*+,-./:;<=>?@[\]^_`{|}~")
 
 
-def _字段序(line, col):
+def _字段序(行文本, col):
     """col 之前有几个「顶层半角逗号」（字面量内的不算）→ 就是字段序。"""
     字段数 = 0
     扫描位 = 0
-    while 扫描位 < col and 扫描位 < len(line):
-        字符 = line[扫描位]
-        if 字符 in "“”\"":
-            close = "”" if 字符 in "“”" else '"'
+    while 扫描位 < col and 扫描位 < len(行文本):
+        单字符 = 行文本[扫描位]
+        if 单字符 in "“”\"":
+            close = "”" if 单字符 in "“”" else '"'
             扫描位 += 1
-            while 扫描位 < len(line) and line[扫描位] != close:
+            while 扫描位 < len(行文本) and 行文本[扫描位] != close:
                 扫描位 += 1
             扫描位 += 1
             continue
-        if 字符 == ",":
+        if 单字符 == ",":
             字段数 += 1
         扫描位 += 1
     return 字段数

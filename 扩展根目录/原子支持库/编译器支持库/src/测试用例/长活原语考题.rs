@@ -52,15 +52,15 @@ enum 任务态 {
 ///
 /// 句柄由表分配（单调递增的不透明 8 字节值）⇒ 句柄是**真凭据**，不是测试里编的常数。
 struct 任务表 {
-    表: Mutex<HashMap<u64, 任务态>>,
+    任务登记表: Mutex<HashMap<u64, 任务态>>,
     下一个句柄: AtomicU64,
 }
 
 /// 本扩展的任务表（进程内一份）。
 fn 本扩展任务表() -> &'static 任务表 {
-    static 表: OnceLock<任务表> = OnceLock::new();
-    表.get_or_init(|| 任务表 {
-        表: Mutex::new(HashMap::new()),
+    static 任务登记表: OnceLock<任务表> = OnceLock::new();
+    任务登记表.get_or_init(|| 任务表 {
+        任务登记表: Mutex::new(HashMap::new()),
         // 起点是个不透明值（无含义，只保证非零、8 字节）。
         下一个句柄: AtomicU64::new(0x5441_534B_0000_0001),
     })
@@ -70,11 +70,11 @@ fn 本扩展任务表() -> &'static 任务表 {
 fn 取任务句柄() -> u64 {
     let 项表 = 本扩展任务表();
     let 句柄 = 项表.下一个句柄.fetch_add(1, Ordering::Relaxed);
-    项表.表.lock().unwrap().insert(句柄, 任务态::在飞);
+    项表.任务登记表.lock().unwrap().insert(句柄, 任务态::在飞);
     thread::spawn(move || {
         thread::sleep(长活时长);
         let 项表 = 本扩展任务表();
-        let mut 锁句柄 = 项表.表.lock().unwrap();
+        let mut 锁句柄 = 项表.任务登记表.lock().unwrap();
         if let Some(任务状态) = 锁句柄.get_mut(&句柄) {
             // 只把「还在飞」推成完成；已取消的不许被覆盖（取消是终态）。
             if *任务状态 == 任务态::在飞 {
@@ -88,7 +88,7 @@ fn 取任务句柄() -> u64 {
 /// 取消一个句柄：把它打成**终态「已取消」**，返回一个可查的码（本扩展的 `1134` 一类）。
 fn 取消(句柄: u64) -> u32 {
     let 项表 = 本扩展任务表();
-    let mut 锁句柄 = 项表.表.lock().unwrap();
+    let mut 锁句柄 = 项表.任务登记表.lock().unwrap();
     match 锁句柄.get_mut(&句柄) {
         Some(当前任务态) if *当前任务态 == 任务态::在飞 => {
             *当前任务态 = 任务态::已取消;
@@ -105,7 +105,7 @@ fn 按句柄取(句柄: u64, 待取项: Duration) -> Result<Vec<u8>, u32> {
     let 截止 = Instant::now() + 待取项;
     loop {
         {
-            let 锁句柄 = 项表.表.lock().unwrap();
+            let 锁句柄 = 项表.任务登记表.lock().unwrap();
             match 锁句柄.get(&句柄) {
                 Some(任务态::已完成(字节)) => return Ok(字节.clone()),
                 Some(任务态::已取消) => return Err(取消码),
@@ -131,7 +131,7 @@ fn 判据7_句柄过边界不失真_八字节原值逐字节不变() {
     assert_eq!(原值.len(), 8, "句柄必须是 8 字节");
     // 句柄是**真凭据**：表里查得到（不是编出来的常数冒充句柄）。
     assert!(
-        本扩展任务表().表.lock().unwrap().contains_key(&句柄),
+        本扩展任务表().任务登记表.lock().unwrap().contains_key(&句柄),
         "句柄不在扩展自持的任务表里"
     );
 }

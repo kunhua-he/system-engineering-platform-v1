@@ -43,13 +43,13 @@ lint段标记 = (
 def _跑(命令: list, 仓根: Path) -> tuple:
     """跑一条命令 ⇒ `(退出码, 标准输出, 标准错误)`；**不设超时**（理由见文件头「超时」段）。"""
     try:
-        结果 = subprocess.run(
+        判定汇总 = subprocess.run(
             命令, cwd=str(仓根), capture_output=True, text=True,
             encoding="utf-8", errors="replace",
         )
     except OSError as 错误:
         return 127, "", f"命令起不来（{type(错误).__name__}：{错误}）"
-    return 结果.returncode, 结果.stdout or "", 结果.stderr or ""
+    return 判定汇总.returncode, 判定汇总.stdout or "", 判定汇总.stderr or ""
 
 
 def 读工作区成员(仓根: Path) -> tuple:
@@ -60,12 +60,12 @@ def 读工作区成员(仓根: Path) -> tuple:
     if 退出码 != 0:
         return [], f"cargo metadata 退出码 {退出码}：{标准错误.strip()[:200]}"
     try:
-        数据 = json.loads(标准输出)
+        配置表 = json.loads(标准输出)
     except json.JSONDecodeError as 错误:
         return [], f"cargo metadata 输出解不开（{错误}）"
     return [
         (str(包项.get("name")), str(包项.get("manifest_path")))
-        for 包项 in 数据.get("packages") or []
+        for 包项 in 配置表.get("packages") or []
     ], None
 
 
@@ -106,28 +106,28 @@ def 解析诊断(标准输出: str) -> tuple:
         if not 行文本:
             continue
         try:
-            数据 = json.loads(行文本)
+            配置表 = json.loads(行文本)
         except json.JSONDecodeError:
             continue  # 不是 JSON 行（人读摘要一类）⇒ 跳过
-        因由 = 数据.get("reason")
+        因由 = 配置表.get("reason")
         if 因由 == "compiler-artifact":
-            制品包集.add(_包名(数据.get("package_id")))
+            制品包集.add(_包名(配置表.get("package_id")))
             continue
         if 因由 != "compiler-message":
             continue
-        消息 = 数据.get("message") or {}
+        消息 = 配置表.get("message") or {}
         级别 = str(消息.get("level") or "")
         if 级别 not in ("error", "warning"):
             continue
-        文件, 行号, 列号 = _取位置(消息)
-        条 = {
-            "包": _包名(数据.get("package_id")),
-            "文件": 文件, "行": 行号, "列": 列号,
+        件路径, 行号, 列号 = _取位置(消息)
+        单条诊断 = {
+            "包": _包名(配置表.get("package_id")),
+            "文件": 件路径, "行": 行号, "列": 列号,
             "级别": 级别,
             "代号": str((消息.get("code") or {}).get("code") or ""),
             "文案": str(消息.get("message") or "").strip(),
         }
-        (错误表 if 级别 == "error" else 警告表).append(条)
+        (错误表 if 级别 == "error" else 警告表).append(单条诊断)
     return 错误表, 警告表, 制品包集
 
 
@@ -143,7 +143,7 @@ def 跑Rust面(仓根: Path) -> dict:
     说明 = ""
     锁相关 = ("--locked" in 标准错误) or ("lock file" in 标准错误) or ("Cargo.lock" in 标准错误)
     if 退出码 != 0 and 锁相关:
-        命令 = [参数 for 参数 in 命令 if 参数 != "--locked"]
+        命令 = [命令行参数 for 命令行参数 in 命令 if 命令行参数 != "--locked"]
         退出码, 标准输出, 标准错误 = _跑(命令, 仓根)
         说明 = "`--locked` 跑不动（锁文件缺失或过期）⇒ 改用 `cargo check --workspace`（不带 --locked）"
     错误表, 警告表, 制品包集 = 解析诊断(标准输出)
@@ -163,24 +163,24 @@ def 是lint配置(节点件: Path, 件名: str) -> bool:
     if 件名 in 直认件名:
         return True
     try:
-        文本 = 节点件.read_text(encoding="utf-8", errors="replace")
+        源文本 = 节点件.read_text(encoding="utf-8", errors="replace")
     except OSError:
         return False
-    return any(段标记 in 文本 for 段标记 in lint段标记)
+    return any(段标记 in 源文本 for 段标记 in lint段标记)
 
 
 def 找Python配置(起点: Path) -> list:
     """从起点逐级上溯找**现成** lint 配置 ⇒ 命中的绝对路径表（一件都没有 ⇒ 空表）。"""
     命中 = []
-    当前 = 起点.resolve()
+    当前路径 = 起点.resolve()
     while True:
         for 件名 in 配置候选:
-            节点件 = 当前 / 件名
+            节点件 = 当前路径 / 件名
             if 节点件.is_file() and 是lint配置(节点件, 件名):
                 命中.append(str(节点件))
-        if 当前.parent == 当前:
+        if 当前路径.parent == 当前路径:
             break
-        当前 = 当前.parent
+        当前路径 = 当前路径.parent
     return 命中
 
 
@@ -202,10 +202,10 @@ def 跑Python面(仓根: Path) -> dict:
 
 def _打印Rust面(读数: dict) -> tuple:
     """打印 Rust 面读数 ⇒ `(成员名表, 报错包集, 错误表)`。"""
-    成员名表 = [名 for 名, _路径 in 读数["成员表"]]
+    成员名表 = [标识符 for 标识符, _路径 in 读数["成员表"]]
     print(f"  workspace 成员（实测 cargo metadata --no-deps）：{len(成员名表)} 个")
-    for 名 in 成员名表:
-        print(f"    - {名}")
+    for 标识符 in 成员名表:
+        print(f"    - {标识符}")
     if 读数["元数据错误"]:
         print(f"  ！成员清单读不到：{读数['元数据错误']}")
     制品名表 = sorted(读数["制品包集"])
@@ -223,19 +223,19 @@ def _打印Rust面(读数: dict) -> tuple:
             "不代表没检查；覆盖由 `--workspace` 与上面的成员清单背书。"
         )
     错误表, 警告表 = 读数["错误表"], 读数["警告表"]
-    报错包集 = {条["包"] for 条 in 错误表}
+    报错包集 = {单条诊断["包"] for 单条诊断 in 错误表}
     if 错误表:
         print(f"  error {len(错误表)} 条（{len(报错包集)} 个 crate）：")
-        for 条 in 错误表:
-            代号 = f"[{条['代号']}]" if 条["代号"] else ""
-            print(f"    ✗ {条['包']} ｜ {条['文件']}:{条['行']}:{条['列']} ｜ error{代号}: {条['文案']}")
+        for 单条诊断 in 错误表:
+            代号 = f"[{单条诊断['代号']}]" if 单条诊断["代号"] else ""
+            print(f"    ✗ {单条诊断['包']} ｜ {单条诊断['文件']}:{单条诊断['行']}:{单条诊断['列']} ｜ error{代号}: {单条诊断['文案']}")
     else:
         print("  error 0 条")
     if 警告表:
         print(f"  warning {len(警告表)} 条（不判失败，如实报出）：")
-        for 条 in 警告表:
-            代号 = f"[{条['代号']}]" if 条["代号"] else ""
-            print(f"    - {条['包']} ｜ {条['文件']}:{条['行']}:{条['列']} ｜ warning{代号}: {条['文案']}")
+        for 单条诊断 in 警告表:
+            代号 = f"[{单条诊断['代号']}]" if 单条诊断["代号"] else ""
+            print(f"    - {单条诊断['包']} ｜ {单条诊断['文件']}:{单条诊断['行']}:{单条诊断['列']} ｜ warning{代号}: {单条诊断['文案']}")
     else:
         print("  warning 0 条")
     if 读数["退出码"] != 0 and not 错误表:
@@ -274,7 +274,7 @@ def 编译自检(仓根: Path) -> int:
     报错数 = len(报错包集)
     通过数 = max(总数 - 报错数, 0)
     报错位置 = "；".join(
-        f"{条['包']} ｜ {条['文件']}:{条['行']}:{条['列']} ｜ {条['文案']}" for 条 in 错误表
+        f"{单条诊断['包']} ｜ {单条诊断['文件']}:{单条诊断['行']}:{单条诊断['列']} ｜ {单条诊断['文案']}" for 单条诊断 in 错误表
     )
     print(
         f"  Rust 编译：{总数} 个 crate，{通过数} 个通过，{报错数} 个报错"

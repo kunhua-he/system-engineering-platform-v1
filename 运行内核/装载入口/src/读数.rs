@@ -32,14 +32,14 @@ pub unsafe fn 读串(指针: *const u8, 读取上限: usize) -> Option<&'static 
     if 指针.is_null() {
         return None;
     }
-    let mut 长度 = 0usize;
-    while 长度 < 读取上限 {
+    let mut 读取字节数 = 0usize;
+    while 读取字节数 < 读取上限 {
         // SAFETY: 由调用方保证 指针..指针+读取上限 可读。
-        if unsafe { *指针.add(长度) } == 0 {
+        if unsafe { *指针.add(读取字节数) } == 0 {
             // SAFETY: 已扫到 NUL，前 长 字节可读且不再变动（静态数据）。
-            return Some(unsafe { core::slice::from_raw_parts(指针, 长度) });
+            return Some(unsafe { core::slice::from_raw_parts(指针, 读取字节数) });
         }
-        长度 += 1;
+        读取字节数 += 1;
     }
     None
 }
@@ -65,18 +65,18 @@ pub(crate) fn 是合法标识串(字节串: &[u8]) -> bool {
 
 /// 号段表 → 切片（判定的合法性由 `判号段表` 负责；此处项数 0 或项表空一律给空切片）。
 pub(crate) fn 号段切片(项表: 表段<号段>) -> &'static [号段] {
-    if 项表.项数 == 0 || 项表.项表.is_null() || 项表.项数 as usize > 号段表上限 {
+    if 项表.表项数 == 0 || 项表.项表.is_null() || 项表.表项数 as usize > 号段表上限 {
         return &[];
     }
     // SAFETY: 契约保证号段表指向静态只读数组；项数 > 0 且项表非空。
-    unsafe { core::slice::from_raw_parts(项表.项表, 项表.项数 as usize) }
+    unsafe { core::slice::from_raw_parts(项表.项表, 项表.表项数 as usize) }
 }
 
 /// 号段表 → 段表。项数 0 或项表空 ⇒ 空（`登记` 用；判定的合法性由 `判号段表` 负责）。
 pub(crate) fn 读号段表(项表: 表段<号段>) -> Vec<号段> {
-    if 项表.项数 == 0 || 项表.项表.is_null() || 项表.项数 as usize > 号段表上限 {
+    if 项表.表项数 == 0 || 项表.项表.is_null() || 项表.表项数 as usize > 号段表上限 {
         return Vec::new();
     }
     // SAFETY: 契约保证号段表指向静态只读数组；项数 > 0 且项表非空。
-    unsafe { core::slice::from_raw_parts(项表.项表, 项表.项数 as usize) }.to_vec()
+    unsafe { core::slice::from_raw_parts(项表.项表, 项表.表项数 as usize) }.to_vec()
 }

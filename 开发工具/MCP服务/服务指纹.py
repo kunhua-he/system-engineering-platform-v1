@@ -36,7 +36,7 @@ from pathlib import Path
     仓根 / "构建装配" / "一键验证" / "一键验证" / "判据_台账号.py",
     仓根 / "构建装配" / "一键验证" / "一键验证" / "剥字面量.py",
     仓根 / "构建装配" / "一键验证" / "一键验证" / "局部绑定形状.py",
-    仓根 / "构建装配" / "一键验证" / "一键验证" / "小工具.py",
+    仓根 / "构建装配" / "一键验证" / "一键验证" / "验证小工具.py",
     仓根 / "构建装配" / "一键验证" / "一键验证" / "常量.py",
     仓根 / "构建装配" / "一键验证" / "一键验证" / "判据基线.py",
     仓根 / "构建装配" / "一键验证" / "一键验证" / "条款文本.py",
@@ -45,23 +45,23 @@ from pathlib import Path
 
 def 算服务指纹() -> str:
     """服务源码的合并指纹 ⇒ 16 位十六进制（按件名排序后逐件摘要 —— 顺序无关）。"""
-    摘要 = hashlib.sha256()
+    摘要值 = hashlib.sha256()
     件表 = sorted(服务根.glob("*.py"))
     if 入口件.is_file():
         件表.append(入口件)
-    for 目录 in 依赖:
-        if 目录.is_dir():
-            件表 += sorted(目录.glob("*.py"))
+    for 目录路径 in 依赖:
+        if 目录路径.is_dir():
+            件表 += sorted(目录路径.glob("*.py"))
         else:
-            件表.append(目录)
+            件表.append(目录路径)
     for 源码件 in 件表:
         try:
-            内容 = 源码件.read_bytes()
+            内容值 = 源码件.read_bytes()
         except OSError:
-            内容 = b""
-        摘要.update(源码件.name.encode("utf-8"))
-        摘要.update(内容)
-    return 摘要.hexdigest()[:16]
+            内容值 = b""
+        摘要值.update(源码件.name.encode("utf-8"))
+        摘要值.update(内容值)
+    return 摘要值.hexdigest()[:16]
 
 
 启动指纹 = 算服务指纹()

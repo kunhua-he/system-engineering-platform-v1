@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import re
 
-from .小工具 import 判不了, 违规
+from .验证小工具 import 判不了, 违规
 from .常量 import 检查名, 接口面件
 from .判据_接口面常量 import _取Rust串常量
 
@@ -32,35 +32,35 @@ from .判据_接口面常量 import _取Rust串常量
 文本标签名 = "文本"
 
 
-def _取JS串常量(文本: str, 名称: str):
+def _取JS串常量(源文本: str, 名称: str):
     """JS 件里 `const <名> = "<值>";` 的值（可带 `export`；取不到 ⇒ None）。"""
-    匹配 = re.search(
-        r'(?m)^[ \t]*(?:export[ \t]+)?const[ \t]+' + re.escape(名称) + r'[ \t]*=[ \t]*"([^"]*)"', 文本)
-    return 匹配.group(1) if 匹配 else None
+    匹配结果 = re.search(
+        r'(?m)^[ \t]*(?:export[ \t]+)?const[ \t]+' + re.escape(名称) + r'[ \t]*=[ \t]*"([^"]*)"', 源文本)
+    return 匹配结果.group(1) if 匹配结果 else None
 
 
-def _取JS对象整数(文本: str, 对象名: str, 键名: str):
+def _取JS对象整数(源文本: str, 对象名: str, 键名: str):
     """JS 件里 `const <对象名> = { … <键名>: <整数> … };` 的整数（取不到 ⇒ None）。"""
-    对象配 = re.search(r'const[ \t]+' + re.escape(对象名) + r'[ \t]*=[ \t]*\{([^}]*)\}', 文本)
+    对象配 = re.search(r'const[ \t]+' + re.escape(对象名) + r'[ \t]*=[ \t]*\{([^}]*)\}', 源文本)
     if not 对象配:
         return None
     键配 = re.search(r'(?<![\w$])' + re.escape(键名) + r'[ \t]*:[ \t]*(\d+)', 对象配.group(1))
     return int(键配.group(1)) if 键配 else None
 
 
-def _取Rust类型标签(文本: str, 标签名: str):
+def _取Rust类型标签(源文本: str, 标签名: str):
     """`常量.rs` 的 `pub mod 类型标签 { … pub const <标签名>: u32 = <整数>; … }` 的值。"""
-    模块配 = re.search(r'pub mod 类型标签\s*\{(.*?)\n\}', 文本, re.S)
+    模块配 = re.search(r'pub mod 类型标签\s*\{(.*?)\n\}', 源文本, re.S)
     if not 模块配:
         return None
-    匹配 = re.search(r'pub const ' + re.escape(标签名) + r'\s*:\s*u32\s*=\s*(\d+)', 模块配.group(1))
-    return int(匹配.group(1)) if 匹配 else None
+    匹配结果 = re.search(r'pub const ' + re.escape(标签名) + r'\s*:\s*u32\s*=\s*(\d+)', 模块配.group(1))
+    return int(匹配结果.group(1)) if 匹配结果 else None
 
 
-def _取JS编译字面量(文本: str):
+def _取JS编译字面量(源文本: str):
     """`编译.js` 里文本类型标签的硬编码字面量：`…类型标签) !== <整数>`。"""
-    匹配 = re.search(r'类型标签\s*\)\s*!==\s*(\d+)', 文本)
-    return int(匹配.group(1)) if 匹配 else None
+    匹配结果 = re.search(r'类型标签\s*\)\s*!==\s*(\d+)', 源文本)
+    return int(匹配结果.group(1)) if 匹配结果 else None
 
 
 def 可比项(上层读数: dict) -> tuple:

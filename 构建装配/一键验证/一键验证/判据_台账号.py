@@ -42,7 +42,7 @@ from __future__ import annotations
 
 import re
 
-from .小工具 import 判不了, 违规
+from .验证小工具 import 判不了, 违规
 from .常量 import 检查名
 from .判据基线 import 读台账号基线, 库相对路径
 from .条款文本 import 读条款件
@@ -82,11 +82,11 @@ _行内代码 = re.compile(r"`[^`\n]*`")
 _引号 = ('"', "'")
 
 
-def 去围栏块(文本: str) -> str:
+def 去围栏块(源文本: str) -> str:
     """把围栏代码块**整块换成空行**（行数不变 ⇒ 行号仍对得上原文）。"""
     输出缓冲 = []
     在内 = False
-    for 源码行 in 文本.splitlines(True):
+    for 源码行 in 源文本.splitlines(True):
         if _围栏行.match(源码行):
             在内 = not 在内
             输出缓冲.append("\n")
@@ -95,9 +95,9 @@ def 去围栏块(文本: str) -> str:
     return "".join(输出缓冲)
 
 
-def 去行内代码(文本: str) -> str:
+def 去行内代码(源文本: str) -> str:
     """把行内代码 span 换成等长空格（列位置不变）。"""
-    return _行内代码.sub(lambda 命中: " " * len(命中.group(0)), 文本)
+    return _行内代码.sub(lambda 命中: " " * len(命中.group(0)), 源文本)
 
 
 def 是制品产物(键名: str) -> bool:
@@ -144,10 +144,10 @@ def 扫台账号(扫描面: dict) -> list:
     for 路径 in sorted(扫描面):
         if 是制品产物(路径):
             continue  # 被忽略的生成物（裁决 §二）；与 台账号面 同一条规则（都调 是制品产物）
-        文本 = 扫描面[路径] or ""
-        if not 文本:
+        源文本 = 扫描面[路径] or ""
+        if not 源文本:
             continue
-        for 号值, 源码行 in enumerate(文本.split("\n"), 1):
+        for 号值, 源码行 in enumerate(源文本.split("\n"), 1):
             # 三种带前缀的写法共用一个正则（同一份扫描面）：按命中文本回判是哪一形。
             for 匹配结果 in _台账引用.finditer(源码行):
                 输出缓冲.append(
@@ -166,7 +166,7 @@ def 扫台账号(扫描面: dict) -> list:
                 )
         if not 路径.endswith(".md"):
             continue
-        散文 = 去行内代码(去围栏块(文本))
+        散文 = 去行内代码(去围栏块(源文本))
         for 号值, 源码行 in enumerate(散文.split("\n"), 1):
             for 匹配结果 in _裸号引用.finditer(源码行):
                 if 匹配结果.start() > 0 and 源码行[匹配结果.start() - 1] in _引号:

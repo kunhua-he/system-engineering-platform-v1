@@ -7,7 +7,7 @@ from pathlib import Path
 
 from .Rust文本 import 漏传上下文调用
 from .判据元数据 import 判据元数据
-from .小工具 import 判不了, 违规
+from .验证小工具 import 判不了, 违规
 from .常量 import 检查名
 
 
@@ -153,8 +153,8 @@ def 检查14_元判据(上层读数: dict) -> list:
             )
         )
     else:
-        for 节点件, 文本 in 读了:
-            for 行号 in 漏传上下文调用(文本):
+        for 节点件, 源文本 in 读了:
+            for 行号 in 漏传上下文调用(源文本):
                 输出缓冲.append(
                     违规(
                         检查名[13],

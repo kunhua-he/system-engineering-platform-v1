@@ -42,20 +42,20 @@ from .服务指纹 import 过期提示行
 改文件只能走 v1_edit（Edit / Write 会被钩子拦）。"""
 
 
-def _写响应报文(输出, 码, 结果=None, 错误=None):
+def _写响应报文(输出, 报文号, 查询读数=None, 错误=None):
     """写一条响应。`错误` 非空 ⇒ JSON-RPC 错误对象（协议级失败，不是工具失败）。"""
-    响应报文 = {"jsonrpc": "2.0", "id": 码}
+    响应报文 = {"jsonrpc": "2.0", "id": 报文号}
     if 错误 is not None:
         响应报文["error"] = 错误
     else:
-        响应报文["result"] = 结果
+        响应报文["result"] = 查询读数
     输出.write(json.dumps(响应报文, ensure_ascii=False) + "\n")
     输出.flush()
 
 
-def 派发(方法, 参数, 仓根, 工具表):
+def 派发(协议方法, 命令行参数, 仓根, 工具表):
     """把一个请求派到 MCP 的四个方法上 ⇒ `(结果, 错误)`。"""
-    if 方法 == "initialize":
+    if 协议方法 == "initialize":
         # MCP 口径：回**服务端支持**的版本 —— 不原样回显客户端请求的版本（原样回显 = 声称支持所有版本）。
         return {
             "protocolVersion": 协议版本,
@@ -63,19 +63,19 @@ def 派发(方法, 参数, 仓根, 工具表):
             "serverInfo": {"name": 服务名, "title": 服务显示名, "version": 服务版本},
             "instructions": 服务提示词,
         }, None
-    if 方法 == "ping":
+    if 协议方法 == "ping":
         return {}, None
-    if 方法 == "tools/list":
+    if 协议方法 == "tools/list":
         # 工具表每条 = `(实现, 标题, 说明, 模式)` —— 标题是**中文显示名**，说明是给模型的原文。
         return {"tools": [
             {"name": 名称, "title": 标题, "description": 说明, "inputSchema": 模式}
             for 名称, (_实现, 标题, 说明, 模式) in 工具表.items()
         ]}, None
-    if 方法 == "tools/call":
-        名称 = 参数.get("name")
+    if 协议方法 == "tools/call":
+        名称 = 命令行参数.get("name")
         if 名称 not in 工具表:
             return None, {"code": -32602, "message": "没有这个工具：%r" % (名称,)}
-        实参 = 参数.get("arguments")
+        实参 = 命令行参数.get("arguments")
         if 实参 is None:
             实参 = {}
         if not isinstance(实参, dict):
@@ -88,10 +88,10 @@ def 派发(方法, 参数, 仓根, 工具表):
         if 过期行:
             输出文本 = 过期行 + "\n" + 输出文本
         return {"content": [{"type": "text", "text": 输出文本}], "isError": 退出码 != 0}, None
-    return None, {"code": -32601, "message": "方法不存在：%r" % (方法,)}
+    return None, {"code": -32601, "message": "方法不存在：%r" % (协议方法,)}
 
 
-def 跑主循环(仓根, 工具表, 输入=None, 输出=None):
+def 跑主循环(仓根, 工具表, 输入流=None, 输出=None):
     """跑 stdio 主循环（**永不返回** —— 它是「结构边界：永不返回」，见 入口白名单.json）。
 
     ★ 自愈重启（2026-10-05）：每轮回「读下一帧之前」比对服务指纹，过期就 `os.execv` 重放自身
@@ -106,9 +106,9 @@ def 跑主循环(仓根, 工具表, 输入=None, 输出=None):
     自愈只对**真服务**（真 stdio）生效：注入的内存流（测试 / `--自检`）不 exec；exec 失败兜住
     （`兜底`）⇒ 不再重试、继续用旧码，绝不让失败把进程带走。
     """
-    输入 = 输入 or sys.stdin
+    输入流 = 输入流 or sys.stdin
     输出 = 输出 or sys.stdout
-    可自愈 = 输入 is sys.stdin
+    可自愈 = 输入流 is sys.stdin
     兜底 = False
     缓冲 = b""
     while True:
@@ -123,13 +123,13 @@ def 跑主循环(仓根, 工具表, 输入=None, 输出=None):
                     print("★ 自愈重启失败：%s ⇒ 继续用旧码" % (错误,), file=sys.stderr)
                     兜底 = True
                     continue               # 不再重试 ⇒ 回顶正常读帧（旧码）
-            if not select.select([输入], [], [], 停等秒)[0]:
+            if not select.select([输入流], [], [], 停等秒)[0]:
                 continue                   # 空闲超时 ⇒ 回顶再比一次指纹
             if 过期提示行():
                 continue                   # 帧已到但**未读** ⇒ 回顶 exec（帧留在管道，不丢）
         if 可自愈:
             while b"\n" not in 缓冲:
-                字节 = os.read(输入.fileno(), 65536)
+                字节 = os.read(输入流.fileno(), 65536)
                 if not 字节:
                     if not 缓冲:
                         return 0           # EOF
@@ -140,7 +140,7 @@ def 跑主循环(仓根, 工具表, 输入=None, 输出=None):
                 源码行, 缓冲 = 缓冲.split(b"\n", 1)
                 源码行 = 源码行.decode("utf-8")
         else:
-            源码行 = 输入.readline()
+            源码行 = 输入流.readline()
             if 源码行 == "":
                 return 0                   # EOF
         if not 源码行.strip():
@@ -159,16 +159,16 @@ def 跑主循环(仓根, 工具表, 输入=None, 输出=None):
         错误码 = 请求.get("id")
         if 错误码 is None:
             continue                       # 通知：不回应
-        参数 = 请求.get("params")
-        if 参数 is None:
-            参数 = {}
-        if not isinstance(参数, dict):
+        命令行参数 = 请求.get("params")
+        if 命令行参数 is None:
+            命令行参数 = {}
+        if not isinstance(命令行参数, dict):
             _写响应报文(输出, 错误码, None,
-                      {"code": -32602, "message": "params 必须是对象，收到：%s" % type(参数).__name__})
+                      {"code": -32602, "message": "params 必须是对象，收到：%s" % type(命令行参数).__name__})
             continue
         try:
-            结果, 错误 = 派发(请求.get("method"), 参数, 仓根, 工具表)
+            查询读数, 错误 = 派发(请求.get("method"), 命令行参数, 仓根, 工具表)
         except Exception:                  # 实现层任何异常都不许抛出循环
-            结果, 错误 = None, {"code": -32603, "message": "内部错误：%s" % (sys.exc_info()[1],)}
-        _写响应报文(输出, 错误码, 结果, 错误)
+            查询读数, 错误 = None, {"code": -32603, "message": "内部错误：%s" % (sys.exc_info()[1],)}
+        _写响应报文(输出, 错误码, 查询读数, 错误)
     return 0

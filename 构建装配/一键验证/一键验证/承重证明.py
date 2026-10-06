@@ -50,13 +50,13 @@ def 承重证明(源仓根: Path) -> int:
             "print('退出码:', m.算退出码(r))\n"
         )
         起始时刻 = time.perf_counter()
-        结果 = subprocess.run(
+        判定汇总 = subprocess.run(
             [sys.executable, "-c", 代码],
             capture_output=True, text=True, cwd=str(源仓根),
         )
         墙钟 = int((time.perf_counter() - 起始时刻) * 1000)
-        是否红 = "⑱条: []" not in 结果.stdout and "⑱条:" in 结果.stdout
-        return 墙钟, 是否红, 结果.stdout.strip().replace("\n", " ｜ "), 结果.returncode
+        是否红 = "⑱条: []" not in 判定汇总.stdout and "⑱条:" in 判定汇总.stdout
+        return 墙钟, 是否红, 判定汇总.stdout.strip().replace("\n", " ｜ "), 判定汇总.returncode
 
     print("承重证明（决策记录 §三.4）：⑱ 的红必须由真墙钟逼出来（本命令墙钟必然 > 5 s）")
     print("每例一个**新进程**（⑱ 的读数从进程启动起算，同进程连跑会把耗时算进去）")
@@ -68,10 +68,10 @@ def 承重证明(源仓根: Path) -> int:
     )
     全过 = True
     for 名称, 注入, 提速, 该红 in 用例:
-        墙钟, 是否红, 文本, 退出码 = 跑一例(注入, 提速)
+        墙钟, 是否红, 源文本, 退出码 = 跑一例(注入, 提速)
         这过 = 是否红 == 该红
         全过 = 全过 and 这过
-        print(f"{'✓' if 这过 else '✗'} {名称}：该红={该红} 实红={是否红} · 子进程墙钟 {墙钟} ms · {文本}")
+        print(f"{'✓' if 这过 else '✗'} {名称}：该红={该红} 实红={是否红} · 子进程墙钟 {墙钟} ms · {源文本}")
     print("")
     print(f"承重证明{'全部通过' if 全过 else '有不过的断言'}")
     return 0 if 全过 else 1

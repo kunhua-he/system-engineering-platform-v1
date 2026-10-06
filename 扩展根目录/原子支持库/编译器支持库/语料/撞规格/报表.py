@@ -19,34 +19,34 @@ def 打印报表读数(读数, rows, tier_bytes):
 
     print("\n【关键字 · 以 . 开头】共 %d 种 / %d 次"
           % (len(读数["关键字_带点"]), sum(读数["关键字_带点"].values())))
-    for 关键字, 计数 in 读数["关键字_带点"].most_common():
+    for 关键字, 计数表 in 读数["关键字_带点"].most_common():
         mark = "" if 关键字 in 规格带点关键字 else ("  ← 规格未点名" if 关键字 in 已知带点词 else "  ← 规格未点名（且不在已知词表）")
-        print(f"    .{关键字:<20} {计数:>7}{mark}")
+        print(f"    .{关键字:<20} {计数表:>7}{mark}")
 
     print("\n【关键字 · 不带点】%s" % dict(读数["关键字_不带点"]))
 
     print("\n【样本里出现、但规格 §二 没点名的关键字 · 各附一条上下文】")
-    for 关键字, 计数 in 读数["关键字_带点"].most_common():
+    for 关键字, 计数表 in 读数["关键字_带点"].most_common():
         if 关键字 in 规格带点关键字:
             continue
-        name, line = 读数["关键字上下文"].get("." + 关键字, ("", ""))
-        print(f"    .{关键字:<12} {计数:>5} 次   {name[:34]:<36} | {line[:96]}")
-    for 关键字, 计数 in 读数["关键字_不带点"].most_common():
-        name, line = 读数["关键字上下文"].get(关键字, ("", ""))
-        print(f"    {关键字:<13} {计数:>5} 次   {name[:34]:<36} | {line[:96]}")
+        name, 行文本 = 读数["关键字上下文"].get("." + 关键字, ("", ""))
+        print(f"    .{关键字:<12} {计数表:>5} 次   {name[:34]:<36} | {行文本[:96]}")
+    for 关键字, 计数表 in 读数["关键字_不带点"].most_common():
+        name, 行文本 = 读数["关键字上下文"].get(关键字, ("", ""))
+        print(f"    {关键字:<13} {计数表:>5} 次   {name[:34]:<36} | {行文本[:96]}")
 
     print("\n【常量引用名字全表】%d 种" % len(读数["常量名"]))
     print("    " + "  ".join(sorted(读数["常量名"])))
 
     print("\n【运算符】共 %d 种" % len(读数["运算符"]))
-    for ch, 计数 in 读数["运算符"].most_common():
+    for ch, 计数表 in 读数["运算符"].most_common():
         mark = "" if ch in 规格运算符 else "  ← 规格只列 ＝ ＋ ÷，这个没列"
-        print(f"    {ch}  U+{ord(ch):04X}  {计数:>7}{mark}")
+        print(f"    {ch}  U+{ord(ch):04X}  {计数表:>7}{mark}")
 
     print("\n【界符】共 %d 种" % len(读数["界符"]))
-    for ch, 计数 in 读数["界符"].most_common():
+    for ch, 计数表 in 读数["界符"].most_common():
         mark = "" if ch in 规格界符 else "  ← 规格只列 ( ) [ ] , . & { }，这个没列"
-        print(f"    {ch!r:<6} {计数:>7}{mark}")
+        print(f"    {ch!r:<6} {计数表:>7}{mark}")
 
     print("\n【注释】%d 条 · 内含第二个单引号 %d 条" % (读数["注释"], 读数["注释里有单引号"]))
     print("【文本字面量】全角 %d · 半角 %d · 嵌套 %d · 未闭合 %d"
@@ -79,44 +79,44 @@ def 打印报表读数(读数, rows, tier_bytes):
         else:
             cats["其他"] += 1
     print("    ", dict(cats))
-    other = [字符 for 字符 in 读数["标识符字符"]
-             if not ("\u4e00" <= 字符 <= "\u9fff") and 字符 != "_" and not 字符.isalnum()]
+    other = [单字符 for 单字符 in 读数["标识符字符"]
+             if not ("\u4e00" <= 单字符 <= "\u9fff") and 单字符 != "_" and not 单字符.isalnum()]
     print("     非 汉字/下划线/字母数字 的标识符字符：", other)
 
     print("\n【运算符出现的位置】（行类, 字段序）—— 声明行第 3 字段起是**不加引号的备注文本**")
-    for (lk, fi), 计数 in sorted(读数["运算符位"].items(), key=lambda kv: -kv[1]):
-        print(f"    行类={lk:<4} 第{fi}字段  {计数:>5} 次")
+    for (lk, fi), 计数表 in sorted(读数["运算符位"].items(), key=lambda kv: -kv[1]):
+        print(f"    行类={lk:<4} 第{fi}字段  {计数表:>5} 次")
 
     print("\n【文本字面量出现的位置】（行类, 字段序, 定界符）")
-    for (lk, fi, 定界符), 计数 in sorted(读数["字面量位"].items(), key=lambda kv: -kv[1])[:18]:
-        print(f"    行类={lk:<4} 第{fi}字段  {定界符}  {计数:>5} 次")
+    for (lk, fi, 定界符), 计数表 in sorted(读数["字面量位"].items(), key=lambda kv: -kv[1])[:18]:
+        print(f"    行类={lk:<4} 第{fi}字段  {定界符}  {计数表:>5} 次")
 
     print("\n【数值字面量出现的位置】（行类, 字段序）")
-    for (lk, fi), 计数 in sorted(读数["数值位"].items(), key=lambda kv: -kv[1])[:18]:
-        print(f"    行类={lk:<4} 第{fi}字段  {计数:>5} 次")
+    for (lk, fi), 计数表 in sorted(读数["数值位"].items(), key=lambda kv: -kv[1])[:18]:
+        print(f"    行类={lk:<4} 第{fi}字段  {计数表:>5} 次")
 
     print("\n【未归类字符出现的位置】（行类, 字段序）—— 这一栏就是缺口的定位")
-    for (lk, fi), 计数 in sorted(读数["未归类位"].items(), key=lambda kv: -kv[1]):
-        print(f"    行类={lk:<4} 第{fi}字段  {计数:>6} 次")
+    for (lk, fi), 计数表 in sorted(读数["未归类位"].items(), key=lambda kv: -kv[1]):
+        print(f"    行类={lk:<4} 第{fi}字段  {计数表:>6} 次")
     print("    末行无换行符的样本：%d / %d" % (读数["末行无换行"], 读数["样本数"]))
 
     print("\n【未归类字符】（规格里归不进任何一类的字符）")
     if not 读数["未归类"]:
         print("    无")
-    for ch, 计数 in 读数["未归类"].most_common():
-        who = [f"{样本名}×{次数}" for 样本名, 次数 in 读数["未归类样本"][ch].most_common(2)]
-        pos = " ".join(f"{lk}·第{fi}字段×{次数}" for (lk, fi), 次数 in 读数["未归类位2"][ch].most_common())
-        print(f"    {ch!r} U+{ord(ch):04X}  {计数:>7} 次   [{pos}]")
+    for ch, 计数表 in 读数["未归类"].most_common():
+        who = [f"{样本名}×{出现次数}" for 样本名, 出现次数 in 读数["未归类样本"][ch].most_common(2)]
+        位文案 = " ".join(f"{lk}·第{fi}字段×{出现次数}" for (lk, fi), 出现次数 in 读数["未归类位2"][ch].most_common())
+        print(f"    {ch!r} U+{ord(ch):04X}  {计数表:>7} 次   [{位文案}]")
         print(f"          样本 {', '.join(who)}")
     print("\n【未归类字符的上下文】（每种取一条）")
-    for ch, 计数 in 读数["未归类"].most_common():
+    for ch, 计数表 in 读数["未归类"].most_common():
         for name, raw, tier in rows:
             if not 读数["未归类样本"][ch].get(name):
                 continue
-            文本 = raw.decode("gbk")
-            for line in 文本.split("\n"):
-                if ch in line:
-                    print(f"    {ch!r}  {name[:38]:<40} | {line.rstrip()[:120]}")
+            源文本 = raw.decode("gbk")
+            for 行文本 in 源文本.split("\n"):
+                if ch in 行文本:
+                    print(f"    {ch!r}  {name[:38]:<40} | {行文本.rstrip()[:120]}")
                     break
             break
 
@@ -127,8 +127,8 @@ def 打印报表读数(读数, rows, tier_bytes):
 
     print("\n【含未归类字符的行 · 逐条（去重）】共 %d 行" % len(读数["未归类行样"]))
     for li in sorted(读数["未归类行样"], key=lambda 行号: -读数["未归类行"][行号]):
-        name, line = 读数["未归类行样"][li]
-        print(f"    {读数['未归类行'][li]:>4} 个未归类字符 | {name[:34]:<36} | {line.rstrip()[:118]}")
+        name, 行文本 = 读数["未归类行样"][li]
+        print(f"    {读数['未归类行'][li]:>4} 个未归类字符 | {name[:34]:<36} | {行文本.rstrip()[:118]}")
 
     print("\n【通过率】")
     tot = 读数["总字符"]
@@ -152,7 +152,7 @@ def 打印报表读数(读数, rows, tier_bytes):
 
 def 落读数件(读数, tier_bytes):
     """落 `语料/_撞规格读数.json`（原 main() 的 --json 段，逐字搬来）。"""
-    out = {
+    读数 = {
         # ★ 头标（判据 ⑩ 的口径）：生成物要自称「生成物 · 禁手改 · 生成器 = 谁」——
         # 少了它，`v1_task` 功能=5 拒绝记账（实测：这件因为没头标，一直只能靠手改）。
         # ★ 路径必须是**那一行的末一个值**：记账器取「`生成器：` 之后整段」再剥引号/逗号，
@@ -164,12 +164,12 @@ def 落读数件(读数, tier_bytes):
         "界符": dict(读数["界符"]), "注释": 读数["注释"],
         "字面量_全角": 读数["字面量_全角"], "字面量_半角": 读数["字面量_半角"],
         "数值": dict(读数["数值"]), "常量引用种数": len(读数["常量引用"]),
-        "缩进宽度": {str(宽度): 次数 for 宽度, 次数 in 读数["缩进宽度"].items()},
+        "缩进宽度": {str(宽度): 出现次数 for 宽度, 出现次数 in 读数["缩进宽度"].items()},
         "换行_CRLF": 读数["换行_CRLF"], "换行_LF": 读数["换行_LF"],
         "空实参_单行最多": 读数["空实参_单行最多"], "空实参_行数": 读数["空实参_行数"],
-        "未归类": {f"{字符}|U+{ord(字符):04X}": 次数 for 字符, 次数 in 读数["未归类"].items()},
+        "未归类": {f"{单字符}|U+{ord(单字符):04X}": 出现次数 for 单字符, 出现次数 in 读数["未归类"].items()},
         "覆盖字符": 读数["覆盖字符"], "未归类字节": 读数["未归类字节"],
         "分层字节": dict(tier_bytes),
     }
-    json.dump(out, open(os.path.join(语料目录, "_撞规格读数.json"), "w", encoding="utf-8"),
+    json.dump(读数, open(os.path.join(语料目录, "_撞规格读数.json"), "w", encoding="utf-8"),
               ensure_ascii=False, indent=1)

@@ -18,9 +18,9 @@ def 注入_接口面常量不一致(临根: Path) -> str:
     （后端件的路径集合是 §二 冻结项，前端跟着它走）。
     """
     路径 = 临根 / 命令行件
-    文本 = 路径.read_text(encoding="utf-8")
-    改后 = 文本.replace('路径_调用 = "/接口/调用"', '路径_调用 = "/接口/调用错"', 1)
-    assert 改后 != 文本, "样本前置条件不成立：夹具前端件里没有 `路径_调用 = \"/接口/调用\"`"
+    源文本 = 路径.read_text(encoding="utf-8")
+    改后 = 源文本.replace('路径_调用 = "/接口/调用"', '路径_调用 = "/接口/调用错"', 1)
+    assert 改后 != 源文本, "样本前置条件不成立：夹具前端件里没有 `路径_调用 = \"/接口/调用\"`"
     路径.write_text(改后, encoding="utf-8")
     return 命令行件
 
@@ -32,10 +32,10 @@ def 注入_案例布局不一致(临根: Path) -> str:
     （`常量.rs`）各写一份，漂了必须有人抓。改的是**代码**那一侧。
     """
     路径 = 临根 / 接口面件
-    文本 = 路径.read_text(encoding="utf-8")
-    改后 = 文本.replace('pub const 案例回执件: &str = "运行回执.jsonl";',
+    源文本 = 路径.read_text(encoding="utf-8")
+    改后 = 源文本.replace('pub const 案例回执件: &str = "运行回执.jsonl";',
                         'pub const 案例回执件: &str = "运行回执错.jsonl";', 1)
-    assert 改后 != 文本, "样本前置条件不成立：夹具后端件里没有 `案例回执件 = \"运行回执.jsonl\"`"
+    assert 改后 != 源文本, "样本前置条件不成立：夹具后端件里没有 `案例回执件 = \"运行回执.jsonl\"`"
     路径.write_text(改后, encoding="utf-8")
     return 接口面件
 
@@ -47,8 +47,8 @@ def 注入_网页端点漂移(临根: Path) -> str:
     **网页**那一侧（接口面 `常量.rs` 是权威，网页跟着它走）。
     """
     路径 = 临根 / 网页面件
-    文本 = 路径.read_text(encoding="utf-8")
-    改后 = 文本.replace('const 路径_调用 = "/接口/调用";', 'const 路径_调用 = "/接口/调用错";', 1)
-    assert 改后 != 文本, "样本前置条件不成立：夹具网页件里没有 `const 路径_调用 = \"/接口/调用\";`"
+    源文本 = 路径.read_text(encoding="utf-8")
+    改后 = 源文本.replace('const 路径_调用 = "/接口/调用";', 'const 路径_调用 = "/接口/调用错";', 1)
+    assert 改后 != 源文本, "样本前置条件不成立：夹具网页件里没有 `const 路径_调用 = \"/接口/调用\";`"
     路径.write_text(改后, encoding="utf-8")
     return 网页面件

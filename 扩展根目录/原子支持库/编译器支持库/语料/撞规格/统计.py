@@ -94,12 +94,12 @@ def 统计读数(rows):
                     读数["换行_CRLF"] += 1
                 else:
                     读数["换行_LF"] += 1
-        for li, col, ch, line, fi, lk in unknown:
+        for li, col, ch, 行文本, fi, lk in unknown:
             读数["未归类"][ch] += 1
             读数["未归类样本"][ch][name] += 1
             读数["未归类位"][(lk, fi)] += 1
             读数["未归类位2"][ch][(lk, fi)] += 1
-            if 是备注字段(line, fi):
+            if 是备注字段(行文本, fi):
                 读数["未归类_备注位"] += 1
             else:
                 读数["未归类_代码位"] += 1
@@ -107,12 +107,12 @@ def 统计读数(rows):
                 读数["未归类_代码位字节"] += len(ch.encode("gbk"))
             读数["未归类字节"] += len(ch.encode("gbk"))
             读数["未归类行"][li] += 1
-            读数["未归类行样"].setdefault(li, (name, line))
+            读数["未归类行样"].setdefault(li, (name, 行文本))
         读数["覆盖字符"] += covered
         读数["样本明细"][name] = (len(raw), len(text), covered, len(unknown))
         # 空实参：`, ,` 与 `( ,` 与 `, )` 的零宽位
-        for line in text.split("\n"):
-            ln = line[:-1] if line.endswith("\r") else line
+        for 行文本 in text.split("\n"):
+            ln = 行文本[:-1] if 行文本.endswith("\r") else 行文本
             args = ln[ln.find("(") + 1:ln.rfind(")")] if "(" in ln and ln.rfind(")") > ln.find("(") else ""
             if not args:
                 continue
@@ -125,8 +125,8 @@ def 统计读数(rows):
                 读数["空实参_位置"][empt] += 1
                 读数["空实参_单行最多"] = max(读数["空实参_单行最多"], empt)
         # 缩进宽度（只统计列 0 为空格的行）
-        for line in text.split("\n"):
-            ln = line[:-1] if line.endswith("\r") else line
+        for 行文本 in text.split("\n"):
+            ln = 行文本[:-1] if 行文本.endswith("\r") else 行文本
             if ln.startswith(" ") and ln.strip():
                 缩进宽 = len(ln) - len(ln.lstrip(" "))
                 读数["缩进宽度"][缩进宽] += 1

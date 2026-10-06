@@ -20,15 +20,15 @@ def 出报告(读数):
           % (len(读数["分类"]), len(读数["叶子"]), sum(叶条["大小"] for 叶条 in 读数["叶子"]), 0xba000))
     print("   %-6s %-14s %6s %10s %8s" % ("类型", "名", "条数", "总字节", "占叶字节"))
     总叶 = sum(叶条["大小"] for 叶条 in 读数["叶子"])
-    for 类别 in sorted(读数["分类"], key=lambda 叶条: (isinstance(叶条, str), 叶条)):
-        叶表 = 读数["分类"][类别]
+    for 类别值 in sorted(读数["分类"], key=lambda 叶条: (isinstance(叶条, str), 叶条)):
+        叶表 = 读数["分类"][类别值]
         字节合计 = sum(叶条["大小"] for 叶条 in 叶表)
-        print("   %-6s %-14s %6d %10d %7.2f%%" % (类别, 资源类型名.get(类别, "?"), len(叶表), 字节合计, 100 * 字节合计 / 总叶))
+        print("   %-6s %-14s %6d %10d %7.2f%%" % (类别值, 资源类型名.get(类别值, "?"), len(叶表), 字节合计, 100 * 字节合计 / 总叶))
     print("   ── 逐条叶子 ──")
-    for 类别 in sorted(读数["分类"], key=lambda 叶条: (isinstance(叶条, str), 叶条)):
-        for 叶子 in 读数["分类"][类别]:
+    for 类别值 in sorted(读数["分类"], key=lambda 叶条: (isinstance(叶条, str), 叶条)):
+        for 叶子 in 读数["分类"][类别值]:
             print("   type %-4s id %-8s rva 0x%06x 大小 %7d 代码页 %5d 数据项偏移 0x%06x"
-                  % (类别, 叶子["id"], 叶子["rva"], 叶子["大小"], 叶子["代码页"], 叶子["数据项偏移"]))
+                  % (类别值, 叶子["id"], 叶子["rva"], 叶子["大小"], 叶子["代码页"], 叶子["数据项偏移"]))
 
     print("\n② 菜单（类型 4）：%d 个资源 · %d 项" % (len(读数["菜单"]), sum(len(表值[1]) for 表值 in 读数["菜单"].values())))
     for rid in sorted(读数["菜单"]):
@@ -37,7 +37,7 @@ def 出报告(读数):
         for 菜单项 in 菜单项表:
             print("      %s%s [opt=0x%04x %s] id=%-7s @0x%04x %r"
                   % ("  " * 菜单项["层"], ">" if 菜单项["选项"] & 0x10 else " ",
-                     菜单项["选项"], "|".join(名称 for 位置, 名称 in 菜单选项位.items() if 菜单项["选项"] & 位置) or "0",
+                     菜单项["选项"], "|".join(名称 for 选项位, 名称 in 菜单选项位.items() if 菜单项["选项"] & 选项位) or "0",
                      ("0x%04x" % 菜单项["编号"]) if 菜单项["编号"] is not None else "  -   ",
                      菜单项["偏移"], 菜单项["文字"]))
 
@@ -97,8 +97,8 @@ def 出报告(读数):
         print("      头 32 字节：%s" % 虚址[:32].hex(" "))
         if 控件["容器"] and 控件["容器"].startswith("ICONDIR"):
             # 这里嵌的是 16 字节 ICONDIRENTRY（组资源用的是 14 字节 GRPICONDIRENTRY）——见界面实测.md §六
-            个数 = struct.unpack_from("<H", 虚址, 4)[0]
-            for 条序 in range(个数):
+            条目个数 = struct.unpack_from("<H", 虚址, 4)[0]
+            for 条序 in range(条目个数):
                 宽度, 高度, 色数, _, 平面, 位深, 字节数, 项偏移 = struct.unpack_from("<BBBBHHII", 虚址, 6 + 16 * 条序)
                 print("      图[%d] %dx%d 色数=%d 平面=%d 位深=%d 字节=%d 偏移=%d"
                       % (条序, 宽度, 高度, 色数, 平面, 位深, 字节数, 项偏移))

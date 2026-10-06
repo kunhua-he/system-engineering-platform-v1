@@ -84,7 +84,7 @@ def 预编译考题(根目录: Path) -> int:
     缓存.mkdir(parents=True, exist_ok=True)
     二进制 = 缓存 / "考题"
     区间起点 = time.monotonic()
-    结果 = subprocess.run(
+    判定汇总 = subprocess.run(
         # `--edition 2024` 与扩展 crate 的 `Cargo.toml` 逐字一致（否则「真跑」跑的不是它的真版本）。
         ["rustc", "--test", "--edition", "2024", str(考题路径(根目录)), "-o", str(二进制)],
         cwd=str(根目录),
@@ -93,8 +93,8 @@ def 预编译考题(根目录: Path) -> int:
         timeout=编译超时毫秒 / 1000,
     )
     耗时毫秒 = int((time.monotonic() - 区间起点) * 1000)
-    if 结果.returncode != 0:
-        sys.stderr.write(f"✗ 考题编不出来（rustc 退出码 {结果.returncode}）：\n{结果.stderr.strip()}\n")
+    if 判定汇总.returncode != 0:
+        sys.stderr.write(f"✗ 考题编不出来（rustc 退出码 {判定汇总.returncode}）：\n{判定汇总.stderr.strip()}\n")
         return 1
     (缓存 / "戳.json").write_text(
         json.dumps(
@@ -129,11 +129,11 @@ def 扫内核任务表(根目录: Path) -> list:
         return 命中
     for 节点件 in sorted(扫描面.rglob("*.rs")):
         try:
-            文本 = 节点件.read_text(encoding="utf-8")
+            源文本 = 节点件.read_text(encoding="utf-8")
         except OSError:
             continue
         for 关键词 in 任务表认定词:
-            if 关键词 in 文本:
+            if 关键词 in 源文本:
                 命中.append(f"{节点件.relative_to(根目录)}::{关键词}")
     return 命中
 
@@ -149,7 +149,7 @@ def 跑长活原语考题(根目录: Path) -> int:
         print("✗ 产物与源不符（考题被改过，戳是旧的）：先跑 --预编译考题 刷新")
         return 1
     try:
-        结果 = subprocess.run(
+        判定汇总 = subprocess.run(
             [str(二进制), "--test-threads=1"],
             cwd=str(根目录),
             capture_output=True,
@@ -159,7 +159,7 @@ def 跑长活原语考题(根目录: Path) -> int:
     except (OSError, subprocess.TimeoutExpired) as 错误:
         print(f"✗ 考题跑不起来：{错误}")
         return 1
-    测果 = 解测果(结果.stdout + 结果.stderr)
+    测果 = 解测果(判定汇总.stdout + 判定汇总.stderr)
     行表 = []
     失败 = 0
     for 测名, 号值 in sorted(测名到判据.items(), key=lambda 排序项: 排序项[1]):
@@ -184,7 +184,7 @@ def 跑长活原语考题(根目录: Path) -> int:
         标记 = {"通过": "✓", "失败": "✗", "未判": "○"}[结论]
         print(f"  {标记} 判据 {号值} ｜ {结论} ｜ {证据}")
     过了数 = sum(1 for _, 结论, _ in 行表 if 结论 == "通过")
-    print(f"考题真跑退出码 {结果.returncode} · 通过 {过了数} / {len(行表)}")
+    print(f"考题真跑退出码 {判定汇总.returncode} · 通过 {过了数} / {len(行表)}")
     return 0 if 失败 == 0 else 1
 
 
@@ -198,16 +198,16 @@ def 跑自测() -> int:
     项表 = 解测果("test 通过样例 ... ok\ntest 失败样例 ... FAILED\n")
     if 项表.get("通过样例") is not True or 项表.get("失败样例") is not False:
         错误.append("解测果 把 ok / FAILED 判反了")
-    with tempfile.TemporaryDirectory() as 临时:
-        根目录 = Path(临时)
+    with tempfile.TemporaryDirectory() as 临时目录:
+        根目录 = Path(临时目录)
         (根目录 / 内核扫描面相对路径).mkdir(parents=True)
         if 扫内核任务表(根目录):
             错误.append("干净树上报出了任务表（假红）")
         (根目录 / 内核扫描面相对路径 / "植入.rs").write_text("static mut 任务表: u32 = 0;\n", encoding="utf-8")
         if not 扫内核任务表(根目录):
             错误.append("植入了任务表却抓不到（漏判）")
-    with tempfile.TemporaryDirectory() as 临时:
-        根目录 = Path(临时)
+    with tempfile.TemporaryDirectory() as 临时目录:
+        根目录 = Path(临时目录)
         节点件 = 考题路径(根目录)
         节点件.parent.mkdir(parents=True)
         节点件.write_text("// 旧内容\n", encoding="utf-8")

@@ -32,8 +32,8 @@ pub mod 扫扩展根;
 mod 报文读写;
 #[path = "请求.rs"]
 mod 请求;
-#[path = "路由.rs"]
-mod 路由;
+#[path = "端点路由.rs"]
+mod 端点路由;
 #[path = "静态件.rs"]
 mod 静态件;
 #[path = "转码.rs"]
@@ -52,7 +52,7 @@ mod 留痕响应;
 pub use 分发::{造应答, 拒绝状态码};
 pub use 报文读写::报文;
 pub use 网关::{默认并发线程数, 服务, 启动失败};
-pub use 路由::{拒绝, 端点};
+pub use 端点路由::{拒绝, 端点};
 
 #[cfg(test)]
 #[path = "接口面测试.rs"]

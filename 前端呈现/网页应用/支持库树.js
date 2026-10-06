@@ -31,16 +31,16 @@ function 取能力表(应答体) {
  */
 function 折树(能力表) {
   const 枝表 = new Map();
-  for (const 段项 of 号段) 枝表.set(段项.名, { 段: 段项, 扩: new Map(), 直挂: [] });
+  for (const 段项 of 号段) 枝表.set(段项.名字, { 段项: 段项, 扩展体: new Map(), 直挂: [] });
   for (const 能力 of 能力表) {
     const 编号 = Number(能力.编号);
     const 号段 = 找段(编号);
     if (!号段) continue;
-    const 数据槽 = 枝表.get(号段.名);
+    const 数据槽 = 枝表.get(号段.名字);
     const 扩展 = 找扩展(编号);
     if (扩展) {
-      if (!数据槽.扩.has(扩展.名)) 数据槽.扩.set(扩展.名, { 扩: 扩展, 能力表: [] });
-      数据槽.扩.get(扩展.名).能力表.push(能力);
+      if (!数据槽.扩展体.has(扩展.名字)) 数据槽.扩展体.set(扩展.名字, { 扩展体: 扩展, 能力表: [] });
+      数据槽.扩展体.get(扩展.名字).能力表.push(能力);
     } else {
       数据槽.直挂.push(能力);
     }
@@ -48,9 +48,9 @@ function 折树(能力表) {
   return 枝表;
 }
 
-function 种类说明(种类) {
-  if (种类 === "支持库") return "支持库：随扩展根载入的原子能力（1xxx–6xxx）";
-  if (种类 === "模块") return "模块：组合件（7xxx）";
+function 种类说明(扩展种类) {
+  if (扩展种类 === "支持库") return "支持库：随扩展根载入的原子能力（1xxx–6xxx）";
+  if (扩展种类 === "模块") return "模块：组合件（7xxx）";
   return "技能：一份用法说明，不含实现（8xxx）";
 }
 
@@ -91,9 +91,9 @@ export function 装支持库树(取元素, 钩子) {
     源码行.setAttribute("role", "button");
     源码行.setAttribute("aria-expanded", "true");
     源码行.addEventListener("click", 翻折);
-    源码行.addEventListener("keydown", (事件) => {
-      if (事件.key === "Enter" || 事件.key === " ") {
-        事件.preventDefault();
+    源码行.addEventListener("keydown", (界面事件) => {
+      if (界面事件.key === "Enter" || 界面事件.key === " ") {
+        界面事件.preventDefault();
         翻折();
       }
     });
@@ -124,19 +124,19 @@ export function 装支持库树(取元素, 钩子) {
     let 总数 = 0;
     const 根盒 = 建元素("div", "树子");
     for (const 段项 of 号段) {
-      const 数据槽 = 枝表.get(段项.名);
-      const 条数 = 数据槽.直挂.length + [...数据槽.扩.values()].reduce((累加和, 扩展条目) => 累加和 + 扩展条目.能力表.length, 0);
-      总数 += 条数;
-      const 段行 = 建行(0, 段项.名 + "（" + 段项.段起点 + "–" + 段项.止 + "）", "段",
-        条数 ? "▾" : "", 条数 + " 条");
+      const 数据槽 = 枝表.get(段项.名字);
+      const 记录条数 = 数据槽.直挂.length + [...数据槽.扩展体.values()].reduce((累加和, 扩展条目) => 累加和 + 扩展条目.能力表.length, 0);
+      总数 += 记录条数;
+      const 段行 = 建行(0, 段项.名字 + "（" + 段项.段起点 + "–" + 段项.段止 + "）", "段图标",
+        记录条数 ? "▾" : "", 记录条数 + " 条");
       段行.title = 段项.注;
       根盒.append(段行);
-      if (!条数) continue;
+      if (!记录条数) continue;
       const 段盒 = 建元素("div", "树子");
-      for (const 扩展条目 of 数据槽.扩.values()) {
-        const 扩行 = 建行(1, 扩展条目.扩.名 + "（" + 扩展条目.扩.段起点 + "–" + 扩展条目.扩.止 + "）", "模块",
+      for (const 扩展条目 of 数据槽.扩展体.values()) {
+        const 扩行 = 建行(1, 扩展条目.扩展体.名字 + "（" + 扩展条目.扩展体.段起点 + "–" + 扩展条目.扩展体.段止 + "）", "模块图标",
           "▾", 扩展条目.能力表.length + " 条");
-        扩行.title = 种类说明(扩展条目.扩.种类);
+        扩行.title = 种类说明(扩展条目.扩展体.扩展种类);
         const 扩盒 = 建元素("div", "树子");
         for (const 能力 of 扩展条目.能力表) 扩盒.append(建叶(2, 能力));
         接折标(扩行, 扩盒);
@@ -152,8 +152,8 @@ export function 装支持库树(取元素, 钩子) {
     容器.append(根行);
     容器.append(根盒);
     写状态(状态, "GET /接口 回了 " + 能力表.length + " 条能力 · 按号段表折成 "
-      + 号段.filter((号段) => 分支表.get(号段.名).直挂.length
-        || [...分支表.get(号段.名).扩.values()].length).length + " 段有内容 / 共 " + 号段.length + " 段");
+      + 号段.filter((号段) => 分支表.get(号段.名字).直挂.length
+        || [...分支表.get(号段.名字).扩展体.values()].length).length + " 段有内容 / 共 " + 号段.length + " 段");
   }
 
   /** 拉一次清单，摆树。返回应答（好让别的格子复用同一次读数）。 */
@@ -169,11 +169,11 @@ export function 装支持库树(取元素, 钩子) {
       // 扩展分组**实时取**（判据 ⑯：底座不许点名扩展）。取不到就摆成「没有扩展这一层」，
       // 不拦着能力树 —— 那正是扩展缺了时底座该有的样子（README §五 硬边界 3）。
       await 拉扩展表();
-      const 能力表 = 取能力表(造应答.体);
+      const 能力表 = 取能力表(造应答.报文体);
       if (!能力表.length) {
         清空容器(容器);
         写状态(状态, "应答里没有能力清单（顶层键："
-          + (造应答.体 && typeof 造应答.体 === "object" ? Object.keys(造应答.体).join(" · ") : "不是对象")
+          + (造应答.报文体 && typeof 造应答.报文体 === "object" ? Object.keys(造应答.报文体).join(" · ") : "不是对象")
           + "）", false);
         return null;
       }

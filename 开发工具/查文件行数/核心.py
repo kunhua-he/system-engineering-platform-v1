@@ -47,11 +47,11 @@ def 是源码(名称):
 
 def 收集源码(仓根):
     命中表 = []
-    for 当前, 目录表, 文件表 in os.walk(仓根):
-        目录表[:] = [目录 for 目录 in 目录表 if 目录 not in 跳过目录]
+    for 当前目录, 目录表, 文件表 in os.walk(仓根):
+        目录表[:] = [目录路径 for 目录路径 in 目录表 if 目录路径 not in 跳过目录]
         for 名称 in sorted(文件表):
             if 是源码(名称):
-                命中表.append(os.path.relpath(os.path.join(当前, 名称), 仓根))
+                命中表.append(os.path.relpath(os.path.join(当前目录, 名称), 仓根))
     return sorted(命中表)
 
 
@@ -60,45 +60,45 @@ def 读文本(路径):
         return 文件句柄.read()
 
 
-def 入口类别(相对路, 文本):
+def 入口类别(相对路, 源文本):
     """返回入口类别；不是入口给 None。"""
     名称 = os.path.basename(相对路)
     if 名称 in 入口件名:
         return "rust"
     if 名称 == "__init__.py":
         return "py-init"
-    if 名称.endswith(".py") and 主入口行模式.search(文本):
+    if 名称.endswith(".py") and 主入口行模式.search(源文本):
         return "py-script"
     return None
 
 
-def 入口实现项(类别, 相对路, 文本):
+def 入口实现项(类别值, 相对路, 源文本):
     """入口文件里「不该有」的顶层实现项清单（逐条给原文，便于定位）。"""
     命中表 = []
-    if 类别 == "rust":
+    if 类别值 == "rust":
         # 二进制入口 `main.rs` 的 `fn main` 是语言强制，不是「实现」——唯一豁免。
         豁免主函数 = os.path.basename(相对路) == "main.rs"
-        for 序号, 源码行 in enumerate(文本.splitlines(), 1):
-            匹配 = 顶层项行模式.match(源码行.strip())
-            if 匹配:
-                if 豁免主函数 and 匹配.group(1) == "fn" and 源码行.strip().startswith(("fn main(", "pub fn main(")):
+        for 序号, 源码行 in enumerate(源文本.splitlines(), 1):
+            正则匹配 = 顶层项行模式.match(源码行.strip())
+            if 正则匹配:
+                if 豁免主函数 and 正则匹配.group(1) == "fn" and 源码行.strip().startswith(("fn main(", "pub fn main(")):
                     continue
-                命中表.append((序号, 匹配.group(1), 源码行.strip()))
-    elif 类别 == "py-init":
-        for 序号, 源码行 in enumerate(文本.splitlines(), 1):
-            匹配 = 定义行模式.match(源码行)
-            if 匹配:
-                命中表.append((序号, "def/class " + 匹配.group(1), 源码行.strip()))
+                命中表.append((序号, 正则匹配.group(1), 源码行.strip()))
+    elif 类别值 == "py-init":
+        for 序号, 源码行 in enumerate(源文本.splitlines(), 1):
+            正则匹配 = 定义行模式.match(源码行)
+            if 正则匹配:
+                命中表.append((序号, "def/class " + 正则匹配.group(1), 源码行.strip()))
                 continue
-            匹配 = 赋值行模式.match(源码行)
-            if 匹配 and 匹配.group(1) != "__all__":
-                命中表.append((序号, "赋值 " + 匹配.group(1), 源码行.strip()))
+            正则匹配 = 赋值行模式.match(源码行)
+            if 正则匹配 and 正则匹配.group(1) != "__all__":
+                命中表.append((序号, "赋值 " + 正则匹配.group(1), 源码行.strip()))
     else:  # py-script：只许一个入口函数
         定义 = []
-        for 序号, 源码行 in enumerate(文本.splitlines(), 1):
-            匹配 = 定义行模式.match(源码行)
-            if 匹配:
-                定义.append((序号, 匹配.group(1), 源码行.strip()))
+        for 序号, 源码行 in enumerate(源文本.splitlines(), 1):
+            正则匹配 = 定义行模式.match(源码行)
+            if 正则匹配:
+                定义.append((序号, 正则匹配.group(1), 源码行.strip()))
         if len(定义) > 1:
             命中表 = 定义[1:]
     return 命中表
@@ -109,23 +109,23 @@ def 扫一遍(仓根):
     入口超行数 = []
     入口有实现 = []
     for 相对路 in 收集源码(仓根):
-        文本 = 读文本(os.path.join(仓根, 相对路))
-        行数 = len(文本.splitlines())
+        源文本 = 读文本(os.path.join(仓根, 相对路))
+        行数 = len(源文本.splitlines())
         if 行数 > 行数上限:
             超行数.append((行数, 相对路))
-        类别 = 入口类别(相对路, 文本)
-        if 类别 is None:
+        类别值 = 入口类别(相对路, 源文本)
+        if 类别值 is None:
             continue
         if 行数 > 入口行数上限:
             入口超行数.append((行数, 相对路))
-        实现 = 入口实现项(类别, 相对路, 文本)
+        实现 = 入口实现项(类别值, 相对路, 源文本)
         if 实现:
             入口有实现.append((相对路, 实现))
     return 超行数, 入口超行数, 入口有实现
 
 
-def 报读数(仓根, 结果):
-    超行数, 入口超行数, 入口有实现 = 结果
+def 报读数(仓根, 查询读数):
+    超行数, 入口超行数, 入口有实现 = 查询读数
     print("=" * 96)
     print(f"仓根 {仓根} · 源码后缀 {源码后缀} · 跳过 {sorted(跳过目录)}")
     print(f"判据：单文件 ≤ {行数上限} 行 · 入口 ≤ {入口行数上限} 行 · 入口零实现")
@@ -143,8 +143,8 @@ def 报读数(仓根, 结果):
     print(f"\n【③ 入口文件含实现】共 {len(入口有实现)} 个")
     for 路径, 实现 in 入口有实现:
         print(f"    {路径}（{len(实现)} 处）")
-        for 序号, 类别, 原文 in 实现[:6]:
-            print(f"        第 {序号} 行  {类别}  | {原文[:88]}")
+        for 序号, 类别值, 原文 in 实现[:6]:
+            print(f"        第 {序号} 行  {类别值}  | {原文[:88]}")
         if len(实现) > 6:
             print(f"        …还有 {len(实现) - 6} 处")
     if not 入口有实现:
@@ -155,12 +155,12 @@ def 报读数(仓根, 结果):
 
 def 跑自测():
     """反向样本：造超限文件，断言判据抓得住；再造合规文件，断言不误报。"""
-    with tempfile.TemporaryDirectory(prefix="查行数自测_") as 临时:
-        def 造文件(相对路, 内容):
-            路径 = os.path.join(临时, 相对路)
+    with tempfile.TemporaryDirectory(prefix="查行数自测_") as 临时目录:
+        def 造文件(相对路, 内容值):
+            路径 = os.path.join(临时目录, 相对路)
             os.makedirs(os.path.dirname(路径), exist_ok=True)
             with open(路径, "w", encoding="utf-8") as 文件句柄:
-                文件句柄.write(内容)
+                文件句柄.write(内容值)
         造文件("超限.rs", "\n".join(f"// 第 {行序} 行" for 行序 in range(行数上限 + 1)) + "\n")
         造文件("入口超行数/lib.rs", "\n".join("// 占位" for _ in range(入口行数上限 + 1)) + "\n")
         造文件("入口含实现/lib.rs", "pub mod 首个;\npub use 首个::次个;\n\nfn 实现() {}\n")
@@ -169,7 +169,7 @@ def 跑自测():
         造文件("合规/lib.rs", "//! 路由。\n\n#[path = \"首个.rs\"]\npub mod 首个;\npub use 首个::次个;\n")
         造文件("合规/脚本.py", 'if __name__ == "__main__":\n    print(1)\n')
 
-        超行数, 入口超行数, 入口有实现 = 扫一遍(临时)
+        超行数, 入口超行数, 入口有实现 = 扫一遍(临时目录)
         抓超 = [路径 for _, 路径 in 超行数]
         抓口 = [路径 for _, 路径 in 入口超行数]
         抓实 = [路径 for 路径, _ in 入口有实现]

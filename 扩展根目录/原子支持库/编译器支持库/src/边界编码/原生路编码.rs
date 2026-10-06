@@ -27,9 +27,9 @@ pub fn 编码记号流(输出流: &记号流) -> Vec<u8> {
     输出缓冲.extend_from_slice(&输出流.原文);
     输出缓冲.extend_from_slice(&(输出流.记号表.len() as u32).to_le_bytes());
     for 一枚记号 in &输出流.记号表 {
-        输出缓冲.push(一枚记号.种类.取号值());
+        输出缓冲.push(一枚记号.记号类别.取号值());
         输出缓冲.extend_from_slice(&一枚记号.区间起点.to_le_bytes());
-        输出缓冲.extend_from_slice(&一枚记号.止.to_le_bytes());
+        输出缓冲.extend_from_slice(&一枚记号.区间终点.to_le_bytes());
     }
     输出缓冲
 }
@@ -38,14 +38,14 @@ pub fn 编码记号流(输出流: &记号流) -> Vec<u8> {
 pub fn 编码语法树(语法树: &语法树) -> Vec<u8> {
     let mut 输出缓冲 = 编码记号流(&语法树.记号流);
     输出缓冲.extend_from_slice(&(语法树.节点表.len() as u32).to_le_bytes());
-    for 元素 in &语法树.节点表 {
-        输出缓冲.extend_from_slice(&元素.种类.取号值().to_le_bytes());
-        输出缓冲.extend_from_slice(&元素.原文区间.0.to_le_bytes());
-        输出缓冲.extend_from_slice(&元素.原文区间.1.to_le_bytes());
-        输出缓冲.extend_from_slice(&元素.子节点区间.0.to_le_bytes());
-        输出缓冲.extend_from_slice(&元素.子节点区间.1.to_le_bytes());
+    for 节点项 in &语法树.节点表 {
+        输出缓冲.extend_from_slice(&节点项.节点类别.取号值().to_le_bytes());
+        输出缓冲.extend_from_slice(&节点项.原文区间.0.to_le_bytes());
+        输出缓冲.extend_from_slice(&节点项.原文区间.1.to_le_bytes());
+        输出缓冲.extend_from_slice(&节点项.子节点区间.0.to_le_bytes());
+        输出缓冲.extend_from_slice(&节点项.子节点区间.1.to_le_bytes());
     }
-    输出缓冲.extend_from_slice(&语法树.根.to_le_bytes());
+    输出缓冲.extend_from_slice(&语法树.根下标.to_le_bytes());
     输出缓冲
 }
 
@@ -69,8 +69,8 @@ pub fn 编码语法树(语法树: &语法树) -> Vec<u8> {
 /// 但它们要三张注册表入参，而 1107 的参数表只有「程序文本」一行 ⇒ 本入口拿不到表），这条口径照
 /// `诊断/入口.rs` 文件头原样保留。**空字节集不是本函数的产物**：它留给执行函数
 /// 表示「没跑」（入参槽不合契约），与「全过」的 1 字节标签 0 可区分 —— 测试钉住。
-pub fn 编码诊断结果(结果: Option<&形状错误>) -> Vec<u8> {
-    let Some(错误) = 结果 else {
+pub fn 编码诊断结果(匹配结果: Option<&形状错误>) -> Vec<u8> {
+    let Some(错误) = 匹配结果 else {
         // None = 覆盖到的阶段全过：1 字节标签 0（**非**空字节集，见上）。
         return vec![0];
     };
@@ -78,10 +78,10 @@ pub fn 编码诊断结果(结果: Option<&形状错误>) -> Vec<u8> {
     输出缓冲.extend_from_slice(&crate::诊断::阶段号(错误).to_le_bytes());
     输出缓冲.extend_from_slice(&crate::形状错误码(错误).to_le_bytes());
     match crate::诊断::字节位置(错误) {
-        Some((区间起点, 止)) => {
+        Some((区间起点, 区间终点)) => {
             输出缓冲.extend_from_slice(&1u32.to_le_bytes());
             输出缓冲.extend_from_slice(&区间起点.to_le_bytes());
-            输出缓冲.extend_from_slice(&止.to_le_bytes());
+            输出缓冲.extend_from_slice(&区间终点.to_le_bytes());
         }
         None => 输出缓冲.extend_from_slice(&0u32.to_le_bytes()),
     }

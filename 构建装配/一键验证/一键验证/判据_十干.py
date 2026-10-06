@@ -33,7 +33,7 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-from .小工具 import 判不了, 违规
+from .验证小工具 import 判不了, 违规
 from .常量 import 检查名, 排除目录
 # 排除的顶层目录名（口径书点名的四个）—— **段形态主人**是
 # `开发工具/代码地图/落点.py::排除目录`，本件与 `判据_引用.py` 都引它（2026-09-30 收口：
@@ -64,11 +64,11 @@ def 十干字() -> str:
     return _查名().序数代称字
 
 
-def 去词内十干(文本: str) -> str:
+def 去词内十干(源文本: str) -> str:
     """把白名单词换成**等长空格**（列位置不变）—— 词内的十干字不算。空表 ⇒ 原样返回。"""
     if not 词内十干:
-        return 文本
-    净文本 = 文本
+        return 源文本
+    净文本 = 源文本
     for 白名单词 in 词内十干:
         净文本 = 净文本.replace(白名单词, " " * len(白名单词))
     return 净文本
@@ -128,17 +128,17 @@ def 扫十干(件表: dict) -> list:
     只有真含字的那几件才逐行定位 —— 全树 0 命中时这一趟只花几毫秒。
     """
     字表 = 十干字()
-    结果 = []
+    判定汇总 = []
     for 路径 in sorted(件表):
         净文本 = 去词内十干(件表[路径] or "")
         if not 净文本:
             continue
-        for 字符 in 字表:
-            if 字符 in 净文本:
+        for 单字符 in 字表:
+            if 单字符 in 净文本:
                 for 行号, 行文本 in enumerate(净文本.split("\n"), 1):
-                    if 字符 in 行文本:
-                        结果.append((路径, 行号, ord(字符)))
-    return 结果
+                    if 单字符 in 行文本:
+                        判定汇总.append((路径, 行号, ord(单字符)))
+    return 判定汇总
 
 
 def 扫十干面(上层读数: dict) -> list:

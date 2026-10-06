@@ -18,14 +18,14 @@ def 装条款(根目录: Path, 文档行: list) -> list:
     return 输出行
 
 
-def 拆节(文本: str) -> list:
+def 拆节(源文本: str) -> list:
     """md → `[(节标题, 节正文)]`。`# ` 与 `## ` 都是界（`###` 及以下归上一节）。"""
     节表, 节标题, 缓冲 = [], "", []
-    for 一行 in 文本.splitlines():
-        if 一行.startswith("# ") or 一行.startswith("## "):
+    for 文本行 in 源文本.splitlines():
+        if 文本行.startswith("# ") or 文本行.startswith("## "):
             节表.append((节标题, "\n".join(缓冲).strip()))
-            节标题, 缓冲 = 一行.lstrip("#").strip(), []
+            节标题, 缓冲 = 文本行.lstrip("#").strip(), []
         else:
-            缓冲.append(一行)
+            缓冲.append(文本行)
     节表.append((节标题, "\n".join(缓冲).strip()))
     return [(节题, 节体) for 节题, 节体 in 节表 if 节题 or 节体]

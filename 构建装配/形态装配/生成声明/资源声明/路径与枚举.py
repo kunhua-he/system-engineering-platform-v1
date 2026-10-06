@@ -40,14 +40,14 @@ def 建资源根(原始):
     """
     if 原始 is None or str(原始).strip() == "":
         raise 生成失败("声明根是空串")
-    绝对 = os.path.abspath(原始 if os.path.isabs(str(原始)) else os.path.join(仓根, str(原始)))
-    相对 = os.path.relpath(绝对, 仓根).replace(os.sep, "/")
+    绝对路径 = os.path.abspath(原始 if os.path.isabs(str(原始)) else os.path.join(仓根, str(原始)))
+    相对 = os.path.relpath(绝对路径, 仓根).replace(os.sep, "/")
     if 相对 in (".", "..") or 相对.startswith("../"):
         raise 生成失败(
             "声明根 %r 解析成 %r：它不在仓库内（仓根 %s）⇒ 产物里会出现机器相关路径、"
             "破坏确定性 —— fail-closed" % (原始, 相对, 仓根)
         )
-    if not os.path.isdir(绝对):
+    if not os.path.isdir(绝对路径):
         raise 生成失败("声明根 %r 不是一个目录（解析成 %s）" % (原始, 相对))
     return 相对
 

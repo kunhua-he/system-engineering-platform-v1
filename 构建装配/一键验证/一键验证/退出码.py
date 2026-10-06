@@ -4,9 +4,9 @@
 from __future__ import annotations
 
 
-def 算退出码(结果: dict) -> int:
+def 算退出码(判定汇总: dict) -> int:
     """全过（无失败、无未判）= 0；否则 = 1。空集是「未判」不是「通过」。"""
-    return 0 if not 结果["失败"] and not 结果["未判"] else 1
+    return 0 if not 判定汇总["失败"] and not 判定汇总["未判"] else 1
 
 
 def 自检_退出码语义() -> tuple:

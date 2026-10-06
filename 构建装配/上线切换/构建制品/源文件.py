@@ -7,8 +7,8 @@ from pathlib import Path
 from .常量 import 仓根, 跳过目录, 源后缀
 
 
-def 走源文件(目录: Path):
-    for 根目录, 目录表, 文件表 in os.walk(目录):
+def 走源文件(源根目录: Path):
+    for 根目录, 目录表, 文件表 in os.walk(源根目录):
         目录表[:] = [目录名 for 目录名 in 目录表 if 目录名 not in 跳过目录]
         for 名称 in 文件表:
             if 名称.endswith(源后缀):

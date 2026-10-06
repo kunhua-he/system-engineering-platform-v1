@@ -28,11 +28,11 @@ pub use v1_contract::{通知号段, 通知函数, 通知返回};
 
 #[path = "形状.rs"]
 mod 形状;
-#[path = "通道.rs"]
-mod 通道;
+#[path = "通道模块.rs"]
+mod 通道模块;
 
 pub use 形状::{生命周期通知, 通知端点, 派发结果};
-pub use 通道::通知通道;
+pub use 通道模块::通知通道;
 
 #[cfg(test)]
 #[path = "测试.rs"]

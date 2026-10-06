@@ -9,14 +9,14 @@ from PE形状 import 解析错误
 def 解图标组(组字节, 资源id, 是光标):
     if len(组字节) < 6:
         raise 解析错误("%s组 %s 短于 ICONDIR" % ("光标" if 是光标 else "图标", 资源id))
-    保留, 类型, 个数 = struct.unpack_from("<HHH", 组字节, 0)
+    保留, 类型, 条目个数 = struct.unpack_from("<HHH", 组字节, 0)
     期望 = 2 if 是光标 else 1
     if 类型 != 期望:
         raise 解析错误("%s组 %s 的 type=%d != %d" % ("光标" if 是光标 else "图标", 资源id, 类型, 期望))
-    if 个数 == 0 or 6 + (14 if 是光标 else 14) * 个数 > len(组字节):
-        raise 解析错误("%s组 %s 声明 %d 条，条目区越界" % ("光标" if 是光标 else "图标", 资源id, 个数))
+    if 条目个数 == 0 or 6 + (14 if 是光标 else 14) * 条目个数 > len(组字节):
+        raise 解析错误("%s组 %s 声明 %d 条，条目区越界" % ("光标" if 是光标 else "图标", 资源id, 条目个数))
     条目表 = []
-    for 条序 in range(个数):
+    for 条序 in range(条目个数):
         项起 = 6 + 14 * 条序
         if 是光标:
             宽度, 高度, 平面, 位深, 字节, rid = struct.unpack_from("<HHHHIH", 组字节, 项起)

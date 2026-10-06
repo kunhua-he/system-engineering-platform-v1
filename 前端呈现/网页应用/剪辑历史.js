@@ -14,33 +14,33 @@ const 流水表 = [];
 const 流水上限 = 300;
 
 /** 一行：时刻 · 触发者 · 读数。`类别` 是触发者，`文本` 是真实读数。 */
-export function 记流水(类别, 文本) {
+export function 记流水(类别值, 源文本) {
   const 当前时刻 = new Date();
-  const 补两位 = (个数) => String(个数).padStart(2, "0");
+  const 补两位 = (整数值) => String(整数值).padStart(2, "0");
   流水表.push({
     时刻: 补两位(当前时刻.getHours()) + ":" + 补两位(当前时刻.getMinutes()) + ":" + 补两位(当前时刻.getSeconds()),
-    类: 类别,
-    文: 文本,
+    流水类: 类别值,
+    应答文本: 源文本,
   });
   if (流水表.length > 流水上限) 流水表.splice(0, 流水表.length - 流水上限);
   画流水();
 }
 
 function 画流水() {
-  const 列表 = document.getElementById("史列表");
+  const 史列表盒 = document.getElementById("史列表");
   const 状态 = document.getElementById("史状态");
-  if (!列表) return;
-  清空容器(列表);
+  if (!史列表盒) return;
+  清空容器(史列表盒);
   if (!流水表.length) {
-    列表.append(建元素("div", "史空", "还没有动作。点工具条上的图标、或上面任一按钮，这里就多一行。"));
+    史列表盒.append(建元素("div", "史空", "还没有动作。点工具条上的图标、或上面任一按钮，这里就多一行。"));
     if (状态) 状态.textContent = "0 行";
     return;
   }
   // 新的在上：一眼看到刚发生的那一条。
   for (const 流水条 of [...流水表].reverse()) {
     const 源码行 = 建元素("div", "史行");
-    源码行.append(建元素("span", "史时", 流水条.时刻), 建元素("span", "史类", 流水条.类), 建元素("span", "文", 流水条.文));
-    列表.append(源码行);
+    源码行.append(建元素("span", "史时", 流水条.时刻), 建元素("span", "史类", 流水条.流水类), 建元素("span", "文", 流水条.应答文本));
+    史列表盒.append(源码行);
   }
   if (状态) 状态.textContent = 流水表.length + " 行";
 }

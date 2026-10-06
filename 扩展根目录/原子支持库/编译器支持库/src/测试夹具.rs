@@ -22,17 +22,17 @@ pub(crate) fn 造记号流(原文: &str, 项表: &[(记号种类, &str)]) -> 记
     let 字节 = 原文.as_bytes().to_vec();
     let mut 记号表 = Vec::new();
     let mut 游标 = 0usize;
-    for (种类, 片段) in 项表 {
+    for (记号类别, 片段) in 项表 {
         let 相对 = 原文[游标..].find(片段).expect("夹具片段在原文里找不到");
         let 区间起点 = 游标 + 相对;
         let 区间终点 = 区间起点 + 片段.len();
-        记号表.push(记号::新建(*种类, 区间起点 as u32, 区间终点 as u32));
+        记号表.push(记号::构造(*记号类别, 区间起点 as u32, 区间终点 as u32));
         游标 = 区间终点;
     }
     assert_eq!(游标, 字节.len(), "夹具片段没铺满全文");
-    let 长度 = 字节.len() as u32;
-    记号表.push(记号::新建(记号种类::文件结束, 长度, 长度));
-    记号流::新建(字节, 记号表).expect("夹具造的记号流必须合法")
+    let 槽字节长度 = 字节.len() as u32;
+    记号表.push(记号::构造(记号种类::文件结束, 槽字节长度, 槽字节长度));
+    记号流::构造(字节, 记号表).expect("夹具造的记号流必须合法")
 }
 
 /// 取某片段的字节区间。
@@ -43,11 +43,11 @@ pub(crate) fn 取片段字节区间(原文: &str, 片段: &str) -> (u32, u32) {
 
 /// 53 份真文本样本（`语料/真文本/*.txt`，UTF-8），按文件名排序。
 pub(crate) fn 语料文件() -> Vec<PathBuf> {
-    let 目录 = Path::new(env!("CARGO_MANIFEST_DIR"))
+    let 语料目录 = Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("语料")
         .join("真文本");
-    let mut 路s: Vec<PathBuf> = std::fs::read_dir(&目录)
-        .unwrap_or_else(|错误| panic!("读不到 {}：{错误}", 目录.display()))
+    let mut 路s: Vec<PathBuf> = std::fs::read_dir(&语料目录)
+        .unwrap_or_else(|错误| panic!("读不到 {}：{错误}", 语料目录.display()))
         .filter_map(|目录项| 目录项.ok().map(|目录项| 目录项.path()))
         .filter(|路径| 路径.to_str().is_some_and(|名称| 名称.ends_with(".txt")))
         .collect();
@@ -63,9 +63,9 @@ pub(crate) fn 读语料(路径: &Path) -> String {
 /// 首个不一致字节偏移（逐字节比；先到头的那份长度为界）。
 pub(crate) fn 首个不一致(原文: &[u8], 产物: &[u8]) -> u64 {
     let 较短长度 = 原文.len().min(产物.len());
-    for 位置 in 0..较短长度 {
-        if 原文[位置] != 产物[位置] {
-            return 位置 as u64;
+    for 字节位置 in 0..较短长度 {
+        if 原文[字节位置] != 产物[字节位置] {
+            return 字节位置 as u64;
         }
     }
     较短长度 as u64

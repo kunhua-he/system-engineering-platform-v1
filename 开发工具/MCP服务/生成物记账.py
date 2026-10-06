@@ -37,11 +37,11 @@ def 脏件指纹(工作树: Path):
             for 路径 in 变更表}
 
 
-def _取声明(文本: str, 生成器路径: str) -> str:
+def _取声明(源文本: str, 生成器路径: str) -> str:
     """从一段文本里取出「生成器：<路径>」 ⇒ 路径（三件事不齐或路径不是本生成器 ⇒ 空串）。"""
-    if "生成物" not in 文本 or not ("禁手改" in 文本 or "禁手不改" in 文本):
+    if "生成物" not in 源文本 or not ("禁手改" in 源文本 or "禁手不改" in 源文本):
         return ""
-    for 源码行 in 文本.splitlines():
+    for 源码行 in 源文本.splitlines():
         if "生成器：" in 源码行:
             # 剥掉 JSON 的收尾标点：JSON 值恒带 `"`（有时还有 `,`），
             # 不剥则取出的路径永远多两个字符 ⇒ 与真生成器路径对不上 ⇒ 记账恒被拒。

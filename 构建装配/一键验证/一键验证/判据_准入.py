@@ -28,7 +28,7 @@ from __future__ import annotations
 
 import sys
 
-from .小工具 import 判不了, 违规
+from .验证小工具 import 判不了, 违规
 from .常量 import 仓根, 检查名
 
 # 判法的唯一落点：独立 runner 的包根（**判据自身所在仓**，不是被扫的仓）。
@@ -42,8 +42,8 @@ def _取判据模块():
     if _判据模块 is None:
         if _准入包根 not in sys.path:
             sys.path.insert(0, _准入包根)
-        from 准入判据 import 判据 as 模块
-        _判据模块 = 模块
+        from 准入判据 import 判据 as 准入判据模块
+        _判据模块 = 准入判据模块
     return _判据模块
 
 
@@ -71,14 +71,14 @@ def _跑一条判据(上层读数, 判名):
     return 记住
 
 
-def _转违规列表(名称, 位置, 不能自愈, 结果):
+def _转违规列表(名称, 落点, 不能自愈, 判定汇总):
     """runner 的三元结果 ⇒ 闸 1 的违规列表（`未判` 走未判通道，**不许当通过**）。"""
-    状态, 说明, _对象数 = 结果
+    状态, 说明, _对象数 = 判定汇总
     if 状态 == "通过":
         return []
     if 状态 == "失败":
-        return [违规(名称, 位置, 说明, 不能自愈)]
-    判不了(名称, 位置, 说明, 不能自愈)
+        return [违规(名称, 落点, 说明, 不能自愈)]
+    判不了(名称, 落点, 说明, 不能自愈)
     return []
 
 

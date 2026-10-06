@@ -7,11 +7,11 @@ from .检查 import 跑全语料, 跑自测
 from .跑取证 import 跑取证
 
 
-def 入口函数(参数):
+def 入口函数(命令行参数):
     分片 = None
-    if "--分片" in 参数:
-        参数下标 = 参数.index("--分片")
-        分片 = 参数[参数下标 + 1] if 参数下标 + 1 < len(参数) else None
+    if "--分片" in 命令行参数:
+        参数下标 = 命令行参数.index("--分片")
+        分片 = 命令行参数[参数下标 + 1] if 参数下标 + 1 < len(命令行参数) else None
         if not 分片:
             print("用法：--分片 i/n（例：--分片 0/120）")
             return 2

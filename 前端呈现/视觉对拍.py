@@ -77,13 +77,13 @@ def 入口函数(命令行参数):
         进程 = subprocess.Popen(
             [str(网关), "--声明根", str(声明根), "--端口", "0", "--静态根", str(前端目录)],
             stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
-        端口 = None
+        监听端口 = None
         for 源码行 in 进程.stdout:
             print("  [网关] " + 源码行.rstrip())
             if "监听 127.0.0.1:" in 源码行:
-                端口 = int(源码行.rsplit(":", 1)[1])
+                监听端口 = int(源码行.rsplit(":", 1)[1])
                 break
-        if not 端口:
+        if not 监听端口:
             进程.kill()
             print("起不来：网关没报监听端口（看上面它的输出）", file=sys.stderr)
             return 1

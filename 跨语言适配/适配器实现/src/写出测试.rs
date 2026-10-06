@@ -16,14 +16,14 @@ use crate::小写出::{JSON值, 写协议值};
 #[test]
 fn 小写出_转义_引号反斜杠控制字符都转() {
     assert_eq!(
-        写协议值(&JSON值::文本("a\"b\\c\nd\u{1}".to_owned())),
+        写协议值(&JSON值::文本值("a\"b\\c\nd\u{1}".to_owned())),
         r#""a\"b\\c\nd\u0001""#
     );
     // 非 ASCII 原样走 UTF-8（不转 `\uXXXX`）。
-    assert_eq!(写协议值(&JSON值::文本("接口".to_owned())), "\"接口\"");
+    assert_eq!(写协议值(&JSON值::文本值("接口".to_owned())), "\"接口\"");
 
     // ── 反向样本：裸控制字符**不许**出现在输出里（它就是非法 JSON 的来源）──
-    let 输出 = 写协议值(&JSON值::文本("\u{0}\u{1f}".to_owned()));
+    let 输出 = 写协议值(&JSON值::文本值("\u{0}\u{1f}".to_owned()));
     assert!(
         !输出.chars().any(|字符表| (字符表 as u32) < 0x20),
         "输出里不许有裸控制字符"
@@ -37,14 +37,14 @@ fn 小写出_形状与确定性() {
     assert_eq!(写协议值(&JSON值::空值项), "null");
     assert_eq!(写协议值(&JSON值::真值), "true");
     assert_eq!(写协议值(&JSON值::假值), "false");
-    assert_eq!(写协议值(&JSON值::整数(-7)), "-7");
-    assert_eq!(写协议值(&JSON值::数组(Vec::new())), "[]");
-    assert_eq!(写协议值(&JSON值::对象(Vec::new())), "{}");
+    assert_eq!(写协议值(&JSON值::整数项(-7)), "-7");
+    assert_eq!(写协议值(&JSON值::数组值(Vec::new())), "[]");
+    assert_eq!(写协议值(&JSON值::对象值(Vec::new())), "{}");
 
     let 造对象 = || {
-        JSON值::对象(vec![
-            ("首项".to_owned(), JSON值::整数(1)),
-            ("次项".to_owned(), JSON值::数组(vec![JSON值::真值])),
+        JSON值::对象值(vec![
+            ("首项".to_owned(), JSON值::整数项(1)),
+            ("次项".to_owned(), JSON值::数组值(vec![JSON值::真值])),
         ])
     };
     assert_eq!(写协议值(&造对象()), 写协议值(&造对象()), "同一份数据两次序列化逐字节相同");
@@ -54,7 +54,7 @@ fn 小写出_形状与确定性() {
 /// 判据：`平台_取接口描述` 交出的 JSON **括号与引号成对**（结构上不是半个形状）。
 #[test]
 fn 接口描述_括号与引号成对() {
-    let 边界 = 对外边界::新建(&[v1_loader::底座声明()]).expect("底座");
+    let 边界 = 对外边界::构造(&[v1_loader::底座声明()]).expect("底座");
     assert!(括号引号成对(&边界.取接口描述()), "真输出必须成对");
 
     // ── 反向样本：判据不是空转 ──
@@ -65,11 +65,11 @@ fn 接口描述_括号与引号成对() {
 }
 
 /// 判据：`{}` `[]` 成对 · 字符串闭合（**只做平衡检查，不是解析器** —— 文件头写明不解析）。
-fn 括号引号成对(文本: &str) -> bool {
+fn 括号引号成对(文本值: &str) -> bool {
     let mut 括号栈: Vec<char> = Vec::new();
     let mut 在串 = false;
     let mut 转义 = false;
-    for 字符表 in 文本.chars() {
+    for 字符表 in 文本值.chars() {
         if 在串 {
             if 转义 {
                 转义 = false;

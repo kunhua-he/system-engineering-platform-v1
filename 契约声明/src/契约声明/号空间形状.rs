@@ -16,7 +16,7 @@
 //!
 //! # 怎么用
 //!
-//! - 造：`能力号::新建(1101)`（或 `.into()`）。
+//! - 造：`能力号::构造(1101)`（或 `.into()`）。
 //! - 取：`.取号值()`（或 `u32::from(号)`）—— 只有**确实**要落到裸数时才取。
 //! - 比较：`号 == 1101` 直接可用（与 `u32` 有 `PartialEq`）；跨号空间的比较没有实现 ⇒ 编不过。
 
@@ -25,15 +25,15 @@
 /// 与 `u32` 的 `PartialEq` 是**为了读写裸字面量**（`号 == 1101`），不是为了让两个号空间
 /// 互相赋值 —— 那是 `From<u32>` 也做不到的：`能力号` 与 `资源号` 之间**没有** `From`。
 macro_rules! 造号空间类型 {
-    ($(#[$文:meta])* $名:ident) => {
+    ($(#[$文:meta])* $类型名:ident) => {
         $(#[$文])*
         #[repr(transparent)]
         #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
-        pub struct $名(pub u32);
+        pub struct $类型名(pub u32);
 
-        impl $名 {
+        impl $类型名 {
             /// 造一个。
-            pub const fn 新建(待处理值: u32) -> Self {
+            pub const fn 构造(待处理值: u32) -> Self {
                 Self(待处理值)
             }
             /// 取出裸 `u32`。**只在确实要落到裸数时用**。
@@ -42,33 +42,33 @@ macro_rules! 造号空间类型 {
             }
         }
 
-        impl From<u32> for $名 {
+        impl From<u32> for $类型名 {
             fn from(待处理值: u32) -> Self {
                 Self(待处理值)
             }
         }
-        impl From<$名> for u32 {
-            fn from(待处理值: $名) -> Self {
+        impl From<$类型名> for u32 {
+            fn from(待处理值: $类型名) -> Self {
                 待处理值.0
             }
         }
-        impl PartialEq<u32> for $名 {
+        impl PartialEq<u32> for $类型名 {
             fn eq(&self, 另一份: &u32) -> bool {
                 self.0 == *另一份
             }
         }
-        impl PartialEq<$名> for u32 {
-            fn eq(&self, 另一份: &$名) -> bool {
+        impl PartialEq<$类型名> for u32 {
+            fn eq(&self, 另一份: &$类型名) -> bool {
                 *self == 另一份.0
             }
         }
-        impl PartialOrd<u32> for $名 {
+        impl PartialOrd<u32> for $类型名 {
             fn partial_cmp(&self, 另一份: &u32) -> Option<core::cmp::Ordering> {
                 self.0.partial_cmp(另一份)
             }
         }
-        impl PartialOrd<$名> for u32 {
-            fn partial_cmp(&self, 另一份: &$名) -> Option<core::cmp::Ordering> {
+        impl PartialOrd<$类型名> for u32 {
+            fn partial_cmp(&self, 另一份: &$类型名) -> Option<core::cmp::Ordering> {
                 self.partial_cmp(&另一份.0)
             }
         }

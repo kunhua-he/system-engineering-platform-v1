@@ -56,7 +56,7 @@ from 构建装配.门禁 import 自门禁  # noqa: E402
 读数行模式 = re.compile(r"^通过\s.*$", re.M)
 
 
-def 入口函数(参数: list) -> int:
+def 入口函数(命令行参数: list) -> int:
     仓根 = Path(__file__).resolve().parents[2]
     全过 = True
     明细 = []
@@ -67,7 +67,7 @@ def 入口函数(参数: list) -> int:
         # ★ 子进程 5 秒 timeout（2026-10-05 修 · 审计 B-7）：原先只**事后量**、子进程无 timeout
         #   ⇒ CLI / pre-commit 路径一旦卡死就挂死（MCP 侧已有 `timeout=5`）。超时 = 判红并报「超时」。
         try:
-            结果 = subprocess.run(
+            判定汇总 = subprocess.run(
                 [sys.executable, str(仓根 / 相对)],
                 cwd=str(仓根), capture_output=True, text=True, timeout=5,
             )
@@ -77,13 +77,13 @@ def 入口函数(参数: list) -> int:
             print("    退出码 超时 ｜ （超时：本闸 > 5 s 未返回 —— 五秒硬顶无例外）")
             明细.append((名称, 相对, "超时：%s 未在 5 s 内返回" % 相对))
             continue
-        命中 = 读数行模式.search(结果.stdout or "")
+        命中 = 读数行模式.search(判定汇总.stdout or "")
         读数 = 命中.group(0).strip() if 命中 else "（没有读出「通过 …」那一行）"
-        全过 = 全过 and (结果.returncode == 0)
+        全过 = 全过 and (判定汇总.returncode == 0)
         print(f"  {名称} ｜ {相对}")
-        print(f"    退出码 {结果.returncode} ｜ {读数}")
-        if 结果.returncode != 0:
-            明细.append((名称, 相对, (结果.stdout or "") + (结果.stderr or "")))
+        print(f"    退出码 {判定汇总.returncode} ｜ {读数}")
+        if 判定汇总.returncode != 0:
+            明细.append((名称, 相对, (判定汇总.stdout or "") + (判定汇总.stderr or "")))
     print("")
     if 全过:
         print("闸 0：两条闸都过（退出码 0）")

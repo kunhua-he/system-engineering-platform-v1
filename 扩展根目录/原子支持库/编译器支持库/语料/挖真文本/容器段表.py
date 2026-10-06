@@ -5,7 +5,7 @@ from .常量 import 常量记录正则, 段头魔数, 段头终止
 
 # ── 容器段表 ──────────────────────────────────────────────────────────────
 def 段表(字节流):
-    out, 扫描位 = [], 0
+    段项表, 扫描位 = [], 0
     while True:
         头位 = 字节流.find(段头魔数, 扫描位)
         if 头位 < 0:
@@ -16,12 +16,12 @@ def 段表(字节流):
             key = bytes([0x73, 0x00, 段型, 0x19])
             dec = bytes(nm[位次] ^ key[位次 % 4] for 位次 in range(len(nm)))
             try:
-                out.append((头位, 段型, dec.split(b"\x00")[0].decode("gbk")))
+                段项表.append((头位, 段型, dec.split(b"\x00")[0].decode("gbk")))
             except UnicodeDecodeError:
                 pass
         扫描位 = 头位 + 1
-    out.sort()
-    return out
+    段项表.sort()
+    return 段项表
 
 
 def 偏移所属段(tab, off):
@@ -36,9 +36,9 @@ def 偏移所属段(tab, off):
 
 def 取常量名(字节流, off, back=4096):
     best = None
-    for 匹配 in 常量记录正则.finditer(字节流, max(0, off - back), off):
+    for 正则匹配 in 常量记录正则.finditer(字节流, max(0, off - back), off):
         try:
-            best = (匹配.start(), 匹配.group(1).decode("gbk"))
+            best = (正则匹配.start(), 正则匹配.group(1).decode("gbk"))
         except UnicodeDecodeError:
             continue
     return best

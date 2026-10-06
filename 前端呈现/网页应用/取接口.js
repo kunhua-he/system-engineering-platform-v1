@@ -79,9 +79,9 @@ export async function 跑案例(标识) {
  * `POST /接口/导出`，体 `{"目标":"…"}`（`标识` 给了才带上）。
  * `目标` 的五种取值由调用方给（本页不在这里判它合不合法 —— 非法由后端回 `9004`）。
  */
-export async function 发导出(目标, 标识) {
+export async function 发导出(导出目标, 标识) {
   const 尾部 = 标识 ? ',"标识":' + JSON.stringify(标识) : "";
-  return 发请求(路径_导出, '{"目标":' + JSON.stringify(目标) + 尾部 + "}");
+  return 发请求(路径_导出, '{"目标":' + JSON.stringify(导出目标) + 尾部 + "}");
 }
 
 /**
@@ -103,7 +103,7 @@ export async function 发菜单命令(编号) {
 }
 
 /** 契约里的类型标签：`4` = 文本 · `0` = 空（`契约声明/类型声明/0004.json` · `0000.json`）。 */
-export const 类型标签 = { 空标签: 0, 文本: 4 };
+export const 类型标签 = { 空标签: 0, 源文本: 4 };
 
 /**
  * 拼一条「首实参是程序文本」的调用体。
@@ -117,10 +117,10 @@ export const 类型标签 = { 空标签: 0, 文本: 4 };
  * （引号 · 换行 · 反斜杠要按 JSON 规则转义，否则体本身就不合法）。
  * 它不改文本一个字节、不看文本内容、不认任何关键字 —— 不是「处理程序」，是编码传输串。
  */
-export function 拼文本调用体(编号, 文本, 参数个数) {
-  const 待处理值 = [{ 类型标签: 类型标签.文本, 值: 文本 }];
+export function 拼文本调用体(编号, 源文本, 参数个数) {
+  const 待处理值 = [{ 类型标签: 类型标签.源文本, 值: 源文本 }];
   const 位次 = Math.max(1, Number(参数个数) || 1);
-  for (let 位置 = 1; 位置 < 位次; 位置 += 1) 待处理值.push({ 类型标签: 类型标签.空标签, 值: 0 });
+  for (let 项下标 = 1; 项下标 < 位次; 项下标 += 1) 待处理值.push({ 类型标签: 类型标签.空标签, 值: 0 });
   return '{"编号":' + 编号 + ',"值":' + JSON.stringify(待处理值) + "}";
 }
 
@@ -131,7 +131,7 @@ export function 拼文本调用体(编号, 文本, 参数个数) {
  */
 export async function 取静态件(路径) {
   const 造应答 = await fetch(路径, { headers: { Accept: "text/plain, */*" } });
-  return { 状态: 造应答.status, 文: await 造应答.text() };
+  return { 状态: 造应答.status, 应答文本: await 造应答.text() };
 }
 
 async function 取应答(路径) {
@@ -158,6 +158,6 @@ async function 收应答(造应答) {
   } catch {
     应答体 = null;
   }
-  const 文本 = await 造应答.text();
-  return { 状态: 造应答.status, 体: 应答体, 文: 文本 };
+  const 源文本 = await 造应答.text();
+  return { 状态: 造应答.status, 报文体: 应答体, 应答文本: 源文本 };
 }

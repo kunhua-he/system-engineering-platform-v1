@@ -25,7 +25,7 @@ impl 关口结果 {
     pub fn 错误码(&self) -> Option<u32> {
         match self {
            关口结果::成功(_) => None,
-            关口结果::失败(错) => Some(错.取错误码()),
+            关口结果::失败(失败值) => Some(失败值.取错误码()),
         }
     }
 
@@ -33,7 +33,7 @@ impl 关口结果 {
     pub fn 错误(&self) -> Option<资源错误> {
         match self {
             关口结果::成功(_) => None,
-            关口结果::失败(错) => Some(*错),
+            关口结果::失败(失败值) => Some(*失败值),
         }
     }
 }
@@ -43,7 +43,7 @@ impl 关口结果 {
 pub struct 资源摘要 {
     pub 资源号: u32,
     pub 标识: String,
-    pub 种类: String,
+    pub 扩展种类: String,
     /// **健康否**的落点：声明里有它、部署没绑入口 ⇒ 调了会拿「入口未绑定」。
     pub 已绑定入口: bool,
     pub 操作表: Vec<操作摘要>,
@@ -53,7 +53,7 @@ pub struct 资源摘要 {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct 操作摘要 {
     pub 操作号: u32,
-    pub 名: String,
+    pub 名字: String,
     /// 输入类型标签**表**（逐位对齐调用时的输入槽表；空表 = 不要入参）。
     pub 输入类型: Vec<u32>,
     /// 输出类型标签**表**（逐位对齐返回的输出槽表；空表 = 不返回值）。

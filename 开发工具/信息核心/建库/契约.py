@@ -37,8 +37,8 @@ def _契约表(根目录: Path) -> tuple:
         能力行.append((能力编号, str(声明数据.get("名称", "")), len(参数表),
                       声明数据.get("返回类型", 0),
                       ",".join(str(码文) for 码文 in (声明数据.get("可抛错误码") or []))))
-        for 参号, 参数 in enumerate(参数表, 1):
-            参行.append((能力编号, 参号, str(参数.get("名称", "")), 参数.get("类型标签", 0), "入参"))
+        for 参号, 入参 in enumerate(参数表, 1):
+            参行.append((能力编号, 参号, str(入参.get("名称", "")), 入参.get("类型标签", 0), "入参"))
     for 声明件 in sorted((契约 / "类型声明").glob("*.json")):
         声明数据 = 读JSON件(声明件) or {}
         类型行.append((声明数据.get("类型标签", 0), str(声明数据.get("名称", "")),

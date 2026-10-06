@@ -16,17 +16,17 @@ def 找声明根(件表: dict) -> list:
         号段 = 键名.split("/")
         if len(号段) < 3:
             continue
-        目录 = "/".join(号段[:-1])
+        单元目录 = "/".join(号段[:-1])
         if 号段[-1] in 声明根标记:
-            根目录.append(目录)
+            根目录.append(单元目录)
     return sorted(set(根目录))
 
 
 def 读声明侧(件表: dict) -> dict:
     """返回 {声明根: {"能力声明": {编号: (数据, 键)}, "错误码表": …, "类型声明": …, "包": 数据}}。"""
     根表 = {}
-    for 键名, 文本 in 件表.items():
-        if not 键名.endswith(".json") or 文本 is None:
+    for 键名, 源文本 in 件表.items():
+        if not 键名.endswith(".json") or 源文本 is None:
             continue
         根目录 = None
         for 声明根 in 找声明根(件表):
@@ -36,21 +36,21 @@ def 读声明侧(件表: dict) -> dict:
         if 根目录 is None:
             continue
         try:
-            数据 = json.loads(文本)
+            声明数据 = json.loads(源文本)
         except json.JSONDecodeError:
             continue
-        if not isinstance(数据, dict):
+        if not isinstance(声明数据, dict):
             continue
         根目录条目 = 根表.setdefault(
             根目录, {"能力声明": {}, "错误码表": {}, "类型声明": {}, "包": None}
         )
         尾部 = 键名[len(根目录) + 1 :]
         if 尾部 == "包声明.json" or 尾部 == "平台声明.json":
-            根目录条目["包"] = (数据, 键名)
+            根目录条目["包"] = (声明数据, 键名)
         elif 尾部.startswith("能力声明/") and 尾部.endswith(".json"):
-            根目录条目["能力声明"][键名] = (数据, 键名)
+            根目录条目["能力声明"][键名] = (声明数据, 键名)
         elif 尾部.startswith("错误码表/") and 尾部.endswith(".json"):
-            根目录条目["错误码表"][键名] = (数据, 键名)
+            根目录条目["错误码表"][键名] = (声明数据, 键名)
         elif 尾部.startswith("类型声明/") and 尾部.endswith(".json"):
-            根目录条目["类型声明"][键名] = (数据, 键名)
+            根目录条目["类型声明"][键名] = (声明数据, 键名)
     return 根表

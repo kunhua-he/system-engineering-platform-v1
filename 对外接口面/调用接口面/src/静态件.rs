@@ -32,7 +32,7 @@ pub struct 静态件 {
 
 /// 请求路径 → 静态件。`None` = 托管根下没有这个件（⇒ 分发侧给 404）。
 ///
-/// `路径` 必须是**已经百分号解码过**的路径 —— 解码在协议层做（`路由.rs`），
+/// `路径` 必须是**已经百分号解码过**的路径 —— 解码在协议层做（`端点路由.rs`），
 /// 这里只认解码后的形态，不重复解一次（同一件事两处做，两处会分叉）。
 pub fn 取静态件(根目录: &Path, 路径: &str) -> Option<静态件> {
     let 相对 = 安全相对路径(路径)?;
@@ -107,9 +107,9 @@ mod 静态件测试 {
         assert_eq!(首页.内容类型, "text/html; charset=utf-8");
         assert!(首页.字节.starts_with(b"<!DOCTYPE html>"), "该是真 index.html");
 
-        let 样式 = 取静态件(&根目录, "/样式.css").expect("样式.css 在托管根下");
-        assert_eq!(样式.内容类型, "text/css; charset=utf-8");
-        assert!(!样式.字节.is_empty());
+        let 样式件 = 取静态件(&根目录, "/样式.css").expect("样式.css 在托管根下");
+        assert_eq!(样式件.内容类型, "text/css; charset=utf-8");
+        assert!(!样式件.字节.is_empty());
 
         let 脚本件 = 取静态件(&根目录, "/取接口.js").expect("取接口.js 在托管根下");
         assert_eq!(脚本件.内容类型, "text/javascript; charset=utf-8");

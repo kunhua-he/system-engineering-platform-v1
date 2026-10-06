@@ -12,9 +12,9 @@ from pathlib import Path
 from .冻结形状 import 形状指纹
 
 
-def 转JSON文本(对象):
+def 转JSON文本(待处理对象):
     """JSON 文本（`ensure_ascii=False` · 两空格缩进 · 末尾换行）——合成仓夹具的写盘口径。"""
-    return _json.dumps(对象, ensure_ascii=False, indent=2) + "\n"
+    return _json.dumps(待处理对象, ensure_ascii=False, indent=2) + "\n"
 
 
 # 判据 ⑲ 的基线：**合成仓也要有一份** —— 判据读不到基线就 fail-closed 报红（「存量入基线」要求
@@ -256,7 +256,7 @@ def 干净合成仓() -> dict:
             "use v1_loader::载入声明;\n"
             # 准入判据 ⑤ 要的「装载声明根把申报的 通知函数 登记成端点」（同一函数里加一行，
             # 不新增顶层项 ⇒ 不撞合成仓行数基线的「入口有实现 处数」）。
-            "pub fn 装载(声明: &'static v1_loader::平台信息) { 载入声明(声明); 通知.通道.注册通知端点(声明.标识串, 函数); }\n"
+            "pub fn 装载(声明: &'static v1_loader::平台信息) { 载入声明(声明); 通知.通道实例.注册通知端点(声明.标识串, 端点函数); }\n"
             '#[unsafe(export_name = "平台_取接口描述")]\n'
             'pub extern "C" fn 取接口描述() -> *const u8 { core::ptr::null() }\n'
             '#[unsafe(export_name = "平台_调用")]\n'
@@ -371,10 +371,10 @@ def 干净合成仓() -> dict:
 
 
 def 造干净仓(临根: Path) -> None:
-    for 相对路径, 内容 in 干净合成仓().items():
+    for 相对路径, 件内容 in 干净合成仓().items():
         路径 = 临根 / 相对路径
         路径.parent.mkdir(parents=True, exist_ok=True)
-        路径.write_text(内容, encoding="utf-8")
+        路径.write_text(件内容, encoding="utf-8")
     # 登记成夹具仓：判据 ㉒ 的面是**索引**，而夹具仓没有索引（索引是整仓产出的）
     # ⇒ 只有这样登记过的仓，`读文件.索引路径` 才会给它现场造一份合成索引（#225 的硬约束）。
     # 真仓没索引 ⇒ 判据报**未判**（诚实读数），不许造合成索引顶替 —— 那会把真仓的面换掉。

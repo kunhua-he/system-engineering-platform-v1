@@ -67,8 +67,8 @@ def 自检_禁译名扫描() -> list:
     ))
 
     # ── ④ 排除面：`构建环境/` 与 `只读参考/` 里的巧合字节不许被算进来（否则是假红）──
-    with tempfile.TemporaryDirectory(prefix="禁译名排除面-") as 临时:
-        临时仓根 = Path(临时)
+    with tempfile.TemporaryDirectory(prefix="禁译名排除面-") as 临时目录:
+        临时仓根 = Path(临时目录)
         for 目录名 in ("构建环境", "只读参考", "运行内核"):
             (临时仓根 / 目录名).mkdir()
         (临时仓根 / "构建环境" / "缓存.bin").write_text("巧合字节 " + 禁译名词 + "\n", encoding="utf-8")

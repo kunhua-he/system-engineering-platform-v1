@@ -21,20 +21,20 @@ pub fn 编码容器(容器: &容器) -> Vec<u8> {
     let mut 输出缓冲 = Vec::new();
     输出缓冲.extend_from_slice(&(容器.段表.len() as u32).to_le_bytes());
     for 容器段 in &容器.段表 {
-        输出缓冲.extend_from_slice(&容器段.头.校验和.to_le_bytes());
-        输出缓冲.push(容器段.头.段类型);
-        输出缓冲.extend_from_slice(&容器段.头.名称区);
-        输出缓冲.extend_from_slice(&(容器段.头.段名.len() as u32).to_le_bytes());
-        输出缓冲.extend_from_slice(&容器段.头.段名);
-        输出缓冲.extend_from_slice(&(容器段.数据.len() as u64).to_le_bytes());
-        输出缓冲.extend_from_slice(&容器段.数据);
+        输出缓冲.extend_from_slice(&容器段.段头字段.校验和.to_le_bytes());
+        输出缓冲.push(容器段.段头字段.段类型);
+        输出缓冲.extend_from_slice(&容器段.段头字段.名称区);
+        输出缓冲.extend_from_slice(&(容器段.段头字段.段名.len() as u32).to_le_bytes());
+        输出缓冲.extend_from_slice(&容器段.段头字段.段名);
+        输出缓冲.extend_from_slice(&(容器段.数据字节.len() as u64).to_le_bytes());
+        输出缓冲.extend_from_slice(&容器段.数据字节);
     }
     输出缓冲
 }
 
 /// 字节集 → 结构。`None` = 编码非法（长度字段与实到字节数不符，或尾部有多余字节）。
 pub fn 解码容器(字节: &[u8]) -> Option<容器> {
-    let mut 读游标 = 顺序读器 { 字节, 位: 0 };
+    let mut 读游标 = 顺序读器 { 字节, 游标位: 0 };
     let 段数 = 读游标.读四字节()?;
     let mut 段表 = Vec::new();
     for _ in 0..段数 {
@@ -45,14 +45,14 @@ pub fn 解码容器(字节: &[u8]) -> Option<容器> {
         let 名长 = 读游标.读四字节()? as usize;
         let 段名 = 读游标.取字节(名长)?.to_vec();
         let 数长 = 读游标.读八字节()? as usize;
-        let 数据 = 读游标.取字节(数长)?.to_vec();
+        let 数据字节 = 读游标.取字节(数长)?.to_vec();
         段表.push(容器段 {
-            头: 段头 { 校验和, 段类型, 名称区, 段名 },
-            数据,
+            段头字段: 段头 { 校验和, 段类型, 名称区, 段名 },
+            数据字节,
         });
     }
     // 尾部有多余字节 ⇒ 非法（不许"尽力而为"地忽略）。
-    if 读游标.位 != 字节.len() {
+    if 读游标.游标位 != 字节.len() {
         return None;
     }
     Some(容器 { 段表 })

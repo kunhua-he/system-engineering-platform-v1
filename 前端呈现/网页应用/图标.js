@@ -17,7 +17,7 @@ const 图形命名空间 = "http" + "://www.w3.org/2000/svg";
  * 全部画在 16×16 的框里，描边宽 1，跟文字同色。
  */
 export const 图形表 = {
-  新建: { 路径: "M3 1h7l3 3v11H3zM10 1v3h3" },
+  新建图: { 路径: "M3 1h7l3 3v11H3zM10 1v3h3" },
   打开: { 路径: "M1 13V4h5l2 2h7v7zM1 13h14" },
   保存: { 路径: "M2 2h9l3 3v9H2zM5 2v5h6V2M4 9h8v5H4z" },
   剪切: { 路径: "M4 1l8 11M12 1L4 12M4 14a2 2 0 100-4 2 2 0 000 4zM12 14a2 2 0 100-4 2 2 0 000 4z" },
@@ -33,15 +33,15 @@ export const 图形表 = {
   视图: { 路径: "M1 3h14v10H1zM1 6h14M3 4.5h1M5 4.5h1" },
   组件: { 路径: "M1 1h6v6H1zM9 1h6v6H9zM1 9h6v6H1zM9 9h6v6H9z" },
   能力: { 路径: "M8 1l2 4.2 4.5.6-3.3 3.1.8 4.5L8 11.2 4 13.4l.8-4.5L1.5 5.8 6 5.2z" },
-  段: { 路径: "M1 4h14M1 8h10M1 12h14" },
-  模块: { 路径: "M1 5l7-4 7 4v6l-7 4-7-4z" },
+  段图标: { 路径: "M1 4h14M1 8h10M1 12h14" },
+  模块图标: { 路径: "M1 5l7-4 7 4v6l-7 4-7-4z" },
   技能: { 路径: "M2 8l4 4 8-8" },
   窗口: { 路径: "M1 3h14v10H1zM1 6h14M3 4.5h1M5 4.5h1" },
   按钮: { 路径: "M1 5h14v6H1zM3 8h10" },
   编辑框: { 路径: "M1 5h14v6H1zM3 7v2" },
   标签: { 路径: "M2 4h12M2 8h8M2 12h12" },
   表格: { 路径: "M1 2h14v12H1zM1 6h14M1 10h14M6 2v12M11 2v12" },
-  列表: { 路径: "M1 2h14v12H1zM1 5h14M1 8h14M1 11h14" },
+  列表图标: { 路径: "M1 2h14v12H1zM1 5h14M1 8h14M1 11h14" },
   时钟: { 路径: "M8 1a7 7 0 100 14A7 7 0 008 1zM8 4v4l3 2" },
   问号: { 路径: "M8 1a7 7 0 100 14A7 7 0 008 1zM6 6a2 2 0 113 2v2M8 12.5v1" },
   剪刀: { 路径: "M4 1l8 11M12 1L4 12M4 14a2 2 0 100-4 2 2 0 000 4zM12 14a2 2 0 100-4 2 2 0 000 4z" },
@@ -67,9 +67,9 @@ export const 图形表 = {
 /** 建一个 SVG 节点。`名称` 不在表里就给一个空框（宁可空着，也不编一个形状出来）。 */
 export function 画图标(名称) {
   const 图形项 = 图形表[名称] || { 路径: "M1 1h14v14H1z" };
-  const 元素 = document.createElementNS(图形命名空间, "svg");
-  元素.setAttribute("viewBox", "0 0 16 16");
-  元素.setAttribute("aria-hidden", "true");
+  const 界面元素 = document.createElementNS(图形命名空间, "svg");
+  界面元素.setAttribute("viewBox", "0 0 16 16");
+  界面元素.setAttribute("aria-hidden", "true");
   const 路径 = document.createElementNS(图形命名空间, "path");
   路径.setAttribute("d", 图形项.路径);
   路径.setAttribute("stroke", "currentColor");
@@ -77,6 +77,6 @@ export function 画图标(名称) {
   路径.setAttribute("stroke-linecap", "round");
   路径.setAttribute("stroke-linejoin", "round");
   路径.setAttribute("fill", 图形项.是否填充 ? "currentColor" : "none");
-  元素.append(路径);
-  return 元素;
+  界面元素.append(路径);
+  return 界面元素;
 }

@@ -21,7 +21,7 @@ from __future__ import annotations
 
 import re
 
-from .小工具 import 判不了, 是整数, 违规
+from .验证小工具 import 判不了, 是整数, 违规
 from .常量 import Rust后缀, 对外边界符号, 常量表路径, 扩展根三类, 接缝符号, 检查名, 生成物路由件相对路径, 是生成物, 生成物目录, 生成物后缀, 边界业务判断模式, 边界状态模式, 边界目录前缀
 from .测试件 import 并行取生产区文本, 收集导出
 
@@ -33,14 +33,14 @@ def 检查12_边界纪律(上层读数: dict) -> list:
     （每个扩展各一个）与边界自身的纪律（0 业务判断 · 0 状态 · 无第二个导出面）。
     """
     输出缓冲 = []
-    文件 = 上层读数["文件"]
+    全仓件表 = 上层读数["文件"]
     # 代码后缀 用模块级那一份（一个地方定义）——原来这里是第二份，实测差点漂移。
     # Rust 类判据只收 `.rs`：⑫ 的子判据全是 Rust 词法
     # （`export_name` 属性 · `if 号 ==` · 模块级 `static`），拿它扫 `.py`/`.ts` 是跨语言借词法。
 
     扫描件源 = [
         (键名, 文件项["文本"])
-        for 键名, 文件项 in 文件.items()
+        for 键名, 文件项 in 全仓件表.items()
         if 键名.endswith(Rust后缀)
         and 文件项["文本"] is not None
         and not 键名.startswith(("构建装配/", "开发工具/"))
@@ -49,7 +49,7 @@ def 检查12_边界纪律(上层读数: dict) -> list:
 
     # ── 2b 每个扩展恰好 1 个接缝导出（GetPlatformInfo）──
     扩展目录表 = {}
-    for 键名 in 文件:
+    for 键名 in 全仓件表:
         if not 键名.endswith("Cargo.toml"):
             continue
         号段 = 键名.split("/")
@@ -67,8 +67,8 @@ def 检查12_边界纪律(上层读数: dict) -> list:
         )
         )
     保串件 = 并行取生产区文本(扫描件源, 上层读数["测试文件集"], 保串=True)
-    for 目录 in sorted(扩展目录表):
-        本目录件 = {件键: 待处理值 for 件键, 待处理值 in 保串件.items() if 件键.startswith(目录 + "/")}
+    for 扩展根目录 in sorted(扩展目录表):
+        本目录件 = {件键: 待处理值 for 件键, 待处理值 in 保串件.items() if 件键.startswith(扩展根目录 + "/")}
         导出表 = 收集导出(本目录件)
         名表 = sorted(导出表)
         if 名表 != [接缝符号]:
@@ -81,7 +81,7 @@ def 检查12_边界纪律(上层读数: dict) -> list:
             输出缓冲.append(
                 违规(
                     检查名[11],
-                    f"{目录}/:导出符号"
+                    f"{扩展根目录}/:导出符号"
                     + (f"（现有 {名表}：{' · '.join(命中处表) or '位置未取到'}）" if 名表 else ""),
                     f"这个扩展导出 {len(名表)} 个符号（判据要求恰好 1 个：`{接缝符号}`）："
                     f"{名表 or '无'}——{情形}",
@@ -107,12 +107,12 @@ def 检查12_边界纪律(上层读数: dict) -> list:
         )
     else:
         业务处 = []
-        for 键名, 文本 in 边界件.items():
-            for 匹配结果 in 边界业务判断模式.finditer(文本):
-                行起 = 文本.rfind("\n", 0, 匹配结果.start()) + 1
+        for 键名, 源文本 in 边界件.items():
+            for 匹配结果 in 边界业务判断模式.finditer(源文本):
+                行起 = 源文本.rfind("\n", 0, 匹配结果.start()) + 1
                 业务处.append(
-                    f"{键名}:{文本[: 匹配结果.start()].count(chr(10)) + 1}"
-                    f"（{文本[行起 : 文本.find(chr(10), 匹配结果.start())].strip()[:60]}）"
+                    f"{键名}:{源文本[: 匹配结果.start()].count(chr(10)) + 1}"
+                    f"（{源文本[行起 : 源文本.find(chr(10), 匹配结果.start())].strip()[:60]}）"
                 )
         if 业务处:
             输出缓冲.append(
@@ -129,12 +129,12 @@ def 检查12_边界纪律(上层读数: dict) -> list:
 
         # ── 4 边界里 0 处状态 ──
         状态处 = []
-        for 键名, 文本 in 边界件.items():
-            for 匹配结果 in 边界状态模式.finditer(文本):
-                行起 = 文本.rfind("\n", 0, 匹配结果.start()) + 1
+        for 键名, 源文本 in 边界件.items():
+            for 匹配结果 in 边界状态模式.finditer(源文本):
+                行起 = 源文本.rfind("\n", 0, 匹配结果.start()) + 1
                 状态处.append(
-                    f"{键名}:{文本[: 匹配结果.start()].count(chr(10)) + 1}"
-                    f"（{文本[行起 : 文本.find(chr(10), 匹配结果.start())].strip()[:60]}）"
+                    f"{键名}:{源文本[: 匹配结果.start()].count(chr(10)) + 1}"
+                    f"（{源文本[行起 : 源文本.find(chr(10), 匹配结果.start())].strip()[:60]}）"
                 )
         if 状态处:
             输出缓冲.append(

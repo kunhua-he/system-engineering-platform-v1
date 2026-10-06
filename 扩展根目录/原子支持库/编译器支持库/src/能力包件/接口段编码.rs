@@ -43,8 +43,8 @@ pub fn 编码(说明: &接口说明) -> Vec<u8> {
     写段文本(&mut 输出缓冲, &说明.名称);
     写段文本(&mut 输出缓冲, &说明.说明);
     输出缓冲.extend_from_slice(&(说明.参数表.len() as u32).to_le_bytes());
-    for 参数 in &说明.参数表 {
-        写参数项(&mut 输出缓冲, 参数);
+    for 入参 in &说明.参数表 {
+        写参数项(&mut 输出缓冲, 入参);
     }
     输出缓冲.extend_from_slice(&说明.返回类型.to_le_bytes());
     输出缓冲.extend_from_slice(&(说明.可抛错误码.len() as u32).to_le_bytes());
@@ -59,10 +59,10 @@ pub fn 编码(说明: &接口说明) -> Vec<u8> {
 /// **不许尽力而为**：非空字节集必须**正好**解完，剩余一字节即 `None`（同
 /// [`注册表::解码`](crate::语义::注册表::解码) 的口径）。
 pub fn 解码(字节: &[u8]) -> Option<接口说明> {
-    let mut 读游标 = 顺序读器 { 字节, 位: 0 };
+    let mut 读游标 = 顺序读器 { 字节, 游标位: 0 };
     let 编号 = 读游标.读四字节()?;
-    let 名称 = 读游标.文本()?;
-    let 说明文本 = 读游标.文本()?;
+    let 名称 = 读游标.源文本()?;
+    let 说明文本 = 读游标.源文本()?;
     let 参数个数 = 读游标.读四字节()? as usize;
     // 每项至少 4 字节名长 + 4 类型标签 + 2 状态位 + 24 槽 = 34 字节。
     if 参数个数 > 读游标.取剩余长度() / 34 {
@@ -82,26 +82,26 @@ pub fn 解码(字节: &[u8]) -> Option<接口说明> {
     for _ in 0..错误个数 {
         可抛错误码.push(读错误项(&mut 读游标)?);
     }
-    if 读游标.位 != 字节.len() {
+    if 读游标.游标位 != 字节.len() {
         return None;
     }
     Some(接口说明 { 编号, 名称, 说明: 说明文本, 参数表, 返回类型, 可抛错误码 })
 }
 
-fn 写段文本(输出缓冲: &mut Vec<u8>, 文本: &str) {
-    输出缓冲.extend_from_slice(&(文本.len() as u32).to_le_bytes());
-    输出缓冲.extend_from_slice(文本.as_bytes());
+fn 写段文本(输出缓冲: &mut Vec<u8>, 源文本: &str) {
+    输出缓冲.extend_from_slice(&(源文本.len() as u32).to_le_bytes());
+    输出缓冲.extend_from_slice(源文本.as_bytes());
 }
 
-fn 写参数项(输出缓冲: &mut Vec<u8>, 参数: &接口参数项) {
-    写段文本(输出缓冲, &参数.名称);
-    输出缓冲.extend_from_slice(&参数.类型标签.to_le_bytes());
-    输出缓冲.extend_from_slice(&参数.状态位.to_le_bytes());
-    写槽(输出缓冲, &参数.默认值);
+fn 写参数项(输出缓冲: &mut Vec<u8>, 入参: &接口参数项) {
+    写段文本(输出缓冲, &入参.名称);
+    输出缓冲.extend_from_slice(&入参.类型标签.to_le_bytes());
+    输出缓冲.extend_from_slice(&入参.状态位.to_le_bytes());
+    写槽(输出缓冲, &入参.默认值);
 }
 
 fn 写错误项(输出缓冲: &mut Vec<u8>, 错误: &接口错误项) {
-    输出缓冲.extend_from_slice(&错误.码.to_le_bytes());
+    输出缓冲.extend_from_slice(&错误.码值.to_le_bytes());
     输出缓冲.extend_from_slice(&错误.段位.to_le_bytes());
     写段文本(输出缓冲, &错误.名称);
     输出缓冲.push(bool::from(错误.可重试) as u8);
@@ -118,12 +118,12 @@ fn 写槽(输出缓冲: &mut Vec<u8>, 数据槽: &v1_contract::数据槽) {
     输出缓冲.extend_from_slice(&数据槽.类型标签.取号值().to_le_bytes());
     输出缓冲.extend_from_slice(&数据槽.槽标志位.to_le_bytes());
     输出缓冲.extend_from_slice(&数据槽.保留.to_le_bytes());
-    输出缓冲.extend_from_slice(&数据槽.长度.to_le_bytes());
+    输出缓冲.extend_from_slice(&数据槽.槽字节长度.to_le_bytes());
     输出缓冲.extend_from_slice(&数据槽.槽值.to_le_bytes());
 }
 
 fn 读参数项(读游标: &mut 顺序读器) -> Option<接口参数项> {
-    let 名称 = 读游标.文本()?;
+    let 名称 = 读游标.源文本()?;
     let 类型标签 = 读游标.读四字节()?;
     let 状态位 = 读游标.读双字节()?;
     let 默认值 = 读游标.读数据槽()?;
@@ -132,9 +132,9 @@ fn 读参数项(读游标: &mut 顺序读器) -> Option<接口参数项> {
 
 fn 读错误项(读游标: &mut 顺序读器) -> Option<接口错误项> {
     Some(接口错误项 {
-        码: 读游标.读四字节()?,
+        码值: 读游标.读四字节()?,
         段位: 读游标.读四字节()?,
-        名称: 读游标.文本()?,
+        名称: 读游标.源文本()?,
         可重试: 读游标.逻辑型值()?,
         可自愈: 读游标.逻辑型值()?,
         需人工: 读游标.逻辑型值()?,

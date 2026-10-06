@@ -8,24 +8,24 @@ import sys
 from . import 常量
 
 
-def 打印验证结果(结果: dict, 输出流=None) -> None:
+def 打印验证结果(判定汇总: dict, 输出流=None) -> None:
     输出流 = 输出流 or sys.stdout
-    失败项 = [明细条 for 明细条 in 结果["失败"] if isinstance(明细条, str)]
+    失败项 = [明细条 for 明细条 in 判定汇总["失败"] if isinstance(明细条, str)]
     # 未判按**判据**计（整条判据空集 + 判据内部的子判据空集都算这条判据有未判读数）。
     # 所以「通过 + 失败 + 未判」可能 > 判据总数：同一条判据可以既有真红、又有空集的子判据
     # （实测：⑪ 的判据 2a 真红、判据 6 的对象是空集）。
     未判项 = sorted(
-        {明细条 for 明细条 in 结果["未判"] if isinstance(明细条, str)}
-        | {明细条["检查"] for 明细条 in 结果["未判"] if isinstance(明细条, dict)}
+        {明细条 for 明细条 in 判定汇总["未判"] if isinstance(明细条, str)}
+        | {明细条["检查"] for 明细条 in 判定汇总["未判"] if isinstance(明细条, dict)}
     )
-    失败条 = [明细条 for 明细条 in 结果["失败"] if isinstance(明细条, dict)]
-    未判条 = [明细条 for 明细条 in 结果["未判"] if isinstance(明细条, dict)]
-    整条空集 = {明细条 for 明细条 in 结果["未判"] if isinstance(明细条, str)}
+    失败条 = [明细条 for 明细条 in 判定汇总["失败"] if isinstance(明细条, dict)]
+    未判条 = [明细条 for 明细条 in 判定汇总["未判"] if isinstance(明细条, dict)]
+    整条空集 = {明细条 for 明细条 in 判定汇总["未判"] if isinstance(明细条, str)}
     子空集 = [明细条 for 明细条 in 未判条 if 明细条["检查"] not in 整条空集]
     print(
-        f"通过 {len(结果['通过'])} 项 · 失败 {len(失败项)} 项 · "
-        f"未判 {len(未判项)} 项 · 疑似瞬时 {len(结果['疑似瞬时'])} 项 · "
-        f"耗时 {结果['耗时毫秒']} ms",
+        f"通过 {len(判定汇总['通过'])} 项 · 失败 {len(失败项)} 项 · "
+        f"未判 {len(未判项)} 项 · 疑似瞬时 {len(判定汇总['疑似瞬时'])} 项 · "
+        f"耗时 {判定汇总['耗时毫秒']} ms",
         file=输出流,
     )
     if 失败条:
@@ -50,10 +50,10 @@ def 打印验证结果(结果: dict, 输出流=None) -> None:
                 f"为什么不能自愈：{未判项['不能自愈']} ｜ 分类：{未判项.get('分类')}",
                 file=输出流,
             )
-    if 结果["疑似瞬时"]:
+    if 判定汇总["疑似瞬时"]:
         print("", file=输出流)
         print("疑似瞬时（两次运行结果不一致，不当阻断）：", file=输出流)
-        for 瞬时项 in 结果["疑似瞬时"]:
+        for 瞬时项 in 判定汇总["疑似瞬时"]:
             print(
                 f"- {瞬时项['检查']} ｜ {瞬时项['位置']} ｜ 缺什么：{瞬时项['缺什么']} ｜ 分类：疑似瞬时",
                 file=输出流,

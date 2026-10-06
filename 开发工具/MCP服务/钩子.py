@@ -34,11 +34,11 @@ def _读配置() -> dict:
     if not 配置文件路径.is_file():
         return {}
     try:
-        数据 = json.loads(配置文件路径.read_text(encoding="utf-8"))
+        配置表 = json.loads(配置文件路径.read_text(encoding="utf-8"))
     except ValueError as 解不动的原因:
         raise SystemExit("读不动 %s（不是合法 JSON）：%s\n本件不替你改它 —— 先修好它再跑"
                          % (配置文件路径, 解不动的原因))
-    return 数据 if isinstance(数据, dict) else {}
+    return 配置表 if isinstance(配置表, dict) else {}
 
 
 def _是自家钩子条(钩子块) -> bool:
@@ -46,7 +46,7 @@ def _是自家钩子条(钩子块) -> bool:
               for 钩子条目 in (钩子块.get("hooks") or []) if isinstance(钩子条目, dict))
 
 
-def 保存(路径: Path, 文本: str) -> None:
+def 保存(路径: Path, 源文本: str) -> None:
     """临时件 + `os.replace`（原子改名）—— ★ 这是**用户级配置**，写坏 = ZCode 起不来。
 
     `write_text` 先截断再写：进程被杀 / 磁盘满 / 并发写 ⇒ 半截 JSON。这里改成同目录临时件写完
@@ -64,7 +64,7 @@ def 保存(路径: Path, 文本: str) -> None:
                                 prefix="." + 路径.name + ".", suffix=".tmp")
     try:
         with os.fdopen(句柄, "w", encoding="utf-8") as 文件句柄:
-            文件句柄.write(文本)
+            文件句柄.write(源文本)
             文件句柄.flush()
             os.fsync(文件句柄.fileno())
         if 原模式 is not None:
@@ -79,9 +79,9 @@ def 保存(路径: Path, 文本: str) -> None:
 
 
 def 装钩子() -> int:
-    数据 = _读配置()
+    配置表 = _读配置()
     已存在 = 配置文件路径.is_file()
-    钩子块 = 数据.get("hooks")
+    钩子块 = 配置表.get("hooks")
     if not isinstance(钩子块, dict):
         钩子块 = {}
     暂存 = dict(钩子块) if 钩子块 else None       # ★ 装前快照（改之前取，还原 enabled 用）
@@ -98,7 +98,7 @@ def 装钩子() -> int:
                       "hooks": [{"type": "command", "command": 钩子命令, "timeout": 5}]}]
     事件表["PreToolUse"] = 前事件
     钩子块["events"] = 事件表
-    数据["hooks"] = 钩子块
+    配置表["hooks"] = 钩子块
     # 写前留备份 + 记装前样子（只在第一次装时写）：这份状态件同时是「卸钩子时按什么还原」的依据。
     配置文件路径.parent.mkdir(parents=True, exist_ok=True)
     备选路径 = 配置文件路径.with_name(配置文件路径.name + ".v1装前状态")
@@ -106,7 +106,7 @@ def 装钩子() -> int:
         原文 = 配置文件路径.read_text(encoding="utf-8") if 已存在 else ""
         备选路径.write_text(json.dumps({"有配置": 已存在, "原文": 原文, "钩子": 暂存},
                                    ensure_ascii=False), encoding="utf-8")
-    保存(配置文件路径, json.dumps(数据, ensure_ascii=False, indent=2) + "\n")
+    保存(配置文件路径, json.dumps(配置表, ensure_ascii=False, indent=2) + "\n")
     print("装钩子：已写进 %s" % 配置文件路径)
     print("        拦：%s（其余工具一律放行，含 Bash / Read / Grep）" % 拦的工具)
     print("        ★ 钩子写进**用户级配置** ⇒ **拦本机所有项目**的 Edit/Write，不止本仓（有意如此）。")
@@ -117,8 +117,8 @@ def 装钩子() -> int:
 
 
 def 卸钩子() -> int:
-    数据 = _读配置()
-    钩子块 = 数据.get("hooks")
+    配置表 = _读配置()
+    钩子块 = 配置表.get("hooks")
     if not isinstance(钩子块, dict) or not isinstance(钩子块.get("events"), dict):
         print("装钩子：配置里没有 hooks 段 ⇒ 本来就没装")
         return 0
@@ -154,10 +154,10 @@ def 卸钩子() -> int:
         else:
             钩子块.pop("enabled", None)
     if 钩子块:
-        数据["hooks"] = 钩子块
+        配置表["hooks"] = 钩子块
     else:
-        数据.pop("hooks", None)                   # 全空 ⇒ 不留空壳
-    保存(配置文件路径, json.dumps(数据, ensure_ascii=False, indent=2) + "\n")
+        配置表.pop("hooks", None)                   # 全空 ⇒ 不留空壳
+    保存(配置文件路径, json.dumps(配置表, ensure_ascii=False, indent=2) + "\n")
     # 收尾：装前根本没配置 ⇒ 把建出来的那份也删掉，回到「没有」；撤掉状态件（下次装重新快照）。
     if 已存在:
         if not 暂存.get("有配置"):

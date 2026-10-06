@@ -29,7 +29,7 @@ pub struct 属性信息 {
 pub struct 元素信息 {
     pub 名称: *const u8,
     pub 说明: *const u8,
-    pub 数值: i64,
+    pub 数值项: i64,
 }
 
 /// 数据类型信息。

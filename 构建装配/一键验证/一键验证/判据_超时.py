@@ -37,7 +37,7 @@ from __future__ import annotations
 
 import re
 
-from .小工具 import 判不了, 违规
+from .验证小工具 import 判不了, 违规
 from .常量 import 代码后缀, 检查名
 from .测试件 import 并行取生产区文本
 
@@ -77,8 +77,8 @@ def _去行注释(源码行: str, 注释符: str) -> str:
     「那时 停等秒 = 5.0 · 健康超时秒 = 15.0」（那是记录改之前的历史读数），
     被当成了真的超时设置 ⇒ ㊲ 假红。
     """
-    位置 = 源码行.find(注释符)
-    return 源码行 if 位置 < 0 else 源码行[:位置]
+    落点 = 源码行.find(注释符)
+    return 源码行 if 落点 < 0 else 源码行[:落点]
 
 
 def 扫超时(件表: dict) -> list:
@@ -89,26 +89,26 @@ def 扫超时(件表: dict) -> list:
     """
     输出缓冲 = []
     for 键名 in sorted(件表):
-        文本 = 件表[键名]
-        if not 文本:
+        源文本 = 件表[键名]
+        if not 源文本:
             continue
         注释符 = 行注释符.get(_后缀(键名))
-        for 号值, 原行 in enumerate(文本.split("\n"), 1):
+        for 号值, 原行 in enumerate(源文本.split("\n"), 1):
             源码行 = _去行注释(原行, 注释符) if 注释符 else 原行
             for 名称, 待处理值 in _超时赋值式.findall(源码行):
-                个数 = float(待处理值.replace("_", ""))
+                毫秒数 = float(待处理值.replace("_", ""))
                 if "毫秒" in 名称:
-                    if 个数 > 毫秒上限:
+                    if 毫秒数 > 毫秒上限:
                         输出缓冲.append((键名, 号值, "`%s = %s`（毫秒）> 上限 %d 毫秒" % (名称, 待处理值, 毫秒上限), False))
-                elif 个数 > 秒上限:
+                elif 毫秒数 > 秒上限:
                     输出缓冲.append((键名, 号值, "`%s = %s`（秒）> 上限 %g 秒" % (名称, 待处理值, 秒上限), False))
             for 待处理值 in _超时参.findall(源码行):
-                个数 = float(待处理值.replace("_", ""))
-                if 秒上限 < 个数 <= 100:
+                毫秒数 = float(待处理值.replace("_", ""))
+                if 秒上限 < 毫秒数 <= 100:
                     输出缓冲.append((键名, 号值, "`timeout=%s`（按秒）> 上限 %g 秒" % (待处理值, 秒上限), False))
-                elif 个数 >= 1000 and 个数 > 毫秒上限:
+                elif 毫秒数 >= 1000 and 毫秒数 > 毫秒上限:
                     输出缓冲.append((键名, 号值, "`timeout=%s`（按毫秒）> 上限 %d 毫秒" % (待处理值, 毫秒上限), False))
-                elif 100 < 个数 < 1000:
+                elif 100 < 毫秒数 < 1000:
                     输出缓冲.append((键名, 号值, "`timeout=%s`：**单位分不出**（101–999）" % 待处理值, True))
             for 待处理值 in _秒实参模式.findall(源码行):
                 if float(待处理值.replace("_", "")) > 秒上限:
@@ -176,11 +176,11 @@ def 检查37_超时设置上限五秒(上层读数: dict) -> list:
         "照 ㉑「单位进名字」）或直接用别的两形之一 ⇒ 只能由该设置的作者改"
     )
     for 路径, 号值, 说明, 是未判 in 扫超时(件表):
-        位置 = f"{路径}:{号值}"
+        落点 = f"{路径}:{号值}"
         if 是未判:
-            判不了(检查名[36], 位置, 说明, 口径_未判)
+            判不了(检查名[36], 落点, 说明, 口径_未判)
         else:
-            输出缓冲.append(违规(检查名[36], 位置, 说明, 口径))
+            输出缓冲.append(违规(检查名[36], 落点, 说明, 口径))
     return 输出缓冲
 
 
