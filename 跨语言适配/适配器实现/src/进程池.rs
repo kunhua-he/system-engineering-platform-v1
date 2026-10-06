@@ -24,7 +24,7 @@ use std::os::fd::OwnedFd;
 use std::os::unix::net::UnixStream;
 use std::os::unix::process::CommandExt;
 use std::process::{Child, Command, Stdio};
-use std::time::{Duration, Instant};
+use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 /// 单次装载初始化重放的帧预算（毫秒）。**≤ 五秒硬顶**。
 const 重放预算毫秒: u64 = 200;
@@ -100,6 +100,8 @@ struct 工作进程 {
     子进程: Child,
     通道: UnixStream,
     进程组号: i32,
+    /// 本实例的**代次**：每次（重）拉起取一个新值 ⇒ 旧句柄永不误命中新任务。
+    实例代次: u64,
     运行中: bool,
     连续崩溃次数: u32,
     下次允许拉起: Instant,
@@ -111,12 +113,14 @@ struct 工作进程 {
 pub struct 进程池 {
     配置: 进程池配置,
     域表: Vec<(执行域标识, 工作进程)>,
+    /// 上次分配的实例代次（同进程内也强制单调递增）。
+    上次代次: u64,
 }
 
 impl 进程池 {
     /// 建一个空池（一份部署配置）。
     pub fn 新建(配置: 进程池配置) -> Self {
-        Self { 配置, 域表: Vec::new() }
+        Self { 配置, 域表: Vec::new(), 上次代次: 0 }
     }
 
     /// 已建域数（验证面用）。
@@ -132,6 +136,30 @@ impl 进程池 {
     /// 这个域的装载初始化重放过没有。
     pub fn 已重放装载(&self, 标识: &执行域标识) -> bool {
         self.取域位置(标识).map_or(false, |位置| self.域表[位置].1.装载已重放)
+    }
+
+    /// 这个域的**当前实例代次**（没有域 ⇒ `None`）。句柄带上代次 ⇒ 旧代次永不误命中新任务。
+    pub fn 当前代次(&self, 标识: &执行域标识) -> Option<u64> {
+        self.取域位置(标识).map(|位置| self.域表[位置].1.实例代次)
+    }
+
+    /// 句柄代次与这个域的当前代次是否相符（不符 = 陈旧句柄，应结构化拒，不许静默当新任务）。
+    pub fn 代次相符(&self, 标识: &执行域标识, 代次: u64) -> bool {
+        self.当前代次(标识) == Some(代次)
+    }
+
+    /// 取一个**跨重启不复用**的实例代次：以墙钟纳秒为源，且强制比上次大（同进程内也单调）。
+    ///
+    /// 停机恢复后重建的池从新的墙钟起点再取 ⇒ 旧代次永不与新一代次相等
+    /// （旧句柄永不误命中新任务；W01「重放及引用归属」）。
+    fn 取单调代次(&mut self) -> u64 {
+        let 墙钟 = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .map(|时长| 时长.as_nanos() as u64)
+            .unwrap_or(0);
+        let 代次 = 墙钟.max(self.上次代次.saturating_add(1));
+        self.上次代次 = 代次;
+        代次
     }
 
     fn 取域位置(&self, 标识: &执行域标识) -> Option<usize> {
@@ -213,12 +241,14 @@ impl 进程池 {
         }
         let (子进程, 通道) = Self::生成进程(启动程序, 启动参数)?;
         let 进程组号 = i32::try_from(子进程.id()).map_err(|_| 进程池错误::拉起失败)?;
+        let 实例代次 = self.取单调代次();
         match self.取域位置(标识) {
             Some(位置) => {
                 let 工作 = &mut self.域表[位置].1;
                 工作.子进程 = 子进程;
                 工作.通道 = 通道;
                 工作.进程组号 = 进程组号;
+                工作.实例代次 = 实例代次;
                 工作.运行中 = true;
                 工作.装载已重放 = false;
             }
@@ -229,6 +259,7 @@ impl 进程池 {
                         子进程,
                         通道,
                         进程组号,
+                        实例代次,
                         运行中: true,
                         连续崩溃次数: 0,
                         下次允许拉起: Instant::now(),
@@ -272,10 +303,12 @@ impl 进程池 {
         }
         let (子进程, 通道) = Self::生成进程(启动程序, 启动参数)?;
         let 进程组号 = i32::try_from(子进程.id()).map_err(|_| 进程池错误::拉起失败)?;
+        let 实例代次 = self.取单调代次();
         let 工作 = &mut self.域表[位置].1;
         工作.子进程 = 子进程;
         工作.通道 = 通道;
         工作.进程组号 = 进程组号;
+        工作.实例代次 = 实例代次;
         工作.运行中 = true;
         let mut 判读 = Self::判读格子(工作, Instant::now());
         判读.已重拉 = true;
