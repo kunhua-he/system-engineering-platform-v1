@@ -108,10 +108,13 @@ def 登记核心词(名字: str, 分组: str, 说明: str) -> int:
 
 
 def 删名字(名字: str) -> int:
-    """把一行从 `命名登记`（连带 `命名出现`）删掉 ⇒ 退出码（0 成功 · 2 参数非法）。
+    """把一行从 `命名登记`（连带派生库 `命名出现`）删掉 ⇒ 退出码（0 成功 · 2 参数非法）。
 
     用途：一个名已从代码里改净、登记成了**陈旧行**（`落库` 只新增、不会删）⇒ 用本口清出。
     不删会一直计在 `待改名` 里。
+
+    ★ 2026-10-07：`命名出现` 已搬进**派生库**（非版本，见 `表定义.派生表`）⇒ 两处分开删：
+    规则库删 `命名登记`，派生库删 `命名出现`（派生库 / 表不在 ⇒ 出现行数记 0，不报错）。
     """
     名字 = (名字 or "").strip()
     if not 名字:
@@ -119,11 +122,23 @@ def 删名字(名字: str) -> int:
         return 2
     连接 = sqlite3.connect(表定义.库路径(仓根))
     try:
-        出现行数 = 连接.execute("delete from 命名出现 where 名字 = ?", (名字,)).rowcount
         登记行数 = 连接.execute("delete from 命名登记 where 名字 = ?", (名字,)).rowcount
         连接.commit()
     finally:
         连接.close()
+    出现行数 = 0
+    派生库件 = 表定义.派生库路径(仓根)
+    if 派生库件.is_file():
+        派生连接 = sqlite3.connect(str(派生库件))
+        try:
+            有表 = 派生连接.execute(
+                "select 1 from sqlite_master where type='table' and name='命名出现'").fetchone()
+            if 有表:
+                出现行数 = 派生连接.execute(
+                    "delete from 命名出现 where 名字 = ?", (名字,)).rowcount
+                派生连接.commit()
+        finally:
+            派生连接.close()
     print(f"命名登记：删 {名字}（登记 {登记行数} 行 · 命名出现 {出现行数} 行）")
     print("★ 库变了 ⇒ 收口前记得 `v1_task` 功能=6 记账"
           "（`源件` = `开发工具/信息核心/信息核心.db`），否则释放的越界检测会拒")
