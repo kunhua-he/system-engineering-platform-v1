@@ -17,12 +17,34 @@ pub(crate) const 头区上限: usize = 16 * 1024;
 /// 请求体的字节上限。**旁路策略**：不设上限就是让一次请求决定进程的内存。
 pub(crate) const 体上限: usize = 1 << 20;
 
-/// 一条已读完的 HTTP 请求。**只留形状**：方法 · 目标 · 体。
+/// 一条已读完的 HTTP 请求。**方法 · 目标 · 体 · 三个边界头**。
+///
+/// # 为什么留 `主机` / `来源站点` / `内容类型`（审计发现2 · P1）
+///
+/// 原先本结构只留方法 / 目标 / 体，**丢掉全部请求头**。后果是回环口收「外源形状」的副作用
+/// 请求照执行（审计实测：`Host=attacker.example` + `Origin=https://attacker.example` +
+/// `Content-Type: text/plain` 的写请求返回 200 并真落了件）—— 不做 CORS 不等于拒绝跨源请求，
+/// 浏览器允许访问回环服务时即构成 CSRF 面。这三个头是**边界判定**唯一要的输入（判定在
+/// `报文校验.rs`，本件只负责**留值**，不做任何解释）：
+///
+/// - `主机`（`Host`）—— HTTP/1.1 必带，非本机 ⇒ 拒；
+/// - `来源站点`（`Origin`）—— 跨源时浏览器会带，带且非本机 ⇒ 拒；
+/// - `内容类型`（`Content-Type`）—— 副作用端点只收 `application/json`。
+///
+/// 保留头**不是**加鉴权：`接口面形状.md` §一「第一次用不需要读文档就能调对」照旧成立
+/// （无 `Origin` 的命令行 / 脚本请求一律放行）—— 校验只挡「浏览器替别的站点发的」那一类。
+/// 值一律**原样留、不裁不改**：解释与判定只有一处（`报文校验.rs`），两处解释必然漂。
 #[derive(Debug, Clone)]
 pub struct 报文 {
     pub 请求方法: String,
     pub 请求目标: String,
     pub 报文体: String,
+    /// `Host` 头原值（缺省 = 空串）。
+    pub 主机: String,
+    /// `Origin` 头原值（缺省 = 空串 ⇒ 同源 / 命令行请求）。
+    pub 来源站点: String,
+    /// `Content-Type` 头原值（缺省 = 空串）。
+    pub 内容类型: String,
 }
 
 /// 读一条请求。错误是**一句可读说明**（⇒ 400）。
@@ -58,12 +80,22 @@ pub(crate) fn 读报文(输出流: &mut TcpStream) -> Result<报文, String> {
     let (请求方法, 请求目标) = (部件[0].to_owned(), 部件[1].to_owned());
 
     let mut 内容长度 = 0usize;
+    // 边界判定要的三个头（审计发现2）：**原样留值**，判定全在 `报文校验.rs`。
+    let mut 主机 = String::new();
+    let mut 来源站点 = String::new();
+    let mut 内容类型 = String::new();
     for 文本行 in 行迭代器 {
         let Some((名字, 值)) = 文本行.split_once(':') else {
             continue;
         };
         let 名称 = 名字.trim().to_ascii_lowercase();
         let 待处理值 = 值.trim();
+        match 名称.as_str() {
+            "host" => 主机 = 待处理值.to_owned(),
+            "origin" => 来源站点 = 待处理值.to_owned(),
+            "content-type" => 内容类型 = 待处理值.to_owned(),
+            _ => {}
+        }
         if 名称 == "content-length" {
             内容长度 = 待处理值
                 .parse::<usize>()
@@ -92,7 +124,7 @@ pub(crate) fn 读报文(输出流: &mut TcpStream) -> Result<报文, String> {
         体字节.extend_from_slice(&读缓冲[..读到]);
     }
     let 请求体 = String::from_utf8(体字节).map_err(|_| "请求体不是合法 UTF-8".to_owned())?;
-    Ok(报文 { 请求方法, 请求目标, 报文体: 请求体 })
+    Ok(报文 { 请求方法, 请求目标, 报文体: 请求体, 主机, 来源站点, 内容类型 })
 }
 
 /// 找 `\r\n\r\n` 的起始偏移（请求头与体的分界）。
