@@ -54,13 +54,14 @@ fn main() -> ExitCode {
         }
     }
 
-    if let Some(父目录) = 命令行参数.输出.parent() {
-        if !父目录.as_os_str().is_empty() {
-            if let Err(错误) = fs::create_dir_all(父目录) {
-                eprintln!("建不出输出目录 {}：{错误}", 父目录.display());
-                return ExitCode::FAILURE;
-            }
-        }
+    // 两个嵌套 `if` 合成一个（Clippy `collapsible_if`）：`if let … && !…` 是同一分支，
+    // 分开写只是多一层缩进（附② 零成本可修那类）。
+    if let Some(父目录) = 命令行参数.输出.parent()
+        && !父目录.as_os_str().is_empty()
+        && let Err(错误) = fs::create_dir_all(父目录)
+    {
+        eprintln!("建不出输出目录 {}：{错误}", 父目录.display());
+        return ExitCode::FAILURE;
     }
     match fs::write(&命令行参数.输出, &制品字节) {
         Ok(()) => {
