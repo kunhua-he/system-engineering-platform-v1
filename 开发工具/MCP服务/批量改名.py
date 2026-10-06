@@ -33,7 +33,7 @@ for 子目录 in (str(工具根 / "开发工具"), str(工具根 / "开发工具
         sys.path.insert(0, 子目录)
 
 from 代码地图 import 同步索引, 文件指纹   # noqa: E402
-import 命名校验                       # noqa: E402  —— 名册读不动的异常类型（只此一份）
+import 表定义                        # noqa: E402  —— 名册读不动的异常类型（只此一份，住 `表定义.库读不动`）
 import 一键验证.命名扫描 as 命名扫描      # noqa: E402  —— 撞名预检用
 from .修改 import 对账, _写文件, 读名册    # noqa: E402
 from .禁改面 import 禁改原因             # noqa: E402  —— 禁改面**只此一份**（本口与 `v1_edit` 同调）
@@ -117,7 +117,7 @@ def 派发(参数表: dict, 仓根) -> tuple:
         # 闸 ④ 新名登记（fail-closed）：名册读不动 ⇒ 拒，绝不当空名册放行。
         try:
             已登记, 例外 = 读名册(工作树)
-        except 命名校验.库读不动 as 读不动:
+        except 表定义.库读不动 as 读不动:
             return 5, ("**拒**（新名登记闸）：读不动规则库 ⇒ fail-closed：%s\n"
                      "修法：在这棵工作树里跑 `python3 开发工具/信息核心/信息核心.py 建库`" % 读不动)
         未登记 = sorted({新名 for 新名 in 名对表.values()
