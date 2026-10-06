@@ -90,6 +90,10 @@ mod 值归还;
 pub mod 装载件缓存;
 #[cfg(unix)] #[path = "进程监督.rs"] pub mod 进程监督;
 #[cfg(unix)] #[path = "进程帧.rs"] pub mod 进程帧;
+// 进程池：跨进程执行域的拉起 · 监督 · 崩溃重拉（每域一进程 · 不落 static）。
+#[cfg(unix)] #[path = "进程池.rs"] pub mod 进程池;
+// 线协议：在 Unix domain socket 上承载同一份 `边界协议.md` 的调用语义（复用帧编解码）。
+#[cfg(unix)] #[path = "线协议.rs"] pub mod 线协议;
 // 核心实现：适配器本体（装载 · 转发调用）与它对外交出的形状（结果与四份摘要）。
 #[path = "核心实现.rs"]
 mod 核心实现;
@@ -118,3 +122,5 @@ mod 写出测试;
 mod 生命周期协商测试;
 #[cfg(all(test, unix))] #[path = "进程监督测试.rs"] mod 进程监督测试;
 #[cfg(all(test, unix))] #[path = "进程帧测试.rs"] mod 进程帧测试;
+#[cfg(all(test, unix))] #[path = "进程池测试.rs"] mod 进程池测试;
+#[cfg(all(test, unix))] #[path = "线协议测试.rs"] mod 线协议测试;
