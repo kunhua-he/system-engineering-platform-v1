@@ -55,3 +55,21 @@ def 注入_层间边括号可见性(临根: Path) -> str:
         encoding="utf-8",
     )
     return "跨语言适配/适配器实现/src/lib.rs"
+
+
+def 注入_Python反向依赖(临根: Path) -> str:
+    """判据 ⑪-5b 的反向样本：Python 侧 `from 构建装配… import` 造成的**反向依赖** ⇒ 当场红。
+
+    B8 补面（判据 5 原先只认 Rust `use`）：`.py` 的跨层 import 此前不进边表 —— 实测
+    `扩展根` 4 件 `from 构建装配.门禁 import 自门禁` 一路活到 2026-10-07 没人判。
+    本件放**非豁免**位置（`样例支持库/src/`，不在 `常量.层序文件豁免` 里）：
+    `扩展根`（层序 2）依赖 `构建装配`（3）⇒ 目标序 > 源序 = 反向依赖。
+    """
+    路径 = 临根 / "扩展根目录" / "原子支持库" / "样例支持库" / "src" / "工具脚本.py"
+    路径.parent.mkdir(parents=True, exist_ok=True)
+    路径.write_text(
+        "# 反向样本：扩展根里的 Python 件反向 import 构建装配。\n"
+        "from 构建装配.门禁 import 自门禁\n",
+        encoding="utf-8",
+    )
+    return "扩展根目录/原子支持库/样例支持库/src/工具脚本.py"
