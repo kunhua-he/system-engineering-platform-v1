@@ -150,10 +150,12 @@ def _写文件(件路径: Path, 全文: str) -> str:
 
 
 def 读名册(工作树: Path) -> tuple:
-    """⇒ `(已登记合格名, 例外名)` —— 读**这棵工作树**的规则库；读不动 ⇒ 抛 `命名校验.库读不动`。
+    """⇒ `(已登记合格名, 例外名)` —— 读**这棵工作树**的规则库；读不动 ⇒ 抛 `表定义.库读不动`。
 
     只认 `命名登记` 里 `状态='合格'` 的行（`待改名` 的行是**待改的债**，不能拿来当新名）；
     外部强加的名住 `命名例外`，一并放行。**fail-closed**：库不在 / 读不动一律抛，绝不当空名册用。
+    ★ 2026-10-07：异常类型从已删的那件搬到 `表定义.py`（库路径与建表的主人），
+    本处改 `import 表定义` 后取它 —— 名字不变，调用方（`批量改名.py`）同步改。
     """
     import sqlite3
     import sys as _sys
@@ -162,18 +164,17 @@ def 读名册(工作树: Path) -> tuple:
     for 子目录 in (str(工具根 / "开发工具"), str(工具根 / "开发工具" / "信息核心")):
         if 子目录 not in _sys.path:
             _sys.path.insert(0, 子目录)
-    import 命名校验
     import 表定义
 
     库件 = 表定义.库路径(工作树)
     if not Path(库件).is_file():
-        raise 命名校验.库读不动("规则库不在：%s" % 库件)
+        raise 表定义.库读不动("规则库不在：%s" % 库件)
     连接 = sqlite3.connect("file:%s?mode=ro" % 库件, uri=True)
     try:
         已登记 = {文本行[0] for 文本行 in 连接.execute("select 名字 from 命名登记 where 状态='合格'")}
         例外 = {文本行[0] for 文本行 in 连接.execute("select 名字 from 命名例外")}
     except sqlite3.Error as 错误:
-        raise 命名校验.库读不动("规则库读不动：%s" % 错误) from 错误
+        raise 表定义.库读不动("规则库读不动：%s" % 错误) from 错误
     finally:
         连接.close()
     return 已登记, 例外
@@ -193,7 +194,7 @@ def _未登记绑定名(工作树: Path, 项表: list) -> tuple:
                  str(工具根 / "构建装配" / "一键验证")):
         if 子目录 not in _sys.path:
             _sys.path.insert(0, 子目录)
-    import 命名校验
+    import 表定义
     from 代码地图 import 形参面, 查名
     import 一键验证.命名扫描 as 命名扫描
 
@@ -205,7 +206,7 @@ def _未登记绑定名(工作树: Path, 项表: list) -> tuple:
 
     try:
         已登记, 例外 = 读名册(工作树)
-    except 命名校验.库读不动 as 错误:
+    except 表定义.库读不动 as 错误:
         return [], str(错误)
     新引入 = set()
     for 路径, 功能号, 旧内容, 新内容 in 项表:
