@@ -145,7 +145,7 @@ impl 进程池 {
         Duration::from_millis(毫秒)
     }
 
-    /// 拉起一个工作进程：UnixStream 一对，子端接它自己的 stdin/stdout，宿主端留在池里。
+    /// 拉起一个工作进程：UnixStream 一对，子端接它自身的 stdin/stdout，宿主端留在池里。
     fn 生成进程(启动程序: &str, 启动参数: &[String]) -> Result<(Child, UnixStream), 进程池错误> {
         let (主机端, 子进程端) = UnixStream::pair().map_err(|_| 进程池错误::拉起失败)?;
         let 子读端 = 子进程端.try_clone().map_err(|_| 进程池错误::拉起失败)?;
