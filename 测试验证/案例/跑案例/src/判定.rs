@@ -196,7 +196,7 @@ mod 测试 {
             调用结局,
             死在哪一层: 层级.map(str::to_owned),
             死在哪一步: Some("调度".to_owned()),
-            错误码: 错误码,
+            错误码,
             能力名: Some("首项".to_owned()),
             产物,
             派发结果: None,
