@@ -104,6 +104,12 @@ pub struct 服务 {
     /// `工具根` 同一条约定（装配侧说了算），但**不给默认值** —— 重扫一个猜出来的目录
     /// 比不扫更坏 ⇒ 没注入时装载 fail-closed 指路（`生命周期响应::装载`）。
     声明根: Option<PathBuf>,
+    /// 运行期重扫时**判候选**用的后缀集文本（权威 = `扩展装载/后缀表.json`）。**注入的
+    /// 部署事实**：与 `声明根` 同形（不由它找路径、不认目录），缺了 fail-closed 指路。
+    后缀表文本: Option<String>,
+    /// 解包物（能力码段）落点。`None` = 用适配器默认（运行数据根的缓存类）——
+    /// 本 struct 与其余字段一样**无进程级 static**。
+    缓存根目录: Option<PathBuf>,
     工具根: PathBuf,
     监听: TcpListener,
     监听端口: u16,
@@ -157,6 +163,8 @@ impl 服务 {
             契约身份,
             静态根: 托管根.into(),
             声明根: None,
+            后缀表文本: None,
+            缓存根目录: None,
             工具根: PathBuf::from(工具根默认),
             监听,
             监听端口,
@@ -191,6 +199,19 @@ impl 服务 {
     /// fail-closed 指路（`生命周期响应::装载` 报出「声明根未注入」）。
     pub fn 声明根(mut self, 根目录: impl Into<PathBuf>) -> Self {
         self.声明根 = Some(根目录.into());
+        self
+    }
+
+    /// 注入**后缀表文本**（重扫时判候选用的后缀集）。与 `声明根` 同一条约定。
+    pub fn 后缀表(mut self, 源文本: impl Into<String>) -> Self {
+        self.后缀表文本 = Some(源文本.into());
+        self
+    }
+
+    /// 换解包物缓存根（装配侧的口）。不给就用适配器默认（运行数据根的缓存类）——
+    /// 与 `托管静态根` 同形：缺省走唯一落点，不退回源码树也不退回 `/tmp`。
+    pub fn 缓存根目录(mut self, 根目录: impl Into<PathBuf>) -> Self {
+        self.缓存根目录 = Some(根目录.into());
         self
     }
 
@@ -347,6 +368,8 @@ impl 服务 {
             return 造应答::正常态(&crate::生命周期响应::装载(
                 &mut 适配器,
                 self.声明根.as_deref(),
+                self.后缀表文本.as_deref(),
+                self.缓存根目录.as_deref(),
             ));
         }
         let 适配器 = self.适配器.read().unwrap_or_else(|中毒| 中毒.into_inner());
