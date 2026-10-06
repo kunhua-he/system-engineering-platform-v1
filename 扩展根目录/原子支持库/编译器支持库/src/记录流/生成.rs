@@ -26,7 +26,9 @@ pub fn 生成段数据(输出流: &记录流) -> Result<Vec<u8>, 生成错误> {
 
     输出缓冲.extend_from_slice(&输出流.段头字段.段序号.to_le_bytes());
     输出缓冲.extend_from_slice(&输出流.段头字段.保留.to_le_bytes());
-    输出缓冲.extend_from_slice(&输出流.段头字段.校验值.to_le_bytes());
+    // 校验值 = 折(体)，体由内容重建（与 `体长` 同一口径）⇒ 先留 4 字节占位，函数尾回填。
+    // 不读 `头.校验值` 快照（同「体长由内容重算」一条规矩）。
+    输出缓冲.extend_from_slice(&[0u8; 4]);
     // 体长由内容重算后写回，不读 `头.体长`（见模块注释「一处与容器层同源的口径」）。
     输出缓冲.extend_from_slice(&(体长 as u32).to_le_bytes());
     输出缓冲.extend_from_slice(&输出流.段头字段.补零);
@@ -54,5 +56,8 @@ pub fn 生成段数据(输出流: &记录流) -> Result<Vec<u8>, 生成错误> {
     }
 
     输出缓冲.extend_from_slice(&输出流.其余载荷);
+    // 校验槽回填：折(体) = 折(段数据头之后的全部字节)。体已全部拼齐，故在函数尾一次算完。
+    let 校验值 = crate::容器::校验槽::折(&输出缓冲[段数据头长度..]);
+    输出缓冲[0x08..0x0C].copy_from_slice(&校验值.to_le_bytes());
     Ok(输出缓冲)
 }

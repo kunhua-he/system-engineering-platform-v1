@@ -37,6 +37,7 @@ pub(crate) fn 样例容器() -> 容器::容器 {
             },
             数据字节: vec![1, 0, 0, 0],
         }],
+        ..Default::default()
     }
 }
 
