@@ -208,7 +208,7 @@ impl<'a> 读游标<'a> {
         self.字节.len().saturating_sub(self.位)
     }
 
-    fn 取(&mut self, 个数: usize) -> Option<&'a [u8]> {
+    fn 取字节(&mut self, 个数: usize) -> Option<&'a [u8]> {
         let 尾部 = self.位.checked_add(个数)?;
         if 尾部 > self.字节.len() {
             return None;
@@ -219,24 +219,24 @@ impl<'a> 读游标<'a> {
     }
 
     fn 读单字节(&mut self) -> Option<u8> {
-        self.取(1).map(|片段| 片段[0])
+        self.取字节(1).map(|片段| 片段[0])
     }
 
     fn 读双字节(&mut self) -> Option<u16> {
-        Some(u16::from_le_bytes(self.取(2)?.try_into().ok()?))
+        Some(u16::from_le_bytes(self.取字节(2)?.try_into().ok()?))
     }
 
     fn 读四字节(&mut self) -> Option<u32> {
-        Some(u32::from_le_bytes(self.取(4)?.try_into().ok()?))
+        Some(u32::from_le_bytes(self.取字节(4)?.try_into().ok()?))
     }
 
     fn 读八字节(&mut self) -> Option<u64> {
-        Some(u64::from_le_bytes(self.取(8)?.try_into().ok()?))
+        Some(u64::from_le_bytes(self.取字节(8)?.try_into().ok()?))
     }
 
     fn 读文本(&mut self) -> Option<String> {
         let 读取字节数 = self.读四字节()? as usize;
-        let 片段 = self.取(读取字节数)?;
+        let 片段 = self.取字节(读取字节数)?;
         Some(String::from(core::str::from_utf8(片段).ok()?))
     }
 
