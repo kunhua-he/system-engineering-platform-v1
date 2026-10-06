@@ -270,6 +270,15 @@ use std::alloc::System;
 /// 活字节（alloc 加、dealloc 减）。**只在测试二进制里**，不是生产状态。
 static 泄漏读数_活字节: AtomicUsize = AtomicUsize::new(0);
 
+/// 计数分配器要**盯住**的那一个地址（0 = 不盯）。
+///
+/// 用途：审计发现 1 的**身份证** —— 证「指定返回地址真的发生了 free」，而不是只证「槽空了」。
+/// 旧行为（只清槽）下这条恒为 0，根因即于此可见。
+static 泄漏读数_盯住地址: AtomicUsize = AtomicUsize::new(0);
+
+/// 被盯地址上的 `dealloc` 命中数（命中即 +1）。
+static 泄漏读数_命中次数: AtomicUsize = AtomicUsize::new(0);
+
 struct 泄漏读数_计数分配器;
 
 unsafe impl GlobalAlloc for 泄漏读数_计数分配器 {
@@ -281,6 +290,9 @@ unsafe impl GlobalAlloc for 泄漏读数_计数分配器 {
         指针
     }
     unsafe fn dealloc(&self, 指针: *mut u8, 内存布局: Layout) {
+        if 指针 as usize != 0 && 指针 as usize == 泄漏读数_盯住地址.load(Ordering::SeqCst) {
+            泄漏读数_命中次数.fetch_add(1, Ordering::SeqCst);
+        }
         unsafe { System.dealloc(指针, 内存布局) };
         泄漏读数_活字节.fetch_sub(内存布局.size(), Ordering::SeqCst);
     }
@@ -291,6 +303,20 @@ static 泄漏读数_分配器: 泄漏读数_计数分配器 = 泄漏读数_计�
 
 fn 泄漏读数_读活字节() -> usize {
     泄漏读数_活字节.load(Ordering::SeqCst)
+}
+
+/// 让计数分配器盯住 `堆地址`，并把命中数清零。
+///
+/// 只在**单用例内**用：全局地址复用可能让别的用例的分配/释放也落在同一地址上，
+/// 故本腿只在该地址**还活着**（负向）或**由本用例泄露、不会被别处释放**（正向）时断言。
+pub(crate) fn 泄漏读数_盯住(堆地址: usize) {
+    泄漏读数_命中次数.store(0, Ordering::SeqCst);
+    泄漏读数_盯住地址.store(堆地址, Ordering::SeqCst);
+}
+
+/// 读被盯地址上的 `dealloc` 命中数。
+pub(crate) fn 泄漏读数_命中() -> usize {
+    泄漏读数_命中次数.load(Ordering::SeqCst)
 }
 
 /// 一次「取接口描述」拿到的字节数（顺手归还，不留账）。
