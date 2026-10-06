@@ -66,7 +66,7 @@ export async function 拉扩展表() {
         扩展表.push({
           名字: String(扩展.名称),
           扩展种类: String(类别值.种类),
-          段起点: Number(号段.段起点),
+          段起点: Number(号段.起),
           段止: Number(号段.止),
         });
       }
