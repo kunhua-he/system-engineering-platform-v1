@@ -6,6 +6,7 @@ import re
 
 from .常量 import 生成物相对路径, 契约源相对路径, 契约源目录
 from .扫实现小工具 import 找配对界符
+from .声明侧 import 找声明根
 from 构建装配.一键验证.一键验证.剥字面量 import 去字面量
 
 
@@ -142,7 +143,7 @@ def 解常量值(值文: str) -> object:
 
 
 def 建符号表(件表: dict, 掩表: dict = None) -> dict:
-    """从生成物 + `契约声明/src/` 下**全部** `.rs` 建「符号 → 数」引用表（只读，不计入实现面）。
+    """从已声明根的生成物与 `契约声明/src/` 全部 `.rs` 建「符号 → 数」引用表。
 
     **扫描面是符号不是文件**：早先只读 `生成物相对路径` 与 `契约源相对路径` 两个写死的路径，
     `契约声明/src/lib.rs` 一拆成路由（`mod` + `pub use`），搬进子件的 `槽标志` / `命令状态` /
@@ -151,12 +152,18 @@ def 建符号表(件表: dict, 掩表: dict = None) -> dict:
     """
     项表 = {}
     掩表 = 掩表 or {}
+    声明源目录表 = tuple(根目录 + "/src/" for 根目录 in 找声明根(件表))
     for 键名 in sorted(件表):
-        if not (键名.startswith(契约源目录) and 键名.endswith(".rs")):
+        if not 键名.endswith(".rs"):
             continue
         源文本 = 件表.get(键名)
         if 源文本 is None:
             continue
+        if not 键名.startswith(契约源目录):
+            if not 键名.startswith(声明源目录表):
+                continue
+            if not all(标记 in 源文本 for 标记 in ("生成物", "禁手改", "生成器：")):
+                continue
         掩码文本 = 掩表.get(键名) or 去字面量(源文本)
         # `pub const <名>: <t> = <整数字面量>;`（顶层或缩进都认；`pub const fn` 不匹配）
         for 正则匹配 in re.finditer(
