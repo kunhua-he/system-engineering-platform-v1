@@ -128,7 +128,7 @@ export function 装菜单栏(取元素, 编辑, 依赖 = {}) {
           源码行.setAttribute("aria-disabled", "true");
           源码行.title = "资源里带 MF_GRAYED 位（实测 181 项里只有这一项）—— 在易语言里也是点不动的";
         } else {
-          源码行.addEventListener("click", (事件) => { 事件.stopPropagation(); 点叶子(菜单项); });
+          源码行.addEventListener("click", (界面事件) => { 界面事件.stopPropagation(); 点叶子(菜单项); });
         }
       }
       容器盒.append(源码行);
@@ -143,8 +143,8 @@ export function 装菜单栏(取元素, 编辑, 依赖 = {}) {
     按钮.append(摆文字(顶层));
     按钮.setAttribute("aria-expanded", "false");
     const 容器盒 = 摆层(顶层.项, 0);
-    按钮.addEventListener("click", (事件) => {
-      事件.stopPropagation();
+    按钮.addEventListener("click", (界面事件) => {
+      界面事件.stopPropagation();
       if (开着的 && 开着的.按钮 === 按钮) { 合上(); return; }
       合上();
       容器盒.hidden = false;
@@ -159,7 +159,7 @@ export function 装菜单栏(取元素, 编辑, 依赖 = {}) {
   }
 
   document.addEventListener("click", 合上);
-  document.addEventListener("keydown", (事件) => { if (事件.key === "Escape") 合上(); });
+  document.addEventListener("keydown", (界面事件) => { if (界面事件.key === "Escape") 合上(); });
 
   报状态("菜单结构 1:1 取自 e.exe 菜单资源 127（10 个顶层弹出 / 181 项）· 已接线 "
     + 编译族.size + " 项（编译族）· 其余点了问后端（POST /接口/菜单命令）取结构化回执");

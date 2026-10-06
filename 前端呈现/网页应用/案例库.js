@@ -75,8 +75,8 @@ export function 装案例库(取元素, 编辑) {
 
   取元素("案例列按钮").addEventListener("click", 列案例);
   取元素("案例跑按钮").addEventListener("click", 跑一个案例);
-  取元素("案例标识").addEventListener("keydown", (事件) => {
-    if (事件.key === "Enter") 跑一个案例();
+  取元素("案例标识").addEventListener("keydown", (界面事件) => {
+    if (界面事件.key === "Enter") 跑一个案例();
   });
 
   // ── 通用同源只读口（静态件，不是端点）──────────────────────────────────

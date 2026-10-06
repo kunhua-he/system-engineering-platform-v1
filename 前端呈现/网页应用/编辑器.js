@@ -100,9 +100,9 @@ export function 装编辑器(取元素) {
     号值.scrollTop = 编辑.scrollTop;
   });
 
-  编辑.addEventListener("keydown", (事件) => {
-    if (事件.key !== "Tab" || 事件.ctrlKey || 事件.metaKey || 事件.altKey) return;
-    事件.preventDefault();
+  编辑.addEventListener("keydown", (界面事件) => {
+    if (界面事件.key !== "Tab" || 界面事件.ctrlKey || 界面事件.metaKey || 界面事件.altKey) return;
+    界面事件.preventDefault();
     编辑.setRangeText("    ", 编辑.selectionStart, 编辑.selectionEnd, "end");
     重绘();
   });

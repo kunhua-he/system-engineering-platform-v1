@@ -40,10 +40,10 @@ from .判据工具 import 记判据
 )
 
 
-def 查不覆盖(判据名: str, 单元: str):
+def 查不覆盖(判据名: str, 扫描单元: str):
     """本次扫描里这一格是否按设计不覆盖；是则返回登记条，否则 None。"""
     for 登记条 in 不覆盖登记表:
-        if 登记条["判据名"] == 判据名 and 登记条["单元"] == 单元:
+        if 登记条["判据名"] == 判据名 and 登记条["单元"] == 扫描单元:
             return 登记条
     return None
 
@@ -97,7 +97,7 @@ def 校验登记(单元表: list, 登记=None, 仓根: str = None, 扫描范围:
     return 输出缓冲
 
 
-def 单元在本次范围外但存在(单元: str, 仓根, 扫描范围) -> bool:
+def 单元在本次范围外但存在(扫描单元: str, 仓根, 扫描范围) -> bool:
     """这个登记的单元是否「落在本次范围之外、却在仓里确实存在」。
 
     两个条件缺一不可：① 单元不在 `范围` 里（否则它就该被扫描面看见，看不见才是长霉）；
@@ -105,10 +105,10 @@ def 单元在本次范围外但存在(单元: str, 仓根, 扫描范围) -> bool
     """
     if 仓根 is None or 扫描范围 is None:
         return False
-    在范围内 = any(单元 == 前缀 or 单元.startswith(前缀.rstrip("/") + "/") for 前缀 in 扫描范围)
+    在范围内 = any(扫描单元 == 前缀 or 扫描单元.startswith(前缀.rstrip("/") + "/") for 前缀 in 扫描范围)
     if 在范围内:
         return False
-    return (Path(仓根) / 单元).is_dir()
+    return (Path(仓根) / 扫描单元).is_dir()
 
 
 def 登记表自洽元记录(单元表: list, 仓根: str = None, 扫描范围: list = None) -> list:

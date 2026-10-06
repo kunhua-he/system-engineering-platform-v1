@@ -75,7 +75,7 @@ def 记规则(字段表: dict) -> int:
         else:
             # 自动编号 + 写入：用 `insert`（不是 `or replace`）⇒ 撞号抛 `IntegrityError`、
             # 回滚重取，绝不静默覆盖别条腿刚写的同号行（旧实现用 `or replace`，并发下盖掉）。
-            for 次数 in range(5):
+            for 重试次数 in range(5):
                 编号 = 取新编号(连接, 类名)
                 try:
                     连接.execute("insert into 规则 values(?,?,?,?,?)",

@@ -10,7 +10,7 @@
 ///
 /// 载体**换了不改形状**（槽是自描述的）—— 这是 `边界协议.md` 第三节那一条。
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum 载体 {
+pub enum 载体类型 {
     /// A：进程内 ABI。
     进程内,
     /// B：本机 IPC / 本机进程。
@@ -37,15 +37,15 @@ pub enum 崩溃影响面 {
 /// 写一句「不写进声明仓」。真正被调的那一份在 [`crate::部署绑定`] 里。
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct 入口声明 {
-    pub 载体: 载体,
+    pub 载体类型: 载体类型,
     /// 声明侧恒为 `None`。
     pub 路径: Option<String>,
 }
 
 impl 入口声明 {
     /// 声明侧的形状：只说载体，不填路径。
-    pub const fn 仅载体(载体: 载体) -> Self {
-        Self { 载体, 路径: None }
+    pub const fn 仅载体(载体类型: 载体类型) -> Self {
+        Self { 载体类型, 路径: None }
     }
 }
 
@@ -58,7 +58,7 @@ impl 入口声明 {
 /// **声明自洽性可判，隔离本身不可给**（要真隔离得换载体，见 `现代架构落点.md` 第九节）。
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct 隔离声明 {
-    pub 载体: 载体,
+    pub 载体类型: 载体类型,
     pub 可重建: bool,
     pub 崩溃影响面: 崩溃影响面,
 }

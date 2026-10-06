@@ -256,12 +256,12 @@ pub(crate) unsafe extern "C" fn 反解容器执行(返回槽: *mut 数据槽, �
         return;
     }
     // SAFETY: 调用方按契约形状调用（返回槽可写、参数表可读）。
-    let Some(输入) = (unsafe { 取字节集(参数个数, 参数表, 0) }) else {
+    let Some(输入字节) = (unsafe { 取字节集(参数个数, 参数表, 0) }) else {
         // SAFETY: 同上。
         unsafe { 写错误槽(返回槽, 错误码::参数槽不符) };
         return;
     };
-    let 错误码 = match 容器::反解容器(&输入) {
+    let 错误码 = match 容器::反解容器(&输入字节) {
         Ok(容器) => {
             // SAFETY: 返回槽 可写（上面已判非空）。
             unsafe { 写字节集(返回槽, 结构编码::编码容器(&容器)) };
@@ -283,12 +283,12 @@ pub(crate) unsafe extern "C" fn 生成容器执行(返回槽: *mut 数据槽, �
         return;
     }
     // SAFETY: 调用方按契约形状调用。
-    let Some(输入) = (unsafe { 取字节集(参数个数, 参数表, 0) }) else {
+    let Some(输入字节) = (unsafe { 取字节集(参数个数, 参数表, 0) }) else {
         // SAFETY: 同上。
         unsafe { 写错误槽(返回槽, 错误码::参数槽不符) };
         return;
     };
-    let Some(容器) = 结构编码::解码容器(&输入) else {
+    let Some(容器) = 结构编码::解码容器(&输入字节) else {
         // SAFETY: 返回槽 可写。
         unsafe { 写错误槽(返回槽, 错误码::结构编码非法) };
         return;

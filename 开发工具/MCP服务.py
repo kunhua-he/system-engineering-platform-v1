@@ -62,9 +62,9 @@ def 入口函数(argv=None):
             '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":"x"}',
             '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"v1_symbol","arguments":"x"}}',
         ):
-            输入, 输出流, 错误 = io.StringIO(文本 + "\n"), io.StringIO(), False
+            输入流, 输出流, 错误 = io.StringIO(文本 + "\n"), io.StringIO(), False
             try:
-                跑主循环(仓根, 工具表, 输入=输入, 输出=输出流)
+                跑主循环(仓根, 工具表, 输入流=输入流, 输出=输出流)
             except Exception:
                 错误 = True
             if 错误:

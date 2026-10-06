@@ -287,8 +287,8 @@ impl 服务 {
     /// 短连接，每个被阻塞的线程各接住一条，随即看到标志并退出。
     pub fn 请求停止(&self) {
         self.停止.store(true, Ordering::Release);
-        let 次数 = self.并发线程数.load(Ordering::Acquire).max(1);
-        for _ in 0..次数 {
+        let 并发次数 = self.并发线程数.load(Ordering::Acquire).max(1);
+        for _ in 0..并发次数 {
             let _ = TcpStream::connect((监听地址, self.端口));
         }
     }

@@ -273,16 +273,16 @@ static 泄漏读数_活字节: AtomicUsize = AtomicUsize::new(0);
 struct 泄漏读数_计数分配器;
 
 unsafe impl GlobalAlloc for 泄漏读数_计数分配器 {
-    unsafe fn alloc(&self, 布局: Layout) -> *mut u8 {
-        let 指针 = unsafe { System.alloc(布局) };
+    unsafe fn alloc(&self, 内存布局: Layout) -> *mut u8 {
+        let 指针 = unsafe { System.alloc(内存布局) };
         if !指针.is_null() {
-            泄漏读数_活字节.fetch_add(布局.size(), Ordering::SeqCst);
+            泄漏读数_活字节.fetch_add(内存布局.size(), Ordering::SeqCst);
         }
         指针
     }
-    unsafe fn dealloc(&self, 指针: *mut u8, 布局: Layout) {
-        unsafe { System.dealloc(指针, 布局) };
-        泄漏读数_活字节.fetch_sub(布局.size(), Ordering::SeqCst);
+    unsafe fn dealloc(&self, 指针: *mut u8, 内存布局: Layout) {
+        unsafe { System.dealloc(指针, 内存布局) };
+        泄漏读数_活字节.fetch_sub(内存布局.size(), Ordering::SeqCst);
     }
 }
 

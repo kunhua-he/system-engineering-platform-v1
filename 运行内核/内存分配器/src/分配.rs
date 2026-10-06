@@ -39,12 +39,12 @@ impl 分配器 {
         }
         // 走到这里：1 <= 字节长度 <= u32::MAX，对齐固定 16。
         // 若目标平台的 usize 装不下（32 位下 size + align - 1 溢出），按超上限处理。
-        let 布局 = Layout::from_size_align(字节长度 as usize, 分配对齐 as usize)
+        let 内存布局 = Layout::from_size_align(字节长度 as usize, 分配对齐 as usize)
             .map_err(|_| 分配错误::超上限 { 请求: 字节长度, 上限: 单次分配上限 })?;
         // SAFETY: 布局已校验且非零长度，alloc_zeroed 对合法布局是安全的。
         // 用 alloc_zeroed 而非 alloc：交出去的内存先清零，跨语言读到的不是垃圾，
         // 确定性优先（README 第二节「要求确定性」）。
-        let 指针 = unsafe { alloc_zeroed(布局) };
+        let 指针 = unsafe { alloc_zeroed(内存布局) };
         if 指针.is_null() {
             return Err(分配错误::内存不足);
         }
@@ -75,9 +75,9 @@ impl 分配器 {
             });
         };
         // SAFETY: 长度与对齐来自本分配器成功的一次分配，布局必然合法。
-        let 布局 = unsafe { Layout::from_size_align_unchecked(长度 as usize, 分配对齐 as usize) };
+        let 内存布局 = unsafe { Layout::from_size_align_unchecked(长度 as usize, 分配对齐 as usize) };
         // SAFETY: 地址由本分配器交出、尚未释放（刚从活块账上取下），且按同一布局分配。
-        unsafe { dealloc(地址 as *mut u8, 布局) };
+        unsafe { dealloc(地址 as *mut u8, 内存布局) };
         self.已释放.insert(地址);
         Ok(())
     }

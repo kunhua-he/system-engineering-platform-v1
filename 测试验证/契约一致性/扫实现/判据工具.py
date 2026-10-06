@@ -18,16 +18,16 @@ def 记判据(判据: str, 判定: str, 位置: str, 缺什么: str, 不能自�
     }
 
 
-def _本表(单元: dict) -> dict:
+def _本表(扫描单元: dict) -> dict:
     """本单元内可解析的整数符号（能力号 · 错误码 · 本文件 const）。"""
     项表 = {}
-    for 条目 in 单元["能力号"]:
+    for 条目 in 扫描单元["能力号"]:
         if 条目["值"] is not None:
             项表[条目["名"]] = 条目["值"]
-    for 条目 in 单元.get("错误码常量", []):
+    for 条目 in 扫描单元.get("错误码常量", []):
         if 条目["值"] is not None:
             项表[条目["名"]] = 条目["值"]
-    项表.update(单元.get("本文件整数常量", {}))
+    项表.update(扫描单元.get("本文件整数常量", {}))
     return 项表
 
 
@@ -44,7 +44,7 @@ def _取编号(字段: dict, 兜底):
     return 兜底()
 
 
-def _解可抛错误码(单元: dict, 原文, 符号表: dict, 本表: dict):
+def _解可抛错误码(扫描单元: dict, 原文, 符号表: dict, 本表: dict):
     """把 `命令信息.可抛错误码` 的实参解析成错误码列表；解不出返回 None（不许猜）。
 
     只认两种写法（`契约声明/src/lib.rs` 命令信息 · 旁路区 `可抛错误码: 表段<u32>`）：
@@ -59,7 +59,7 @@ def _解可抛错误码(单元: dict, 原文, 符号表: dict, 本表: dict):
     匹配 = re.match(r"表段\s*::\s*新建\s*\(\s*([^\s.(]+)\s*\.\s*as_ptr\s*\(\s*\)", 文本)
     if not 匹配:
         return None
-    抛码表项 = 单元.get("抛码表", {}).get(末段(匹配.group(1)))
+    抛码表项 = 扫描单元.get("抛码表", {}).get(末段(匹配.group(1)))
     if 抛码表项 is None:
         return None
     结果 = []
@@ -71,8 +71,8 @@ def _解可抛错误码(单元: dict, 原文, 符号表: dict, 本表: dict):
     return 结果
 
 
-def _按编号找命令(单元: dict, 编号) -> object:
-    for 条目 in 单元["命令"]:
+def _按编号找命令(扫描单元: dict, 编号) -> object:
+    for 条目 in 扫描单元["命令"]:
         if 条目["编号"] == 编号:
             return 条目
     return None
@@ -91,13 +91,13 @@ def _参数表名(实现条目: dict) -> object:
     return 名称
 
 
-def _落点(单元: dict, 名称: str) -> object:
+def _落点(扫描单元: dict, 名称: str) -> object:
     """本单元里名为 `名称` 的 const（③g / ③h 的编译期断言落点）；没有返回 None。
 
     为什么按**名**取 const 而不扫表声明：落点是**声明过的契约名**（只在一处定义，
     改口径只改那一处），而扫声明文本会因换个命名 / 挪个位置就漏（假绿）。
     """
-    for 条目 in 单元["常量"]:
+    for 条目 in 扫描单元["常量"]:
         if 条目["名"] == 名称:
             return 条目
     return None

@@ -138,8 +138,8 @@ export function 装设计视图(取元素, 钩子) {
       const 按钮 = 建元素("button", "窗件", 文本);
       按钮.id = 号值;
       摆控件(按钮, 8 + 位置 * 92, 30, 86, 24, "");
-      按钮.addEventListener("click", (事件) => { 事件.stopPropagation(); 动作(); });
-      按钮.addEventListener("mousedown", (事件) => { 事件.stopPropagation(); 选件(按钮, 文本, "按钮"); });
+      按钮.addEventListener("click", (界面事件) => { 界面事件.stopPropagation(); 动作(); });
+      按钮.addEventListener("mousedown", (界面事件) => { 界面事件.stopPropagation(); 选件(按钮, 文本, "按钮"); });
       窗体身.append(按钮);
     });
 
@@ -147,7 +147,7 @@ export function 装设计视图(取元素, 钩子) {
     项表.id = "表格_清单";
     摆控件(项表, 8, 62, 486, 250, "表格");
     项表.title = "能力清单（真调 GET /接口 的结果）";
-    项表.addEventListener("mousedown", (事件) => { 事件.stopPropagation(); 选件(项表, "能力清单表", "表格"); });
+    项表.addEventListener("mousedown", (界面事件) => { 界面事件.stopPropagation(); 选件(项表, "能力清单表", "表格"); });
     窗体身.append(项表);
   }
 

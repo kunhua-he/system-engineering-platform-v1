@@ -178,9 +178,9 @@ pub(crate) fn 正常声明() -> &'static 平台信息 {
         ]));
         let 函数: &'static [执行函数] = Box::leak(Box::new([执行_写参数个数, 执行_写参数个数加百]));
         let 命令号: &'static [u32] = Box::leak(Box::new([测试命令首号.取号值()]));
-        let 事件: &'static [事件信息] = Box::leak(Box::new([造事件(参数)]));
+        let 事件项: &'static [事件信息] = Box::leak(Box::new([造事件(参数)]));
         let 类型: &'static [数据类型信息] =
-            Box::leak(Box::new([造类型(v1_contract::类型标签::新建(1), 命令号, 事件)]));
+            Box::leak(Box::new([造类型(v1_contract::类型标签::新建(1), 命令号, 事件项)]));
         let 常量: &'static [常量信息] =
             Box::leak(Box::new([造常量(v1_contract::常量号::新建(0), 常量排布::数值, core::ptr::null(), 3.5)]));
 

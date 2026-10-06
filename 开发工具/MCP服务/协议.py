@@ -91,7 +91,7 @@ def 派发(方法, 参数, 仓根, 工具表):
     return None, {"code": -32601, "message": "方法不存在：%r" % (方法,)}
 
 
-def 跑主循环(仓根, 工具表, 输入=None, 输出=None):
+def 跑主循环(仓根, 工具表, 输入流=None, 输出=None):
     """跑 stdio 主循环（**永不返回** —— 它是「结构边界：永不返回」，见 入口白名单.json）。
 
     ★ 自愈重启（2026-10-05）：每轮回「读下一帧之前」比对服务指纹，过期就 `os.execv` 重放自身
@@ -106,9 +106,9 @@ def 跑主循环(仓根, 工具表, 输入=None, 输出=None):
     自愈只对**真服务**（真 stdio）生效：注入的内存流（测试 / `--自检`）不 exec；exec 失败兜住
     （`兜底`）⇒ 不再重试、继续用旧码，绝不让失败把进程带走。
     """
-    输入 = 输入 or sys.stdin
+    输入流 = 输入流 or sys.stdin
     输出 = 输出 or sys.stdout
-    可自愈 = 输入 is sys.stdin
+    可自愈 = 输入流 is sys.stdin
     兜底 = False
     缓冲 = b""
     while True:
@@ -123,13 +123,13 @@ def 跑主循环(仓根, 工具表, 输入=None, 输出=None):
                     print("★ 自愈重启失败：%s ⇒ 继续用旧码" % (错误,), file=sys.stderr)
                     兜底 = True
                     continue               # 不再重试 ⇒ 回顶正常读帧（旧码）
-            if not select.select([输入], [], [], 停等秒)[0]:
+            if not select.select([输入流], [], [], 停等秒)[0]:
                 continue                   # 空闲超时 ⇒ 回顶再比一次指纹
             if 过期提示行():
                 continue                   # 帧已到但**未读** ⇒ 回顶 exec（帧留在管道，不丢）
         if 可自愈:
             while b"\n" not in 缓冲:
-                字节 = os.read(输入.fileno(), 65536)
+                字节 = os.read(输入流.fileno(), 65536)
                 if not 字节:
                     if not 缓冲:
                         return 0           # EOF
@@ -140,7 +140,7 @@ def 跑主循环(仓根, 工具表, 输入=None, 输出=None):
                 源码行, 缓冲 = 缓冲.split(b"\n", 1)
                 源码行 = 源码行.decode("utf-8")
         else:
-            源码行 = 输入.readline()
+            源码行 = 输入流.readline()
             if 源码行 == "":
                 return 0                   # EOF
         if not 源码行.strip():

@@ -91,9 +91,9 @@ export function 装支持库树(取元素, 钩子) {
     源码行.setAttribute("role", "button");
     源码行.setAttribute("aria-expanded", "true");
     源码行.addEventListener("click", 翻折);
-    源码行.addEventListener("keydown", (事件) => {
-      if (事件.key === "Enter" || 事件.key === " ") {
-        事件.preventDefault();
+    源码行.addEventListener("keydown", (界面事件) => {
+      if (界面事件.key === "Enter" || 界面事件.key === " ") {
+        界面事件.preventDefault();
         翻折();
       }
     });
