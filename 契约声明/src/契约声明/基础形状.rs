@@ -14,20 +14,20 @@ use crate::类型标签;
 #[repr(C)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct 版本三元组 {
-    pub 主: i32,
+    pub 主版本: i32,
     pub 次: i32,
     pub 构建: i32,
 }
 
 impl 版本三元组 {
     pub const fn 新建(主版本: i32, 次版本: i32, 构建: i32) -> Self {
-        Self { 主: 主版本, 次: 次版本, 构建 }
+        Self { 主版本: 主版本, 次: 次版本, 构建 }
     }
 
     /// 本版本是否满足「版本要求」：**先比主、再比次**（要求无修订段；构建号不参与）。
     pub const fn 满足(&self, 要求: &版本要求) -> bool {
-        if self.主 != 要求.主 {
-            return self.主 > 要求.主;
+        if self.主版本 != 要求.主版本 {
+            return self.主版本 > 要求.主版本;
         }
         self.次 >= 要求.次
     }
@@ -41,13 +41,13 @@ impl 版本三元组 {
 #[repr(C)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct 版本要求 {
-    pub 主: i32,
+    pub 主版本: i32,
     pub 次: i32,
 }
 
 impl 版本要求 {
     pub const fn 新建(主版本: i32, 次版本: i32) -> Self {
-        Self { 主: 主版本, 次: 次版本 }
+        Self { 主版本: 主版本, 次: 次版本 }
     }
 }
 

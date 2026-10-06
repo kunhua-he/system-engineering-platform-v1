@@ -75,7 +75,7 @@ pub struct 回执 {
     pub 耗时微秒: u128,
     pub 跑的时间: String,
     pub 说明: String,
-    pub 步骤: Vec<步骤读数>,
+    pub 案例步骤: Vec<步骤读数>,
 }
 
 impl 回执 {
@@ -104,7 +104,7 @@ impl 回执 {
         文本缓冲.push_str(",\"说明\":");
         crate::最小JSON::写串(&mut 文本缓冲, &self.说明);
         文本缓冲.push_str(",\"步骤\":[");
-        for (序号, 步序) in self.步骤.iter().enumerate() {
+        for (序号, 步序) in self.案例步骤.iter().enumerate() {
             if 序号 > 0 {
                 文本缓冲.push(',');
             }
@@ -276,7 +276,7 @@ mod 测试 {
             耗时微秒: 7,
             跑的时间: 现在UTC(),
             说明: "换行\n也要转义".to_owned(),
-            步骤: vec![步骤读数 {
+            案例步骤: vec![步骤读数 {
                 名: "首项".to_owned(),
                 种类: "能力".to_owned(),
                 能力编号: 1105,

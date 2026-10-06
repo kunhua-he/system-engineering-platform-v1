@@ -25,23 +25,23 @@ fn 切分_反向_空原文与只写注释_合法且逐枚对上() {
     assert_eq!(切分合法输入(""), vec![(文件结束, String::new())]);
     assert_eq!(
         切分合法输入("\r\n"),
-        vec![(换行, "\r\n".into()), (文件结束, String::new())]
+        vec![(换行记号, "\r\n".into()), (文件结束, String::new())]
     );
     assert_eq!(
         切分合法输入("\n"),
-        vec![(换行, "\n".into()), (文件结束, String::new())]
+        vec![(换行记号, "\n".into()), (文件结束, String::new())]
     );
     assert_eq!(
         切分合法输入("'"),
-        vec![(注释, "'".into()), (文件结束, String::new())]
+        vec![(注释记号, "'".into()), (文件结束, String::new())]
     );
     assert_eq!(
         切分合法输入("' 一\r\n' 二\r\n"),
         vec![
-            (注释, "' 一".into()),
-            (换行, "\r\n".into()),
-            (注释, "' 二".into()),
-            (换行, "\r\n".into()),
+            (注释记号, "' 一".into()),
+            (换行记号, "\r\n".into()),
+            (注释记号, "' 二".into()),
+            (换行记号, "\r\n".into()),
             (文件结束, String::new()),
         ]
     );

@@ -25,7 +25,7 @@ def 检查制品(目录: Path) -> tuple:
     清单 = json.loads((目录 / "制品清单.json").read_text(encoding="utf-8"))
     记的 = 清单.get("文件清单", {})
     现在 = 制品内文件清单(目录)
-    不符 = sorted(键名 for 键名, 待处理值 in 记的.items() if 现在.get(键名) != 待处理值)
-    多余 = sorted(键名 for 键名 in 现在 if 键名 not in 记的)
-    缺件 = sorted(键名 for 键名 in 记的 if 键名 not in 现在)
-    return 不符, 多余, 缺件
+    不符项 = sorted(键名 for 键名, 待处理值 in 记的.items() if 现在.get(键名) != 待处理值)
+    多余项 = sorted(键名 for 键名 in 现在 if 键名 not in 记的)
+    缺件清单 = sorted(键名 for 键名 in 记的 if 键名 not in 现在)
+    return 不符项, 多余项, 缺件清单

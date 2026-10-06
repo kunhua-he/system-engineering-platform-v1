@@ -80,7 +80,7 @@ impl<'a> 表达式分析器<'a> {
     }
 
     pub(super) fn 跳过空白(&mut self) {
-        while self.游标 < self.止 && self.记号表[self.游标].种类 == 记号种类::空白 {
+        while self.游标 < self.止 && self.记号表[self.游标].种类 == 记号种类::空白记号 {
             self.游标 += 1;
         }
     }

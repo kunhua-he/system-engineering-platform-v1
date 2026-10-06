@@ -181,9 +181,9 @@ def 是仓内(路径: Path) -> bool:
 
 def 相对路径(路径: Path, 树根) -> str:
     """⇒ 仓根相对路径（正斜杠）；不在仓根下则退回树根相对，再退回绝对。"""
-    for 基 in (仓根, Path(树根)):
+    for 基准值 in (仓根, Path(树根)):
         try:
-            return 路径.resolve().relative_to(基.resolve()).as_posix()
+            return 路径.resolve().relative_to(基准值.resolve()).as_posix()
         except ValueError:
             continue
     return 路径.resolve().as_posix()
@@ -229,7 +229,7 @@ def 未登记名(树根, 文件=None) -> list[dict]:
             continue
         相对 = 相对路径(路径, 树根)
         for 序号, 一行 in enumerate(文本.splitlines(), 1):
-            for 名 in 标识符.findall(剥行(一行, 后缀)):
+            for 名, 起始位 in _命名扫描.抽标识符带位置(剥行(一行, 后缀)):
                 if 名 in 已登记 or 名 in 过滤名:
                     continue
                 出[(名, 相对, 序号)] = {"名字": 名, "文件": 相对, "行号": 序号}
@@ -279,10 +279,13 @@ def 扫出现(树根) -> list:
         for 序号, 一行 in enumerate(文本.splitlines(), 1):
             骨架 = 剥行(一行, 后缀)
             本行 = {}
-            for 匹配 in 标识符.finditer(骨架):
-                名 = 匹配.group(0)
+            # ★ 2026-10-06 收口：抽名与 `命名扫描.抽标识符` **同一份** —— 排除紧跟 `.` 的成员访问
+            #   （`.end()` / `.key` / `.start()` 是**别人家的名字**）。本件原先用裸 `标识符.findall`
+            #   ⇒ 把标准库方法名也当我们的名字记进债单（实测 `小工具` 58 处全是 `.成员` 用法、
+            #   `start` 62 处里 55 处是 `.start()`）。与判据 ㉒ 的口径同源。
+            for 名, 起始位 in _命名扫描.抽标识符带位置(骨架):
                 if 名 not in 过滤名:
-                    本行[名] = 本行.get(名, True) and 骨架[:匹配.start()].rstrip().endswith(".")
+                    本行[名] = 本行.get(名, True) and 骨架[:起始位].rstrip().endswith(".")
             for 名, 全成员 in 本行.items():
                 出.append({"名字": 名, "文件": 相对, "行号": 序号, "面": 判面(骨架, 名), "成员": 全成员})
     return 出

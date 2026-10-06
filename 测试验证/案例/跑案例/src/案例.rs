@@ -46,7 +46,7 @@ pub struct 实参 {
 
 /// 一步：调能力（`通知号` / `读留痕条数` 均 `None`）· 发生命周期通知（`通知号 = Some`）· 读留痕（`读留痕条数 = Some`）。三者互斥。
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct 步骤 {
+pub struct 案例步骤 {
     pub 名: String,
     pub 能力编号: u32,
     pub 实参: Vec<实参>,
@@ -110,7 +110,7 @@ pub struct 案例 {
     /// 案例点名要装载的声明名（可选；空 = 只装被验扩展）。名字 → 声明在 `装载声明::解析声明名`。
     pub 声明: Vec<String>,
     /// 步骤链。**至少一步**——空步骤链是空集，不许算通过。
-    pub 步骤: Vec<步骤>,
+    pub 案例步骤: Vec<案例步骤>,
     /// 与 `步骤` 等长，一一对应。
     pub 期望: Vec<期望>,
 }
@@ -161,12 +161,12 @@ fn 读一个(目录: &Path) -> Result<案例, String> {
     let 名称 = 要串(&清单, "案例名")?.to_owned();
     let 说明 = 要串(&清单, "说明")?.to_owned();
     let 声明 = 读声明(&清单)?;
-    let 步骤 = 读步骤(&清单, 目录)?;
-    let 期望 = 读期望(&目录.join("期望.json"), 步骤.len(), 目录)?;
-    if 步骤.is_empty() {
+    let 案例步骤 = 读步骤(&清单, 目录)?;
+    let 期望 = 读期望(&目录.join("期望.json"), 案例步骤.len(), 目录)?;
+    if 案例步骤.is_empty() {
         return Err(format!("{}：步骤是空集 —— 空集不算通过", 目录.display()));
     }
-    Ok(案例 { 名: 名称, 目录: 目录.to_path_buf(), 说明, 声明, 步骤, 期望 })
+    Ok(案例 { 名: 名称, 目录: 目录.to_path_buf(), 说明, 声明, 案例步骤, 期望 })
 }
 
 /// 读案例点名的**声明表**（可选；空 = 只装被验扩展）。名字不认由 `装载声明` 报。
@@ -180,7 +180,7 @@ fn 读声明(清单: &JSON值) -> Result<Vec<String>, String> {
     Ok(声明表)
 }
 
-fn 读步骤(清单: &JSON值, 目录: &Path) -> Result<Vec<步骤>, String> {
+fn 读步骤(清单: &JSON值, 目录: &Path) -> Result<Vec<案例步骤>, String> {
     let 项表 = 清单
         .取成员("步骤")
         .and_then(|成员值| 成员值.取数组())
@@ -253,7 +253,7 @@ fn 读步骤(清单: &JSON值, 目录: &Path) -> Result<Vec<步骤>, String> {
             实参.push(实参 { 类型标签, 来源 });
         }
         }
-        累积表.push(步骤 { 名: 名称, 能力编号, 实参, 通知号, 读留痕条数 });
+        累积表.push(案例步骤 { 名: 名称, 能力编号, 实参, 通知号, 读留痕条数 });
     }
     Ok(累积表)
 }

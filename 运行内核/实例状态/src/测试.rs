@@ -68,17 +68,17 @@ fn 两表互不污染() {
 /// 同一张表连开一批不撞号，关掉一半再开一批也不与旧号相撞。
 #[test]
 fn 句柄生成器不重复() {
-    let 数量 = 10_000u32;
+    let 样本数量 = 10_000u32;
     let mut 项表 = 实例表::新建();
     let mut 见过 = HashSet::new();
     let mut 首批 = Vec::new();
-    for _ in 0..数量 {
+    for _ in 0..样本数量 {
         首批.push(项表.开启实例());
     }
     for 句柄 in &首批 {
         assert!(见过.insert(句柄.0), "句柄重复：{句柄:?}");
     }
-    assert_eq!(见过.len(), 数量 as usize);
+    assert_eq!(见过.len(), 样本数量 as usize);
     for 句柄 in &首批 {
         assert_eq!(项表.校验句柄(*句柄), Ok(()));
     }
@@ -87,11 +87,11 @@ fn 句柄生成器不重复() {
         assert_eq!(项表.关闭实例(*句柄), Ok(()));
     }
     let mut 次批 = Vec::new();
-    for _ in 0..数量 {
+    for _ in 0..样本数量 {
         次批.push(项表.开启实例());
     }
     for 句柄 in &次批 {
         assert!(见过.insert(句柄.0), "新旧句柄撞号：{句柄:?}");
     }
-    assert_eq!(见过.len(), (数量 * 2) as usize);
+    assert_eq!(见过.len(), (样本数量 * 2) as usize);
 }

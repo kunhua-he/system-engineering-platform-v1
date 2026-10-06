@@ -47,7 +47,7 @@ class PE:
         if self.魔数 != 0x10B:
             raise 解析错误("魔数 0x%x 不是 PE32（64 位布局未取证，拒绝猜）" % self.魔数)
         self.基址 = struct.unpack_from("<I", 数据, self.PE头偏移 + 24 + 28)[0]
-        self.节 = []
+        self.节段 = []
         for 节序 in range(self.节数):
             节表项偏移 = self.PE头偏移 + 24 + self.可选头长 + 节序 * 40
             if 节表项偏移 + 40 > len(数据):
@@ -57,8 +57,8 @@ class PE:
             if 原址 + 原长 > len(数据):
                 raise 解析错误("节 %s 原始数据越界（%d+%d > %d）"
                             % (节名, 原址, 原长, len(数据)))
-            self.节.append((节名, 虚址, 虚长, 原址, 原长))
-        if not self.节:
+            self.节段.append((节名, 虚址, 虚长, 原址, 原长))
+        if not self.节段:
             raise 解析错误("节数为 0")
         # DataDirectory[2] = 资源目录。**只读出来，不在这里判空** —— 要不要有资源目录
         # 由调用方决定（见 `要资源目录`）。
@@ -71,7 +71,7 @@ class PE:
         return self.资源目录
 
     def 转偏移(self, rva):
-        for 节名, 虚址, 虚长, 原址, 原长 in self.节:
+        for 节名, 虚址, 虚长, 原址, 原长 in self.节段:
             if 虚址 <= rva < 虚址 + max(虚长, 原长):
                 文偏移 = 原址 + (rva - 虚址)
                 if 文偏移 >= len(self.原始字节):
@@ -101,7 +101,7 @@ class PE:
 
     def 节区间(self, 名):
         """按节名取 `(原址, 原址+原长)`；没有这一节就抛。"""
-        for 节名, 虚址, 虚长, 原址, 原长 in self.节:
+        for 节名, 虚址, 虚长, 原址, 原长 in self.节段:
             if 节名 == 名:
                 return 原址, 原址 + 原长
         raise 解析错误("没有 %s 节" % 名)

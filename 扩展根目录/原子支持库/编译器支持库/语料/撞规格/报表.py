@@ -29,10 +29,10 @@ def 打印报表读数(读数, rows, tier_bytes):
     for 关键字, 计数 in 读数["关键字_带点"].most_common():
         if 关键字 in 规格带点关键字:
             continue
-        name, line = 读数["关键字上下文"].get("." + 关键字, ("", ""))
+        name, 行文本 = 读数["关键字上下文"].get("." + 关键字, ("", ""))
         print(f"    .{关键字:<12} {计数:>5} 次   {name[:34]:<36} | {line[:96]}")
     for 关键字, 计数 in 读数["关键字_不带点"].most_common():
-        name, line = 读数["关键字上下文"].get(关键字, ("", ""))
+        name, 行文本 = 读数["关键字上下文"].get(关键字, ("", ""))
         print(f"    {关键字:<13} {计数:>5} 次   {name[:34]:<36} | {line[:96]}")
 
     print("\n【常量引用名字全表】%d 种" % len(读数["常量名"]))
@@ -114,8 +114,8 @@ def 打印报表读数(读数, rows, tier_bytes):
             if not 读数["未归类样本"][ch].get(name):
                 continue
             文本 = raw.decode("gbk")
-            for line in 文本.split("\n"):
-                if ch in line:
+            for 行文本 in 文本.split("\n"):
+                if ch in 行文本:
                     print(f"    {ch!r}  {name[:38]:<40} | {line.rstrip()[:120]}")
                     break
             break
@@ -127,7 +127,7 @@ def 打印报表读数(读数, rows, tier_bytes):
 
     print("\n【含未归类字符的行 · 逐条（去重）】共 %d 行" % len(读数["未归类行样"]))
     for li in sorted(读数["未归类行样"], key=lambda 行号: -读数["未归类行"][行号]):
-        name, line = 读数["未归类行样"][li]
+        name, 行文本 = 读数["未归类行样"][li]
         print(f"    {读数['未归类行'][li]:>4} 个未归类字符 | {name[:34]:<36} | {line.rstrip()[:118]}")
 
     print("\n【通过率】")

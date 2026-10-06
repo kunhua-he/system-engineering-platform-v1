@@ -76,17 +76,17 @@ def 定位行(字节流, pos):
 def 扩张边界(字节流, 锚点):
     """按行形状从锚点向前扩张（弱证据用）。"""
     ls, le, nxt = 定位行(字节流, 锚点)
-    start = ls if 字节流[ls:ls + len(版本锚)] == 版本锚 else 锚点
+    锚起点 = ls if 字节流[ls:ls + len(版本锚)] == 版本锚 else 锚点
     end = nxt
     while end < len(字节流):
         _, 行尾, 下一行起 = 定位行(字节流, end)
         if 行分类(字节流[end:行尾]) == "OTHER":
             break
         end = 下一行起
-    if start == ls:
-        while start >= 2:
-            pls, ple, _ = 定位行(字节流, start - 2)
-            if pls >= start or 行分类(字节流[pls:ple]) == "OTHER":
+    if 锚起点 == ls:
+        while 锚起点 >= 2:
+            pls, ple, _ = 定位行(字节流, 锚起点 - 2)
+            if pls >= 锚起点 or 行分类(字节流[pls:ple]) == "OTHER":
                 break
-            start = pls
-    return start, end
+            锚起点 = pls
+    return 锚起点, end

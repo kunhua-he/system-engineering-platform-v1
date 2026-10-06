@@ -46,16 +46,16 @@ def 列目录JSON件(相对目录):
     return [(名字, 相对目录 + "/" + 名字) for 名字 in 名单]
 
 
-def 取整(容器, 键, 来源, 下界=None, 上界=None):
+def 取整(容器, 键, 来源, 下界值=None, 上界值=None):
     待处理值 = 容器.get(键)
     if 待处理值 is None:
         raise 生成失败("%s 缺字段「%s」" % (来源, 键))
     if isinstance(待处理值, bool) or not isinstance(待处理值, int):
         raise 生成失败("%s 的「%s」不是整数：%r" % (来源, 键, 待处理值))
-    if 下界 is not None and 待处理值 < 下界:
-        raise 生成失败("%s 的「%s」=%d 小于 %d" % (来源, 键, 待处理值, 下界))
-    if 上界 is not None and 待处理值 > 上界:
-        raise 生成失败("%s 的「%s」=%d 大于 %d" % (来源, 键, 待处理值, 上界))
+    if 下界值 is not None and 待处理值 < 下界值:
+        raise 生成失败("%s 的「%s」=%d 小于 %d" % (来源, 键, 待处理值, 下界值))
+    if 上界值 is not None and 待处理值 > 上界值:
+        raise 生成失败("%s 的「%s」=%d 大于 %d" % (来源, 键, 待处理值, 上界值))
     return 待处理值
 
 

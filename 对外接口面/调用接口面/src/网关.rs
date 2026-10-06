@@ -344,7 +344,7 @@ impl 服务 {
             && 请求体.as_ref().is_some_and(crate::请求::是装载动作)
         {
             let mut 适配器 = self.适配器.write().unwrap_or_else(|中毒| 中毒.into_inner());
-            return 造应答::正常(&crate::生命周期响应::装载(
+            return 造应答::正常态(&crate::生命周期响应::装载(
                 &mut 适配器,
                 self.声明根.as_deref(),
             ));

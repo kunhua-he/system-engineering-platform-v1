@@ -77,7 +77,7 @@ pub fn 写描述(适配器: &适配器, 契约来源: &平台信息) -> String {
         (
             "契约版本".to_owned(),
             JSON值::对象(vec![
-                ("主".to_owned(), JSON值::整数(版本.主 as i64)),
+                ("主".to_owned(), JSON值::整数(版本.主版本 as i64)),
                 ("次".to_owned(), JSON值::整数(版本.次 as i64)),
                 ("构建".to_owned(), JSON值::整数(版本.构建 as i64)),
             ]),

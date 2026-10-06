@@ -75,15 +75,15 @@ def 入口函数() -> int:
         if not (目录 / "制品清单.json").is_file():
             打印文本("制品不存在或没有清单：{}".format(目录))
             return 1
-        不符, 多余, 缺件 = 检查制品(目录)
-        打印文本("制品 {} ｜ 指纹不符 {} ｜ 清单外文件 {} ｜ 缺件 {}".format(参数.检查, len(不符), len(多余), len(缺件)))
-        for 不符路径 in 不符:
+        不符项, 多余项, 缺件清单 = 检查制品(目录)
+        打印文本("制品 {} ｜ 指纹不符 {} ｜ 清单外文件 {} ｜ 缺件 {}".format(参数.检查, len(不符项), len(多余项), len(缺件清单)))
+        for 不符路径 in 不符项:
             打印文本("  不符 {}".format(不符路径))
-        for 多余路径 in 多余:
+        for 多余路径 in 多余项:
             打印文本("  清单外 {}".format(多余路径))
-        for 缺件路径 in 缺件:
+        for 缺件路径 in 缺件清单:
             打印文本("  缺件 {}".format(缺件路径))
-        return 0 if not (不符 or 多余 or 缺件) else 1
+        return 0 if not (不符项 or 多余项 or 缺件清单) else 1
 
     声明文本 = 扩展根声明.read_text(encoding="utf-8")
     声明 = json.loads(声明文本)

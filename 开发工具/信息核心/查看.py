@@ -171,16 +171,16 @@ def 接口页(连接) -> bytes:
     return 页面壳("接口", 正文)
 
 
-def 条款页(连接, 件: str) -> bytes:
-    if 件:
-        数据行 = list(连接.execute("select 序号,标题,正文 from 条款 where 文档路径=? order by 序号", (件,)))
+def 条款页(连接, 文件条目: str) -> bytes:
+    if 文件条目:
+        数据行 = list(连接.execute("select 序号,标题,正文 from 条款 where 文档路径=? order by 序号", (文件条目,)))
         if not 数据行:
             return 页面壳("找不到", f"<p class=\"红\">库里没有这份文档：{html.escape(件)}</p>")
         正文 = f"<h2>{html.escape(件)}（{len(数据行)} 节）</h2>"
         for _序号, 标题, 节正文 in 数据行:
             正文 += (f"<h3>{html.escape(标题 or '（无标题）')}</h3>"
                      f"<pre style=\"white-space:pre-wrap;font:12px/1.5 monospace\">{html.escape(节正文)}</pre>")
-        return 页面壳(件, 正文)
+        return 页面壳(文件条目, 正文)
     数据行 = list(连接.execute(
         "select 文档路径,权威档,count(*),sum(length(正文)) from 条款 group by 文档路径,权威档 "
         "order by 权威档,文档路径"))

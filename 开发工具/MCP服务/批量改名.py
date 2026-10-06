@@ -178,10 +178,10 @@ def 读冻结字段名(工作树) -> set:
     """
     import json
     try:
-        件 = Path(工作树) / "契约声明" / "冻结登记.json"
-        if not 件.is_file():
+        文件条目 = Path(工作树) / "契约声明" / "冻结登记.json"
+        if not 文件条目.is_file():
             return set()
-        登记 = json.loads(件.read_text(encoding="utf-8"))
+        登记 = json.loads(文件条目.read_text(encoding="utf-8"))
     except (OSError, ValueError):
         return set()
     _子目录 = str(工具根 / "构建装配" / "一键验证")
