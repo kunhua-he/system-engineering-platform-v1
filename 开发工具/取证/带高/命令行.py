@@ -15,10 +15,10 @@ def 入口函数(argv):
     if len(argv) < 1:
         print(__doc__)
         return 1
-    for 参数 in argv:
+    for 命令行参数 in argv:
         try:
-            带高逐行(参数)
+            带高逐行(命令行参数)
         except OSError as 错误:
-            print(f"打不开 {参数}：{错误}", file=sys.stderr)
+            print(f"打不开 {命令行参数}：{错误}", file=sys.stderr)
             return 1
     return 0

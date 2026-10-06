@@ -28,9 +28,9 @@ def _复制(测试世界: 判读世界) -> 判读世界:
 
 
 def _复制扩展目录(测试世界: 判读世界) -> Path:
-    目标 = Path(tempfile.mkdtemp(prefix="准入判据_指纹_")) / "编译器支持库"
-    shutil.copytree(测试世界.扩展目录(), 目标)
-    return 目标
+    目标目录 = Path(tempfile.mkdtemp(prefix="准入判据_指纹_")) / "编译器支持库"
+    shutil.copytree(测试世界.扩展目录(), 目标目录)
+    return 目标目录
 
 
 def 跑自测() -> int:
@@ -40,9 +40,9 @@ def 跑自测() -> int:
     失败 = []
     源码行 = []
 
-    def 断言(编号, 名称, 样本名, 期望, 结果):
-        if 结果[0] != 期望:
-            失败.append(f"{编号} {名称}｜{样本名}：期望 {期望}，实得 {结果[0]}（{结果[1]}）")
+    def 断言(编号, 名称, 样本名, 期望, 判定汇总):
+        if 判定汇总[0] != 期望:
+            失败.append(f"{编号} {名称}｜{样本名}：期望 {期望}，实得 {判定汇总[0]}（{判定汇总[1]}）")
             return False
         return True
 
@@ -110,16 +110,16 @@ def 跑自测() -> int:
     正向样本 = _复制(测试世界)
     断言("⑨", "crate-type", "正向样本", "通过", 判_9_扩展crate类型单路(正向样本))
     反向样本 = _复制(测试世界)
-    路径, 文本 = 反向样本.扩展Cargo表[0]
-    反向样本.扩展Cargo表 = [(路径, 文本.replace("[lib]\n", '[lib]\ncrate-type = ["cdylib"]\n'))]
+    路径, 源文本 = 反向样本.扩展Cargo表[0]
+    反向样本.扩展Cargo表 = [(路径, 源文本.replace("[lib]\n", '[lib]\ncrate-type = ["cdylib"]\n'))]
     断言("⑨", "crate-type", "反向样本（注入 crate-type）", "失败", 判_9_扩展crate类型单路(反向样本))
 
     # ⑩：空集 → 未判；注入一条合法 → 通过；注入一条非法 → 失败（证明非空转）
-    临时 = Path(tempfile.mkdtemp(prefix="准入判据_类别_")) / "0000.json"
-    临时.write_text(json.dumps({"类别号": 0, "名称": "默认", "说明": "默认类别"},
+    临时件 = Path(tempfile.mkdtemp(prefix="准入判据_类别_")) / "0000.json"
+    临时件.write_text(json.dumps({"类别号": 0, "名称": "默认", "说明": "默认类别"},
                               ensure_ascii=False), encoding="utf-8")
     正向样本 = _复制(测试世界)
-    正向样本.命令类别 = [临时]
+    正向样本.命令类别 = [临时件]
     断言("⑩", "命令类别", "正向样本（注入 1 条合法）", "通过", 判_10_命令类别号名表(正向样本))
     反向样本 = _复制(测试世界)
     类别样本件路径 = Path(tempfile.mkdtemp(prefix="准入判据_类别_")) / "0001.json"
@@ -211,11 +211,11 @@ def 跑自测() -> int:
     for 编号 in ["①", "⑮"]:
         源码行.append(f"  {编号} {有意不判[编号]['名']}（有意不判：依据锚点机器核）")
     print("准入判据自测（正向必过 · 反向必红）")
-    for 文本 in 源码行:
-        print(文本)
-    print(f"\n样本断言：{len(失败) == 0 and '全过' or '有失败'} · 耗时 {毫秒} ms")
-    for 文本 in 失败:
-        print(f"  ✗ {文本}")
+    for 源文本 in 源码行:
+        print(源文本)
+    print(f"\n样本断言：{len(失败) == 0 and '全过' or '有失败'} · 耗时 {毫秒数} ms")
+    for 源文本 in 失败:
+        print(f"  ✗ {源文本}")
     if not 失败:
         print("  每条机器判据的 正向样本 与 反向样本 都符合预期（判据非空转）")
     return 0 if not 失败 else 1

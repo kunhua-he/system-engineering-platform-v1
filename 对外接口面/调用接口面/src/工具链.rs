@@ -99,9 +99,9 @@ impl 读数 {
 ///
 /// 失败分两种（[`命令错误`]）：**起不来**（件不存在 / 没有执行权限）与**超时**，
 /// 调用方要能分开 —— 「跑者不存在」「跑了但超时」「跑了但退出码非零」是三件事。
-pub fn 跑命令取读数(程序: &Path, 参数: &[&str], 工作目录: &Path) -> Result<读数, 命令错误> {
+pub fn 跑命令取读数(程序: &Path, 命令行参数: &[&str], 工作目录: &Path) -> Result<读数, 命令错误> {
     let mut 子进程 = Command::new(程序)
-        .args(参数)
+        .args(命令行参数)
         .current_dir(工作目录)
         .stdin(Stdio::null())
         .stdout(Stdio::piped())

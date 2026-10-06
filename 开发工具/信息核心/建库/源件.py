@@ -23,10 +23,10 @@ def 读一件(源件路径: Path) -> list:
     （一行一名 · `#` 注释 · `名 → 新名`）—— 它**从不经过这里**（名册已住库 `命名定义`，
     仓内无此类源件）⇒ 死码已删（声明与行为不符是缺陷）。
     """
-    数据 = 读JSON件(源件路径)
-    if not isinstance(数据, dict) or not isinstance(数据.get("行"), list):
+    源件数据 = 读JSON件(源件路径)
+    if not isinstance(源件数据, dict) or not isinstance(源件数据.get("行"), list):
         raise ValueError(f"源件读不动（要 {{'说明': …, '行': […]}}）：{源件路径}")
-    return [tuple(一行) for 一行 in 数据["行"]]
+    return [tuple(文本行) for 文本行 in 源件数据["行"]]
 
 
 def 装未完成(根目录: Path) -> list:
@@ -41,7 +41,7 @@ def 装分片源件(连接, 表名: str, 分片列: str, 现抽, 根目录: Path
     返回**整表**行数（读数口径与 `装表` 一致）。
     """
     文档行 = 装文档(根目录)
-    在场路径表 = [一行[0] for 一行 in 文档行]
+    在场路径表 = [文本行[0] for 文本行 in 文档行]
     数据行 = 现抽(根目录, 文档行)
     if 在场路径表:
         占位符 = ",".join("?" * len(在场路径表))

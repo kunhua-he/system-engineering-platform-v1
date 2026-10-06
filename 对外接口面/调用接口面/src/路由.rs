@@ -88,8 +88,8 @@ impl 拒绝 {
 ///
 /// `GET` 且不在端点表里的路径交给**静态托管**（`接口面形状.md` §五）：那里是前端自身的件
 /// 住的地方（`/` → `index.html`）。件在不在由分发侧判，路由不看盘。
-pub fn 认端点(方法: &str, 目标: &str) -> Result<端点, 拒绝> {
-    let 路径 = 取路径(目标);
+pub fn 认端点(方法: &str, 请求目标: &str) -> Result<端点, 拒绝> {
+    let 路径 = 取路径(请求目标);
     let 路径 = 百分号解码(路径).map_err(|_| 拒绝::路径解码失败)?;
     let 方法 = 方法.to_ascii_uppercase();
 
@@ -157,15 +157,15 @@ fn 要方法(实际: &str, 允许: &'static str) -> Result<(), 拒绝> {
 }
 
 /// 从请求目标里取路径：去掉查询串；`absolute-form`（`http://主机/路径`）也认。
-fn 取路径(目标: &str) -> &str {
-    let 目标 = 目标
+fn 取路径(请求目标: &str) -> &str {
+    let 请求目标 = 请求目标
         .strip_prefix("http://")
-        .or_else(|| 目标.strip_prefix("https://"))
-        .and_then(|剩余目标| 剩余目标.find('/').map(|位置| &剩余目标[位置..]))
-        .unwrap_or(目标);
-    match 目标.find('?') {
-        Some(位置) => &目标[..位置],
-        None => 目标,
+        .or_else(|| 请求目标.strip_prefix("https://"))
+        .and_then(|剩余目标| 剩余目标.find('/').map(|字节位置| &剩余目标[字节位置..]))
+        .unwrap_or(请求目标);
+    match 请求目标.find('?') {
+        Some(字节位置) => &请求目标[..字节位置],
+        None => 请求目标,
     }
 }
 

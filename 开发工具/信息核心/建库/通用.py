@@ -31,9 +31,9 @@ def 读文本(路径: Path) -> str:
 
 def 扫md(根目录: Path) -> list:
     跳过 = set(排除目录) | {"__pycache__", "node_modules", "target"}  # 段形态主人（落点.排除目录）+ 本面增量
-    结果 = []
+    查询读数 = []
     for 路径 in 根目录.rglob("*.md"):
         if any(路径段 in 跳过 for 路径段 in 路径.relative_to(根目录).parts):
             continue
-        结果.append(路径.relative_to(根目录).as_posix())
-    return sorted(结果)
+        查询读数.append(路径.relative_to(根目录).as_posix())
+    return sorted(查询读数)

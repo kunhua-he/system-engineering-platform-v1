@@ -61,14 +61,14 @@ pub(crate) struct 通知标识项 {
 
 /// 通知账：通知通道 + 按标识的索引，**一起受同一把锁保护**（见文件头）。
 pub(crate) struct 通知账 {
-    pub(crate) 通道: 通知通道,
+    pub(crate) 通道实例: 通知通道,
     pub(crate) 标识表: Vec<通知标识项>,
 }
 
 impl 通知账 {
-    pub(crate) fn 新建() -> Self {
+    pub(crate) fn 构造() -> Self {
         Self {
-            通道: 通知通道::新建(),
+            通道实例: 通知通道::构造(),
             标识表: Vec::new(),
         }
     }
@@ -106,6 +106,6 @@ unsafe impl Sync for 适配器 {}
 /// 锁一把 `Mutex`，中毒也照用（锁中毒只说明别的线程 panic 过，被保护的数据本身没坏）。
 ///
 /// 与 `运行内核/调用调度/src/配额记账.rs` 的处置同一口径：**不许因为中毒就崩**。
-pub(crate) fn 取锁<'取互斥锁, 值>(锁句柄: &'取互斥锁 Mutex<值>) -> std::sync::MutexGuard<'取互斥锁, 值> {
+pub(crate) fn 取锁<'取互斥锁, 值类型>(锁句柄: &'取互斥锁 Mutex<值类型>) -> std::sync::MutexGuard<'取互斥锁, 值类型> {
     锁句柄.lock().unwrap_or_else(|中毒| 中毒.into_inner())
 }

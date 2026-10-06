@@ -23,9 +23,9 @@ def 注入_契约声明扩展名进名表(临根: Path) -> str:
     再在底座生产代码里点名它 ⇒ 判据 ⑯ 当场红（旧口径不会报：名表里没这个名）。
     """
     登记件 = 临根 / "契约声明" / "冻结登记.json"
-    数据 = json.loads(登记件.read_text(encoding="utf-8"))
-    数据["旁路"][0]["旁路走哪"] = "样例：落点 `扩展根目录/组合模块库/样例模块/src/lib.rs`"
-    登记件.write_text(json.dumps(数据, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    配置表 = json.loads(登记件.read_text(encoding="utf-8"))
+    配置表["旁路"][0]["旁路走哪"] = "样例：落点 `扩展根目录/组合模块库/样例模块/src/lib.rs`"
+    登记件.write_text(json.dumps(配置表, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     路径 = 临根 / _样本件
     路径.parent.mkdir(parents=True, exist_ok=True)
     路径.write_text(
@@ -43,7 +43,7 @@ def 注入_声明面裸点名(临根: Path) -> str:
     的一段，是散文里点名（后人会照抄）。旧口径下 `契约声明/` 整片被排除 ⇒ 这处不报。
     """
     声明件 = 临根 / "契约声明" / "号段图.json"
-    数据 = json.loads(声明件.read_text(encoding="utf-8"))
-    数据["说明"] = 数据.get("说明", "") + "（样例：样例支持库 提供语言能力）"
-    声明件.write_text(json.dumps(数据, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    配置表 = json.loads(声明件.read_text(encoding="utf-8"))
+    配置表["说明"] = 配置表.get("说明", "") + "（样例：样例支持库 提供语言能力）"
+    声明件.write_text(json.dumps(配置表, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     return "契约声明/号段图.json"

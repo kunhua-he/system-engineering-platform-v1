@@ -26,8 +26,8 @@ use v1_adapter::平台信息;
 pub const 库后缀: [&str; 3] = [".dylib", ".so", ".dll"];
 
 /// 取一个目录下的直接子目录，**按名字排序**（装载顺序即依赖序，不许随文件系统飘）。
-pub fn 列子目录(目录: &Path) -> Vec<PathBuf> {
-    let Ok(目录读器) = fs::read_dir(目录) else { return Vec::new() };
+pub fn 列子目录(扩展根目录: &Path) -> Vec<PathBuf> {
+    let Ok(目录读器) = fs::read_dir(扩展根目录) else { return Vec::new() };
     let mut 输出缓冲: Vec<PathBuf> = 目录读器
         .filter_map(|目录项| 目录项.ok())
         .map(|目录项| 目录项.path())
@@ -120,19 +120,19 @@ pub struct 声明根扫描 {
 /// **扫描面 = 全部 `种类[]`**：三个种类（支持库 · 模块 · 技能）**都有制品**，只是载入方式不同
 /// （支持库取能力码段 · 模块/技能只解析段），所以没有哪一类该被排除在候选外。
 /// 候选资格由「该子目录里有没有本种类的制品」判（`扩展装载/后缀表.json`），不由声明里的开关判。
-pub fn 读声明根(文本: &str) -> Result<声明根扫描, String> {
-    let 根目录 = crate::协议解析::解析协议值(文本)
+pub fn 读声明根(源文本: &str) -> Result<声明根扫描, String> {
+    let 根目录 = crate::协议解析::解析协议值(源文本)
         .map_err(|错误| format!("扩展根声明不是合法 JSON：{}", 错误.说明文字))?;
-    let 种类 = 根目录
+    let 扩展种类 = 根目录
         .取成员("种类")
         .and_then(|待处理值| 待处理值.取数组())
         .ok_or_else(|| "扩展根声明缺 `种类` 段".to_owned())?;
     let mut 目录s = Vec::new();
-    for 类别 in 种类 {
-        let Some(目录) = 类别.取成员("目录").and_then(|待处理值| 待处理值.取文本()) else {
+    for 类别 in 扩展种类 {
+        let Some(扩展根目录) = 类别.取成员("目录").and_then(|待处理值| 待处理值.取文本()) else {
             continue;
         };
-        目录s.push(PathBuf::from(目录));
+        目录s.push(PathBuf::from(扩展根目录));
     }
-    Ok(声明根扫描 { 种类数: 种类.len(), 目录s })
+    Ok(声明根扫描 { 种类数: 扩展种类.len(), 目录s })
 }

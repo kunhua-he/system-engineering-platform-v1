@@ -147,7 +147,7 @@ def 判_5_适配器通知口(测试世界: 判读世界):
                "pub fn 请求卸载按标识"]:
         if 记号 not in 测试世界.通知口:
             缺失表.append(f"通知口.rs 缺 {记号}")
-    if "通知.通道.注册通知端点(声明.标识串, 函数)" not in 测试世界.适配器lib:
+    if "通知.通道实例.注册通知端点(声明.标识串, 函数)" not in 测试世界.适配器lib:
         缺失表.append("适配器装载声明根未把申报的 通知函数 登记成端点（申报了送不到）")
     对象数 = 2  # 通知口.rs · 适配器 lib.rs
     if 缺失表:
@@ -188,14 +188,14 @@ def 判_6_优雅卸载真跑(测试世界: 判读世界):
 def 判_7_接缝符号名冻结(测试世界: 判读世界):
     """⑦ 接缝符号名与返回结构裁决定死（明示偏离并写进文档）。"""
     缺失表 = []
-    文本 = 测试世界.边界协议
-    if "GetPlatformInfo" not in 文本:
+    源文本 = 测试世界.边界协议
+    if "GetPlatformInfo" not in 源文本:
         缺失表.append("边界协议未写我方符号名 GetPlatformInfo")
-    if "GetNewInf" not in 文本:
+    if "GetNewInf" not in 源文本:
         缺失表.append("边界协议未点名参照实现 GetNewInf（无从判「1:1 还是偏离」）")
-    if "不复刻" not in 文本 and "偏离" not in 文本:
+    if "不复刻" not in 源文本 and "偏离" not in 源文本:
         缺失表.append("边界协议未明示「偏离/不复刻」")
-    if "冻结" not in 文本:
+    if "冻结" not in 源文本:
         缺失表.append("边界协议未写「冻结」")
     # 实现侧必须 dlsym 的正是这个冻结名
     实现名 = (测试世界.扩展根声明.get("扫描") or {}).get("找什么", "")
@@ -239,8 +239,8 @@ def 判_9_扩展crate类型单路(测试世界: 判读世界):
     if 对象数 == 0:
         return "未判", "扩展根目录下 0 份扩展 Cargo.toml（空集不算通过）", 0
     坏件表 = []
-    for 路径, 文本 in 测试世界.扩展Cargo表:
-        if 段含键(文本, "lib", "crate-type"):
+    for 路径, 源文本 in 测试世界.扩展Cargo表:
+        if 段含键(源文本, "lib", "crate-type"):
             坏件表.append(f"{路径} 的 [lib] 声明了 crate-type（只许装配侧编）")
     if "--crate-type" not in 测试世界.构建制品 or "cdylib" not in 测试世界.构建制品:
         坏件表.append("构建制品.py 未见装配侧 cargo rustc --crate-type cdylib（唯一那条路不在）")
@@ -249,9 +249,9 @@ def 判_9_扩展crate类型单路(测试世界: 判读世界):
     return "通过", f"{对象数} 份扩展 Cargo.toml 均未声明 crate-type · 装配侧现场编在", 对象数
 
 
-def 段含键(文本: str, 段名: str, 键名: str) -> bool:
+def 段含键(源文本: str, 段名: str, 键名: str) -> bool:
     """粗判 TOML：段 [段名] 到下一个 [ 之间是否出现 键名。"""
-    源码行 = 文本.splitlines()
+    源码行 = 源文本.splitlines()
     在段 = False
     for 行文 in 源码行:
         净文本 = 行文.strip()
@@ -291,10 +291,10 @@ def 判_10_命令类别号名表(测试世界: 判读世界):
 
 def 判_11_号段冲突显式优先级(测试世界: 判读世界):
     """⑪ 号段冲突判定不靠检查顺序的巧合（显式优先级口径）。"""
-    文本 = 测试世界.载入判定文
+    源文本 = 测试世界.载入判定文
     对象数 = 1
-    显式 = ("先于" in 文本 or "优先级" in 文本 or "优先于" in 文本)
-    点名 = ("号段冲突" in 文本) and ("自洽" in 文本)
+    显式 = ("先于" in 源文本 or "优先级" in 源文本 or "优先于" in 源文本)
+    点名 = ("号段冲突" in 源文本) and ("自洽" in 源文本)
     if 显式 and 点名:
         return "通过", "载入判定.json 显式写明「号段冲突先于声明自洽」", 对象数
     缺失表 = []
@@ -332,14 +332,14 @@ def 判_12_列扩展真清单(测试世界: 判读世界):
 def 判_13_装载失败报因(测试世界: 判读世界):
     """⑬ 装载失败报因（剔除并报原因，不静默）。"""
     缺失表 = []
-    文本 = 测试世界.启动网关
-    if "fn 取扩展声明" not in 文本 or "Result<&'static 平台信息, String>" not in 文本:
+    源文本 = 测试世界.启动网关
+    if "fn 取扩展声明" not in 源文本 or "Result<&'static 平台信息, String>" not in 源文本:
         缺失表.append("启动网关.rs 无 取扩展声明 且失败带 String 原因")
-    if "剔除的.push" not in 文本:
+    if "剔除的.push" not in 源文本:
         缺失表.append("启动网关.rs 未把失败落进「剔除」台账")
-    if "剔除 {落点}：{原因}" not in 文本:
+    if "剔除 {落点}：{原因}" not in 源文本:
         缺失表.append("启动网关.rs 未把剔除原因打出来")
-    if re.search(r"let\s+_\s*=\s*取扩展声明", 文本):
+    if re.search(r"let\s+_\s*=\s*取扩展声明", 源文本):
         缺失表.append("启动网关.rs 有 `let _ = 取扩展声明`（静默吞因）")
     对象数 = 1
     if 缺失表:
@@ -354,15 +354,15 @@ def 判_14_指纹重跑命令(测试世界: 判读世界):
     if not 指纹生成命令 or not 指纹脚本.exists():
         return "未判", f"生成命令不可跑（命令={指纹生成命令!r} · 脚本在={指纹脚本.exists()}）", 1
     try:
-        结果 = subprocess.run(
+        判定汇总 = subprocess.run(
             [sys.executable, str(指纹脚本), "--检查"],
             cwd=str(测试世界.仓根), capture_output=True, text=True, timeout=5,
         )
     except (OSError, subprocess.TimeoutExpired) as 错误:
         return "未判", f"重跑命令跑不起来：{错误}", 1
-    if 结果.returncode == 0:
+    if 判定汇总.returncode == 0:
         return "通过", "生成命令可跑 · --检查 退出码 0（指纹与盘面一致）", 1
-    return "失败", f"生成命令可跑，但 --检查 退出码 {结果.returncode}（指纹与盘面不符=制品滞后）：{结果.stdout.strip() or 结果.stderr.strip()}", 1
+    return "失败", f"生成命令可跑，但 --检查 退出码 {判定汇总.returncode}（指纹与盘面不符=制品滞后）：{判定汇总.stdout.strip() or 判定汇总.stderr.strip()}", 1
 
 
 def 判_16_适配器SendSync(测试世界: 判读世界):

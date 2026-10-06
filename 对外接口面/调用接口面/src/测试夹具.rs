@@ -33,7 +33,7 @@ impl 收到应答 {
         crate::协议解析::解析协议值(&self.体).unwrap_or_else(|错误| {
             panic!(
                 "应答体必须是合法 JSON，却在第 {} 字节报「{}」：\n{}",
-                错误.位置, 错误.说明文字, self.体
+                错误.出错位置, 错误.说明文字, self.体
             )
         })
     }
@@ -92,7 +92,7 @@ pub fn 无符号值(待处理值: &协议值, 键名: &str) -> u64 {
 }
 
 /// 取一个文本成员。
-pub fn 文本(待处理值: &协议值, 键名: &str) -> String {
+pub fn 源文本(待处理值: &协议值, 键名: &str) -> String {
     待处理值.取成员(键名)
         .and_then(协议值::取文本)
         .map(str::to_owned)
@@ -100,7 +100,7 @@ pub fn 文本(待处理值: &协议值, 键名: &str) -> String {
 }
 
 /// 取一个数组成员。
-pub fn 数组(待处理值: &协议值, 键名: &str) -> Vec<协议值> {
+pub fn 取成员数组(待处理值: &协议值, 键名: &str) -> Vec<协议值> {
     待处理值.取成员(键名)
         .and_then(协议值::取数组)
         .map(<[协议值]>::to_vec)
@@ -184,16 +184,16 @@ pub fn 发到端口(端口: u16, 请求: &str) -> 收到应答 {
 
 /// 解析原始应答文本。
 fn 解析应答(字节: &[u8]) -> 收到应答 {
-    let 文本 = String::from_utf8(字节.to_vec()).expect("应答必须是 UTF-8");
-    let (头部, 应答体) = 文本
+    let 源文本 = String::from_utf8(字节.to_vec()).expect("应答必须是 UTF-8");
+    let (头部, 应答体) = 源文本
         .split_once("\r\n\r\n")
-        .unwrap_or_else(|| panic!("应答必须有头体分界：\n{文本}"));
+        .unwrap_or_else(|| panic!("应答必须有头体分界：\n{源文本}"));
     let 状态 = 头部
         .lines()
         .next()
         .and_then(|源码行| 源码行.split(' ').nth(1))
         .and_then(|状态码| 状态码.parse::<u16>().ok())
-        .unwrap_or_else(|| panic!("应答首行必须是「HTTP/1.1 码 短语」：\n{文本}"));
+        .unwrap_or_else(|| panic!("应答首行必须是「HTTP/1.1 码 短语」：\n{源文本}"));
     收到应答 {
         状态,
         头: 头部.to_owned(),

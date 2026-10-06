@@ -34,11 +34,11 @@ def 检查资源声明(根目录):
 
 def 生成资源声明(根目录):
     """生成并落盘。→ 0（成）。`src/` 不存在即 fail-closed（生成失败 ⇒ 2）。"""
-    目录 = os.path.dirname(os.path.join(仓根, 落盘件(根目录)))
-    if not os.path.isdir(目录):
+    落点目录 = os.path.dirname(os.path.join(仓根, 落盘件(根目录)))
+    if not os.path.isdir(落点目录):
         raise 生成失败(
             "落点目录不存在：%s —— 生成物要落进实现 crate 的 src/（%s 下没有 src/）⇒ fail-closed"
-            % (os.path.relpath(目录, 仓根).replace(os.sep, "/"), 根目录)
+            % (os.path.relpath(落点目录, 仓根).replace(os.sep, "/"), 根目录)
         )
     新字节 = 渲染资源声明(根目录).encode("utf-8")
     with open(os.path.join(仓根, 落盘件(根目录)), "wb") as 句柄:

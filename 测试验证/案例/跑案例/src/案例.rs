@@ -47,7 +47,7 @@ pub struct 实参 {
 /// 一步：调能力（`通知号` / `读留痕条数` 均 `None`）· 发生命周期通知（`通知号 = Some`）· 读留痕（`读留痕条数 = Some`）。三者互斥。
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct 案例步骤 {
-    pub 名: String,
+    pub 名字: String,
     pub 能力编号: u32,
     pub 实参: Vec<实参>,
     pub 通知号: Option<u32>,
@@ -78,7 +78,7 @@ pub enum 产物判据 {
 /// 失败时期望的错误码。三项业务判断**必须写在案例里**——它们猜不出来（`README.md` 第七节）。
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct 错误码期望 {
-    pub 码: u32,
+    pub 码值: u32,
     pub 名称: String,
     pub 可重试: bool,
     pub 可自愈: bool,
@@ -104,8 +104,8 @@ pub enum 期望 {
 /// 一个案例。
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct 案例 {
-    pub 名: String,
-    pub 目录: PathBuf,
+    pub 名字: String,
+    pub 案例目录: PathBuf,
     pub 说明: String,
     /// 案例点名要装载的声明名（可选；空 = 只装被验扩展）。名字 → 声明在 `装载声明::解析声明名`。
     pub 声明: Vec<String>,
@@ -117,7 +117,7 @@ pub struct 案例 {
 
 impl 案例 {
     pub fn 程序文本路(&self) -> PathBuf {
-        self.目录.join(程序文本文件名)
+        self.案例目录.join(程序文本文件名)
     }
 }
 
@@ -156,73 +156,73 @@ pub fn 读全部(案例根: &Path) -> Result<Vec<案例>, String> {
     Ok(累积表)
 }
 
-fn 读一个(目录: &Path) -> Result<案例, String> {
-    let 清单 = 读JSON件(&目录.join("案例.json"))?;
-    let 名称 = 要串(&清单, "案例名")?.to_owned();
-    let 说明 = 要串(&清单, "说明")?.to_owned();
-    let 声明 = 读声明(&清单)?;
-    let 案例步骤 = 读步骤(&清单, 目录)?;
-    let 期望 = 读期望(&目录.join("期望.json"), 案例步骤.len(), 目录)?;
+fn 读一个(案例目录: &Path) -> Result<案例, String> {
+    let 案例清单 = 读JSON件(&案例目录.join("案例.json"))?;
+    let 名称 = 要串(&案例清单, "案例名")?.to_owned();
+    let 说明 = 要串(&案例清单, "说明")?.to_owned();
+    let 声明 = 读声明(&案例清单)?;
+    let 案例步骤 = 读步骤(&案例清单, 案例目录)?;
+    let 期望 = 读期望(&案例目录.join("期望.json"), 案例步骤.len(), 案例目录)?;
     if 案例步骤.is_empty() {
-        return Err(format!("{}：步骤是空集 —— 空集不算通过", 目录.display()));
+        return Err(format!("{}：步骤是空集 —— 空集不算通过", 案例目录.display()));
     }
-    Ok(案例 { 名: 名称, 目录: 目录.to_path_buf(), 说明, 声明, 案例步骤, 期望 })
+    Ok(案例 { 名字: 名称, 案例目录: 案例目录.to_path_buf(), 说明, 声明, 案例步骤, 期望 })
 }
 
 /// 读案例点名的**声明表**（可选；空 = 只装被验扩展）。名字不认由 `装载声明` 报。
-fn 读声明(清单: &JSON值) -> Result<Vec<String>, String> {
-    let Some(项表) = 清单.取成员("声明") else { return Ok(Vec::new()) };
+fn 读声明(案例清单: &JSON值) -> Result<Vec<String>, String> {
+    let Some(项表) = 案例清单.取成员("声明") else { return Ok(Vec::new()) };
     let 项表 = 项表.取数组().ok_or_else(|| "`声明` 不是数组".to_owned())?;
     let mut 声明表 = Vec::with_capacity(项表.len());
-    for 成员 in 项表 {
-        声明表.push(成员.取字符串().ok_or_else(|| "`声明` 项不是字符串".to_owned())?.to_owned());
+    for 数组项 in 项表 {
+        声明表.push(数组项.取字符串().ok_or_else(|| "`声明` 项不是字符串".to_owned())?.to_owned());
     }
     Ok(声明表)
 }
 
-fn 读步骤(清单: &JSON值, 目录: &Path) -> Result<Vec<案例步骤>, String> {
-    let 项表 = 清单
+fn 读步骤(案例清单: &JSON值, 案例目录: &Path) -> Result<Vec<案例步骤>, String> {
+    let 项表 = 案例清单
         .取成员("步骤")
         .and_then(|成员值| 成员值.取数组())
-        .ok_or_else(|| format!("{}：`步骤` 缺失或不是数组", 目录.display()))?;
+        .ok_or_else(|| format!("{}：`步骤` 缺失或不是数组", 案例目录.display()))?;
     let mut 累积表 = Vec::new();
     for (序号, 步骤项) in 项表.iter().enumerate() {
         let 名称 = 步骤项
             .取成员("名")
             .and_then(|成员值| 成员值.取字符串())
-            .ok_or_else(|| format!("{}：步骤[{序号}] 缺 `名`", 目录.display()))?
+            .ok_or_else(|| format!("{}：步骤[{序号}] 缺 `名`", 案例目录.display()))?
             .to_owned();
         // 通知步骤：写 `通知号` 而不是 `能力编号`（二者互斥；通知步骤没有实参）。
         // 两种步骤共用一次 `步骤 { … }` 构造（只此处一处 `名:` 字段），故先读通知号再分派。
         let 通知号 = 步骤项
             .取成员("通知号")
-            .and_then(|成员| 成员.取整数())
-            .and_then(|个数| u32::try_from(个数).ok());
-        let 读留痕条数 = 步骤项.取成员("读留痕").and_then(|成员| 成员.取整数()).and_then(|个数| u32::try_from(个数).ok());
+            .and_then(|数组项| 数组项.取整数())
+            .and_then(|整数值| u32::try_from(整数值).ok());
+        let 读留痕条数 = 步骤项.取成员("读留痕").and_then(|数组项| 数组项.取整数()).and_then(|整数值| u32::try_from(整数值).ok());
         let mut 能力编号 = 0;
         let mut 实参 = Vec::new();
         if 通知号.is_none() && 读留痕条数.is_none() {
             能力编号 = 步骤项
                 .取成员("能力编号")
                 .and_then(|成员值| 成员值.取整数())
-                .and_then(|个数| u32::try_from(个数).ok())
-                .ok_or_else(|| format!("{}：步骤[{序号}] 的 `能力编号` 缺失或不是 32 位整数", 目录.display()))?;
+                .and_then(|整数值| u32::try_from(整数值).ok())
+                .ok_or_else(|| format!("{}：步骤[{序号}] 的 `能力编号` 缺失或不是 32 位整数", 案例目录.display()))?;
             let 实参表 = 步骤项
                 .取成员("实参")
                 .and_then(|成员值| 成员值.取数组())
-                .ok_or_else(|| format!("{}：步骤[{序号}] 的 `实参` 缺失或不是数组", 目录.display()))?;
-        for (位置, 实参项) in 实参表.iter().enumerate() {
+                .ok_or_else(|| format!("{}：步骤[{序号}] 的 `实参` 缺失或不是数组", 案例目录.display()))?;
+        for (实参序号, 实参项) in 实参表.iter().enumerate() {
             let 类型标签 = 实参项
                 .取成员("类型标签")
                 .and_then(|成员值| 成员值.取整数())
-                .and_then(|个数| u32::try_from(个数).ok())
+                .and_then(|整数值| u32::try_from(整数值).ok())
                 .ok_or_else(|| {
-                    format!("{}：步骤[{序号}].实参[{位置}] 的 `类型标签` 缺失或不是 32 位整数", 目录.display())
+                    format!("{}：步骤[{序号}].实参[{实参序号}] 的 `类型标签` 缺失或不是 32 位整数", 案例目录.display())
                 })?;
             let 来源名 = 实参项
                 .取成员("来源")
                 .and_then(|成员值| 成员值.取字符串())
-                .ok_or_else(|| format!("{}：步骤[{序号}].实参[{位置}] 缺 `来源`", 目录.display()))?;
+                .ok_or_else(|| format!("{}：步骤[{序号}].实参[{实参序号}] 缺 `来源`", 案例目录.display()))?;
             let 值项 = 实参项.取成员("值");
             let 来源 = match 来源名 {
                 "程序文本" => 实参来源::程序文本,
@@ -230,35 +230,35 @@ fn 读步骤(清单: &JSON值, 目录: &Path) -> Result<Vec<案例步骤>, Strin
                     值项
                         .and_then(|成员值| 成员值.取字符串())
                         .ok_or_else(|| {
-                            format!("{}：步骤[{序号}].实参[{位置}] 来源是 `文件`，缺 `值`（路径）", 目录.display())
+                            format!("{}：步骤[{序号}].实参[{实参序号}] 来源是 `文件`，缺 `值`（路径）", 案例目录.display())
                         })?
                         .to_owned(),
                 )),
                 "十六进制" => {
-                    let 文本 = 值项.and_then(|成员值| 成员值.取字符串()).ok_or_else(|| {
-                        format!("{}：步骤[{序号}].实参[{位置}] 来源是 `十六进制`，缺 `值`", 目录.display())
+                    let 源文本 = 值项.and_then(|成员值| 成员值.取字符串()).ok_or_else(|| {
+                        format!("{}：步骤[{序号}].实参[{实参序号}] 来源是 `十六进制`，缺 `值`", 案例目录.display())
                     })?;
-                    实参来源::十六进制字节(解十六进制(文本).map_err(|错误| {
-                        format!("{}：步骤[{序号}].实参[{位置}] 的十六进制：{错误}", 目录.display())
+                    实参来源::十六进制字节(解十六进制(源文本).map_err(|错误| {
+                        format!("{}：步骤[{序号}].实参[{实参序号}] 的十六进制：{错误}", 案例目录.display())
                     })?)
                 }
                 "上一步返回" => 实参来源::上一步返回,
                 其他来源 => {
                     return Err(format!(
-                        "{}：步骤[{序号}].实参[{位置}] 的 `来源` 不认：`{其他来源}`（只认 程序文本 / 文件 / 十六进制 / 上一步返回）",
-                        目录.display()
+                        "{}：步骤[{序号}].实参[{实参序号}] 的 `来源` 不认：`{其他来源}`（只认 程序文本 / 文件 / 十六进制 / 上一步返回）",
+                        案例目录.display()
                     ));
                 }
             };
             实参.push(实参 { 类型标签, 来源 });
         }
         }
-        累积表.push(案例步骤 { 名: 名称, 能力编号, 实参, 通知号, 读留痕条数 });
+        累积表.push(案例步骤 { 名字: 名称, 能力编号, 实参, 通知号, 读留痕条数 });
     }
     Ok(累积表)
 }
 
-fn 读期望(路径: &Path, 步骤数: usize, 目录: &Path) -> Result<Vec<期望>, String> {
+fn 读期望(路径: &Path, 步骤数: usize, 案例目录: &Path) -> Result<Vec<期望>, String> {
     let 根目录 = 读JSON件(路径)?;
     let 项表 = 根目录
         .取成员("步骤")
@@ -273,16 +273,16 @@ fn 读期望(路径: &Path, 步骤数: usize, 目录: &Path) -> Result<Vec<期�
     }
     let mut 累积表 = Vec::new();
     for (序号, 步骤项) in 项表.iter().enumerate() {
-        let 结果 = 步骤项
+        let 调用结局 = 步骤项
             .取成员("结果")
             .and_then(|成员值| 成员值.取字符串())
             .ok_or_else(|| format!("{}：步骤[{序号}] 缺 `结果`", 路径.display()))?;
-        let 判定 = match 结果 {
+        let 判定 = match 调用结局 {
             "成功" => 期望::成功 {
-                产物: 读产物(步骤项, 目录)?,
+                产物: 读产物(步骤项, 案例目录)?,
                 派发结果: 步骤项
                     .取成员("派发结果")
-                    .and_then(|成员| 成员.取字符串())
+                    .and_then(|数组项| 数组项.取字符串())
                     .map(str::to_owned),
             },
             "失败" => {
@@ -295,13 +295,13 @@ fn 读期望(路径: &Path, 步骤数: usize, 目录: &Path) -> Result<Vec<期�
                     .取成员("错误码")
                     .ok_or_else(|| format!("{}：步骤[{序号}] 结果=失败，必须有 `错误码`", 路径.display()))?;
                 let 错误码 = 错误码期望 {
-                    码: 要整数(码项, "码", 路径)?,
+                    码值: 要整数(码项, "码", 路径)?,
                     名称: 要串(码项, "名称")?.to_owned(),
                     可重试: 要真假(码项, "可重试")?,
                     可自愈: 要真假(码项, "可自愈")?,
                     需人工: 要真假(码项, "需人工")?,
                 };
-                期望::失败 { 死在哪一层: 层级, 错误码, 产物: 读产物(步骤项, 目录)? }
+                期望::失败 { 死在哪一层: 层级, 错误码, 产物: 读产物(步骤项, 案例目录)? }
             }
             其他结果 => {
                 return Err(format!(
@@ -315,20 +315,20 @@ fn 读期望(路径: &Path, 步骤数: usize, 目录: &Path) -> Result<Vec<期�
     Ok(累积表)
 }
 
-fn 读产物(产物值: &JSON值, 目录: &Path) -> Result<产物判据, String> {
+fn 读产物(产物值: &JSON值, 案例目录: &Path) -> Result<产物判据, String> {
     let Some(产物) = 产物值.取成员("产物") else {
         return Ok(产物判据::不看返回槽);
     };
     let 判定值 = 产物
         .取成员("判据")
         .and_then(|成员值| 成员值.取字符串())
-        .ok_or_else(|| format!("{}：`产物` 缺 `判据`", 目录.display()))?;
+        .ok_or_else(|| format!("{}：`产物` 缺 `判据`", 案例目录.display()))?;
     match 判定值 {
         "空槽" => Ok(产物判据::空槽),
         "非空字节集" => Ok(产物判据::非空字节集),
         "不判" => Ok(产物判据::不看返回槽),
         "留痕首条能力号" => Ok(产物判据::留痕首条能力号(
-            产物.取成员("能力号").and_then(|成员| 成员.取数值()).ok_or_else(|| "`留痕首条能力号` 缺 `能力号`".to_owned())? as u32,
+            产物.取成员("能力号").and_then(|数组项| 数组项.取数值()).ok_or_else(|| "`留痕首条能力号` 缺 `能力号`".to_owned())? as u32,
         )),
         "错误槽" => Ok(产物判据::错误槽(
             产物
@@ -348,31 +348,31 @@ fn 读产物(产物值: &JSON值, 目录: &Path) -> Result<产物判据, String>
 }
 
 /// 相对路径按案例目录解；绝对路径原样用（只读语料在仓外）。
-pub fn 解路(目录: &Path, 路径: &Path) -> PathBuf {
+pub fn 解路(案例目录: &Path, 路径: &Path) -> PathBuf {
     if 路径.is_absolute() {
         路径.to_path_buf()
     } else {
-        目录.join(路径)
+        案例目录.join(路径)
     }
 }
 
-pub fn 解十六进制(文本: &str) -> Result<Vec<u8>, String> {
-    let 净文本: Vec<u8> = 文本.bytes().filter(|字符表| !matches!(字符表, b' ' | b'\n' | b'\r' | b'\t')).collect();
+pub fn 解十六进制(源文本: &str) -> Result<Vec<u8>, String> {
+    let 净文本: Vec<u8> = 源文本.bytes().filter(|字符表| !matches!(字符表, b' ' | b'\n' | b'\r' | b'\t')).collect();
     if !净文本.len().is_multiple_of(2) {
         return Err(format!("十六进制位数是奇数（{}）", 净文本.len()));
     }
     let mut 累积表 = Vec::with_capacity(净文本.len() / 2);
     for 字节对 in 净文本.chunks(2) {
-        let 文本 = std::str::from_utf8(字节对).map_err(|_| "不是 ASCII".to_owned())?;
-        let 字节值 = u8::from_str_radix(文本, 16).map_err(|_| format!("`{文本}` 不是十六进制字节"))?;
+        let 源文本 = std::str::from_utf8(字节对).map_err(|_| "不是 ASCII".to_owned())?;
+        let 字节值 = u8::from_str_radix(源文本, 16).map_err(|_| format!("`{源文本}` 不是十六进制字节"))?;
         累积表.push(字节值);
     }
     Ok(累积表)
 }
 
 fn 读JSON件(路径: &Path) -> Result<JSON值, String> {
-    let 文本 = std::fs::read_to_string(路径).map_err(|错误| format!("读不到 {}：{错误}", 路径.display()))?;
-    最小JSON::解析JSON值(&文本).map_err(|错误| format!("{} 不是合法 JSON：{错误}", 路径.display()))
+    let 源文本 = std::fs::read_to_string(路径).map_err(|错误| format!("读不到 {}：{错误}", 路径.display()))?;
+    最小JSON::解析JSON值(&源文本).map_err(|错误| format!("{} 不是合法 JSON：{错误}", 路径.display()))
 }
 
 fn 要串<'a>(容器值: &'a JSON值, 键名: &str) -> Result<&'a str, String> {
@@ -382,7 +382,7 @@ fn 要串<'a>(容器值: &'a JSON值, 键名: &str) -> Result<&'a str, String> {
 fn 要整数(容器值: &JSON值, 键名: &str, 路径: &Path) -> Result<u32, String> {
     容器值.取成员(键名)
         .and_then(|成员值| 成员值.取整数())
-        .and_then(|个数| u32::try_from(个数).ok())
+        .and_then(|整数值| u32::try_from(整数值).ok())
         .ok_or_else(|| format!("{}：`{键名}` 缺失或不是 32 位整数", 路径.display()))
 }
 

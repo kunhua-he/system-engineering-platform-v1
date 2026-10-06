@@ -26,10 +26,10 @@ def 进程活着(pid: int) -> bool:
         return False
 
 
-def 起实例(标识: str, 端口: int) -> dict:
+def 起实例(标识: str, 监听端口: int) -> dict:
     """起一份制品的网关实例。`端口=0` ⇒ 由 OS 分配（装载预检用，流量不动）。"""
-    目录 = 制品目录(标识)
-    日志 = 运行根 / "日志" / "{}-{}.log".format(标识, 端口 or "随机")
+    制品落点目录 = 制品目录(标识)
+    日志 = 运行根 / "日志" / "{}-{}.log".format(标识, 监听端口 or "随机")
     输出流 = 日志.open("w", encoding="utf-8")
     # cwd 必须是**制品目录**：制品内 `扩展根声明.json` 的 `路径基准` 就是「工作目录」，
     # `种类[].目录` 指的是制品内的 `扩展/`（`上线切换/形状.md` §三）。扩展这条路靠 cwd 走。
@@ -39,13 +39,13 @@ def 起实例(标识: str, 端口: int) -> dict:
     # 实测（2026-09-27）：只给 `cwd=制品目录` ⇒ `GET /` 全 404、`GET /接口/案例` 恒 9002。
     进程 = subprocess.Popen(
         [
-            str(目录 / "网关"),
+            str(制品落点目录 / "网关"),
             "--声明根", "扩展根声明.json",
-            "--端口", str(端口),
+            "--端口", str(监听端口),
             "--静态根", str(仓根 / "前端呈现" / "网页应用"),
             "--工具根", str(仓根),
         ],
-        cwd=str(目录),
+        cwd=str(制品落点目录),
         stdout=输出流,
         stderr=subprocess.STDOUT,
         stdin=subprocess.DEVNULL,
@@ -55,9 +55,9 @@ def 起实例(标识: str, 端口: int) -> dict:
     if 实际 is None:
         进程.kill()
         raise SystemExit("实例没起来（日志 {}）：\n{}".format(日志, 日志.read_text(encoding="utf-8")))
-    记录 = {"制品标识": 标识, "pid": 进程.pid, "端口": 实际, "日志": str(日志), "制品落点": str(目录)}
-    写指针("已装载/{}".format(标识), 记录)
-    return 记录
+    实例台账 = {"制品标识": 标识, "pid": 进程.pid, "端口": 实际, "日志": str(日志), "制品落点": str(制品落点目录)}
+    写指针("已装载/{}".format(标识), 实例台账)
+    return 实例台账
 
 
 def 等端口(日志: Path, 进程) -> int:
@@ -74,8 +74,8 @@ def 等端口(日志: Path, 进程) -> int:
     return None
 
 
-def 停实例(记录: dict) -> str:
-    pid = int(记录.get("pid") or 0)
+def 停实例(实例台账: dict) -> str:
+    pid = int(实例台账.get("pid") or 0)
     if not pid or not 进程活着(pid):
         return "pid {} 已不在".format(pid or "?")
     try:
@@ -91,7 +91,7 @@ def 停实例(记录: dict) -> str:
     return "pid {} 已停".format(pid)
 
 
-def 取健康读数(端口: int) -> tuple:
+def 取健康读数(监听端口: int) -> tuple:
     """`GET /接口` → (HTTP 状态, 读数)。这是「起没起来」的唯一判据（不是看进程在不在）。
 
     **实测**：路径必须**百分号编码**。端点名是中文，而 Python 标准库的 `http.client`
@@ -100,15 +100,15 @@ def 取健康读数(端口: int) -> tuple:
     """
     路径 = urllib.parse.quote("/接口")
     try:
-        with urllib.request.urlopen("http://127.0.0.1:{}{}".format(端口, 路径), timeout=健康超时秒) as 造应答:
-            文本 = 造应答.read().decode("utf-8")
+        with urllib.request.urlopen("http://127.0.0.1:{}{}".format(监听端口, 路径), timeout=健康超时秒) as 造应答:
+            源文本 = 造应答.read().decode("utf-8")
             状态码 = 造应答.status
     except (urllib.error.URLError, socket.timeout, ConnectionError) as 错误:
         return 0, "连不上：{}".format(错误)
     try:
-        应答描述 = json.loads(文本)
+        应答描述 = json.loads(源文本)
     except ValueError:
-        return 状态码, "返回不是 JSON（{} 字节）".format(len(文本))
+        return 状态码, "返回不是 JSON（{} 字节）".format(len(源文本))
     契约版本 = 应答描述.get("契约版本") or {}
     return 状态码, "契约版本 {}.{}.{} · 实际端口 {} · 能力 {} 条".format(
         契约版本.get("主", "?"), 契约版本.get("次", "?"), 契约版本.get("构建", "?"),
@@ -116,10 +116,10 @@ def 取健康读数(端口: int) -> tuple:
     )
 
 
-def 要求健康读数(端口: int) -> None:
-    状态码, 读数 = 取健康读数(端口)
+def 要求健康读数(监听端口: int) -> None:
+    状态码, 读数 = 取健康读数(监听端口)
     if 状态码 != 200:
-        raise SystemExit("健康检查不过（端口 {}）：{}".format(端口, 读数))
+        raise SystemExit("健康检查不过（端口 {}）：{}".format(监听端口, 读数))
     打印文本("  健康检查 GET /接口 → 200 · {}".format(读数))
 
 
@@ -129,7 +129,7 @@ def 活着的实例() -> list:
     return [读指针("已装载/{}".format(路径.stem)) for 路径 in sorted((运行根 / "已装载").glob("*.json"))]
 
 
-def 端口空着(端口: int) -> bool:
+def 端口空着(监听端口: int) -> bool:
     """流量口是否**空着**（模式=停 的判据：「停下 + 流量口空着」）。
 
     判法是**连一次**：连得上 ⇒ 还有东西在听（不空）；连接被拒 ⇒ 空。
@@ -138,7 +138,7 @@ def 端口空着(端口: int) -> bool:
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as 套接字:
         套接字.settimeout(0.5)
         try:
-            套接字.connect(("127.0.0.1", 端口))
+            套接字.connect(("127.0.0.1", 监听端口))
             return False
         except OSError:
             return True

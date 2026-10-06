@@ -22,7 +22,7 @@ const 最大深度: usize = 64;
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct 解析错误 {
     /// 出错字节偏移（0 起）。
-    pub 位置: usize,
+    pub 出错位置: usize,
     /// 哪一处不合法。
     pub 说明文字: String,
 }
@@ -31,12 +31,12 @@ pub struct 解析错误 {
 pub fn 解析协议值(来源: &str) -> Result<协议值, 解析错误> {
     let mut 游标 = 游标 {
         字节: 来源.as_bytes(),
-        位: 0,
+        游标位: 0,
     };
     游标.跳空白();
     let 待处理值 = 游标.取值(0)?;
     游标.跳空白();
-    if 游标.位 != 游标.字节.len() {
+    if 游标.游标位 != 游标.字节.len() {
         return Err(游标.报错("尾部还有多余内容"));
     }
     Ok(待处理值)
@@ -45,32 +45,32 @@ pub fn 解析协议值(来源: &str) -> Result<协议值, 解析错误> {
 /// 一个只进不退的读游标。
 struct 游标<'a> {
     字节: &'a [u8],
-    位: usize,
+    游标位: usize,
 }
 
 impl<'a> 游标<'a> {
     fn 报错(&self, 说明文字: &str) -> 解析错误 {
         解析错误 {
-            位置: self.位,
+            出错位置: self.游标位,
             说明文字: 说明文字.to_owned(),
         }
     }
 
     fn 取当前字节(&self) -> Option<u8> {
-        self.字节.get(self.位).copied()
+        self.字节.get(self.游标位).copied()
     }
 
     fn 前进一字节(&mut self) -> Option<u8> {
         let 字符表 = self.取当前字节();
         if 字符表.is_some() {
-            self.位 += 1;
+            self.游标位 += 1;
         }
         字符表
     }
 
     fn 跳空白(&mut self) {
         while matches!(self.取当前字节(), Some(b' ' | b'\t' | b'\n' | b'\r')) {
-            self.位 += 1;
+            self.游标位 += 1;
         }
     }
 
@@ -81,7 +81,7 @@ impl<'a> 游标<'a> {
         match self.取当前字节() {
             Some(b'{') => self.取对象(深度),
             Some(b'[') => self.取数组(深度),
-            Some(b'"') => self.取文本().map(协议值::文本),
+            Some(b'"') => self.取文本().map(协议值::文本值),
             Some(b't') => self.取字面(b"true", 协议值::真值),
             Some(b'f') => self.取字面(b"false", 协议值::假值),
             Some(b'n') => self.取字面(b"null", 协议值::空值项),
@@ -92,20 +92,20 @@ impl<'a> 游标<'a> {
     }
 
     fn 取字面(&mut self, 期望: &[u8], 待处理值: 协议值) -> Result<协议值, 解析错误> {
-        if self.字节[self.位..].starts_with(期望) {
-            self.位 += 期望.len();
+        if self.字节[self.游标位..].starts_with(期望) {
+            self.游标位 += 期望.len();
             return Ok(待处理值);
         }
         Err(self.报错("字面量写错了"))
     }
 
     fn 取对象(&mut self, 深度: usize) -> Result<协议值, 解析错误> {
-        self.位 += 1; // '{'
-        let mut 成员: Vec<(String, 协议值)> = Vec::new();
+        self.游标位 += 1; // '{'
+        let mut 对象成员: Vec<(String, 协议值)> = Vec::new();
         self.跳空白();
         if self.取当前字节() == Some(b'}') {
-            self.位 += 1;
-            return Ok(协议值::对象(成员));
+            self.游标位 += 1;
+            return Ok(协议值::对象值(对象成员));
         }
         loop {
             self.跳空白();
@@ -113,7 +113,7 @@ impl<'a> 游标<'a> {
                 return Err(self.报错("对象的键必须是字符串"));
             }
             let 键名 = self.取文本()?;
-            if 成员.iter().any(|(名称, _)| *名称 == 键名) {
+            if 对象成员.iter().any(|(名称, _)| *名称 == 键名) {
                 // 重复键有两解。**不猜**：猜一个就是把语义改错。
                 return Err(self.报错("同一个键出现了两次"));
             }
@@ -123,23 +123,23 @@ impl<'a> 游标<'a> {
             }
             self.跳空白();
             let 待处理值 = self.取值(深度 + 1)?;
-            成员.push((键名, 待处理值));
+            对象成员.push((键名, 待处理值));
             self.跳空白();
             match self.前进一字节() {
                 Some(b',') => continue,
-                Some(b'}') => return Ok(协议值::对象(成员)),
+                Some(b'}') => return Ok(协议值::对象值(对象成员)),
                 _ => return Err(self.报错("对象里缺少逗号或右花括号")),
             }
         }
     }
 
     fn 取数组(&mut self, 深度: usize) -> Result<协议值, 解析错误> {
-        self.位 += 1; // '['
+        self.游标位 += 1; // '['
         let mut 数组项: Vec<协议值> = Vec::new();
         self.跳空白();
         if self.取当前字节() == Some(b']') {
-            self.位 += 1;
-            return Ok(协议值::数组(数组项));
+            self.游标位 += 1;
+            return Ok(协议值::数组值(数组项));
         }
         loop {
             self.跳空白();
@@ -147,14 +147,14 @@ impl<'a> 游标<'a> {
             self.跳空白();
             match self.前进一字节() {
                 Some(b',') => continue,
-                Some(b']') => return Ok(协议值::数组(数组项)),
+                Some(b']') => return Ok(协议值::数组值(数组项)),
                 _ => return Err(self.报错("数组里缺少逗号或右方括号")),
             }
         }
     }
 
     fn 取文本(&mut self) -> Result<String, 解析错误> {
-        self.位 += 1; // 开引号
+        self.游标位 += 1; // 开引号
         let mut 输出缓冲: Vec<u8> = Vec::new();
         loop {
             match self.前进一字节() {
@@ -219,54 +219,54 @@ impl<'a> 游标<'a> {
     }
 
     fn 取数(&mut self) -> Result<协议值, 解析错误> {
-        let 区间起点 = self.位;
+        let 区间起点 = self.游标位;
         if self.取当前字节() == Some(b'-') {
-            self.位 += 1;
+            self.游标位 += 1;
         }
         // 前导零不合法（`01` 与 `1` 是两种写法，JSON 只认后者）。
-        if self.取当前字节() == Some(b'0') && matches!(self.字节.get(self.位 + 1), Some(b'0'..=b'9')) {
+        if self.取当前字节() == Some(b'0') && matches!(self.字节.get(self.游标位 + 1), Some(b'0'..=b'9')) {
             return Err(self.报错("数字不许有前导零"));
         }
         while matches!(self.取当前字节(), Some(b'0'..=b'9')) {
-            self.位 += 1;
+            self.游标位 += 1;
         }
         let mut 是小数 = false;
         if self.取当前字节() == Some(b'.') {
             是小数 = true;
-            self.位 += 1;
+            self.游标位 += 1;
             if !matches!(self.取当前字节(), Some(b'0'..=b'9')) {
                 return Err(self.报错("小数点后面必须有数字"));
             }
             while matches!(self.取当前字节(), Some(b'0'..=b'9')) {
-                self.位 += 1;
+                self.游标位 += 1;
             }
         }
         if matches!(self.取当前字节(), Some(b'e' | b'E')) {
             是小数 = true;
-            self.位 += 1;
+            self.游标位 += 1;
             if matches!(self.取当前字节(), Some(b'+' | b'-')) {
-                self.位 += 1;
+                self.游标位 += 1;
             }
             if !matches!(self.取当前字节(), Some(b'0'..=b'9')) {
                 return Err(self.报错("指数后面必须有数字"));
             }
             while matches!(self.取当前字节(), Some(b'0'..=b'9')) {
-                self.位 += 1;
+                self.游标位 += 1;
             }
         }
-        let 文本 = core::str::from_utf8(&self.字节[区间起点..self.位])
+        let 文本值 = core::str::from_utf8(&self.字节[区间起点..self.游标位])
             .map_err(|_| self.报错("数字不是合法 UTF-8"))?;
         if 是小数 {
-            return 文本
+            return 文本值
                 .parse::<f64>()
                 .map(协议值::小数)
                 .map_err(|_| self.报错("小数超出 64 位浮点能表达的范围"));
         }
         // 整数：先试有符号，再试无符号（`数据槽.值` 是 u64，高位句柄不许被静默改写）。
-        文本
+        文本值
             .parse::<i64>()
-            .map(协议值::整数)
-            .or_else(|_| 文本.parse::<u64>().map(协议值::无符号值))
+            .map(协议值::整数项)
+            .or_else(|_| 文本值.parse::<u64>().map(协议值::无符号值))
             .map_err(|_| self.报错("整数超出 64 位范围"))
     }
 }
@@ -280,7 +280,7 @@ mod 解析测试 {
         assert!(matches!(解析协议值("null"), Ok(协议值::空值项)));
         assert!(matches!(解析协议值(" true "), Ok(协议值::真值)));
         assert!(matches!(解析协议值("false"), Ok(协议值::假值)));
-        assert!(matches!(解析协议值("-12"), Ok(协议值::整数(-12))));
+        assert!(matches!(解析协议值("-12"), Ok(协议值::整数项(-12))));
         // 超出 i64 但仍在 u64 内：单列一支，不许静默改写。
         assert!(matches!(
             解析协议值("18446744073709551615"),
@@ -295,12 +295,12 @@ mod 解析测试 {
     #[test]
     fn 对象与数组_键序原样保留() {
         let 待处理值 = 解析协议值(r#"{"次项":2,"首项":[1,{"末项":null}]}"#).expect("合法");
-        let 成员 = match &待处理值 {
-            协议值::对象(成员) => 成员,
+        let 对象成员 = match &待处理值 {
+            协议值::对象值(对象成员) => 对象成员,
             _ => panic!("应当是对象"),
         };
-        assert_eq!(成员[0].0, "次项", "键序 = 插入序");
-        assert_eq!(成员[1].0, "首项");
+        assert_eq!(对象成员[0].0, "次项", "键序 = 插入序");
+        assert_eq!(对象成员[1].0, "首项");
         assert_eq!(待处理值.取成员("首项").and_then(协议值::取数组).map(<[_]>::len), Some(2));
     }
 
@@ -337,7 +337,7 @@ mod 解析测试 {
     #[test]
     fn 错误带位置() {
         let 错误 = 解析协议值("{\"a\":1,}").expect_err("尾部逗号不合法");
-        assert!(错误.位置 > 0, "错误必须报出位置");
+        assert!(错误.出错位置 > 0, "错误必须报出位置");
         assert!(!错误.说明文字.is_empty(), "错误必须说清哪一处");
     }
 }

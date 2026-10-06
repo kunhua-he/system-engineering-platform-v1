@@ -30,9 +30,9 @@ def 跑自测(样本路径="/tmp/易语言源码/lib/shellEx.fne"):
         print("警告：好样本自身就解不动（%s），反向样本只跑通用那批" % ex)
     print("自测：喂 %d 个坏样本，断言「报错且不产出字段」" % len(坏样本表))
     失败 = 0
-    for 名称, 数据 in 坏样本表:
+    for 名称, 文件字节 in 坏样本表:
         try:
-            pe = PE(数据, 名称)
+            pe = PE(文件字节, 名称)
             字典 = {字段项[2]: 字段项[4] for 字段项 in 读字段(pe, pe.转偏移(解接缝(pe)[3]), 库信息字段)}
             if 字典["m_dwLibFormatVer"] != 库格式号:
                 raise 解析错误("格式号不符 0x%08x" % 字典["m_dwLibFormatVer"])

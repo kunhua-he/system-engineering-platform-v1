@@ -80,7 +80,7 @@ def 入口函数(命令行参数):
     except OSError as 错误:
         print(f"起不来：静态服务开不了（{错误}）", file=sys.stderr)
         return 1
-    端口 = 服务.server_address[1]
+    监听端口 = 服务.server_address[1]
     服务.allow_reuse_address = True
     threading.Thread(target=服务.serve_forever, daemon=True).start()
     try:
@@ -94,7 +94,7 @@ def 入口函数(命令行参数):
             try:
                 页面 = 浏览器.new_page(viewport={"width": 宽度, "height": 高度})
                 # `load` 而不是 `networkidle`：本页会周期性拉 `/接口`，networkidle 可能永远不达。
-                页面.goto(f"http://127.0.0.1:{端口}/", wait_until="load", timeout=5000)
+                页面.goto(f"http://127.0.0.1:{监听端口}/", wait_until="load", timeout=5000)
                 页面.wait_for_timeout(800)  # 让首帧布局与字体落定
                 页面.screenshot(path=str(出图))
             finally:
@@ -106,7 +106,7 @@ def 入口函数(命令行参数):
     if not 出图.is_file():
         print(f"渲染失败：没写出来 {出图}", file=sys.stderr)
         return 1
-    print(f"出图 {出图} · {宽度}x{高度} · {出图.stat().st_size} 字节 · 静态服务端口 {端口}")
+    print(f"出图 {出图} · {宽度}x{高度} · {出图.stat().st_size} 字节 · 静态服务端口 {监听端口}")
     print(f"对拍：python3 开发工具/取证/配色对拍.py {参考图.relative_to(仓根)} {出图}")
     return 0
 

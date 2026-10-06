@@ -22,8 +22,8 @@ from 常量 import 仓根, 扩展根声明源, 网关产物, 暂存根  # noqa: 
 
 def 载入构建制品():
     """进程内加载 `构建装配/上线切换/构建制品.py`（转调它的扩展产物节点，不复制它的 cargo 命令）。"""
-    清单 = 仓根 / "构建装配" / "上线切换" / "构建制品.py"
-    规格 = importlib.util.spec_from_file_location("构建制品", 清单)
+    制品脚本 = 仓根 / "构建装配" / "上线切换" / "构建制品.py"
+    规格 = importlib.util.spec_from_file_location("构建制品", 制品脚本)
     制品模块 = importlib.util.module_from_spec(规格)
     规格.loader.exec_module(制品模块)
     return 制品模块
@@ -80,7 +80,7 @@ def 搭暂存(动态库: Path) -> Path:
         "形状与 扩展装载/扩展根声明.json 一致。生成器：构建装配/演示/起演示.py"
     )
     声明["种类"] = [
-        dict(类别, 目录=str(扩展树 / Path(类别.get("目录", "")).name)) for 类别 in 来源.get("种类", [])
+        dict(扩展类别, 目录=str(扩展树 / Path(扩展类别.get("目录", "")).name)) for 扩展类别 in 来源.get("种类", [])
     ]
     (暂存 / "扩展根声明.json").write_text(
         json.dumps(声明, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"

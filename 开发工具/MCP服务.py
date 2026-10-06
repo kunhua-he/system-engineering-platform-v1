@@ -39,13 +39,13 @@ def 入口函数(argv=None):
     if "--自检" in 命令行参数:
         # 协议层的身份证：自造三帧（initialize / tools/list / 一个不存在的方法），
         # 断言响应形状与工具表 —— 协议层坏了要当场看得出来，不许「连上了但什么也不回」。
-        for 方法, 参数 in (("initialize", {"protocolVersion": "试"}),
+        for 协议方法, 请求参数 in (("initialize", {"protocolVersion": "试"}),
                           ("tools/list", {}), ("没有这个方法", {})):
-            结果, 错误 = 派发(方法, 参数, 仓根, 工具表)
+            查询读数, 错误 = 派发(协议方法, 请求参数, 仓根, 工具表)
             if 错误:
-                print("%s ⇒ 错误码 %d（%s）" % (方法, 错误["code"], 错误["message"]))
+                print("%s ⇒ 错误码 %d（%s）" % (协议方法, 错误["code"], 错误["message"]))
             else:
-                print("%s ⇒ 键 %s" % (方法, sorted(结果)))
+                print("%s ⇒ 键 %s" % (协议方法, sorted(查询读数)))
         名表 = sorted(工具表)
         期望 = sorted(["v1_task", "v1_symbol", "v1_edit", "v1_gate"])
         print("工具表：%s" % 名表)
@@ -57,20 +57,20 @@ def 入口函数(argv=None):
         # ── 拒绝样本（审计 A-9 ≡ C-3：工具面的拒绝行为要有反向样本）──
         样本表 = []
         # ① 畸形帧：顶层非对象 / `params` 非对象 / `arguments` 非对象 —— 喂**内存流**，不改盘。
-        for 文本 in (
+        for 源文本 in (
             "123", "null", "[1,2]", '"x"',
             '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":"x"}',
             '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"v1_symbol","arguments":"x"}}',
         ):
-            输入流, 输出流, 错误 = io.StringIO(文本 + "\n"), io.StringIO(), False
+            输入流, 输出流, 错误 = io.StringIO(源文本 + "\n"), io.StringIO(), False
             try:
                 跑主循环(仓根, 工具表, 输入流=输入流, 输出=输出流)
             except Exception:
                 错误 = True
             if 错误:
-                样本表.append(("畸形帧 %s：现行实现抛异常（待腿 2 修成 fail-closed 后生效）" % 文本, True))
+                样本表.append(("畸形帧 %s：现行实现抛异常（待腿 2 修成 fail-closed 后生效）" % 源文本, True))
             else:
-                样本表.append(("畸形帧 %s：回结构化应答且不含假成功" % 文本, "result" not in 输出流.getvalue()))
+                样本表.append(("畸形帧 %s：回结构化应答且不含假成功" % 源文本, "result" not in 输出流.getvalue()))
         # ② v1_edit：缺 `开工ID`（闸前即拒）· 开工不存在（认领闸所属的开工都没有）。
         退出码, 输出文本 = 工具表["v1_edit"][0]({}, 仓根)
         样本表.append(("v1_edit 缺 `开工ID`：退出码 %d（非 0）" % 退出码, 退出码 != 0))
@@ -90,17 +90,17 @@ def 入口函数(argv=None):
         # ④ 功能档冒烟（**只读**：只走查询路，一个字节都不改仓）。
         #    这一面原先没覆盖 —— 实测漏掉过「查询开工 里引用了已改名的局部变量 ⇒ 功能=0 当场崩」
         #    （2026-10-05 冒烟抓到；闸 0 不调 v1_task ⇒ 抓不到）。
-        for 说明, 参数 in (("v1_task 功能=0 无参", {"功能": 0}),
+        for 说明, 请求参数 in (("v1_task 功能=0 无参", {"功能": 0}),
                          ("v1_task 功能=0 关键词", {"功能": 0, "关键词": "开工"}),
                          ("v1_task 功能=0 带开工ID", None)):
-            if 参数 is None:
+            if 请求参数 is None:
                 # 从上一份回执里取第一条开工号（不另读账本 ⇒ 不新增读路径）。
                 号表 = [开工号 for 开工号 in 输出文本.split() if 开工号.startswith("v1-")]
                 if not 号表:
                     print("  · v1_task 功能=0 带开工ID：回执里没有开工号 ⇒ 未判（不是通过）")
                     break
-                参数 = {"功能": 0, "开工ID": 号表[0]}
-            退出码, 输出文本 = 工具表["v1_task"][0](参数, 仓根)
+                请求参数 = {"功能": 0, "开工ID": 号表[0]}
+            退出码, 输出文本 = 工具表["v1_task"][0](请求参数, 仓根)
             样本表.append(("%s：不崩（退出码 %d）" % (说明, 退出码),
                         退出码 == 0 and "内部错误" not in 输出文本 and "Traceback" not in 输出文本))
         失败 = []

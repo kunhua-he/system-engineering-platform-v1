@@ -17,9 +17,9 @@ from .测试件 import 生产区文本
 from .验证 import 跑全量判据
 
 
-def 取前端明细(结果: dict) -> list:
+def 取前端明细(判定汇总: dict) -> list:
     """⑪-6 的明细：`取判据明细` 之上再加本件那一层收窄（只认落在 `前端呈现/` 面内的）。"""
-    return [明细条 for 明细条 in 取判据明细(结果, 检查名[10]) if "前端呈现" in 明细条["位置"]]
+    return [明细条 for 明细条 in 取判据明细(判定汇总, 检查名[10]) if "前端呈现" in 明细条["位置"]]
 
 
 def 自检_前端语义判据() -> list:
@@ -57,8 +57,8 @@ def 自检_前端语义判据() -> list:
     搬运 = 'export function 拼(号, 文) { return "{" + 号 + ":" + 文 + "}"; }\n'
     词袋 = re.compile(r"JSON\.parse|JSON\.stringify|校验|解析|生成|validate|parse\(")
 
-    def 命中(文本, 模式=None):
-        return [匹配.group(0) for 匹配 in (模式 or 常量.前端逻辑模式).finditer(生产区文本(文本))]
+    def 命中(源文本, 模式=None):
+        return [匹配结果.group(0) for 匹配结果 in (模式 or 常量.前端逻辑模式).finditer(生产区文本(源文本))]
 
     断言(
         "反向样本：真 `JSON.parse` ⇒ 新模式报（解析 = 对内容作出判断）",
@@ -198,8 +198,8 @@ def 自检_前端语义判据() -> list:
 
     # ── 第二层：端到端（注入到干净合成仓 ⇒ 跑真判据；含关/开对照）──
     def 跑自检(注入文, 关判据=False):
-        with tempfile.TemporaryDirectory(prefix="一键验证前端语义-") as 临时:
-            临根 = Path(临时) / "仓"
+        with tempfile.TemporaryDirectory(prefix="一键验证前端语义-") as 临时目录:
+            临根 = Path(临时目录) / "仓"
             造干净仓(临根)
             if 注入文 is not None:
                 (临根 / 注入件).write_text(注入文, encoding="utf-8")
@@ -211,12 +211,12 @@ def 自检_前端语义判据() -> list:
             finally:
                 常量.前端逻辑模式 = 原模式
 
-    def 读数(结果):
-        return [f"{前端明细项['位置']} ｜ {前端明细项['缺什么'][:70]}" for 前端明细项 in 取前端明细(结果)]
+    def 读数(判定汇总):
+        return [f"{前端明细项['位置']} ｜ {前端明细项['缺什么'][:70]}" for 前端明细项 in 取前端明细(判定汇总)]
 
-    def 指到注入件(结果):
+    def 指到注入件(判定汇总):
         return any(
-            注入件 in 前端明细项["位置"] or 注入件 in 前端明细项["缺什么"] for 前端明细项 in 取前端明细(结果)
+            注入件 in 前端明细项["位置"] or 注入件 in 前端明细项["缺什么"] for 前端明细项 in 取前端明细(判定汇总)
         )
 
     开启结果 = 跑自检(真解析)
@@ -273,8 +273,8 @@ def 自检_前端内联脚本() -> list:
     )
 
     def 跑自检(html文, 关判据=False):
-        with tempfile.TemporaryDirectory(prefix="一键验证前端内联-") as 临时:
-            临根 = Path(临时) / "仓"
+        with tempfile.TemporaryDirectory(prefix="一键验证前端内联-") as 临时目录:
+            临根 = Path(临时目录) / "仓"
             造干净仓(临根)
             if html文 is not None:
                 (临根 / 注入件).write_text(html文, encoding="utf-8")

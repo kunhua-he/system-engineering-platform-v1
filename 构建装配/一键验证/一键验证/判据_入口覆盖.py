@@ -114,17 +114,17 @@ def 扫入口(仓根: Path) -> dict:
                 continue
             路径 = Path(根目录) / 名称
             try:
-                文本 = 路径.read_text(encoding="utf-8", errors="replace")
+                源文本 = 路径.read_text(encoding="utf-8", errors="replace")
             except OSError:
                 continue
-            if 名称.endswith(".py") and not 主入口模式.search(文本):
+            if 名称.endswith(".py") and not 主入口模式.search(源文本):
                 continue
-            输出缓冲[取相对路径(仓根, 路径)] = 文本
+            输出缓冲[取相对路径(仓根, 路径)] = 源文本
     _入口面缓存[键名] = 输出缓冲
     return 输出缓冲
 
 
-def 入口带壳(路径: str, 文本: str) -> bool:
+def 入口带壳(路径: str, 源文本: str) -> bool:
     """这条入口带壳吗（口径见模块头「带壳」那一段）。
 
     ★ 2026-09-30 收紧（审计 ㉔）：只认**代码位置**的壳形 —— `.py` 先剥注释与串（复用
@@ -133,10 +133,10 @@ def 入口带壳(路径: str, 文本: str) -> bool:
     （`echo "gate_report"` / 函数定义 / 赋值都不算），见 `外壳脚本带壳形`。
     """
     if 路径.endswith(".sh"):
-        净文本 = "\n".join(源码行 for 源码行 in 文本.split("\n")
+        净文本 = "\n".join(源码行 for 源码行 in 源文本.split("\n")
                           if not 源码行.lstrip().startswith("#"))
         return bool(外壳脚本带壳形.search(净文本))
-    净文本 = 剥后缀(".py", 文本)
+    净文本 = 剥后缀(".py", 源文本)
     return bool(脚本带壳形.search(净文本))
 
 
@@ -154,7 +154,7 @@ def 自检_入口覆盖() -> list:
         "样例/只定义.sh": 'gate_report() {\n  :\n}\n',
         "样例/命令位.sh": 'START_EPOCH="$(date +%s)"\ntrap gate_report EXIT\n',
     }
-    读数 = {路径: 入口带壳(路径, 文本) for 路径, 文本 in 样本表.items()}
+    读数 = {路径: 入口带壳(路径, 源文本) for 路径, 源文本 in 样本表.items()}
     说明文字 = " | ".join("%s=%s" % (路径, 读数[路径]) for 路径 in sorted(样本表))
     return [
         ("反向样本：`.py` 只在 docstring 里提一句不算带壳（旧口径会假绿）",
@@ -174,11 +174,11 @@ def 读入口白名单(仓根: Path) -> tuple:
     if not 节点件.is_file():
         return {}, f"白名单文件不存在（{入口白名单路径}）"
     try:
-        数据 = json.loads(节点件.read_text(encoding="utf-8"))
+        配置表 = json.loads(节点件.read_text(encoding="utf-8"))
     except Exception as 错误:
         return {}, f"白名单解析不了（{type(错误).__name__}）"
     项表 = {}
-    for 白名单项 in 数据.get("白名单") or []:
+    for 白名单项 in 配置表.get("白名单") or []:
         try:
             项表[str(白名单项["路径"])] = (str(白名单项["类"]), str(白名单项["理由"]))
         except (KeyError, TypeError):
@@ -245,12 +245,12 @@ def 检查24_入口覆盖面(上层读数: dict) -> list:
     # 看到的是历史而不是现状，而且它白占一格（把一条本该带壳的入口提前豁免）。
     for 键名 in sorted(白名单):
         if 键名 not in 入口:
-            类别, 理由 = 白名单[键名]
+            判据类别, 理由 = 白名单[键名]
             输出缓冲.append(
                 违规(
                     检查名[23],
                     键名,
-                    f"白名单登记着「{类别}」，而实测这一件**已经不是入口**（不在扫描面里）"
+                    f"白名单登记着「{判据类别}」，而实测这一件**已经不是入口**（不在扫描面里）"
                     f"⇒ **陈旧登记**",
                     "决策记录 2026-09-27_构建段归环境步.md §六：白名单是「按设计不必带壳」的"
                     "声明，不是永久豁免。改名/删除/已加壳之后就把它删掉 —— 留着它，白名单读数"

@@ -40,20 +40,20 @@ def 跑自测(源仓根: Path) -> int:
 
     # ── 反向样本：注入到干净合成仓 ──
     for 名称, 该报的检查, 注入, 该出现的路径 in 自测用例:
-        with tempfile.TemporaryDirectory(prefix="一键验证反向样本-") as 临时:
-            临根 = Path(临时) / "仓"
+        with tempfile.TemporaryDirectory(prefix="一键验证反向样本-") as 临时目录:
+            临根 = Path(临时目录) / "仓"
             造干净仓(临根)
             原硬顶 = 常量.硬顶毫秒  # 注入可能临时改坏它（注入_硬顶失效）⇒ 本轮结束必须还原
-            结果 = 注入(临根)
-            元数据覆盖 = 结果 if isinstance(结果, dict) else None
+            判定汇总 = 注入(临根)
+            元数据覆盖 = 判定汇总 if isinstance(判定汇总, dict) else None
             try:
                 # `只跑`：反向样本只需证「**这一条**判据抓得住」，跑全量 37 条是浪费
                 # （60 条样本 × 37 条会把 `--自测` 顶过五秒硬顶，实测 7.4 s ⇒ ⑱ 假红）。
-                结果 = 跑全量判据(临根, 元数据覆盖=元数据覆盖, 只跑={该报的检查})
+                判定汇总 = 跑全量判据(临根, 元数据覆盖=元数据覆盖, 只跑={该报的检查})
             finally:
                 常量.硬顶毫秒 = 原硬顶
-            退出码 = 0 if not 结果["失败"] else 1
-            条表 = [明细项 for 明细项 in (结果["失败"] + 结果["未判"]) if isinstance(明细项, dict)]
+            退出码 = 0 if not 判定汇总["失败"] else 1
+            条表 = [明细项 for 明细项 in (判定汇总["失败"] + 判定汇总["未判"]) if isinstance(明细项, dict)]
             命中 = [明细项 for 明细项 in 条表 if 明细项["检查"] == 该报的检查]
             命中位置 = [明细项 for 明细项 in 命中 if 该出现的路径 in 明细项["位置"] or 该出现的路径 in 明细项["缺什么"]]
             理由合格 = [
@@ -70,8 +70,8 @@ def 跑自测(源仓根: Path) -> int:
             全过 = 全过 and 这轮过
             命中表[该报的检查] = 命中表.get(该报的检查, 0) + (1 if 命中位置 else 0)
             print(f"【反向样本·{名称}】→ {该出现的路径}    结果：{'过' if 这轮过 else '不过'}")
-            for 名目, 是否好 in 断言:
-                print(f"  {'✓' if 是否好 else '✗'} {名目}")
+            for 断言名, 是否好 in 断言:
+                print(f"  {'✓' if 是否好 else '✗'} {断言名}")
             for 明细项 in 命中位置[:2]:
                 print(
                     f"  - {明细项['检查']} ｜ {明细项['位置']} ｜ 缺什么：{明细项['缺什么'][:120]} ｜ "
@@ -82,20 +82,20 @@ def 跑自测(源仓根: Path) -> int:
             print("")
 
     # ── 正向样本：干净合成仓，不注入 ⇒ 所有判据必须通过 ──
-    with tempfile.TemporaryDirectory(prefix="一键验证正向样本-") as 临时:
-        临根 = Path(临时) / "仓"
+    with tempfile.TemporaryDirectory(prefix="一键验证正向样本-") as 临时目录:
+        临根 = Path(临时目录) / "仓"
         造干净仓(临根)
-        结果 = 跑全量判据(临根)
-    正过 = not 结果["失败"] and not 结果["未判"]
+        判定汇总 = 跑全量判据(临根)
+    正过 = not 判定汇总["失败"] and not 判定汇总["未判"]
     全过 = 全过 and 正过
     print(f"【正向样本·干净合成仓】不注入任何东西    结果：{'过' if 正过 else '不过'}")
     print(
-        f"  通过 {len(结果['通过'])} 项 · 失败 {len([明细条 for 明细条 in 结果['失败'] if isinstance(明细条, str)])} 项 · "
-        f"未判 {len([明细条 for 明细条 in 结果['未判'] if isinstance(明细条, str)])} 项 · "
-        f"疑似瞬时 {len(结果['疑似瞬时'])} 项"
+        f"  通过 {len(判定汇总['通过'])} 项 · 失败 {len([明细条 for 明细条 in 判定汇总['失败'] if isinstance(明细条, str)])} 项 · "
+        f"未判 {len([明细条 for 明细条 in 判定汇总['未判'] if isinstance(明细条, str)])} 项 · "
+        f"疑似瞬时 {len(判定汇总['疑似瞬时'])} 项"
     )
     if not 正过:
-        for 明细项 in [明细条 for 明细条 in 结果["失败"] + 结果["未判"] if isinstance(明细条, dict)][:6]:
+        for 明细项 in [明细条 for 明细条 in 判定汇总["失败"] + 判定汇总["未判"] if isinstance(明细条, dict)][:6]:
             print(f"  ✗ 干净输入上仍报：{明细项['检查']} ｜ {明细项['位置']} ｜ 缺什么：{明细项['缺什么'][:160]}")
     print("")
 

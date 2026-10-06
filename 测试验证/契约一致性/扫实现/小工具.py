@@ -12,25 +12,25 @@ from pathlib import Path
 from 构建装配.一键验证.一键验证.小工具 import 取相对路径, 是整数
 
 
-def 行号(文本: str, 位置: int) -> int:
-    return 文本.count("\n", 0, 位置) + 1
+def 行号(源文本: str, 落点: int) -> int:
+    return 源文本.count("\n", 0, 落点) + 1
 
 
 括号配对表 = {"{": "}", "(": ")", "[": "]"}
 
 
-def 找配对界符(文本: str, 区间起点: int) -> int:
+def 找配对界符(源文本: str, 区间起点: int) -> int:
     """`区间起点` 处是一个开括号；返回与它配对的闭括号下标（找不到返回 -1）。
 
     按**同种括号**计数即可：Rust 的括号各自成对，跨种嵌套不影响各自的配对。
     """
-    开符 = 文本[区间起点]
+    开符 = 源文本[区间起点]
     闭符 = 括号配对表.get(开符)
     if 闭符 is None:
         return -1
     括号深度 = 0
-    for 位次 in range(区间起点, len(文本)):
-        字符表 = 文本[位次]
+    for 位次 in range(区间起点, len(源文本)):
+        字符表 = 源文本[位次]
         if 字符表 == 开符:
             括号深度 += 1
         elif 字符表 == 闭符:
@@ -40,29 +40,29 @@ def 找配对界符(文本: str, 区间起点: int) -> int:
     return -1
 
 
-def 拆顶层项(文本: str) -> list:
+def 拆顶层项(源文本: str) -> list:
     """按顶层逗号拆（括号内不算）。用于数组字面量的项、函数的实参。"""
-    结果 = []
+    判定汇总 = []
     括号深度 = 0
     区间起点 = 0
-    for 位次, 字符表 in enumerate(文本):
+    for 位次, 字符表 in enumerate(源文本):
         if 字符表 in "([{":
             括号深度 += 1
         elif 字符表 in ")]}":
             括号深度 -= 1
         elif 字符表 == "," and 括号深度 == 0:
-            结果.append(文本[区间起点:位次])
+            判定汇总.append(源文本[区间起点:位次])
             区间起点 = 位次 + 1
-    if 文本[区间起点:].strip():
-        结果.append(文本[区间起点:])
-    return [片段.strip() for 片段 in 结果 if 片段.strip()]
+    if 源文本[区间起点:].strip():
+        判定汇总.append(源文本[区间起点:])
+    return [片段.strip() for 片段 in 判定汇总 if 片段.strip()]
 
 
-def 找顶层终止(文本: str, 区间起点: int, 终止=";") -> int:
+def 找顶层终止(源文本: str, 区间起点: int, 终止=";") -> int:
     括号深度 = 0
     位次 = 区间起点
-    while 位次 < len(文本):
-        字符表 = 文本[位次]
+    while 位次 < len(源文本):
+        字符表 = 源文本[位次]
         if 字符表 in "([{":
             括号深度 += 1
         elif 字符表 in ")]}":

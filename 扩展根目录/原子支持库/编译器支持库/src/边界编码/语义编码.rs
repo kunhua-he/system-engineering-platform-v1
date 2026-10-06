@@ -22,18 +22,18 @@ pub fn 编码带号结构(带号结构: &带号结构) -> Vec<u8> {
     let mut 输出缓冲 = Vec::new();
     输出缓冲.extend_from_slice(&(带号结构.号表.len() as u32).to_le_bytes());
     for 号表条目 in &带号结构.号表 {
-        输出缓冲.push(号表条目.类.取号值());
+        输出缓冲.push(号表条目.号类别.取号值());
         输出缓冲.push(号表条目.作用域 as u8);
-        输出缓冲.extend_from_slice(&号表条目.号.to_le_bytes());
-        输出缓冲.extend_from_slice(&(号表条目.名.len() as u32).to_le_bytes());
-        输出缓冲.extend_from_slice(&号表条目.名);
+        输出缓冲.extend_from_slice(&号表条目.编号.to_le_bytes());
+        输出缓冲.extend_from_slice(&(号表条目.名字.len() as u32).to_le_bytes());
+        输出缓冲.extend_from_slice(&号表条目.名字);
     }
     输出缓冲.extend_from_slice(&(带号结构.引用表.len() as u32).to_le_bytes());
     for 引用表条目 in &带号结构.引用表 {
         输出缓冲.extend_from_slice(&引用表条目.节点.to_le_bytes());
-        输出缓冲.push(引用表条目.类.取号值());
+        输出缓冲.push(引用表条目.号类别.取号值());
         输出缓冲.push(引用表条目.来源.取号值());
-        输出缓冲.extend_from_slice(&引用表条目.号.to_le_bytes());
+        输出缓冲.extend_from_slice(&引用表条目.编号.to_le_bytes());
         输出缓冲.push(引用表条目.作用域 as u8);
     }
     输出缓冲

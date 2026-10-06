@@ -16,17 +16,17 @@ def 拼请求地址(端口: int, 路径: str) -> str:
 
 def 发请求(端口: int, 方法: str, 路径: str, 体文本: str, 显示请求: bool) -> tuple:
     """发一条请求 → `(状态码, 应答体文本)`。**不解析、不校验**，只搬运。"""
-    数据 = 体文本.encode("utf-8") if 体文本 is not None else None
-    请求 = urllib.request.Request(拼请求地址(端口, 路径), data=数据, method=方法)
+    请求体字节 = 体文本.encode("utf-8") if 体文本 is not None else None
+    请求 = urllib.request.Request(拼请求地址(端口, 路径), data=请求体字节, method=方法)
     请求.add_header("Accept", "application/json")
-    if 数据 is not None:
+    if 请求体字节 is not None:
         请求.add_header("Content-Type", "application/json; charset=utf-8")
     if 显示请求:
         源码行 = "{} {} HTTP/1.1".format(方法, urllib.parse.quote(路径, safe="/"))
         print("> " + 源码行, file=sys.stderr)
         print("> Host: {}:{}".format(回环地址, 端口), file=sys.stderr)
-        if 数据 is not None:
-            print("> Content-Length: {}".format(len(数据)), file=sys.stderr)
+        if 请求体字节 is not None:
+            print("> Content-Length: {}".format(len(请求体字节)), file=sys.stderr)
             print("> {}".format(体文本), file=sys.stderr)
     try:
         with urllib.request.urlopen(请求, timeout=默认超时秒) as 造应答:

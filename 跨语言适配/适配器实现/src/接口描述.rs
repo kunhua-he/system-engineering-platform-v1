@@ -45,11 +45,11 @@ pub fn 写描述(适配器: &适配器, 契约来源: &平台信息) -> String {
     let 能力 = 适配器
         .能力清单()
         .into_iter()
-        .map(|摘要| {
-            let 契约 = 适配器.能力契约(摘要.编号);
+        .map(|能力条目| {
+            let 契约 = 适配器.能力契约(能力条目.编号);
             let (说明文字, 参数表, 可抛错误码) = match &契约 {
                 Some(契约内容) => (
-                    JSON值::文本(契约内容.说明文字.clone()),
+                    JSON值::文本值(契约内容.说明文字.clone()),
                     契约内容.参数表.clone(),
                     契约内容.可抛错误码.clone(),
                 ),
@@ -58,53 +58,53 @@ pub fn 写描述(适配器: &适配器, 契约来源: &平台信息) -> String {
                 // 跨语言里这是两件事（调用方要判的正是「这个字段有没有值」）。
                 None => (JSON值::空值项, Vec::new(), Vec::new()),
             };
-            JSON值::对象(vec![
-                ("编号".to_owned(), JSON值::整数(摘要.编号 as i64)),
-                ("名称".to_owned(), JSON值::文本(摘要.名称)),
-                ("参数个数".to_owned(), JSON值::整数(摘要.参数个数 as i64)),
-                ("返回类型".to_owned(), JSON值::整数(摘要.返回类型 as i64)),
+            JSON值::对象值(vec![
+                ("编号".to_owned(), JSON值::整数项(能力条目.编号 as i64)),
+                ("名称".to_owned(), JSON值::文本值(能力条目.名称)),
+                ("参数个数".to_owned(), JSON值::整数项(能力条目.参数个数 as i64)),
+                ("返回类型".to_owned(), JSON值::整数项(能力条目.返回类型 as i64)),
                 ("说明".to_owned(), 说明文字),
-                ("参数表".to_owned(), JSON值::数组(参数表.iter().map(写参数).collect())),
+                ("参数表".to_owned(), JSON值::数组值(参数表.iter().map(写参数).collect())),
                 (
                     "可抛错误码".to_owned(),
-                    JSON值::数组(可抛错误码.iter().map(渲染错误码值).collect()),
+                    JSON值::数组值(可抛错误码.iter().map(渲染错误码值).collect()),
                 ),
             ])
         })
         .collect();
 
-    let 根目录 = JSON值::对象(vec![
+    let 根目录 = JSON值::对象值(vec![
         (
             "契约版本".to_owned(),
-            JSON值::对象(vec![
-                ("主".to_owned(), JSON值::整数(版本.主版本 as i64)),
-                ("次".to_owned(), JSON值::整数(版本.次 as i64)),
-                ("构建".to_owned(), JSON值::整数(版本.构建 as i64)),
+            JSON值::对象值(vec![
+                ("主".to_owned(), JSON值::整数项(版本.主版本 as i64)),
+                ("次".to_owned(), JSON值::整数项(版本.次版本号 as i64)),
+                ("构建".to_owned(), JSON值::整数项(版本.构建 as i64)),
             ]),
         ),
         (
             "声明格式号".to_owned(),
-            JSON值::整数(i64::from(契约来源.声明格式号.取号值())),
+            JSON值::整数项(i64::from(契约来源.声明格式号.取号值())),
         ),
-        ("能力".to_owned(), JSON值::数组(能力)),
+        ("能力".to_owned(), JSON值::数组值(能力)),
     ]);
     写协议值(&根目录)
 }
 
 /// 参数表的一行。**行序即契约**（顺序由上层 `Vec` 的排列给出）。
-fn 写参数(参数: &参数摘要) -> JSON值 {
-    JSON值::对象(vec![
-        ("名称".to_owned(), JSON值::文本(参数.名称.clone())),
-        ("类型标签".to_owned(), JSON值::整数(参数.类型标签 as i64)),
-        ("状态位".to_owned(), JSON值::整数(参数.状态位 as i64)),
+fn 写参数(入参: &参数摘要) -> JSON值 {
+    JSON值::对象值(vec![
+        ("名称".to_owned(), JSON值::文本值(入参.名称.clone())),
+        ("类型标签".to_owned(), JSON值::整数项(入参.类型标签 as i64)),
+        ("状态位".to_owned(), JSON值::整数项(入参.状态位 as i64)),
     ])
 }
 
 /// 可抛错误码的一条：`码` + 三项业务判断（失败可编程处理的落点）。
 fn 渲染错误码值(错误码: &错误码摘要) -> JSON值 {
-    JSON值::对象(vec![
-        ("码".to_owned(), JSON值::整数(错误码.码 as i64)),
-        ("名称".to_owned(), JSON值::文本(错误码.名称.clone())),
+    JSON值::对象值(vec![
+        ("码".to_owned(), JSON值::整数项(错误码.码值 as i64)),
+        ("名称".to_owned(), JSON值::文本值(错误码.名称.clone())),
         ("可重试".to_owned(), 真假值转线上值(错误码.可重试)),
         ("可自愈".to_owned(), 真假值转线上值(错误码.可自愈)),
         ("需人工".to_owned(), 真假值转线上值(错误码.需人工)),

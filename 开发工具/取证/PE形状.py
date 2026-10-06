@@ -29,40 +29,40 @@ class 解析错误(Exception):
 class PE:
     """只读 PE32 解析器。任何越界都抛 `解析错误`，不做「尽量猜」。"""
 
-    def __init__(self, 数据, 路径="<内存>"):
-        self.路径, self.原始字节 = 路径, 数据
-        if len(数据) < 0x40:
+    def __init__(self, 镜像字节, 路径="<内存>"):
+        self.路径, self.原始字节 = 路径, 镜像字节
+        if len(镜像字节) < 0x40:
             raise 解析错误("文件短于 64 字节，DOS 头都不完整")
-        if 数据[:2] != b"MZ":
+        if 镜像字节[:2] != b"MZ":
             raise 解析错误("无 MZ 签名，不是 PE 文件")
-        self.PE头偏移 = struct.unpack_from("<I", 数据, 0x3C)[0]
-        if self.PE头偏移 + 24 > len(数据) or 数据[self.PE头偏移:self.PE头偏移 + 4] != b"PE\0\0":
+        self.PE头偏移 = struct.unpack_from("<I", 镜像字节, 0x3C)[0]
+        if self.PE头偏移 + 24 > len(镜像字节) or 镜像字节[self.PE头偏移:self.PE头偏移 + 4] != b"PE\0\0":
             raise 解析错误("e_lfanew(0x%x) 越界或处无 PE\\0\\0 签名" % self.PE头偏移)
         self.机器, self.节数, _, _, _, self.可选头长, _ = struct.unpack_from(
-            "<HHIIIHH", 数据, self.PE头偏移 + 4)
-        if self.可选头长 == 0 or self.PE头偏移 + 24 + self.可选头长 > len(数据):
+            "<HHIIIHH", 镜像字节, self.PE头偏移 + 4)
+        if self.可选头长 == 0 or self.PE头偏移 + 24 + self.可选头长 > len(镜像字节):
             raise 解析错误("可选头长度 %d 为 0 或越界（只剩 %d）"
-                        % (self.可选头长, len(数据) - self.PE头偏移 - 24))
-        self.魔数 = struct.unpack_from("<H", 数据, self.PE头偏移 + 24)[0]
+                        % (self.可选头长, len(镜像字节) - self.PE头偏移 - 24))
+        self.魔数 = struct.unpack_from("<H", 镜像字节, self.PE头偏移 + 24)[0]
         if self.魔数 != 0x10B:
             raise 解析错误("魔数 0x%x 不是 PE32（64 位布局未取证，拒绝猜）" % self.魔数)
-        self.基址 = struct.unpack_from("<I", 数据, self.PE头偏移 + 24 + 28)[0]
+        self.基址 = struct.unpack_from("<I", 镜像字节, self.PE头偏移 + 24 + 28)[0]
         self.节段 = []
         for 节序 in range(self.节数):
             节表项偏移 = self.PE头偏移 + 24 + self.可选头长 + 节序 * 40
-            if 节表项偏移 + 40 > len(数据):
+            if 节表项偏移 + 40 > len(镜像字节):
                 raise 解析错误("节表第 %d 项越界" % 节序)
-            节名 = 数据[节表项偏移:节表项偏移 + 8].rstrip(b"\0").decode("latin1")
-            虚长, 虚址, 原长, 原址 = struct.unpack_from("<IIII", 数据, 节表项偏移 + 8)
-            if 原址 + 原长 > len(数据):
+            节名 = 镜像字节[节表项偏移:节表项偏移 + 8].rstrip(b"\0").decode("latin1")
+            虚长, 虚址, 原长, 原址 = struct.unpack_from("<IIII", 镜像字节, 节表项偏移 + 8)
+            if 原址 + 原长 > len(镜像字节):
                 raise 解析错误("节 %s 原始数据越界（%d+%d > %d）"
-                            % (节名, 原址, 原长, len(数据)))
+                            % (节名, 原址, 原长, len(镜像字节)))
             self.节段.append((节名, 虚址, 虚长, 原址, 原长))
         if not self.节段:
             raise 解析错误("节数为 0")
         # DataDirectory[2] = 资源目录。**只读出来，不在这里判空** —— 要不要有资源目录
         # 由调用方决定（见 `要资源目录`）。
-        self.资源目录 = struct.unpack_from("<II", 数据, self.PE头偏移 + 24 + 96 + 2 * 8)
+        self.资源目录 = struct.unpack_from("<II", 镜像字节, self.PE头偏移 + 24 + 96 + 2 * 8)
 
     def 要资源目录(self):
         """要求本件带资源目录；空的就抛（界面反解走这条 —— 它反解的就是资源）。"""
@@ -89,22 +89,22 @@ class PE:
             return 绝对址
         raise 解析错误("指针 0x%x 既不在镜像里也不像 RVA" % 绝对址)
 
-    def 读双字节(self, 偏移):
-        if 偏移 < 0 or 偏移 + 2 > len(self.原始字节):
-            raise 解析错误("读双字节越界 @0x%x" % 偏移)
-        return struct.unpack_from("<H", self.原始字节, 偏移)[0]
+    def 读双字节(self, 字节偏移):
+        if 字节偏移 < 0 or 字节偏移 + 2 > len(self.原始字节):
+            raise 解析错误("读双字节越界 @0x%x" % 字节偏移)
+        return struct.unpack_from("<H", self.原始字节, 字节偏移)[0]
 
-    def 读四字节(self, 偏移):
-        if 偏移 < 0 or 偏移 + 4 > len(self.原始字节):
-            raise 解析错误("读四字节越界 @0x%x" % 偏移)
-        return struct.unpack_from("<I", self.原始字节, 偏移)[0]
+    def 读四字节(self, 字节偏移):
+        if 字节偏移 < 0 or 字节偏移 + 4 > len(self.原始字节):
+            raise 解析错误("读四字节越界 @0x%x" % 字节偏移)
+        return struct.unpack_from("<I", self.原始字节, 字节偏移)[0]
 
-    def 节区间(self, 名):
+    def 节区间(self, 节名):
         """按节名取 `(原址, 原址+原长)`；没有这一节就抛。"""
         for 节名, 虚址, 虚长, 原址, 原长 in self.节段:
-            if 节名 == 名:
+            if 节名 == 节名:
                 return 原址, 原址 + 原长
-        raise 解析错误("没有 %s 节" % 名)
+        raise 解析错误("没有 %s 节" % 节名)
 
     def 读串(self, 绝对址):
         """读以 NUL 结尾的 GBK 串；指针为 0 ⇒ None。"""
@@ -119,10 +119,10 @@ class PE:
 
     def 解导出表(self):
         """读导出表 ⇒ `[(名, 序号, RVA)…]`；无导出目录就抛。"""
-        目录 = struct.unpack_from("<II", self.原始字节, self.PE头偏移 + 24 + 96)
-        if 目录[0] == 0:
+        目录路径 = struct.unpack_from("<II", self.原始字节, self.PE头偏移 + 24 + 96)
+        if 目录路径[0] == 0:
             raise 解析错误("无导出目录（本库不是支持库？）")
-        文偏移 = self.转偏移(目录[0])
+        文偏移 = self.转偏移(目录路径[0])
         if 文偏移 + 40 > len(self.原始字节):
             raise 解析错误("导出目录越界")
         _, _, _, _, _, 基序, 函数数, 名字数, 函数表址, 名字表, 序号表 = struct.unpack_from(
@@ -130,12 +130,12 @@ class PE:
         if 函数数 == 0:
             raise 解析错误("导出函数数为 0")
         函数表项 = struct.unpack_from("<%dI" % 函数数, self.原始字节, self.转偏移(函数表址))
-        结果 = []
+        汇总表 = []
         for 序号 in range(名字数):
             串起 = self.转偏移(self.读四字节(self.转偏移(名字表) + 4 * 序号))
             名序 = struct.unpack_from("<H", self.原始字节, self.转偏移(序号表) + 2 * 序号)[0]
             if 名序 >= 函数数:
                 raise 解析错误("名字序号 %d 超出函数数 %d" % (名序, 函数数))
             名尾 = self.原始字节.find(b"\0", 串起)
-            结果.append((self.原始字节[串起:名尾], 基序 + 名序, 函数表项[名序]))
-        return 结果
+            汇总表.append((self.原始字节[串起:名尾], 基序 + 名序, 函数表项[名序]))
+        return 汇总表

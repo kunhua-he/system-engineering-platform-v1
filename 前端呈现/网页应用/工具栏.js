@@ -19,7 +19,7 @@ import { 发程序文本 } from "./取接口.js";
  * 行序＝参考图那一条从左到右的次序。
  */
 export const 钮表 = [
-  ["新建", "新建：清空编辑区", "新建"],
+  ["新建图", "新建：清空编辑区", "新建件"],
   ["打开", "打开：经 POST /接口/程序文本 真读「载入示例」选中的那份路径（没选路径则载入内置模板）", "打开"],
   ["保存", "保存：把编辑区文本经 POST /接口/程序文本 写到「载入示例」选中的那份路径", "保存"],
   null,
@@ -41,23 +41,23 @@ export function 装工具栏(取元素, 钩子) {
   const 源码行 = 取元素("图标行");
   const 状态 = 取元素("工具状态");
 
-  const 报状态 = (文本, 是否好) => {
-    写状态(状态, 文本, 是否好);
-    钩子.记流水("工具条", 文本);
+  const 报状态 = (源文本, 是否好) => {
+    写状态(状态, 源文本, 是否好);
+    钩子.记流水("工具条", 源文本);
   };
 
   /** 真剪贴板：`navigator.clipboard` 要安全上下文；被挡就把原因原样报出来，不吞。 */
-  async function 进剪贴板(文本, 动作) {
+  async function 进剪贴板(源文本, 动作) {
     try {
-      await navigator.clipboard.writeText(文本);
-      报状态(动作 + "：" + 文本.length + " 字符已进系统剪贴板", true);
+      await navigator.clipboard.writeText(源文本);
+      报状态(动作 + "：" + 源文本.length + " 字符已进系统剪贴板", true);
     } catch (错误) {
       报状态(动作 + "：系统剪贴板不给写（" + 错误.name + "）—— 页面不是安全上下文，或被权限挡了", false);
     }
   }
 
   const 动作 = {
-    新建() {
+    新建件() {
       钩子.清空();
       报状态("新建：编辑区已清空（0 字符）", true);
     },
@@ -73,7 +73,7 @@ export function 装工具栏(取元素, 钩子) {
       }
       const 造应答 = await 发程序文本("写", 路径, 钩子.编辑.value);
       const 摘要结果 = 取应答摘要(造应答.体);
-      if (摘要结果.类 === "好") {
+      if (摘要结果.判定档 === "好") {
         报状态("保存：已写入 " + 路径 + "（" + 钩子.编辑.value.length + " 字符）", true);
       } else {
         const 错误码 = 造应答.体 && 造应答.体.错误 && 造应答.体.错误.码;
@@ -83,25 +83,25 @@ export function 装工具栏(取元素, 钩子) {
     },
     剪切() {
       const 编辑 = 钩子.编辑;
-      const 文本 = 编辑.value.slice(编辑.selectionStart, 编辑.selectionEnd);
-      if (!文本) { 报状态("剪切：没有选中文本（选区 0 字符）", false); return; }
+      const 源文本 = 编辑.value.slice(编辑.selectionStart, 编辑.selectionEnd);
+      if (!源文本) { 报状态("剪切：没有选中文本（选区 0 字符）", false); return; }
       编辑.setRangeText("", 编辑.selectionStart, 编辑.selectionEnd, "start");
       编辑.dispatchEvent(new Event("input"));
-      进剪贴板(文本, "剪切");
+      进剪贴板(源文本, "剪切");
     },
     复制() {
       const 编辑 = 钩子.编辑;
-      const 文本 = 编辑.value.slice(编辑.selectionStart, 编辑.selectionEnd);
-      if (!文本) { 报状态("复制：没有选中文本（选区 0 字符）", false); return; }
-      进剪贴板(文本, "复制");
+      const 源文本 = 编辑.value.slice(编辑.selectionStart, 编辑.selectionEnd);
+      if (!源文本) { 报状态("复制：没有选中文本（选区 0 字符）", false); return; }
+      进剪贴板(源文本, "复制");
     },
     async 粘贴() {
       const 编辑 = 钩子.编辑;
       try {
-        const 文本 = await navigator.clipboard.readText();
-        编辑.setRangeText(文本, 编辑.selectionStart, 编辑.selectionEnd, "end");
+        const 源文本 = await navigator.clipboard.readText();
+        编辑.setRangeText(源文本, 编辑.selectionStart, 编辑.selectionEnd, "end");
         编辑.dispatchEvent(new Event("input"));
-        报状态("粘贴：" + 文本.length + " 字符已插入光标处", true);
+        报状态("粘贴：" + 源文本.length + " 字符已插入光标处", true);
       } catch (错误) {
         报状态("粘贴：系统剪贴板不给读（" + 错误.name + "）—— 页面不是安全上下文，或被权限挡了", false);
       }
@@ -157,8 +157,8 @@ export function 装工具栏(取元素, 钩子) {
     按钮.setAttribute("aria-label", 提示);
     按钮.append(画图标(图名));
     按钮.addEventListener("click", () => {
-      const 结果 = 动作[名称]();
-      if (结果 && typeof 结果.catch === "function") 结果.catch((错误) => 报状态(名称 + "：动作抛了 —— " + 错误.message, false));
+      const 动作返回 = 动作[名称]();
+      if (动作返回 && typeof 动作返回.catch === "function") 动作返回.catch((错误) => 报状态(名称 + "：动作抛了 —— " + 错误.message, false));
     });
     源码行.append(按钮);
   }

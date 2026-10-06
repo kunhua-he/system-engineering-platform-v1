@@ -25,12 +25,12 @@ def 建解析器() -> argparse.ArgumentParser:
     return 解析器
 
 
-def 读请求(文本: str):
+def 读请求(源文本: str):
     """→ (请求对象, 错说明)。"""
-    if 文本 == "-":
-        文本 = sys.stdin.read()
+    if 源文本 == "-":
+        源文本 = sys.stdin.read()
     try:
-        请求 = json.loads(文本)
+        请求 = json.loads(源文本)
     except ValueError as 错误:
         return None, "请求体不是合法 JSON：%s" % 错误
     if not isinstance(请求, dict):

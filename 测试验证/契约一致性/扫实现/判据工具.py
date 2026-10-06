@@ -8,9 +8,9 @@ from .小工具 import 拆顶层项
 from .符号解析 import 解符号, 末段
 
 
-def 记判据(判据: str, 判定: str, 位置: str, 缺什么: str, 不能自愈: str, 红类: str = "") -> dict:
+def 记判据(判据: str, 判定: str, 落点: str, 缺什么: str, 不能自愈: str, 红类: str = "") -> dict:
     return {
-        "位置": 位置,
+        "位置": 落点,
         "缺什么": 缺什么,
         "为什么不能自愈": 不能自愈,
         "判定": 判定,
@@ -21,12 +21,12 @@ def 记判据(判据: str, 判定: str, 位置: str, 缺什么: str, 不能自�
 def _本表(扫描单元: dict) -> dict:
     """本单元内可解析的整数符号（能力号 · 错误码 · 本文件 const）。"""
     项表 = {}
-    for 条目 in 扫描单元["能力号"]:
-        if 条目["值"] is not None:
-            项表[条目["名"]] = 条目["值"]
-    for 条目 in 扫描单元.get("错误码常量", []):
-        if 条目["值"] is not None:
-            项表[条目["名"]] = 条目["值"]
+    for 条目项 in 扫描单元["能力号"]:
+        if 条目项["值"] is not None:
+            项表[条目项["名"]] = 条目项["值"]
+    for 条目项 in 扫描单元.get("错误码常量", []):
+        if 条目项["值"] is not None:
+            项表[条目项["名"]] = 条目项["值"]
     项表.update(扫描单元.get("本文件整数常量", {}))
     return 项表
 
@@ -53,28 +53,28 @@ def _解可抛错误码(扫描单元: dict, 原文, 符号表: dict, 本表: dic
     """
     if 原文 is None:
         return None
-    文本 = 原文.strip()
-    if re.fullmatch(r"表段\s*::\s*空实例\s*\(\s*\)", 文本):
+    源文本 = 原文.strip()
+    if re.fullmatch(r"表段\s*::\s*空实例\s*\(\s*\)", 源文本):
         return []
-    匹配 = re.match(r"表段\s*::\s*新建\s*\(\s*([^\s.(]+)\s*\.\s*as_ptr\s*\(\s*\)", 文本)
-    if not 匹配:
+    正则匹配 = re.match(r"表段\s*::\s*构造\s*\(\s*([^\s.(]+)\s*\.\s*as_ptr\s*\(\s*\)", 源文本)
+    if not 正则匹配:
         return None
-    抛码表项 = 扫描单元.get("抛码表", {}).get(末段(匹配.group(1)))
+    抛码表项 = 扫描单元.get("抛码表", {}).get(末段(正则匹配.group(1)))
     if 抛码表项 is None:
         return None
-    结果 = []
+    判定汇总 = []
     for 顶层项 in 拆顶层项(抛码表项.get("内文") or ""):
         待处理值 = 解符号(顶层项, 符号表, 本表)
         if 待处理值 is None:
             return None
-        结果.append(待处理值)
-    return 结果
+        判定汇总.append(待处理值)
+    return 判定汇总
 
 
 def _按编号找命令(扫描单元: dict, 编号) -> object:
-    for 条目 in 扫描单元["命令"]:
-        if 条目["编号"] == 编号:
-            return 条目
+    for 条目项 in 扫描单元["命令"]:
+        if 条目项["编号"] == 编号:
+            return 条目项
     return None
 
 
@@ -82,10 +82,10 @@ def _参数表名(实现条目: dict) -> object:
     原文 = 实现条目["字段"].get("参数表", {}).get("原文")
     if 原文 is None:
         return None
-    匹配 = re.match(r"([^\s.]+)", 原文.strip())
-    if not 匹配:
+    正则匹配 = re.match(r"([^\s.]+)", 原文.strip())
+    if not 正则匹配:
         return None
-    名称 = 匹配.group(1)
+    名称 = 正则匹配.group(1)
     if "::" in 名称 or 名称 in ("core", "std", "null"):
         return None  # 路径表达式（`core::ptr::null()` 之类）不是本地参数表名
     return 名称
@@ -97,7 +97,7 @@ def _落点(扫描单元: dict, 名称: str) -> object:
     为什么按**名**取 const 而不扫表声明：落点是**声明过的契约名**（只在一处定义，
     改口径只改那一处），而扫声明文本会因换个命名 / 挪个位置就漏（假绿）。
     """
-    for 条目 in 扫描单元["常量"]:
-        if 条目["名"] == 名称:
-            return 条目
+    for 条目项 in 扫描单元["常量"]:
+        if 条目项["名"] == 名称:
+            return 条目项
     return None

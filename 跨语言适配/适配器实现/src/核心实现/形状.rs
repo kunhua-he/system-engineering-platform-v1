@@ -56,7 +56,7 @@ pub struct 参数摘要 {
 /// 错误码摘要 —— 「失败可编程处理」的落点：拿到码要能查到这三项业务判断。
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct 错误码摘要 {
-    pub 码: u32,
+    pub 码值: u32,
     pub 名称: String,
     pub 说明文字: String,
     pub 可重试: bool,

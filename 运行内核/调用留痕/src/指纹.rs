@@ -28,7 +28,7 @@ pub fn 槽表指纹(槽表: &[数据槽]) -> u64 {
             .into_iter()
             .chain(数据槽.槽标志位.to_le_bytes())
             .chain(数据槽.保留.to_le_bytes())
-            .chain(数据槽.长度.to_le_bytes())
+            .chain(数据槽.槽字节长度.to_le_bytes())
             .chain(数据槽.槽值.to_le_bytes());
         for 一字节 in 字节 {
             指纹 ^= u64::from(一字节);

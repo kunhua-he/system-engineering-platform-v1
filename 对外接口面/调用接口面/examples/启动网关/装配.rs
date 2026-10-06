@@ -31,8 +31,8 @@ fn 说清启动失败(错误: &启动失败) -> String {
 }
 
 fn 取值(名称: &str) -> Option<String> {
-    let 参数: Vec<String> = env::args().collect();
-    参数.iter().position(|参数项| 参数项 == 名称).and_then(|位置| 参数.get(位置 + 1).cloned())
+    let 命令行参数: Vec<String> = env::args().collect();
+    命令行参数.iter().position(|参数项| 参数项 == 名称).and_then(|位次| 命令行参数.get(位次 + 1).cloned())
 }
 
 /// 跑完整条链。命令行参数、端口与日志输出**逐字不变**（上线切换靠 `监听 127.0.0.1:<端口>` 一行拿端口）。
@@ -40,7 +40,7 @@ pub(crate) fn 跑网关() -> Result<(), String> {
     let 声明根路径 =
         PathBuf::from(取值("--声明根").unwrap_or_else(|| "扩展装载/扩展根声明.json".to_owned()));
     let 端口: Option<u16> = match 取值("--端口") {
-        Some(文本) => Some(文本.parse::<u16>().map_err(|_| format!("--端口 不是整数：{文本}"))?),
+        Some(源文本) => Some(源文本.parse::<u16>().map_err(|_| format!("--端口 不是整数：{源文本}"))?),
         None => None,
     };
     // §五 的静态托管根：不给就用契约侧常量（相对 cwd），给了就注入 ——
@@ -53,9 +53,9 @@ pub(crate) fn 跑网关() -> Result<(), String> {
 
     // ── 第一步：读扩展根声明 ────────────────────────────────────────────────
     // 读法只有一份：`v1_gateway::扫扩展根::读声明根`（启动装配与运行期装载同读一份）。
-    let 文本 = fs::read_to_string(&声明根路径)
+    let 源文本 = fs::read_to_string(&声明根路径)
         .map_err(|错误| format!("读不到扩展根声明 {}：{错误}", 声明根路径.display()))?;
-    let 声明根扫描 = 读声明根(&文本)?;
+    let 声明根扫描 = 读声明根(&源文本)?;
     println!(
         "扩展根声明 {} · 种类 {} 类",
         fs::canonicalize(&声明根路径)
@@ -72,12 +72,12 @@ pub(crate) fn 跑网关() -> Result<(), String> {
     let mut 候选: Vec<&'static 平台信息> = vec![v1_adapter::底座声明()];
     let mut 装上的: Vec<String> = Vec::new();
     let mut 剔除的: Vec<(String, String)> = Vec::new();
-    for 目录 in &声明根扫描.目录s {
-        if !目录.is_dir() {
-            println!("跳过 {}：目录不存在", 目录.display());
+    for 扩展根目录 in &声明根扫描.目录s {
+        if !扩展根目录.is_dir() {
+            println!("跳过 {}：目录不存在", 扩展根目录.display());
             continue;
         }
-        for 子目录项 in 列子目录(目录) {
+        for 子目录项 in 列子目录(扩展根目录) {
             let 落点 = 子目录项.display().to_string();
             match 取扩展声明(&子目录项) {
                 Err(原因) => 剔除的.push((落点, 原因)),

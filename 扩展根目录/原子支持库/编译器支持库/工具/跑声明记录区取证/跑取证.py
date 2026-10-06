@@ -6,10 +6,10 @@ import sys
 from .常量 import 仓根, 取证器路径
 
 
-def 跑取证(参数):
+def 跑取证(命令行参数):
     """跑取证器，返回 (退出码, stdout)。"""
     进程 = subprocess.run(
-        [sys.executable, 取证器路径] + 参数,
+        [sys.executable, 取证器路径] + 命令行参数,
         cwd=仓根,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,

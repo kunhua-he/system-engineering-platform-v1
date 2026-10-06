@@ -17,10 +17,10 @@ from .判据_十干 import 扫十干, 数命中, 十干字, 路径被排除, 十
 from .命名扫描 import 抽标识符, 剥后缀
 
 
-def _只剥标识符命中(后缀: str, 文本: str, 字表: str) -> list:
+def _只剥标识符命中(源码后缀: str, 源文本: str, 字表: str) -> list:
     """**退回一步**的面：只剥注释与字符串后抽**标识符**（判据 ㉒ 的那条路）——
     用来证明「逐字节读原文」这一步真在承重（注释 / 字符串里的十干它必漏）。"""
-    return [标识符名 for 标识符名 in 抽标识符(剥后缀(后缀, 文本)) if any(字符 in 字表 for 字符 in 标识符名)]
+    return [标识符名 for 标识符名 in 抽标识符(剥后缀(源码后缀, 源文本)) if any(单字符 in 字表 for 单字符 in 标识符名)]
 
 
 def 自检_十干扫描() -> list:
@@ -74,8 +74,8 @@ def 自检_十干扫描() -> list:
 
     # ── ④ 排除面：`构建环境/` 与 `只读参考/` 里的巧合字节不许被算进来（否则是假红）──
     # 真造一个仓外夹具：两个排除目录各放一个**含十干字**的件，另放一个真件 ⇒ 走树只收真件。
-    with tempfile.TemporaryDirectory(prefix="十干排除面-") as 临时:
-        临时仓根 = Path(临时)
+    with tempfile.TemporaryDirectory(prefix="十干排除面-") as 临时目录:
+        临时仓根 = Path(临时目录)
         for 目录名 in ("构建环境", "只读参考", "运行内核"):
             (临时仓根 / 目录名).mkdir()
         (临时仓根 / "构建环境" / "缓存.bin").write_text("巧合字节 " + 首字 + "\n", encoding="utf-8")
@@ -100,8 +100,8 @@ def 自检_十干扫描() -> list:
     # `.db` 整份不是合法 UTF-8（sqlite 头 + 页对齐零字节）⇒ 走树会**整份跳过它**，
     # 那批正文成盲区。真造一个临时库：`条款` 表里放一行**含十干字**的正文 ⇒
     # `十干面` 必须把它收进面、且报红。
-    with tempfile.TemporaryDirectory(prefix="十干条款面-") as 临时:
-        临时仓根 = Path(临时)
+    with tempfile.TemporaryDirectory(prefix="十干条款面-") as 临时目录:
+        临时仓根 = Path(临时目录)
         库目录 = 临时仓根 / "开发工具" / "信息核心"
         库目录.mkdir(parents=True)
         连接 = sqlite3.connect(库目录 / "信息核心.db")

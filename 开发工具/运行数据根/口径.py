@@ -91,15 +91,15 @@ def 解析当前环境() -> Path:
     )
 
 
-def 子目录路径(根目录: Path, 类别: str) -> Path:
+def 子目录路径(根目录: Path, 类别值: str) -> Path:
     """某一类子目录的路径。**只拼路径，不建目录**；`类别` 必须是四类之一（封闭枚举）。"""
-    if 类别 not in 子目录名:
-        raise ValueError("不是四类运行数据子目录之一：%r（只许 %s）" % (类别, " · ".join(子目录名)))
-    return Path(根目录) / 类别
+    if 类别值 not in 子目录名:
+        raise ValueError("不是四类运行数据子目录之一：%r（只许 %s）" % (类别值, " · ".join(子目录名)))
+    return Path(根目录) / 类别值
 
 
-def 确保子目录(根目录: Path, 类别: str) -> Path:
+def 确保子目录(根目录: Path, 类别值: str) -> Path:
     """建出某一类子目录并交出路径（父目录一并建）。"""
-    路径 = 子目录路径(根目录, 类别)
+    路径 = 子目录路径(根目录, 类别值)
     路径.mkdir(parents=True, exist_ok=True)
     return 路径

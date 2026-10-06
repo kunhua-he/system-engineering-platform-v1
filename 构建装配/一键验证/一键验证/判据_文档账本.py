@@ -55,16 +55,16 @@ def 读账本(上层读数: dict):
     if not 路径.is_file():
         return None, f"账本 `{文档账本路径}` 不在盘上"
     try:
-        文本 = 路径.read_text(encoding="utf-8")
+        源文本 = 路径.read_text(encoding="utf-8")
     except OSError as 错误:
         return None, f"账本读不动：{错误}"
     try:
-        数据 = json.loads(文本)
+        配置表 = json.loads(源文本)
     except ValueError as 错误:
         return None, f"账本不是合法 JSON：{错误}"
-    if not isinstance(数据, dict):
+    if not isinstance(配置表, dict):
         return None, "账本不是 JSON 对象"
-    return 数据, None
+    return 配置表, None
 
 
 def 检查41_文档账本(上层读数: dict) -> list:
@@ -104,12 +104,12 @@ def 检查41_文档账本(上层读数: dict) -> list:
         )
         return 输出缓冲
     合法档 = {
-        条目.get("档") for 条目 in 档表
-        if isinstance(条目, dict) and isinstance(条目.get("档"), str) and 条目.get("档")
+        账本条目.get("档") for 账本条目 in 档表
+        if isinstance(账本条目, dict) and isinstance(账本条目.get("档"), str) and 账本条目.get("档")
     }
     规则表 = [
-        条目 for 条目 in (账本.get("按路径定档") or [])
-        if isinstance(条目, dict) and isinstance(条目.get("前缀"), str) and 条目.get("前缀")
+        账本条目 for 账本条目 in (账本.get("按路径定档") or [])
+        if isinstance(账本条目, dict) and isinstance(账本条目.get("前缀"), str) and 账本条目.get("前缀")
     ]
     件表 = 账本.get("件")
     if not isinstance(件表, list):
@@ -122,14 +122,14 @@ def 检查41_文档账本(上层读数: dict) -> list:
         return 输出缓冲
 
     登记 = {}
-    for 条目 in 件表:
-        if isinstance(条目, dict) and isinstance(条目.get("路径"), str) and 条目.get("路径"):
-            登记[条目["路径"]] = 条目
+    for 账本条目 in 件表:
+        if isinstance(账本条目, dict) and isinstance(账本条目.get("路径"), str) and 账本条目.get("路径"):
+            登记[账本条目["路径"]] = 账本条目
 
     def 按规则定档(键名: str):
-        for 条目 in 规则表:
-            if 键名.startswith(条目["前缀"]):
-                return 条目.get("档")
+        for 账本条目 in 规则表:
+            if 键名.startswith(账本条目["前缀"]):
+                return 账本条目.get("档")
         return None
 
     # ① 未登记（华哥口径：没有定义的 ⇒ 随时可删）
@@ -162,8 +162,8 @@ def 检查41_文档账本(上层读数: dict) -> list:
             )
     # ③ 档不合法 / 「表达什么」空
     for 路径 in sorted(登记):
-        条目 = 登记[路径]
-        档名 = 条目.get("档")
+        账本条目 = 登记[路径]
+        档名 = 账本条目.get("档")
         if 档名 not in 合法档:
             输出缓冲.append(
                 违规(
@@ -174,7 +174,7 @@ def 检查41_文档账本(上层读数: dict) -> list:
                     "要么在 `权威档` 里补定义（补定义要说明它权威到什么程度、谁改）",
                 )
             )
-        if not str(条目.get("表达什么") or "").strip():
+        if not str(账本条目.get("表达什么") or "").strip():
             输出缓冲.append(
                 违规(
                     检查名[40],

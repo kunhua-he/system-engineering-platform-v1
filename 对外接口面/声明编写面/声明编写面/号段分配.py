@@ -61,20 +61,20 @@ def 该层号段(声明根, 类别):
     声明路径 = 声明文件(声明根)
     if 声明路径 is None:
         return None, "找不到 %s（该层占哪几段没有来源）" % " / ".join(声明文件名)
-    数据 = 读JSON件(声明路径)
-    if not isinstance(数据, dict):
+    配置表 = 读JSON件(声明路径)
+    if not isinstance(配置表, dict):
         return None, "%s 读不动或不是对象" % 声明路径.name
 
     if 类别 == "错误码":
         # 段位 d ⇒ 码区间 d*1000+1 … d*1000+999（§五：码 = <段位 1 位><序 3 位>；码 0 不是合法码）
-        段位表 = 数据.get("错误段位表")
+        段位表 = 配置表.get("错误段位表")
         if not isinstance(段位表, list) or not 段位表:
             return None, "%s 的 错误段位表 缺失或为空（错误码占哪几个段位没有来源）" % 声明路径.name
         号段 = []
-        for 位置 in 段位表:
-            if not _是整数(位置) or not (0 <= 位置 <= 9):
-                return None, "%s 的 错误段位表 里有非 0–9 的整数：%r" % (声明路径.name, 位置)
-            号段.append((位置 * 1000 + 1, 位置 * 1000 + 999))
+        for 段位 in 段位表:
+            if not _是整数(段位) or not (0 <= 段位 <= 9):
+                return None, "%s 的 错误段位表 里有非 0–9 的整数：%r" % (声明路径.name, 段位)
+            号段.append((段位 * 1000 + 1, 段位 * 1000 + 999))
         return sorted(号段), "%s 的 错误段位表 %s（码 = <段位><序 3 位>，序 1–999）" % (声明路径.name, 段位表)
 
     if 类别 == "类型":
@@ -87,7 +87,7 @@ def 该层号段(声明根, 类别):
     键名 = _类别到占用键.get(类别)
     if 键名 is None:
         return None, "未知类别 %r" % (类别,)
-    占用 = 数据.get(键名)
+    占用 = 配置表.get(键名)
     if not isinstance(占用, list) or not 占用:
         return None, "%s 的 %s 缺失或为空（该层占哪几段没有来源）" % (声明路径.name, 键名)
     号段 = []
@@ -100,19 +100,19 @@ def 该层号段(声明根, 类别):
     return sorted(号段), "%s 的 %s %s" % (声明路径.name, 键名, 占用)
 
 
-def 已用号(声明根, 目录, 字段):
+def 已用号(声明根, 类别目录, 字段):
     """该目录下已用的号：文件名（= 编号）与 JSON 字段值，两者都收（判据 ① 要求二者一致）。"""
     已用号集 = set()
-    根目录 = Path(声明根) / 目录
+    根目录 = Path(声明根) / 类别目录
     if not 根目录.is_dir():
         return 已用号集
     for 路径 in sorted(根目录.glob("*.json")):
         编号文本 = 路径.name[: -len(".json")]
         if 编号文本.isdigit():
             已用号集.add(int(编号文本))
-        数据 = 读JSON件(路径)
-        if isinstance(数据, dict) and _是整数(数据.get(字段)):
-            已用号集.add(int(数据[字段]))
+        配置表 = 读JSON件(路径)
+        if isinstance(配置表, dict) and _是整数(配置表.get(字段)):
+            已用号集.add(int(配置表[字段]))
     return 已用号集
 
 
@@ -129,11 +129,11 @@ def 作废号(声明根, 类别):
     空间 = _类别到号空间.get(类别)
     if 空间 is None:
         return set()
-    数据 = 读JSON件(Path(声明根) / "作废号表.json")
-    条目 = 数据.get("作废") if isinstance(数据, dict) else None
+    配置表 = 读JSON件(Path(声明根) / "作废号表.json")
+    作废号表 = 配置表.get("作废") if isinstance(配置表, dict) else None
     作废号集 = set()
-    if isinstance(条目, list):
-        for 作废条目 in 条目:
+    if isinstance(作废号表, list):
+        for 作废条目 in 作废号表:
             if (
                 isinstance(作废条目, dict)
                 and 作废条目.get("号空间") == 空间
@@ -166,9 +166,9 @@ def 层标签(声明根, 类别, 编号):
     if not isinstance(项表, list):
         return ""
     if 类别 == "错误码":
-        位置 = 编号 // 1000
+        段位 = 编号 // 1000
         for 号段项 in 项表:
-            if isinstance(号段项, dict) and 号段项.get("段位") == 位置:
+            if isinstance(号段项, dict) and 号段项.get("段位") == 段位:
                 return str(号段项.get("归属", ""))
         return ""
     for 号段项 in 项表:

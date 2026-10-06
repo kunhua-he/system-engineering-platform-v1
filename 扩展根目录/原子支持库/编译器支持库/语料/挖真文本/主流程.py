@@ -89,11 +89,11 @@ def 入口函数():
     # 去重：同文件内被更大范围完全包含的锚点
     def 去重(rows):
         keep = []
-        for 记录 in sorted(rows, key=lambda 记录: (-记录["bytes"], 记录["file"], 记录["anchor"])):
-            if any(保留项["file"] == 记录["file"] and 保留项["anchor"] <= 记录["anchor"]
-                   and 保留项["end"] >= 记录["end"] for 保留项 in keep):
+        for 样本记录 in sorted(rows, key=lambda 样本记录: (-样本记录["bytes"], 样本记录["file"], 样本记录["anchor"])):
+            if any(保留项["file"] == 样本记录["file"] and 保留项["anchor"] <= 样本记录["anchor"]
+                   and 保留项["end"] >= 样本记录["end"] for 保留项 in keep):
                 continue
-            keep.append(记录)
+            keep.append(样本记录)
         return keep
 
     hard = 去重(hard)
@@ -130,38 +130,38 @@ def 入口函数():
     def 落盘真文本(rows, tier):
         manifest = []
         seen = {}
-        for 记录 in rows:
-            key = 记录["sha12"]
-            name = f"{tier}-{简化文件名(os.path.splitext(记录['file'])[0])}-{记录['anchor']}.txt"
+        for 样本记录 in rows:
+            key = 样本记录["sha12"]
+            name = f"{tier}-{简化文件名(os.path.splitext(样本记录['file'])[0])}-{样本记录['anchor']}.txt"
             if key in seen:                       # 同内容只落一份
-                记录["dup_of"] = seen[key]
+                样本记录["dup_of"] = seen[key]
                 continue
             seen[key] = name
             # 落盘一律 UTF-8（原文是 GBK；编码转换只在边界做一次）
             with open(os.path.join(真文本目录, name), "w", encoding="utf-8", newline="") as fh:
-                fh.write(记录["text"].decode("gbk"))
-            记录["sample"] = name
+                fh.write(样本记录["text"].decode("gbk"))
+            样本记录["sample"] = name
             manifest.append(name)
         return manifest
 
     硬文本落点 = 落盘真文本(hard, "硬")
-    m2 = 落盘真文本(plain, "硬文本")
-    m3 = 落盘真文本(weak_ev, "弱")
+    硬文本份数 = 落盘真文本(plain, "硬文本")
+    弱文本份数 = 落盘真文本(weak_ev, "弱")
 
-    json.dump({"hard": [{键名: 待处理值 for 键名, 待处理值 in 记录.items() if 键名 != "text"} for 记录 in hard],
-               "hard_plain": [{键名: 待处理值 for 键名, 待处理值 in 记录.items() if 键名 != "text"} for 记录 in plain],
-               "weak": [{键名: 待处理值 for 键名, 待处理值 in 记录.items() if 键名 != "text"} for 记录 in weak_ev],
+    json.dump({"hard": [{键名: 待处理值 for 键名, 待处理值 in 样本记录.items() if 键名 != "text"} for 样本记录 in hard],
+               "hard_plain": [{键名: 待处理值 for 键名, 待处理值 in 样本记录.items() if 键名 != "text"} for 样本记录 in plain],
+               "weak": [{键名: 待处理值 for 键名, 待处理值 in 样本记录.items() if 键名 != "text"} for 样本记录 in weak_ev],
                "weak_rejected": weak_json},
               open(挖出JSON路径, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
 
     uniq = {}
-    for 记录 in hard + plain + weak_ev:
-        uniq.setdefault(记录["sha12"], 记录)
-    print(f"硬证据（容器长度背书） {len(hard)} 处 → 落盘 {len(m1)} 份")
-    print(f"硬证据（整文件即文本） {len(plain)} 处 → 落盘 {len(m2)} 份")
-    print(f"弱证据（无长度字段）   {len(weak_ev)} 处 → 落盘 {len(m3)} 份")
-    print(f"唯一文本 {len(uniq)} 份 · 唯一字节 {sum(记录['bytes'] for 记录 in uniq.values())}")
-    print(f"全部出现处合计字节 {sum(记录['bytes'] for 记录 in hard + plain + weak_ev)}")
-    for 记录 in sorted(hard + plain + weak_ev, key=lambda 记录: (-记录["bytes"], 记录["file"])):
-        print(f"  {记录['bytes']:>8}  {记录.get('sample') or '(dup ' + str(记录.get('dup_of')) + ')':<34} "
-              f"t{str(记录['seg_type']):<4} {记录['file']}@{记录['anchor']}")
+    for 样本记录 in hard + plain + weak_ev:
+        uniq.setdefault(样本记录["sha12"], 样本记录)
+    print(f"硬证据（容器长度背书） {len(hard)} 处 → 落盘 {len(硬文本落点)} 份")
+    print(f"硬证据（整文件即文本） {len(plain)} 处 → 落盘 {len(硬文本份数)} 份")
+    print(f"弱证据（无长度字段）   {len(weak_ev)} 处 → 落盘 {len(弱文本份数)} 份")
+    print(f"唯一文本 {len(uniq)} 份 · 唯一字节 {sum(样本记录['bytes'] for 样本记录 in uniq.values())}")
+    print(f"全部出现处合计字节 {sum(样本记录['bytes'] for 样本记录 in hard + plain + weak_ev)}")
+    for 样本记录 in sorted(hard + plain + weak_ev, key=lambda 样本记录: (-样本记录["bytes"], 样本记录["file"])):
+        print(f"  {样本记录['bytes']:>8}  {样本记录.get('sample') or '(dup ' + str(样本记录.get('dup_of')) + ')':<34} "
+              f"t{str(样本记录['seg_type']):<4} {样本记录['file']}@{样本记录['anchor']}")

@@ -44,7 +44,7 @@ pub struct 接口参数项 {
 /// 字段序：`码` · `段位` · `名称` · `可重试` · `可自愈` · `需人工` · `已登记`。
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct 接口错误项 {
-    pub 码: u32,
+    pub 码值: u32,
     pub 段位: u32,
     pub 名称: String,
     pub 可重试: bool,

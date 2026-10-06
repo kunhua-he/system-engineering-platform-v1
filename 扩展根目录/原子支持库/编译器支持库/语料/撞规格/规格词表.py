@@ -43,9 +43,9 @@ import re
 def 行首关键字(行文本):
     行文 = 行文本.lstrip()
     if 行文.startswith("."):
-        匹配 = re.match(r"\.([0-9A-Za-z_\u4e00-\u9fff]+)", 行文)
-        if 匹配:
-            return 匹配.group(1)
+        正则匹配 = re.match(r"\.([0-9A-Za-z_\u4e00-\u9fff]+)", 行文)
+        if 正则匹配:
+            return 正则匹配.group(1)
     return None
 
 
@@ -65,15 +65,15 @@ def _字段序(行文本, col):
     字段数 = 0
     扫描位 = 0
     while 扫描位 < col and 扫描位 < len(行文本):
-        字符 = 行文本[扫描位]
-        if 字符 in "“”\"":
-            close = "”" if 字符 in "“”" else '"'
+        单字符 = 行文本[扫描位]
+        if 单字符 in "“”\"":
+            close = "”" if 单字符 in "“”" else '"'
             扫描位 += 1
             while 扫描位 < len(行文本) and 行文本[扫描位] != close:
                 扫描位 += 1
             扫描位 += 1
             continue
-        if 字符 == ",":
+        if 单字符 == ",":
             字段数 += 1
         扫描位 += 1
     return 字段数

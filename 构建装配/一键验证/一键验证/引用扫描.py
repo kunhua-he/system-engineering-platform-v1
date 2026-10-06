@@ -61,9 +61,9 @@ def 节号(标题行: str):
     return int(数码) if 数码.isdigit() else 中表.get(数码)
 
 
-def 节集(文本: str) -> set:
+def 节集(源文本: str) -> set:
     """一份文本里**存在**的节号集合（只看 `##` 标题，与 `断链扫.py::节集` 同一条）。"""
-    return {号值 for 号值 in (节号(标题行) for 标题行 in 文本.splitlines()) if 号值}
+    return {号值 for 号值 in (节号(标题行) for 标题行 in 源文本.splitlines()) if 号值}
 
 
 # 条款行的 `标题` 栏（已由 `建库` 剥掉 `# ` 前缀）—— 直接以数码起头。与 `_节首` 同一张数码表。
@@ -138,18 +138,18 @@ def 扫引用(件表: dict, 自身算: bool = True, 任一候选: bool = True, �
     条款节集 = 条款节集 or {}
     件全集 = list(dict.fromkeys(list(件表) + list(条款节集)))
     基名表 = {键名: Path(键名).name for 键名 in 件全集}
-    节集缓存 = {键名: 节集(文本 or "") for 键名, 文本 in 件表.items()}
+    节集缓存 = {键名: 节集(源文本 or "") for 键名, 源文本 in 件表.items()}
     for 键名, 号集 in 条款节集.items():
         节集缓存.setdefault(键名, set()).update(号集)
     悬空 = []
     判过 = 0
     未判表 = []
     for 本件路径 in sorted(件表):
-        文本 = 件表[本件路径] or ""
-        if "§" not in 文本:
+        源文本 = 件表[本件路径] or ""
+        if "§" not in 源文本:
             continue
         自身节集 = 节集缓存.get(本件路径, set())
-        for 行号, 行文本 in enumerate(文本.splitlines(), 1):
+        for 行号, 行文本 in enumerate(源文本.splitlines(), 1):
             if "§" not in 行文本:
                 continue
             锚表 = [(命中.end(), 命中.group(1).strip("`*（()")) for 命中 in 件名式.finditer(行文本)]
@@ -168,14 +168,14 @@ def 扫引用(件表: dict, 自身算: bool = True, 任一候选: bool = True, �
                     continue
                 if 要求紧邻 and not set(行文本[前导[-1][0]:命中.start()]) <= _允许间隙:
                     continue
-                候选 = 本行候选 if 任一候选 else 候选件(前导[-1][1], 件全集, 基名表)
-                if not 候选:
+                候选名表 = 本行候选 if 任一候选 else 候选件(前导[-1][1], 件全集, 基名表)
+                if not 候选名表:
                     # 目标件匹配不到任何件 ⇒ 不是「可解析」，也不许静默 `continue`：
                     # 进未判表，由判据 ㊴ 报**未判**（存量入基线、只许减）。
                     未判表.append((本件路径, 行号, 前导[-1][1], 号值, 行文本.strip()[:160]))
                     continue
                 判过 += 1
-                if any(号值 in 节集缓存.get(键名, set()) for 键名 in 候选):
+                if any(号值 in 节集缓存.get(键名, set()) for 键名 in 候选名表):
                     continue
                 if 自身算 and 号值 in 自身节集:
                     continue

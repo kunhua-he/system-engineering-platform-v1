@@ -30,15 +30,15 @@ def 读作废号表(声明根):
     if not 路径.is_file():
         return None, None, "%s 不在（作废登记的唯一落点）" % 路径.name
     try:
-        数据 = json.loads(路径.read_bytes().decode("utf-8"))
+        配置表 = json.loads(路径.read_bytes().decode("utf-8"))
     except (OSError, UnicodeDecodeError, ValueError) as 错误:
         return None, None, "%s 读不动（%s）⇒ 面不覆写一份自身读不懂的已公布档案" % (路径.name, 错误)
-    if not isinstance(数据, dict):
+    if not isinstance(配置表, dict):
         return None, None, "%s 顶层不是对象（§七 的形状）" % 路径.name
-    条目 = 数据.get("作废")
-    if not isinstance(条目, list):
+    作废条目 = 配置表.get("作废")
+    if not isinstance(作废条目, list):
         return None, None, "%s 的 作废 不是数组（§七 的形状）" % 路径.name
-    return 数据, 条目, ""
+    return 配置表, 作废条目, ""
 
 
 def 编五键行(正文, 编号):

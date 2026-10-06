@@ -42,8 +42,8 @@ except ModuleNotFoundError as 错误:
     if 错误.name != "构建装配":
         raise
 
-    def 自门禁(起始时刻, 码, 尾巴余量毫秒, 修法, 输出流=None):  # noqa: N802
-        return 码
+    def 自门禁(起始时刻, 退出码, 尾巴余量毫秒, 修法, 输出流=None):  # noqa: N802
+        return 退出码
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))  # 同名字包所在的 <工具>/
 

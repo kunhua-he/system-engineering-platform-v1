@@ -90,7 +90,7 @@ def _补列(连接) -> None:
     `create table if not exists` 只对新库生效 ⇒ 老库要显式补。判定走 `pragma table_info`，
     补过就不动（幂等）。
     """
-    列名集 = {一行[1] for 一行 in 连接.execute("pragma table_info(改动)")}
+    列名集 = {文本行[1] for 文本行 in 连接.execute("pragma table_info(改动)")}
     if "说明" not in 列名集:
         连接.execute("alter table 改动 add column 说明 text")
 
@@ -225,13 +225,13 @@ def 查同内容未释放(连接, 工作内容: str, 排除开工号: str) -> li
     实测 2026-09-27：同一条活登了两次（`v1-100002` 与 `v1-100007`，工作内容一模一样），
     留下一棵没人认领的孤儿工作树。
     """
-    内容 = 工作内容.strip()
-    if not 内容:
+    内容值 = 工作内容.strip()
+    if not 内容值:
         return []
     return [(数据行["开工号"], 数据行["工作内容"]) for 数据行 in 连接.execute(
         "select 开工号, 工作内容 from 开工 "
         "where 工作内容 = ? and 开工号 <> ? and 状态 <> ? order by 开工号",
-        (内容, 排除开工号, 状态_已释放))]
+        (内容值, 排除开工号, 状态_已释放))]
 
 
 def 查重复登记(连接, 开工号: str, 工作内容: str, 路径表, 排除开工表=frozenset()) -> list:

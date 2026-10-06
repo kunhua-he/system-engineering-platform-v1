@@ -49,7 +49,7 @@ def 解析请求(请求):
             % (" · ".join(请求类别表), 类别)
         )
         return 类别, None, None, None, None, False, 错误表
-    目录, 字段 = 请求类别表[类别]
+    类别目录, 字段 = 请求类别表[类别]
 
     编号 = 请求.get("编号")
     if 编号 is not None and not _是整数(编号):
@@ -69,8 +69,8 @@ def 解析请求(请求):
 
     确认 = 请求.get("确认") is True
     if 错误表:
-        return 类别, 目录, 字段, None, None, 确认, 错误表
-    return 类别, 目录, 字段, 编号, 正文, 确认, []
+        return 类别, 类别目录, 字段, None, None, 确认, 错误表
+    return 类别, 类别目录, 字段, 编号, 正文, 确认, []
 
 
 def 合成正文(正文, 字段, 编号):

@@ -15,13 +15,13 @@ use crate::类型标签;
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct 版本三元组 {
     pub 主版本: i32,
-    pub 次: i32,
+    pub 次版本号: i32,
     pub 构建: i32,
 }
 
 impl 版本三元组 {
-    pub const fn 新建(主版本: i32, 次版本: i32, 构建: i32) -> Self {
-        Self { 主版本: 主版本, 次: 次版本, 构建 }
+    pub const fn 构造(主版本: i32, 次版本: i32, 构建: i32) -> Self {
+        Self { 主版本: 主版本, 次版本号: 次版本, 构建 }
     }
 
     /// 本版本是否满足「版本要求」：**先比主、再比次**（要求无修订段；构建号不参与）。
@@ -29,7 +29,7 @@ impl 版本三元组 {
         if self.主版本 != 要求.主版本 {
             return self.主版本 > 要求.主版本;
         }
-        self.次 >= 要求.次
+        self.次版本号 >= 要求.次版本号
     }
 }
 
@@ -42,32 +42,32 @@ impl 版本三元组 {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct 版本要求 {
     pub 主版本: i32,
-    pub 次: i32,
+    pub 次版本号: i32,
 }
 
 impl 版本要求 {
-    pub const fn 新建(主版本: i32, 次版本: i32) -> Self {
-        Self { 主版本: 主版本, 次: 次版本 }
+    pub const fn 构造(主版本: i32, 次版本: i32) -> Self {
+        Self { 主版本: 主版本, 次版本号: 次版本 }
     }
 }
 
 /// 一张静态表：项数 + 项表指针。空表用 `表段::空实例()`。
 #[repr(C)]
 #[derive(Clone, Copy)]
-pub struct 表段<元素> {
-    pub 项数: u32,
-    pub 项表: *const 元素,
+pub struct 表段<表元素> {
+    pub 表项数: u32,
+    pub 项表: *const 表元素,
 }
 
-impl<元素> 表段<元素> {
+impl<表元素> 表段<表元素> {
     pub const fn 空实例() -> Self {
-        Self { 项数: 0, 项表: core::ptr::null() }
+        Self { 表项数: 0, 项表: core::ptr::null() }
     }
-    pub const fn 新建(项表: *const 元素, 项数: u32) -> Self {
-        Self { 项数, 项表 }
+    pub const fn 构造(项表: *const 表元素, 表项数: u32) -> Self {
+        Self { 表项数, 项表 }
     }
     pub fn 是否空(&self) -> bool {
-        self.项数 == 0
+        self.表项数 == 0
     }
 }
 
@@ -88,7 +88,7 @@ pub struct 数据槽 {
     pub 槽标志位: u16,
     pub 保留: u16,
     /// 字节长度。**文本与字节集必带长度**——参照内核不带长度，是它的缺陷，不复刻。
-    pub 长度: u64,
+    pub 槽字节长度: u64,
     /// 内联值，或指向数据的指针（由标志位区分）。
     pub 槽值: u64,
 }
@@ -107,14 +107,14 @@ pub mod 槽标志 {
 
 impl 数据槽 {
     pub const fn 空槽() -> Self {
-        Self { 类型标签: 类型标签::新建(0), 槽标志位: 槽标志::空槽标志, 保留: 0, 长度: 0, 槽值: 0 }
+        Self { 类型标签: 类型标签::构造(0), 槽标志位: 槽标志::空槽标志, 保留: 0, 槽字节长度: 0, 槽值: 0 }
     }
-    pub const fn 内联(标签: 类型标签, 待处理值: u64, 长度: u64) -> Self {
-        Self { 类型标签: 标签, 槽标志位: 0, 保留: 0, 长度, 槽值: 待处理值 }
+    pub const fn 内联槽(标签: 类型标签, 待处理值: u64, 槽字节长度: u64) -> Self {
+        Self { 类型标签: 标签, 槽标志位: 0, 保留: 0, 槽字节长度, 槽值: 待处理值 }
     }
-    pub const fn 指针(标签: 类型标签, 地址: u64, 字节长度: u64, 交出所有权: bool) -> Self {
+    pub const fn 指针(标签: 类型标签, 指针地址: u64, 字节长度: u64, 交出所有权: bool) -> Self {
         let 槽标志位 = if 交出所有权 { 槽标志::引用 | 槽标志::所有权交出 } else { 槽标志::引用 };
-        Self { 类型标签: 标签, 槽标志位, 保留: 0, 长度: 字节长度, 槽值: 地址 }
+        Self { 类型标签: 标签, 槽标志位, 保留: 0, 槽字节长度: 字节长度, 槽值: 指针地址 }
     }
     pub const fn 是否空(&self) -> bool {
         self.槽标志位 & 槽标志::空槽标志 != 0

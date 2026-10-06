@@ -36,23 +36,23 @@ from .常量 import 检查名, 常量表路径, 接口面件, 命令行件, 接�
 案例布局项 = ("案例根", "案例回执件", "案例声明件")
 
 
-def _取Rust串常量(文本: str, 路径名: str):
+def _取Rust串常量(源文本: str, 路径名: str):
     """Rust 件里 `pub const <名>: &str = "<值>";` 的值（取不到 ⇒ None）。"""
-    匹配 = re.search(
-        r'(?m)^[ \t]*pub const ' + re.escape(路径名) + r'\s*:\s*&str\s*=\s*"([^"]*)"\s*;', 文本)
-    return 匹配.group(1) if 匹配 else None
+    匹配结果 = re.search(
+        r'(?m)^[ \t]*pub const ' + re.escape(路径名) + r'\s*:\s*&str\s*=\s*"([^"]*)"\s*;', 源文本)
+    return 匹配结果.group(1) if 匹配结果 else None
 
 
-def _取Py串常量(文本: str, 路径名: str):
+def _取Py串常量(源文本: str, 路径名: str):
     """Python 件里 `名 = "<值>"` 的值（取不到 ⇒ None）。"""
-    匹配 = re.search(r'(?m)^[ \t]*' + re.escape(路径名) + r'\s*=\s*"([^"]*)"', 文本)
-    return 匹配.group(1) if 匹配 else None
+    匹配结果 = re.search(r'(?m)^[ \t]*' + re.escape(路径名) + r'\s*=\s*"([^"]*)"', 源文本)
+    return 匹配结果.group(1) if 匹配结果 else None
 
 
-def _取Py整数常量(文本: str, 路径名: str):
+def _取Py整数常量(源文本: str, 路径名: str):
     """Python 件里 `名 = <整数>` 的值（取不到 ⇒ None）。"""
-    匹配 = re.search(r'(?m)^[ \t]*' + re.escape(路径名) + r'\s*=\s*(\d+)', 文本)
-    return int(匹配.group(1)) if 匹配 else None
+    匹配结果 = re.search(r'(?m)^[ \t]*' + re.escape(路径名) + r'\s*=\s*(\d+)', 源文本)
+    return int(匹配结果.group(1)) if 匹配结果 else None
 
 
 def _取后端端口(上层读数: dict):
@@ -60,9 +60,9 @@ def _取后端端口(上层读数: dict):
     条目表 = (上层读数.get("常量表") or {}).get("常量")
     if not isinstance(条目表, list):
         return None
-    for 条目 in 条目表:
-        if isinstance(条目, dict) and 条目.get("名") == "接口端口":
-            return 条目.get("值")
+    for 常量条目 in 条目表:
+        if isinstance(常量条目, dict) and 常量条目.get("名") == "接口端口":
+            return 常量条目.get("值")
     return None
 
 
@@ -71,9 +71,9 @@ def 可比项(上层读数: dict) -> list:
 
     两侧任一缺该项 ⇒ 该项不进表（缺项由 `检查43` 按「可比项 0 条」报未判）。
     """
-    文件 = 上层读数["文件"]
-    后端文本 = (文件.get(接口面件) or {}).get("文本") or ""
-    前端文本 = (文件.get(命令行件) or {}).get("文本") or ""
+    全仓件表 = 上层读数["文件"]
+    后端文本 = (全仓件表.get(接口面件) or {}).get("文本") or ""
+    前端文本 = (全仓件表.get(命令行件) or {}).get("文本") or ""
     项表 = []
     for 路径名 in 接口面路径名表:
         后端值 = _取Rust串常量(后端文本, 路径名)
@@ -99,8 +99,8 @@ def 样本_接口面常量(上层读数: dict) -> int:
 def 检查43_接口面常量跨语言一致(上层读数: dict) -> list:
     """接口面常量跨语言一致：命令行界面与对外接口面的 路径 · 端口 · 监听地址逐项一致。"""
     输出缓冲 = []
-    文件 = 上层读数["文件"]
-    缺件表 = [路径 for 路径 in (接口面件, 命令行件) if 路径 not in 文件]
+    全仓件表 = 上层读数["文件"]
+    缺件表 = [路径 for 路径 in (接口面件, 命令行件) if 路径 not in 全仓件表]
     if 缺件表:
         判不了(
             检查名[42],
@@ -181,13 +181,13 @@ def 案例布局可比项(上层读数: dict) -> tuple:
 
     取不到某一项 ⇒ 该项不进表（缺项由 `检查47` 按「可比项 0 条」报未判）。
     """
-    文本 = (上层读数["文件"].get(接口面件) or {}).get("文本") or ""
+    源文本 = (上层读数["文件"].get(接口面件) or {}).get("文本") or ""
     正文, 错误 = 读案例形状(上层读数["仓根"])
     if 错误:
         return [], 错误
     项表 = []
     for 布局名 in 案例布局项:
-        布局值 = _取Rust串常量(文本, 布局名)
+        布局值 = _取Rust串常量(源文本, 布局名)
         if 布局值 is not None:
             项表.append((布局名, 布局值, 正文))
     return 项表, None

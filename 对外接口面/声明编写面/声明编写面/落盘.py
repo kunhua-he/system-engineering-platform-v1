@@ -15,9 +15,9 @@ from pathlib import Path
 留痕文件名 = "改动留痕.jsonl"
 
 
-def 序列化数据(数据) -> bytes:
+def 序列化数据(配置表) -> bytes:
     """落盘字节：与既有声明同形（UTF-8 · 2 空格缩进 · 结尾换行）。"""
-    return (json.dumps(数据, ensure_ascii=False, indent=2) + "\n").encode("utf-8")
+    return (json.dumps(配置表, ensure_ascii=False, indent=2) + "\n").encode("utf-8")
 
 
 def 取字节指纹(字节: bytes) -> str:
@@ -33,7 +33,7 @@ def 读现有字节(路径):
         return None
 
 
-def 新建(路径, 字节) -> None:
+def 独占建件(路径, 字节) -> None:
     """独占创建：已存在 ⇒ FileExistsError（这就是「一个号一个文件」的撞车点）。"""
     fd = os.open(str(路径), os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o644)
     try:
@@ -69,11 +69,11 @@ def 只增判定(旧数据, 新数据):
     return (not 差异), 差异
 
 
-def 写留痕行(面根, 记录) -> str:
+def 写留痕行(面根, 留痕记录) -> str:
     """只追加一行 JSON Lines。返回留痕文件相对面的路径。"""
-    目录 = Path(面根) / 留痕目录名
-    目录.mkdir(parents=True, exist_ok=True)
-    路径 = 目录 / 留痕文件名
+    留痕目录 = Path(面根) / 留痕目录名
+    留痕目录.mkdir(parents=True, exist_ok=True)
+    路径 = 留痕目录 / 留痕文件名
     with 路径.open("a", encoding="utf-8") as 输出流:
-        输出流.write(json.dumps(记录, ensure_ascii=False) + "\n")
+        输出流.write(json.dumps(留痕记录, ensure_ascii=False) + "\n")
     return "%s/%s" % (留痕目录名, 留痕文件名)

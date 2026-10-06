@@ -39,7 +39,7 @@ def 是合法符号名(待处理值):
     """导出的 ABI 符号一律 ASCII（外部协议边界，`跨语言适配/边界协议/边界协议.md` §二）。"""
     if not 待处理值 or not (待处理值[0].isascii() and (待处理值[0].isalpha() or 待处理值[0] == "_")):
         return False
-    return all(字符.isascii() and (字符.isalnum() or 字符 == "_") for 字符 in 待处理值)
+    return all(单字符.isascii() and (单字符.isalnum() or 单字符 == "_") for 单字符 in 待处理值)
 
 
 def 校验导出目标(待处理值, 来源, 是底座):

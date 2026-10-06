@@ -28,8 +28,8 @@ def 自检_临时件排除承重() -> list:
     输出缓冲 = []
     临时名 = 检查名[16]
 
-    with tempfile.TemporaryDirectory(prefix="一键验证临时件承重-") as 临时:
-        临根 = Path(临时) / "仓"
+    with tempfile.TemporaryDirectory(prefix="一键验证临时件承重-") as 临时目录:
+        临根 = Path(临时目录) / "仓"
         造干净仓(临根)
         注入_临时件落源码树(临根)
         开启结果 = 跑全量判据(临根, 两遍=False)
@@ -48,8 +48,8 @@ def 自检_临时件排除承重() -> list:
         )
     )
     # 关掉排除：同一注入，⑬ / ⑮ 必须报（先按正常前缀造好注入，再关排除重跑）
-    with tempfile.TemporaryDirectory(prefix="一键验证临时件承重关-") as 临时:
-        临时仓根 = Path(临时) / "仓"
+    with tempfile.TemporaryDirectory(prefix="一键验证临时件承重关-") as 临时目录:
+        临时仓根 = Path(临时目录) / "仓"
         造干净仓(临时仓根)
         注入_临时件落源码树(临时仓根)
         原前缀 = 常量.临时目录前缀

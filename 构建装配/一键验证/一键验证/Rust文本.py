@@ -24,17 +24,17 @@ import re
 _枚举变体声明形 = re.compile(r"^载入声明\s*\([^;]*\)\s*,?\s*$")
 
 
-def _配平括号(文本: str, 开符: int) -> int:
+def _配平括号(源文本: str, 开符: int) -> int:
     """`文本[开符]` 是 `(` ⇒ 返回与它配对的 `)` 的下标（配不平就返回 len）。"""
     嵌套深度 = 0
-    for 游标 in range(开符, len(文本)):
-        if 文本[游标] == "(":
+    for 游标 in range(开符, len(源文本)):
+        if 源文本[游标] == "(":
             嵌套深度 += 1
-        elif 文本[游标] == ")":
+        elif 源文本[游标] == ")":
             嵌套深度 -= 1
             if 嵌套深度 == 0:
                 return 游标
-    return len(文本)
+    return len(源文本)
 
 
 def 漏传上下文调用(源文本: str, 函数名: str = "并行取生产区文本") -> list:
@@ -51,38 +51,38 @@ def 漏传上下文调用(源文本: str, 函数名: str = "并行取生产区�
         if 源文本[: 匹配结果.start()].rstrip().endswith("def"):
             continue  # 定义形
         闭符 = _配平括号(源文本, 源文本.find("(", 匹配结果.start()))
-        参数 = 源文本[匹配结果.end() : 闭符]
-        if "测试文件集" not in 参数:
+        命令行参数 = 源文本[匹配结果.end() : 闭符]
+        if "测试文件集" not in 命令行参数:
             输出缓冲.append(源文本[: 匹配结果.start()].count("\n") + 1)
     return 输出缓冲
 
 
-def 载入调用点(文本: str) -> list:
+def 载入调用点(源文本: str) -> list:
     """返回 `载入声明` **调用点**的 1 基行号表（收窄口径见上方注释）。"""
     输出缓冲 = []
-    for 匹配结果 in re.finditer(r"(?<![\w])载入声明\s*\(", 文本):
-        行起 = 文本.rfind("\n", 0, 匹配结果.start()) + 1
-        源码行 = 文本[行起 : 文本.find("\n", 匹配结果.start())]
+    for 匹配结果 in re.finditer(r"(?<![\w])载入声明\s*\(", 源文本):
+        行起 = 源文本.rfind("\n", 0, 匹配结果.start()) + 1
+        源码行 = 源文本[行起 : 源文本.find("\n", 匹配结果.start())]
         if re.search(r"\bfn\s+载入声明\s*\(", 源码行):
             continue  # 定义形
         if _枚举变体声明形.match(源码行.strip()):
             continue  # 枚举变体声明（裸行）
-        闭符 = _配平括号(文本, 文本.find("(", 匹配结果.start()))
-        尾紧 = 文本[闭符 + 1 :].lstrip()
+        闭符 = _配平括号(源文本, 源文本.find("(", 匹配结果.start()))
+        尾紧 = 源文本[闭符 + 1 :].lstrip()
         if 尾紧.startswith("=>") or 尾紧.startswith("|"):
             continue  # 模式位：match 臂 / or-模式
         # `let` / `if let` / `while let` 的**模式**位：路径前有 `let` 且没有 `=`
         路径起 = 匹配结果.start()
-        while 路径起 > 0 and (文本[路径起 - 1].isalnum() or 文本[路径起 - 1] in "_:"):
+        while 路径起 > 0 and (源文本[路径起 - 1].isalnum() or 源文本[路径起 - 1] in "_:"):
             路径起 -= 1
         边界位置 = max(
-            文本.rfind(";", 0, 路径起),
-            文本.rfind("{", 0, 路径起),
-            文本.rfind("}", 0, 路径起),
-            文本.rfind("\n", 0, 路径起),
+            源文本.rfind(";", 0, 路径起),
+            源文本.rfind("{", 0, 路径起),
+            源文本.rfind("}", 0, 路径起),
+            源文本.rfind("\n", 0, 路径起),
         )
-        前置 = 文本[边界位置 + 1 : 路径起]
+        前置 = 源文本[边界位置 + 1 : 路径起]
         if re.search(r"\blet\b", 前置) and "=" not in 前置:
             continue  # let 的模式位
-        输出缓冲.append(文本[: 匹配结果.start()].count("\n") + 1)
+        输出缓冲.append(源文本[: 匹配结果.start()].count("\n") + 1)
     return 输出缓冲

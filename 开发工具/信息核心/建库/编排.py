@@ -14,7 +14,7 @@ from .源件 import 装未完成, 装分片源件
 from .规则 import 装规则
 
 
-def 装表(连接, 表名: str, 现抽, 根目录: Path, *参数) -> int:
+def 装表(连接, 表名: str, 现抽, 根目录: Path, *命令行参数) -> int:
     """装一张表，返回行数。
 
     **有源件的源表 ⇒ 每次重抽**（源件是权威）；**无源件的源表 ⇒ 有行就不动**（库是唯一存本）。
@@ -32,7 +32,7 @@ def 装表(连接, 表名: str, 现抽, 根目录: Path, *参数) -> int:
         (根目录 / 一件).is_file() for 一件 in 表定义.源件表[表名])
     if 表名 in 表定义.源表 and 已有行数 and not 有源件:
         return 已有行数
-    数据行 = 现抽(根目录, *参数)
+    数据行 = 现抽(根目录, *命令行参数)
     连接.execute(f"delete from {表名}")
     if 数据行:
         连接.executemany(
@@ -65,7 +65,7 @@ def 建库(指定根: Path = None, 打读数: bool = False) -> dict:
         规则连接.execute(语句)
     规则连接.execute("insert or replace into 元 values(?,?)", ("生成物声明", 表定义.生成物声明))
     规则连接.execute("delete from 元 where 键 <> '生成物声明'")  # `元` 只留它；旧键是孤儿，见 表定义.py
-    计数 = {
+    计数表 = {
         "条款": 装表(规则连接, "条款", 装条款, 根目录),
         "规则": 装表(规则连接, "规则", 装规则, 根目录),
         "未完成": 装表(规则连接, "未完成", 装未完成, 根目录),
@@ -79,7 +79,7 @@ def 建库(指定根: Path = None, 打读数: bool = False) -> dict:
     派生连接 = sqlite3.connect(派生库)
     for 语句 in 表定义.派生建表语句:
         派生连接.execute(语句)
-    计数.update({
+    计数表.update({
         "文档": 装表(派生连接, "文档", 装文档, 根目录),
         "代码名": 装表(派生连接, "代码名", 装代码名, 根目录),
         "节点": 装表(派生连接, "节点", 装节点, 根目录),
@@ -93,9 +93,9 @@ def 建库(指定根: Path = None, 打读数: bool = False) -> dict:
     派生连接.close()
     if 打读数:
         print(f"规则库：{规则库}")
-        for 表名, 行数 in 计数.items():
+        for 表名, 行数 in 计数表.items():
             print(f"  {表名}：{行数}")
-    return 计数
+    return 计数表
 
 
 def 入口函数(命令行参数: list) -> int:

@@ -121,22 +121,22 @@ def 扫签名形参(行表: list, 只单字: bool = True) -> list:
         首字节 = 源码行.strip()
         if 首字节.startswith(注释头):
             continue
-        匹配 = _函数头.match(首字节)
-        if not 匹配:
+        正则匹配 = _函数头.match(首字节)
+        if not 正则匹配:
             continue
-        函数名 = 匹配.group(1) or 匹配.group(2)
+        函数名 = 正则匹配.group(1) or 正则匹配.group(2)
         前导 = len(源码行) - len(源码行.lstrip())
         缓冲 = ""
         深度 = 0
         角深度 = 0
         开了 = False
-        for 偏移, 后续 in enumerate(行表[序号:序号 + 40]):
-            if 偏移:
+        for 行偏移, 后续 in enumerate(行表[序号:序号 + 40]):
+            if 行偏移:
                 号段 = 后续.strip()
                 if 号段.startswith(注释头):
                     continue
             else:
-                号段 = 后续[前导 + 匹配.end():]
+                号段 = 后续[前导 + 正则匹配.end():]
             for 字符表 in 号段:
                 if not 开了:
                     # 函数名之后可能先来一段**泛型**（`fn 名<取号: Fn(usize) -> u32>(…)`）——
@@ -180,9 +180,9 @@ def 扫JS形参(行表: list, 只单字: bool = True) -> list:
     for 序号, 源码行 in enumerate(行表, 1):
         if 源码行.strip().startswith(注释头):
             continue
-        for 匹配 in list(_箭头函数.finditer(源码行)) + list(_函数表达式.finditer(源码行)):
+        for 正则匹配 in list(_箭头函数.finditer(源码行)) + list(_函数表达式.finditer(源码行)):
             形参段 = ""
-            for 匹配组 in 匹配.groups():
+            for 匹配组 in 正则匹配.groups():
                 if 匹配组 is not None:
                     形参段 = 匹配组
                     break
@@ -192,13 +192,13 @@ def 扫JS形参(行表: list, 只单字: bool = True) -> list:
     return 输出缓冲
 
 
-def 扫文本(路径: str, 文本: str, 只单字: bool = True) -> list:
+def 扫文本(路径: str, 源文本: str, 只单字: bool = True) -> list:
     """按后缀选面扫**一段文本** ⇒ `[(行号, 函数名, 形参名)]`（JS 面无函数名，留空串）。
 
     **面只由这里选**（`.js`/`.ts`/`.vue` 走 JS 面，其余走签名面）—— CLI 走盘、判据 ㉒ 走
     内存件表，都调它，不另写一套。`只单字` 的口径见 `是形参名`。
     """
-    行表 = 文本.splitlines()
+    行表 = 源文本.splitlines()
     if 路径.endswith(JS后缀):
         return [(源码行, "", 形参名) for 源码行, 形参名 in 扫JS形参(行表, 只单字)]
     return 扫签名形参(行表, 只单字)
@@ -209,13 +209,13 @@ def 扫件(路径: str, 只单字: bool = True) -> list:
     return 扫文本(路径, 读文本(路径), 只单字)
 
 
-def 有函数头(路径: str, 文本: str) -> bool:
+def 有函数头(路径: str, 源文本: str) -> bool:
     """这段文本里有没有函数头（**判空集用**：面下一个函数头都没有 ⇒ 未判，不是通过）。
 
     走**与扫描同一套正则**（`_函数头` / `_箭头函数` / `_函数表达式`）—— 这样「扫描器坏了」与
     「真的没有形参」分得开：正则一坏，空集那一关当场报未判，而不是静默报 0（假绿）。
     """
-    行表 = 文本.splitlines()
+    行表 = 源文本.splitlines()
     if 路径.endswith(JS后缀):
         return any(_箭头函数.search(源码行) or _函数表达式.search(源码行) for 源码行 in 行表)
     return any(_函数头.match(源码行.strip()) and not 源码行.strip().startswith(注释头)
@@ -225,11 +225,11 @@ def 有函数头(路径: str, 文本: str) -> bool:
 def 遍历命名件(根目录: str = None):
     """走树产出扫描面里的件路径（后缀在 `命名后缀` 里，且不在 `跳过目录` 下）。"""
     起点 = str(根目录 or 仓根)
-    for 目录, 子目录表, 件表 in os.walk(起点):
+    for 目录路径, 子目录表, 件表 in os.walk(起点):
         子目录表[:] = [号段 for 号段 in 子目录表 if 号段 not in 跳过目录]
         for 节点件 in 件表:
             if 节点件.endswith(命名后缀):
-                yield os.path.join(目录, 节点件)
+                yield os.path.join(目录路径, 节点件)
 
 
 def 扫描面读数(条表: list) -> dict:

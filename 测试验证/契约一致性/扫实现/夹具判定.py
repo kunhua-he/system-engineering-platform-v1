@@ -24,23 +24,23 @@ from 构建装配.一键验证.一键验证.测试件 import 建测试文件集
 
 def 找条件属性(掩码文本: str) -> list:
     """返回 [(起, 止, 属性文本, 是否含 test)]，按位置序。"""
-    结果 = []
-    for 匹配 in _夹具挂载形.finditer(掩码文本):
-        属性解析 = _条件编译属性(掩码文本, 匹配.start())
+    判定汇总 = []
+    for 正则匹配 in _夹具挂载形.finditer(掩码文本):
+        属性解析 = _条件编译属性(掩码文本, 正则匹配.start())
         if 属性解析 is None:
             continue
         属性文本, 区间终点 = 属性解析
-        结果.append((匹配.start(), 区间终点, 属性文本, bool(re.search(r"\btest\b", 属性文本))))
-    return 结果
+        判定汇总.append((正则匹配.start(), 区间终点, 属性文本, bool(re.search(r"\btest\b", 属性文本))))
+    return 判定汇总
 
 
-def _项头(掩码文本: str, 位置: int) -> tuple:
+def _项头(掩码文本: str, 落点: int) -> tuple:
     """从 `位置` 起扫到第一个 `{` 或 `;`，返回 (头文本, 终止位)。"""
     全长 = len(掩码文本)
-    终止位 = 位置
+    终止位 = 落点
     while 终止位 < 全长 and 掩码文本[终止位] not in "{;":
         终止位 += 1
-    return 掩码文本[位置:终止位], 终止位
+    return 掩码文本[落点:终止位], 终止位
 
 
 def 找夹具项(掩码文本: str) -> list:
@@ -81,22 +81,22 @@ def 建夹具集(件表: dict, 掩表: dict = None) -> dict:
     if 掩表 is None:
         掩表 = {括号位: 去字面量(原文) for 括号位, 原文 in Rs件.items()}
     块表 = {}
-    其它 = []
+    其他项 = []
     for 键名, 掩码文本 in 掩表.items():
         块表[键名] = 找夹具项(掩码文本)
         for 区间起点, _区间终点, _属性文本, 含test in 找条件属性(掩码文本):
             if not 含test:
-                其它.append((键名, 区间起点))
+                其他项.append((键名, 区间起点))
     整份 = 建测试文件集({键名: {"文本": 原文} for 键名, 原文 in Rs件.items()})
-    return {"块": 块表, "整份夹具": 整份, "其它cfg": 其它}
+    return {"块": 块表, "整份夹具": 整份, "其它cfg": 其他项}
 
 
-def 生产区文本(文本: str, 区间表: list) -> str:
+def 生产区文本(源文本: str, 区间表: list) -> str:
     if not 区间表:
-        return 文本
-    结果 = list(文本)
+        return 源文本
+    判定汇总 = list(源文本)
     for 区间起点, 区间终点 in 区间表:
-        for 位次 in range(区间起点, min(区间终点, len(结果))):
-            if 结果[位次] != "\n":
-                结果[位次] = " "
-    return "".join(结果)
+        for 位次 in range(区间起点, min(区间终点, len(判定汇总))):
+            if 判定汇总[位次] != "\n":
+                判定汇总[位次] = " "
+    return "".join(判定汇总)

@@ -76,8 +76,8 @@ from 构建装配.门禁 import 硬顶毫秒, 注入人为慢  # noqa: E402
 阈值毫秒 = 硬顶毫秒 - 尾巴余量毫秒
 
 
-def 打印文本(文本: str) -> None:
-    print(文本, flush=True)
+def 打印文本(源文本: str) -> None:
+    print(源文本, flush=True)
 
 
 def 打点(阶段: dict, 打点起: list, 名称: str) -> None:
@@ -90,7 +90,7 @@ def 打点(阶段: dict, 打点起: list, 名称: str) -> None:
     打点起[0] = time.time()
 
 
-def 端口监听读数(端口: int) -> list:
+def 端口监听读数(监听端口: int) -> list:
     """`lsof` 读一个端口的 LISTEN 状态（只读取证：本演示的误杀证据链用）。
 
     ★ `errors="replace"` 不是可选项：`lsof` 会把**别人的进程名**打出来，而进程名不必是
@@ -99,7 +99,7 @@ def 端口监听读数(端口: int) -> list:
     这里只取「有没有 LISTEN」这一件事，进程名解不干净不影响判读 ⇒ 用 `replace` 兜住。
     """
     运行结果 = subprocess.run(
-        ["/usr/sbin/lsof", "-nP", "-iTCP:{}".format(端口), "-sTCP:LISTEN"],
+        ["/usr/sbin/lsof", "-nP", "-iTCP:{}".format(监听端口), "-sTCP:LISTEN"],
         capture_output=True, text=True, errors="replace",
     )
     源码行 = [源码行 for 源码行 in 运行结果.stdout.splitlines() if "LISTEN" in 源码行]

@@ -38,8 +38,8 @@ export function 装设计视图(取元素, 钩子) {
 
   // ── 属性面板 ───────────────────────────────────────────────────────────
   function 摆属性(键值对) {
-    属头名.textContent = 键值对.名;
-    属头类.textContent = 键值对.类;
+    属头名.textContent = 键值对.名字;
+    属头类.textContent = 键值对.属性类;
     清空容器(属表);
     for (const 名称 of 属性名表) {
       const 源码行 = 建元素("div", "属行");
@@ -50,24 +50,24 @@ export function 装设计视图(取元素, 钩子) {
   }
 
   /** 从一个真 DOM 控件读它的属性值 —— 几何读实际盒子，状态读 DOM 自身。 */
-  function 读件属性(元素, 名称, 类别) {
+  function 读件属性(界面元素, 名称, 类别) {
     const 窗体矩形 = 窗体身.getBoundingClientRect();
-    const 容器盒 = 元素.getBoundingClientRect();
-    const 算得样式 = getComputedStyle(元素);
+    const 容器盒 = 界面元素.getBoundingClientRect();
+    const 算得样式 = getComputedStyle(界面元素);
     return {
-      名: 名称, 类: 类别,
+      名字: 名称, 属性类: 类别,
       值: {
-        名称: 元素.id || "（未命名）",
-        备注: 元素.title || "（空）",
+        名称: 界面元素.id || "（未命名）",
+        备注: 界面元素.title || "（空）",
         左边: Math.round(容器盒.left - 窗体矩形.left),
         顶边: Math.round(容器盒.top - 窗体矩形.top),
         宽度: Math.round(容器盒.width),
         高度: Math.round(容器盒.height),
-        标记: 元素.dataset.标记 || "（空）",
+        标记: 界面元素.dataset.标记 || "（空）",
         可视: 算得样式.visibility === "hidden" || 算得样式.display === "none" ? "假" : "真",
-        禁止: 元素.disabled ? "真" : "假",
+        禁止: 界面元素.disabled ? "真" : "假",
         鼠标指针: 算得样式.cursor,
-        默认类型: 元素.tagName.toLowerCase() === "button" ? (元素.type || "submit") : "（无）",
+        默认类型: 界面元素.tagName.toLowerCase() === "button" ? (界面元素.type || "submit") : "（无）",
         字体: 算得样式.fontFamily.split(",")[0] + ", " + 算得样式.fontSize,
         界面风格: "（本平台没有这一层）",
         矩形: [Math.round(容器盒.left - 窗体矩形.left), Math.round(容器盒.top - 窗体矩形.top),
@@ -82,15 +82,15 @@ export function 装设计视图(取元素, 钩子) {
     const 号段 = 找段(编号);
     const 扩展 = 找扩展(编号);
     return {
-      名: String(能力.名称), 类: "能力 " + 编号,
+      名字: String(能力.名称), 属性类: "能力 " + 编号,
       值: {
         名称: String(能力.名称),
-        备注: "号段 " + (号段 ? 号段.名 + "（" + 号段.段起点 + "–" + 号段.止 + "）" : "（落不进任何一段）"),
+        备注: "号段 " + (号段 ? 号段.名字 + "（" + 号段.段起点 + "–" + 号段.段止 + "）" : "（落不进任何一段）"),
         左边: "（不适用：能力没有屏幕位置）",
         顶边: "（不适用：能力没有屏幕位置）",
         宽度: String(能力.参数个数) + " 个参数",
         高度: "返回类型 " + String(能力.返回类型),
-        标记: 扩展 ? 扩展.名 + " · " + 扩展.种类 : "底座自有",
+        标记: 扩展 ? 扩展.名字 + " · " + 扩展.扩展种类 : "底座自有",
         可视: "真（GET /接口 回了它）",
         禁止: "假",
         鼠标指针: "（不适用）",
@@ -102,23 +102,23 @@ export function 装设计视图(取元素, 钩子) {
     };
   }
 
-  function 选件(元素, 名称, 类别) {
+  function 选件(界面元素, 名称, 类别) {
     if (选中) 选中.classList.remove("选");
-    选中 = 元素;
-    if (元素) 元素.classList.add("选");
-    摆属性(读件属性(元素, 名称, 类别));
+    选中 = 界面元素;
+    if (界面元素) 界面元素.classList.add("选");
+    摆属性(读件属性(界面元素, 名称, 类别));
   }
 
   // ── 窗体画布：控件是真 DOM，每一个都有真动作 ─────────────────────────
-  function 摆控件(元素, 左边距, 顶边距, 宽度, 高度, 类别) {
-    元素.style.position = "absolute";
-    元素.style.left = 左边距 + "px";
-    元素.style.top = 顶边距 + "px";
-    元素.style.width = 宽度 + "px";
-    元素.style.height = 高度 + "px";
+  function 摆控件(界面元素, 左边距, 顶边距, 宽度, 高度, 类别) {
+    界面元素.style.position = "absolute";
+    界面元素.style.left = 左边距 + "px";
+    界面元素.style.top = 顶边距 + "px";
+    界面元素.style.width = 宽度 + "px";
+    界面元素.style.height = 高度 + "px";
     // 空类名不往下加：`classList.add("")` 会抛 DOMTokenList 的错（实测撞到过）。
-    if (类别) 元素.classList.add(类别);
-    return 元素;
+    if (类别) 界面元素.classList.add(类别);
+    return 界面元素;
   }
 
   function 装画布() {
@@ -134,12 +134,12 @@ export function 装设计视图(取元素, 钩子) {
       ["按钮_编译", "编译", () => { 钩子.切页签("提示"); return 钩子.跑编译(); }],
       ["按钮_诊断", "诊断", () => { 钩子.切页签("提示"); return 钩子.跑诊断(); }],
     ];
-    钮表.forEach(([号值, 文本, 动作], 位置) => {
-      const 按钮 = 建元素("button", "窗件", 文本);
+    钮表.forEach(([号值, 源文本, 动作], 位次) => {
+      const 按钮 = 建元素("button", "窗件", 源文本);
       按钮.id = 号值;
-      摆控件(按钮, 8 + 位置 * 92, 30, 86, 24, "");
+      摆控件(按钮, 8 + 位次 * 92, 30, 86, 24, "");
       按钮.addEventListener("click", (界面事件) => { 界面事件.stopPropagation(); 动作(); });
-      按钮.addEventListener("mousedown", (界面事件) => { 界面事件.stopPropagation(); 选件(按钮, 文本, "按钮"); });
+      按钮.addEventListener("mousedown", (界面事件) => { 界面事件.stopPropagation(); 选件(按钮, 源文本, "按钮"); });
       窗体身.append(按钮);
     });
 

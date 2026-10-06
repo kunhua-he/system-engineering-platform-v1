@@ -17,7 +17,7 @@ const 图形命名空间 = "http" + "://www.w3.org/2000/svg";
  * 全部画在 16×16 的框里，描边宽 1，跟文字同色。
  */
 export const 图形表 = {
-  新建: { 路径: "M3 1h7l3 3v11H3zM10 1v3h3" },
+  新建图: { 路径: "M3 1h7l3 3v11H3zM10 1v3h3" },
   打开: { 路径: "M1 13V4h5l2 2h7v7zM1 13h14" },
   保存: { 路径: "M2 2h9l3 3v9H2zM5 2v5h6V2M4 9h8v5H4z" },
   剪切: { 路径: "M4 1l8 11M12 1L4 12M4 14a2 2 0 100-4 2 2 0 000 4zM12 14a2 2 0 100-4 2 2 0 000 4z" },
@@ -67,9 +67,9 @@ export const 图形表 = {
 /** 建一个 SVG 节点。`名称` 不在表里就给一个空框（宁可空着，也不编一个形状出来）。 */
 export function 画图标(名称) {
   const 图形项 = 图形表[名称] || { 路径: "M1 1h14v14H1z" };
-  const 元素 = document.createElementNS(图形命名空间, "svg");
-  元素.setAttribute("viewBox", "0 0 16 16");
-  元素.setAttribute("aria-hidden", "true");
+  const 界面元素 = document.createElementNS(图形命名空间, "svg");
+  界面元素.setAttribute("viewBox", "0 0 16 16");
+  界面元素.setAttribute("aria-hidden", "true");
   const 路径 = document.createElementNS(图形命名空间, "path");
   路径.setAttribute("d", 图形项.路径);
   路径.setAttribute("stroke", "currentColor");
@@ -77,6 +77,6 @@ export function 画图标(名称) {
   路径.setAttribute("stroke-linecap", "round");
   路径.setAttribute("stroke-linejoin", "round");
   路径.setAttribute("fill", 图形项.是否填充 ? "currentColor" : "none");
-  元素.append(路径);
-  return 元素;
+  界面元素.append(路径);
+  return 界面元素;
 }

@@ -29,30 +29,30 @@ use crate::顺序读器::顺序读器;
 /// 一张「名字 → 号」的表。项数 ≤ `u32`，号 ≤ `u16`（见 `形状.rs` 的号宽口径）。
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct 名号表 {
-    项: Vec<(Vec<u8>, u16)>,
+    名号项: Vec<(Vec<u8>, u16)>,
 }
 
 impl 名号表 {
     pub fn 空实例() -> Self {
-        Self { 项: Vec::new() }
+        Self { 名号项: Vec::new() }
     }
 
     /// 直接给项（库内与测试构造用；顺序即盘面顺序，**不排序、不去重**）。
     pub fn 从项(项表: Vec<(Vec<u8>, u16)>) -> Self {
-        Self { 项: 项表 }
+        Self { 名号项: 项表 }
     }
 
-    pub fn 项数(&self) -> usize {
-        self.项.len()
+    pub fn 表项数(&self) -> usize {
+        self.名号项.len()
     }
 
     pub fn 取项表(&self) -> &[(Vec<u8>, u16)] {
-        &self.项
+        &self.名号项
     }
 
     /// 按名字（**原始字节**）找号。同名取**先出现的那一项**。
     pub fn 按名取号(&self, 名称: &[u8]) -> Option<u16> {
-        self.项
+        self.名号项
             .iter()
             .find(|(表名, _)| 表名.as_slice() == 名称)
             .map(|(_, 号值)| *号值)
@@ -61,8 +61,8 @@ impl 名号表 {
     /// 逐项编成字节集（本件是唯一的编码处）。
     pub fn 编码(&self) -> Vec<u8> {
         let mut 输出缓冲 = Vec::new();
-        输出缓冲.extend_from_slice(&(self.项.len() as u32).to_le_bytes());
-        for (名称, 号值) in &self.项 {
+        输出缓冲.extend_from_slice(&(self.名号项.len() as u32).to_le_bytes());
+        for (名称, 号值) in &self.名号项 {
             输出缓冲.extend_from_slice(&(名称.len() as u32).to_le_bytes());
             输出缓冲.extend_from_slice(名称);
             输出缓冲.extend_from_slice(&号值.to_le_bytes());
@@ -77,24 +77,24 @@ impl 名号表 {
         if 字节.is_empty() {
             return Some(Self::空实例());
         }
-        let mut 读游标 = 顺序读器 { 字节, 位: 0 };
-        let 项数 = 读游标.读四字节()? as usize;
+        let mut 读游标 = 顺序读器 { 字节, 游标位: 0 };
+        let 表项数 = 读游标.读四字节()? as usize;
         // 每项至少 4 字节名长 + 2 字节号 = 6 字节 ⇒ 项数不可能超过 字节.len()/6。
         // 先卡这一条，免得下面 `Vec::with_capacity` 被一个伪造的大项数撑爆内存。
-        if 项数 > 字节.len() / 6 {
+        if 表项数 > 字节.len() / 6 {
             return None;
         }
-        let mut 项表 = Vec::with_capacity(项数);
-        for _ in 0..项数 {
+        let mut 项表 = Vec::with_capacity(表项数);
+        for _ in 0..表项数 {
             let 名长 = 读游标.读四字节()? as usize;
             let 名称 = 读游标.取字节(名长)?.to_vec();
             let 号值 = 读游标.读双字节()?;
             项表.push((名称, 号值));
         }
         // 尾部有多余字节 ⇒ 非法（不许静默忽略）。
-        if 读游标.位 != 字节.len() {
+        if 读游标.游标位 != 字节.len() {
             return None;
         }
-        Some(Self { 项: 项表 })
+        Some(Self { 名号项: 项表 })
     }
 }

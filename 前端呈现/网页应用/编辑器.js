@@ -47,8 +47,8 @@ export const 示例表 = [
  * `选中` 是「示例选」这个 `<select>` 节点。
  */
 export function 选中路径(选中) {
-  const 位置 = Number(选中 && 选中.value) || 0;
-  const 源码行 = 示例表[位置] || 示例表[0];
+  const 位次 = Number(选中 && 选中.value) || 0;
+  const 源码行 = 示例表[位次] || 示例表[0];
   return 源码行 ? 源码行[1] : "";
 }
 
@@ -58,8 +58,8 @@ export function 取文本(编辑) {
 }
 
 /** 往编辑区放文本（**原样**，不规范化换行、不动缩进）。 */
-export function 置文本(编辑, 文本) {
-  编辑.value = 文本 === undefined || 文本 === null ? "" : String(文本);
+export function 置文本(编辑, 源文本) {
+  编辑.value = 源文本 === undefined || 源文本 === null ? "" : String(源文本);
   编辑.dispatchEvent(new Event("input"));
 }
 
@@ -81,15 +81,15 @@ export function 装编辑器(取元素) {
   }
 
   function 重绘() {
-    const 文本 = 编辑.value;
-    const 行数 = 文本.split("\n").length;
+    const 源文本 = 编辑.value;
+    const 行数 = 源文本.split("\n").length;
     if (号值.dataset.行数 !== String(行数)) {
       号值.dataset.行数 = String(行数);
       const 项表 = [];
       for (let 序号 = 1; 序号 <= 行数; 序号 += 1) 项表.push(String(序号));
       号值.textContent = 项表.join("\n");
     }
-    字数.textContent = String(文本.length);
+    字数.textContent = String(源文本.length);
     刷光标();
   }
 
@@ -110,9 +110,9 @@ export function 装编辑器(取元素) {
   // 示例下拉与载入按钮
   const 选中 = 取元素("示例选");
   const 状态 = 取元素("工具状态");
-  示例表.forEach(([标签], 位置) => {
+  示例表.forEach(([标签], 位次) => {
     const 选项元素 = document.createElement("option");
-    选项元素.value = String(位置);
+    选项元素.value = String(位次);
     选项元素.textContent = 标签;
     选中.append(选项元素);
   });
@@ -128,10 +128,10 @@ export function 装编辑器(取元素) {
     }
     写状态(状态, "载入中… " + 路径);
     const 造应答 = await 发程序文本("读", 路径);
-    const 数据 = 造应答.体 && 造应答.体.数据;
-    if (取应答摘要(造应答.体).类 === "好" && 数据 && typeof 数据.文本 === "string") {
-      置文本(编辑, 数据.文本);
-      写状态(状态, "已载入 " + 路径 + "（" + 数据.字符数 + " 字符）", true);
+    const 应答数据 = 造应答.体 && 造应答.体.数据;
+    if (取应答摘要(造应答.体).判定档 === "好" && 应答数据 && typeof 应答数据.文本 === "string") {
+      置文本(编辑, 应答数据.文本);
+      写状态(状态, "已载入 " + 路径 + "（" + 应答数据.字符数 + " 字符）", true);
       return "已载入 " + 路径;
     }
     // 失败：把真错误码原样报出来（后端逐种失败各报一个明确码）。

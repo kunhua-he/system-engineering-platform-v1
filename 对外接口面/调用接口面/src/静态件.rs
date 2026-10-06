@@ -107,9 +107,9 @@ mod 静态件测试 {
         assert_eq!(首页.内容类型, "text/html; charset=utf-8");
         assert!(首页.字节.starts_with(b"<!DOCTYPE html>"), "该是真 index.html");
 
-        let 样式 = 取静态件(&根目录, "/样式.css").expect("样式.css 在托管根下");
-        assert_eq!(样式.内容类型, "text/css; charset=utf-8");
-        assert!(!样式.字节.is_empty());
+        let 样式件 = 取静态件(&根目录, "/样式.css").expect("样式.css 在托管根下");
+        assert_eq!(样式件.内容类型, "text/css; charset=utf-8");
+        assert!(!样式件.字节.is_empty());
 
         let 脚本件 = 取静态件(&根目录, "/取接口.js").expect("取接口.js 在托管根下");
         assert_eq!(脚本件.内容类型, "text/javascript; charset=utf-8");

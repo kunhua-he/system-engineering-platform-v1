@@ -24,19 +24,19 @@ struct 实例记录 {
 
 /// 实例表：显式持有，无全局。
 pub struct 实例表 {
-    记录: HashMap<u64, 实例记录>,
+    实例台账: HashMap<u64, 实例记录>,
 }
 
 impl 实例表 {
-    pub fn 新建() -> Self {
-        Self { 记录: HashMap::new() }
+    pub fn 构造() -> Self {
+        Self { 实例台账: HashMap::new() }
     }
 
     /// 开一个实例，返回句柄。
     pub fn 开启实例(&mut self) -> 实例句柄 {
         let 令牌 = Box::new(0u8);
         let 句柄值 = &*令牌 as *const u8 as u64;
-        self.记录.insert(句柄值, 实例记录 { _令牌: 令牌, 已释放: false });
+        self.实例台账.insert(句柄值, 实例记录 { _令牌: 令牌, 已释放: false });
         实例句柄(句柄值)
     }
 
@@ -44,11 +44,11 @@ impl 实例表 {
     ///
     /// 本表没发过这个句柄 ⇒ `句柄越界`；已经关过 ⇒ `句柄失效`。
     pub fn 关闭实例(&mut self, 句柄: 实例句柄) -> Result<(), 实例错误> {
-        match self.记录.get_mut(&句柄.0) {
+        match self.实例台账.get_mut(&句柄.0) {
             None => Err(实例错误::句柄越界),
-            Some(记录) if 记录.已释放 => Err(实例错误::句柄失效),
-            Some(记录) => {
-                记录.已释放 = true;
+            Some(实例台账) if 实例台账.已释放 => Err(实例错误::句柄失效),
+            Some(实例台账) => {
+                实例台账.已释放 = true;
                 Ok(())
             }
         }
@@ -58,9 +58,9 @@ impl 实例表 {
     ///
     /// 本表没发过 ⇒ `句柄越界`；已关掉 ⇒ `句柄失效`。
     pub fn 校验句柄(&self, 句柄: 实例句柄) -> Result<(), 实例错误> {
-        match self.记录.get(&句柄.0) {
+        match self.实例台账.get(&句柄.0) {
             None => Err(实例错误::句柄越界),
-            Some(记录) if 记录.已释放 => Err(实例错误::句柄失效),
+            Some(实例台账) if 实例台账.已释放 => Err(实例错误::句柄失效),
             Some(_) => Ok(()),
         }
     }

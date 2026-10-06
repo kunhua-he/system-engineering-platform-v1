@@ -40,8 +40,8 @@ def 入口函数(argv=None):
     if "--rust子目录" in 命令行参数:
         子目录路 = Path(命令行参数[命令行参数.index("--rust子目录") + 1])
     if "--反向样本" in 命令行参数:
-        with tempfile.TemporaryDirectory(prefix="运行数据根反向样本-") as 临时:
-            return 一致性判据.跑反向样本(Path(临时))
+        with tempfile.TemporaryDirectory(prefix="运行数据根反向样本-") as 临时目录:
+            return 一致性判据.跑反向样本(Path(临时目录))
     return 一致性判据.跑一遍(解析路, 子目录路, python路)
 
 

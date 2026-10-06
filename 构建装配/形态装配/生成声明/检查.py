@@ -11,28 +11,28 @@ from .生成流程 import 生成声明, 落盘件表
 def 找第一处不一致(新内容, 旧文本, 起点=0):
     """返回 (偏移, 新行, 旧行, 行号)；从 起点 之后完全一致则返回 None。"""
     公共长 = min(len(新内容), len(旧文本))
-    偏移 = None
+    字节偏移 = None
     for 序号 in range(起点, 公共长):
         if 新内容[序号] != 旧文本[序号]:
-            偏移 = 序号
+            字节偏移 = 序号
             break
-    if 偏移 is None:
+    if 字节偏移 is None:
         if len(新内容) == len(旧文本):
             return None
-        偏移 = 公共长
+        字节偏移 = 公共长
 
-    def 取行(字节流, 位置):
-        头部 = 字节流.rfind(b"\n", 0, 位置) + 1
-        尾部 = 字节流.find(b"\n", 位置)
+    def 取行(字节流, 字节位置):
+        头部 = 字节流.rfind(b"\n", 0, 字节位置) + 1
+        尾部 = 字节流.find(b"\n", 字节位置)
         if 尾部 < 0:
             尾部 = len(字节流)
-        return 字节流[头部:尾部].decode("utf-8", "replace"), 字节流[:位置].count(b"\n") + 1
+        return 字节流[头部:尾部].decode("utf-8", "replace"), 字节流[:字节位置].count(b"\n") + 1
 
-    新位置 = min(偏移, max(len(新内容) - 1, 0))
-    旧位置 = min(偏移, max(len(旧文本) - 1, 0))
+    新位置 = min(字节偏移, max(len(新内容) - 1, 0))
+    旧位置 = min(字节偏移, max(len(旧文本) - 1, 0))
     新行, 行号 = 取行(新内容, 新位置)
     旧行, _ = 取行(旧文本, 旧位置)
-    return 偏移, 新行, 旧行, 行号
+    return 字节偏移, 新行, 旧行, 行号
 
 
 def 源指纹块范围(新内容):
@@ -62,12 +62,12 @@ def 陈旧件(根目录, 应有):
     认法：顶层 `src/*数据.rs`（生成物命名的固定后缀；路由件与全部子件都以「数据.rs」结尾）
     里不在 `应有` 的。`lib.rs` / `接缝.rs` / `资源声明.rs` 不以「数据.rs」结尾 ⇒ 不误伤。
     """
-    目录 = os.path.join(仓根, os.path.dirname(根目录.落盘件))
-    if not os.path.isdir(目录):
+    落点目录 = os.path.join(仓根, os.path.dirname(根目录.落盘件))
+    if not os.path.isdir(落点目录):
         return []
     应有集 = set(应有)
     输出缓冲 = []
-    for 名称 in sorted(os.listdir(目录)):
+    for 名称 in sorted(os.listdir(落点目录)):
         if not 名称.endswith("数据.rs"):
             continue
         相对 = os.path.join(os.path.dirname(根目录.落盘件), 名称).replace(os.sep, "/")
@@ -77,13 +77,13 @@ def 陈旧件(根目录, 应有):
 
 
 def 检查声明(根目录):
-    新件, 计数, 提醒 = 生成声明(根目录)
+    新件, 计数表, 提醒 = 生成声明(根目录)
     报提醒(提醒)
     应有 = 落盘件表(根目录)
     缺失文件 = [相对 for 相对 in 应有 if not os.path.isfile(os.path.join(仓根, 相对))]
     if 缺失文件:
         print("生成物不存在：%s" % " · ".join(缺失文件))
-        print("跑一次生成：python %s --声明根 %s" % (生成器相对路径, 根目录.根))
+        print("跑一次生成：python %s --声明根 %s" % (生成器相对路径, 根目录.根目录))
         return 1
     不一致 = []
     for 相对 in 应有:
@@ -104,12 +104,12 @@ def 检查声明(根目录):
     for 相对, 新字节, 旧字节 in 不一致:
         print("  ── %s（落盘 %d 字节 · 重新生成 %d 字节）" % (相对, len(旧字节), len(新字节)))
         差异位置 = 找第一处不一致(新字节, 旧字节)
-        偏移, 新行, 旧行, 行号 = 差异位置
-        print("    第一处不一致：字节偏移 %d（第 %d 行）" % (偏移, 行号))
+        字节偏移, 新行, 旧行, 行号 = 差异位置
+        print("    第一处不一致：字节偏移 %d（第 %d 行）" % (字节偏移, 行号))
         print("      落盘　　：%s" % 旧行)
         print("      重新生成：%s" % 新行)
         范围 = 源指纹块范围(新字节)
-        if 范围 is not None and 范围[0] <= 偏移 < 范围[1]:
+        if 范围 is not None and 范围[0] <= 字节偏移 < 范围[1]:
             正文差异 = 找第一处不一致(新字节, 旧字节, 范围[1])
             if 正文差异 is not None:
                 再偏移, 再新行, 再旧行, 再行号 = 正文差异
@@ -121,5 +121,5 @@ def 检查声明(根目录):
                 print("    （差异只在源指纹块里：源的内容变了但正文没变——例如改了 JSON 的键序或空白。）")
     for 相对 in 孤儿:
         print("  ── 陈旧件：%s（生成物不再出它 —— 拆分/改名后的残留，应删）" % 相对)
-    print("  处置：python %s --声明根 %s" % (生成器相对路径, 根目录.根))
+    print("  处置：python %s --声明根 %s" % (生成器相对路径, 根目录.根目录))
     return 1

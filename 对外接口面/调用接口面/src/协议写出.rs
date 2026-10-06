@@ -26,7 +26,7 @@ fn 写一个值(输出缓冲: &mut String, 待处理值: &协议值, 层级: usi
         协议值::空值项 => 输出缓冲.push_str("null"),
         协议值::真值 => 输出缓冲.push_str("true"),
         协议值::假值 => 输出缓冲.push_str("false"),
-        协议值::整数(数) => 输出缓冲.push_str(&数.to_string()),
+        协议值::整数项(数) => 输出缓冲.push_str(&数.to_string()),
         协议值::无符号值(数) => 输出缓冲.push_str(&数.to_string()),
         协议值::小数(数) => {
             if 数.is_finite() {
@@ -36,14 +36,14 @@ fn 写一个值(输出缓冲: &mut String, 待处理值: &协议值, 层级: usi
                 输出缓冲.push_str("null");
             }
         }
-        协议值::文本(文) => 写JSON文本(输出缓冲, 文),
-        协议值::数组(项) => {
-            if 项.is_empty() {
+        协议值::文本值(文) => 写JSON文本(输出缓冲, 文),
+        协议值::数组值(数组项表) => {
+            if 数组项表.is_empty() {
                 输出缓冲.push_str("[]");
                 return;
             }
             输出缓冲.push('[');
-            for (序号, 数组项) in 项.iter().enumerate() {
+            for (序号, 数组项) in 数组项表.iter().enumerate() {
                 if 序号 > 0 {
                     输出缓冲.push(',');
                 }
@@ -53,13 +53,13 @@ fn 写一个值(输出缓冲: &mut String, 待处理值: &协议值, 层级: usi
             写缩进(输出缓冲, 层级);
             输出缓冲.push(']');
         }
-        协议值::对象(成员) => {
-            if 成员.is_empty() {
+        协议值::对象值(对象成员) => {
+            if 对象成员.is_empty() {
                 输出缓冲.push_str("{}");
                 return;
             }
             输出缓冲.push('{');
-            for (序, (键, 成员值)) in 成员.iter().enumerate() {
+            for (序, (键, 成员值)) in 对象成员.iter().enumerate() {
                 if 序 > 0 {
                     输出缓冲.push(',');
                 }
@@ -82,18 +82,18 @@ mod 写出测试 {
 
     #[test]
     fn 转义_引号反斜杠控制字符都转() {
-        assert_eq!(写协议值(&协议值::文本("a\"b\\c\nd\u{1}".to_owned())), r#""a\"b\\c\nd\u0001""#);
+        assert_eq!(写协议值(&协议值::文本值("a\"b\\c\nd\u{1}".to_owned())), r#""a\"b\\c\nd\u0001""#);
         // 非 ASCII 原样走 UTF-8。
-        assert_eq!(写协议值(&协议值::文本("接口".to_owned())), "\"接口\"");
+        assert_eq!(写协议值(&协议值::文本值("接口".to_owned())), "\"接口\"");
     }
 
     #[test]
     fn 空容器与嵌套_形状对() {
-        assert_eq!(写协议值(&协议值::数组(Vec::new())), "[]");
-        assert_eq!(写协议值(&协议值::对象(Vec::new())), "{}");
-        let 待处理值 = 协议值::对象(vec![
-            ("首项".to_owned(), 协议值::整数(1)),
-            ("次项".to_owned(), 协议值::数组(vec![协议值::真值])),
+        assert_eq!(写协议值(&协议值::数组值(Vec::new())), "[]");
+        assert_eq!(写协议值(&协议值::对象值(Vec::new())), "{}");
+        let 待处理值 = 协议值::对象值(vec![
+            ("首项".to_owned(), 协议值::整数项(1)),
+            ("次项".to_owned(), 协议值::数组值(vec![协议值::真值])),
         ]);
         assert_eq!(写协议值(&待处理值), "{\n  \"首项\": 1,\n  \"次项\": [\n    true\n  ]\n}");
     }

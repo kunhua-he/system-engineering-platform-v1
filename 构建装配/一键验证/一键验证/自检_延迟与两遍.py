@@ -29,10 +29,10 @@ def _挪进程起点到此刻():
       挪成「现在」= 模拟一条刚启动的命令 ⇒ 量的是它该量的东西。
       调用方负责在 `finally` 里还原（`验证模块.起始时刻 = 原值`）。
     """
-    模块 = sys.modules[跑全量判据.__module__]
-    原值 = 模块.起始时刻
-    模块.起始时刻 = time.perf_counter()
-    return 模块, 原值
+    准入判据模块 = sys.modules[跑全量判据.__module__]
+    原值 = 准入判据模块.起始时刻
+    准入判据模块.起始时刻 = time.perf_counter()
+    return 准入判据模块, 原值
 
 
 def 自检_延迟判据承重() -> list:
@@ -57,8 +57,8 @@ def 自检_延迟判据承重() -> list:
     真硬顶 = 常量.硬顶毫秒
 
     def 跑自检(硬顶, 关判据=False):
-        with tempfile.TemporaryDirectory(prefix="一键验证延迟承重-") as 临时:
-            临根 = Path(临时) / "仓"
+        with tempfile.TemporaryDirectory(prefix="一键验证延迟承重-") as 临时目录:
+            临根 = Path(临时目录) / "仓"
             造干净仓(临根)
             原硬顶 = 常量.硬顶毫秒
             原表 = 判据表.检查表
@@ -113,8 +113,8 @@ def 自检_延迟判据承重() -> list:
     # 之差必须小 —— `--缺口` 里登记的那条「读数不含 80 ms 尾巴」不靠估，这里直接量。
     import io
 
-    with tempfile.TemporaryDirectory(prefix="一键验证延迟尾巴-") as 临时:
-        临根 = Path(临时) / "仓"
+    with tempfile.TemporaryDirectory(prefix="一键验证延迟尾巴-") as 临时目录:
+        临根 = Path(临时目录) / "仓"
         造干净仓(临根)
         注入_常量重定义(临根)  # 造一条失败明细，让「打印」那段尾巴真的发生
         尾巴果 = 跑全量判据(临根)
@@ -146,33 +146,33 @@ def 自检_两遍复核收窄() -> list:
     import tempfile
 
     输出缓冲 = []
-    计数: dict = {}
+    计数表: dict = {}
 
     def 判据表加调用计数(原表):
-        def 包计数(函数, 名称):
+        def 包计数(判据函数, 名称):
             def 计数包装(上层读数):
-                计数[名称] = 计数.get(名称, 0) + 1
-                return 函数(上层读数)
+                计数表[名称] = 计数表.get(名称, 0) + 1
+                return 判据函数(上层读数)
 
             return 计数包装
 
-        return tuple((名称, 包计数(函数, 名称)) for 名称, 函数 in 原表)
+        return tuple((名称, 包计数(判据函数, 名称)) for 名称, 判据函数 in 原表)
 
     原表 = 判据表.检查表
     真提速 = 常量.提速开关
 
     def 跑一遍自检(注入=None, 提速=True):
-        with tempfile.TemporaryDirectory(prefix="一键验证两遍收窄-") as 临时:
-            临根 = Path(临时) / "仓"
+        with tempfile.TemporaryDirectory(prefix="一键验证两遍收窄-") as 临时目录:
+            临根 = Path(临时目录) / "仓"
             造干净仓(临根)
             if 注入 is not None:
                 注入(临根)
-            计数.clear()
+            计数表.clear()
             验证模块, 原起 = _挪进程起点到此刻()  # 同 `_挪进程起点到此刻` 的理由
             try:
                 判据表.检查表 = 判据表加调用计数(原表)
                 常量.提速开关 = 提速
-                return 跑全量判据(临根), dict(计数)
+                return 跑全量判据(临根), dict(计数表)
             finally:
                 判据表.检查表 = 原表
                 常量.提速开关 = 真提速

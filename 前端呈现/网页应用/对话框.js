@@ -37,13 +37,13 @@ export function 装对话框(取元素) {
     对话框件.style.fontSize = 对话框项.字号 + "pt";
     for (const 控项 of 对话框项.控件) {
       const 控件件 = document.createElement("div");
-      控件件.className = "易控件 " + (类样式[控项.类] || "他") + (控项.禁用 ? " 灰" : "");
-      控件件.style.left = 控项.左 + "px";
+      控件件.className = "易控件 " + (类样式[控项.控件类] || "他") + (控项.禁用 ? " 灰" : "");
+      控件件.style.left = 控项.左边距 + "px";
       控件件.style.top = 控项.上 + "px";
       控件件.style.width = 控项.cx + "px";
       控件件.style.height = 控项.cy + "px";
       控件件.textContent = 控项.标题;
-      控件件.title = "类 " + 控项.类 + " · id " + 控项.id + " · 样式 " + 控项.样式
+      控件件.title = "类 " + 控项.控件类 + " · id " + 控项.id + " · 样式 " + 控项.控件样式
         + (控项.禁用 ? " · WS_DISABLED" : "");
       对话框件.append(控件件);
     }

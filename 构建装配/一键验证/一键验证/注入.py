@@ -36,17 +36,17 @@ from .常量 import 临时目录前缀, 契约目录名
 def 注入_文件名与字段不一致(临根: Path) -> str:
     """类型声明/0000.json 的 类型标签 改成 9（文件名还是 0000）。"""
     路径 = 临根 / 契约目录名 / "类型声明" / "0000.json"
-    数据 = json.loads(路径.read_text(encoding="utf-8"))
-    数据["类型标签"] = 9
-    路径.write_text(json.dumps(数据, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    配置表 = json.loads(路径.read_text(encoding="utf-8"))
+    配置表["类型标签"] = 9
+    路径.write_text(json.dumps(配置表, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     return "契约声明/类型声明/0000.json"
 
 
 def 注入_类型标签重复(临根: Path) -> str:
     """新增 类型声明/1.json（与 0000.json 是同一个号，文件名拼写不同）。"""
-    目录 = 临根 / 契约目录名 / "类型声明"
-    (目录 / "1.json").write_text(
-        (目录 / "0000.json").read_text(encoding="utf-8"), encoding="utf-8"
+    编号目录 = 临根 / 契约目录名 / "类型声明"
+    (编号目录 / "1.json").write_text(
+        (编号目录 / "0000.json").read_text(encoding="utf-8"), encoding="utf-8"
     )
     return "契约声明/类型声明/1.json"
 
@@ -58,59 +58,59 @@ def 注入_作废号又活跃(临根: Path) -> str:
     这一行会被判「号空间认不出」而报红，但那报的不是本条要抓的「活跃号又被作废」。
     """
     路径 = 临根 / 契约目录名 / "作废号表.json"
-    数据 = json.loads(路径.read_text(encoding="utf-8"))
-    数据["作废"] = [
+    配置表 = json.loads(路径.read_text(encoding="utf-8"))
+    配置表["作废"] = [
         {"编号": 9001, "原名称": "旧样例能力", "作废于": "2026-09-27", "原因": "样例",
          "号空间": "能力"}
     ]
-    路径.write_text(json.dumps(数据, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    路径.write_text(json.dumps(配置表, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     return "契约声明/作废号表.json"
 
 
 def 注入_号段图相交(临根: Path) -> str:
     """把 号段图.json 的能力号段第 2 段改成 7000–7999，与模块段完全重叠。"""
     路径 = 临根 / 契约目录名 / "号段图.json"
-    数据 = json.loads(路径.read_text(encoding="utf-8"))
-    数据["能力号段"][1]["起"] = 7000
-    数据["能力号段"][1]["止"] = 7999
-    路径.write_text(json.dumps(数据, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    配置表 = json.loads(路径.read_text(encoding="utf-8"))
+    配置表["能力号段"][1]["起"] = 7000
+    配置表["能力号段"][1]["止"] = 7999
+    路径.write_text(json.dumps(配置表, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     return "契约声明/号段图.json"
 
 
 def 注入_占用越布局(临根: Path) -> str:
     """把 平台声明.json 的能力号段改成 [(0,999),(6900,7100)]——第二段跨了两个布局段。"""
     路径 = 临根 / 契约目录名 / "平台声明.json"
-    数据 = json.loads(路径.read_text(encoding="utf-8"))
-    数据["能力号段"] = [{"起": 0, "止": 999}, {"起": 6900, "止": 7100}]
-    路径.write_text(json.dumps(数据, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    配置表 = json.loads(路径.read_text(encoding="utf-8"))
+    配置表["能力号段"] = [{"起": 0, "止": 999}, {"起": 6900, "止": 7100}]
+    路径.write_text(json.dumps(配置表, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     return "契约声明/平台声明.json"
 
 
 def 注入_参数类型不在表里(临根: Path) -> str:
     """能力声明/9001.json 的参数表加一行，类型标签 77 在类型表里查不到。"""
     路径 = 临根 / 契约目录名 / "能力声明" / "9001.json"
-    数据 = json.loads(路径.read_text(encoding="utf-8"))
-    数据["参数表"] = [{"名称": "样例参数", "说明": "样例", "类型标签": 77, "状态位": 0}]
-    路径.write_text(json.dumps(数据, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    配置表 = json.loads(路径.read_text(encoding="utf-8"))
+    配置表["参数表"] = [{"名称": "样例参数", "说明": "样例", "类型标签": 77, "状态位": 0}]
+    路径.write_text(json.dumps(配置表, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     return "契约声明/能力声明/9001.json"
 
 
 def 注入_返回类型不在表里(临根: Path) -> str:
     """能力声明/9001.json 的 返回类型 改成 88（类型表里没有）。"""
     路径 = 临根 / 契约目录名 / "能力声明" / "9001.json"
-    数据 = json.loads(路径.read_text(encoding="utf-8"))
-    数据["返回类型"] = 88
-    路径.write_text(json.dumps(数据, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    配置表 = json.loads(路径.read_text(encoding="utf-8"))
+    配置表["返回类型"] = 88
+    路径.write_text(json.dumps(配置表, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     return "契约声明/能力声明/9001.json"
 
 
 def 注入_错误码业务登记项缺一(临根: Path) -> str:
     """删掉 错误码表/0001.json 的 需人工，并把 可自愈 改成 null。"""
     路径 = 临根 / 契约目录名 / "错误码表" / "0001.json"
-    数据 = json.loads(路径.read_text(encoding="utf-8"))
-    数据.pop("需人工", None)
-    数据["可自愈"] = None
-    路径.write_text(json.dumps(数据, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    配置表 = json.loads(路径.read_text(encoding="utf-8"))
+    配置表.pop("需人工", None)
+    配置表["可自愈"] = None
+    路径.write_text(json.dumps(配置表, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     return "契约声明/错误码表/0001.json"
 
 
@@ -123,12 +123,12 @@ def 注入_作废的码又活跃(临根: Path) -> str:
     能力号 1 一起封（实测的假冲突）。
     """
     路径 = 临根 / 契约目录名 / "作废号表.json"
-    数据 = json.loads(路径.read_text(encoding="utf-8"))
-    数据["作废"] = [
+    配置表 = json.loads(路径.read_text(encoding="utf-8"))
+    配置表["作废"] = [
         {"编号": 1, "原名称": "样例错误", "作废于": "2026-09-27", "原因": "样例",
          "号空间": "错误码"}
     ]
-    路径.write_text(json.dumps(数据, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    路径.write_text(json.dumps(配置表, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     return "契约声明/错误码表/0001.json"
 
 
@@ -142,12 +142,12 @@ def 注入_作废的类型标签又活跃(临根: Path) -> str:
     「与上面四个不通」），故补成第五个号空间后，`类型声明/` 必须对到 `类型` 空间。
     """
     路径 = 临根 / 契约目录名 / "作废号表.json"
-    数据 = json.loads(路径.read_text(encoding="utf-8"))
-    数据["作废"] = [
+    配置表 = json.loads(路径.read_text(encoding="utf-8"))
+    配置表["作废"] = [
         {"编号": 0, "原名称": "旧空类型", "作废于": "2026-09-27", "原因": "样例",
          "号空间": "类型"}
     ]
-    路径.write_text(json.dumps(数据, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    路径.write_text(json.dumps(配置表, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     return "契约声明/类型声明/0000.json"
 
 
@@ -158,11 +158,11 @@ def 注入_作废行缺号空间(临根: Path) -> str:
     退化成「一个号在五个空间一起封」，正是实测的假冲突（错误码 16 去封能力号 16）。
     """
     路径 = 临根 / 契约目录名 / "作废号表.json"
-    数据 = json.loads(路径.read_text(encoding="utf-8"))
-    数据["作废"] = [
+    配置表 = json.loads(路径.read_text(encoding="utf-8"))
+    配置表["作废"] = [
         {"编号": 1, "原名称": "样例错误", "作废于": "2026-09-27", "原因": "样例"}
     ]
-    路径.write_text(json.dumps(数据, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    路径.write_text(json.dumps(配置表, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     return "契约声明/作废号表.json"
 
 
@@ -176,29 +176,29 @@ def 注入_可抛错误码引用作废码(临根: Path) -> str:
     ]
     作废路径.write_text(json.dumps(作废, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     路径 = 临根 / 契约目录名 / "能力声明" / "9001.json"
-    数据 = json.loads(路径.read_text(encoding="utf-8"))
-    数据["可抛错误码"] = [16]
-    路径.write_text(json.dumps(数据, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    配置表 = json.loads(路径.read_text(encoding="utf-8"))
+    配置表["可抛错误码"] = [16]
+    路径.write_text(json.dumps(配置表, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     return "契约声明/能力声明/9001.json"
 
 
 def 注入_通知号越方向(临根: Path) -> str:
     """把 通知号段/2000.json 的通知号改成 1500（落在上行段），方向仍是 下行。"""
-    目录 = 临根 / 契约目录名 / "通知号段"
-    数据 = json.loads((目录 / "2000.json").read_text(encoding="utf-8"))
-    数据["通知号"] = 1500
-    文本 = json.dumps(数据, ensure_ascii=False, indent=2) + "\n"
-    (目录 / "1500.json").write_text(文本, encoding="utf-8")
-    (目录 / "2000.json").unlink()
+    编号目录 = 临根 / 契约目录名 / "通知号段"
+    配置表 = json.loads((编号目录 / "2000.json").read_text(encoding="utf-8"))
+    配置表["通知号"] = 1500
+    源文本 = json.dumps(配置表, ensure_ascii=False, indent=2) + "\n"
+    (编号目录 / "1500.json").write_text(源文本, encoding="utf-8")
+    (编号目录 / "2000.json").unlink()
     return "契约声明/通知号段/1500.json"
 
 
 def 注入_冻结落点不存在(临根: Path) -> str:
     """冻结项 落点 指向一个不存在的文件。"""
     路径 = 临根 / 契约目录名 / "冻结登记.json"
-    数据 = json.loads(路径.read_text(encoding="utf-8"))
-    数据["冻结项"][0]["落点"] = "契约声明/src/没有这个文件.rs::平台信息"
-    路径.write_text(json.dumps(数据, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    配置表 = json.loads(路径.read_text(encoding="utf-8"))
+    配置表["冻结项"][0]["落点"] = "契约声明/src/没有这个文件.rs::平台信息"
+    路径.write_text(json.dumps(配置表, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     return "契约声明/冻结登记.json"
 
 
@@ -209,9 +209,9 @@ def 注入_冻结形状被改(临根: Path) -> str:
     证明那条比对不是空转）。别的判据同时红是正常的（样本按 (样本名, 判据名) 定位）。
     """
     路径 = 临根 / 契约目录名 / "src" / "lib.rs"
-    文本 = 路径.read_text(encoding="utf-8")
-    改后 = 文本.replace("pub 目标字宽: u16,", "pub 目标字宽: u32,", 1)
-    assert 改后 != 文本, "样本前置条件不成立：契约声明/src/lib.rs 里没有 `pub 目标字宽: u16,`"
+    源文本 = 路径.read_text(encoding="utf-8")
+    改后 = 源文本.replace("pub 目标字宽: u16,", "pub 目标字宽: u32,", 1)
+    assert 改后 != 源文本, "样本前置条件不成立：契约声明/src/lib.rs 里没有 `pub 目标字宽: u16,`"
     路径.write_text(改后, encoding="utf-8")
     return "契约声明/src/lib.rs"
 
@@ -219,18 +219,18 @@ def 注入_冻结形状被改(临根: Path) -> str:
 def 注入_段类型号越界(临根: Path) -> str:
     """新增段类型号写成 `256` —— 盘面段类型是 u8，`256` 装不下（这正是历史上写错的那个号）。"""
     路径 = 临根 / 契约目录名 / "冻结登记.json"
-    数据 = json.loads(路径.read_text(encoding="utf-8"))
-    数据["段类型号登记"]["新增"]["接口说明段"] = 256
-    路径.write_text(json.dumps(数据, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    配置表 = json.loads(路径.read_text(encoding="utf-8"))
+    配置表["段类型号登记"]["新增"]["接口说明段"] = 256
+    路径.write_text(json.dumps(配置表, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     return "契约声明/冻结登记.json"
 
 
 def 注入_段类型号撞已占用(临根: Path) -> str:
     """新增段类型号撞上参照实现已占用的号（`3` = 程序段）—— 那就不是「不动旧段」了。"""
     路径 = 临根 / 契约目录名 / "冻结登记.json"
-    数据 = json.loads(路径.read_text(encoding="utf-8"))
-    数据["段类型号登记"]["新增"]["指纹段"] = 3
-    路径.write_text(json.dumps(数据, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    配置表 = json.loads(路径.read_text(encoding="utf-8"))
+    配置表["段类型号登记"]["新增"]["指纹段"] = 3
+    路径.write_text(json.dumps(配置表, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     return "契约声明/冻结登记.json"
 
 
@@ -319,14 +319,14 @@ def 注入_第二处资源出入口(临根: Path) -> str:
 
 def 注入_元判据缺反向样本(临根: Path):
     """元判据的反向样本：注入一条「没有反向样本」的判据（返回元数据覆盖）。"""
-    覆盖 = dict(判据元数据)
-    覆盖["⑮ 样例判据（没有反向样本）"] = {
+    覆盖表 = dict(判据元数据)
+    覆盖表["⑮ 样例判据（没有反向样本）"] = {
         "扫描面": ("契约声明",),
         "对象数": _样本_编号文件,
         "反向样本": "",
         "正向样本": "干净合成仓",
     }
-    return 覆盖
+    return 覆盖表
 
 
 def 注入_行号引用(临根: Path) -> str:

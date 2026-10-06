@@ -17,7 +17,7 @@
 /// 转码失败。**带位置**：哪一处不合法是定位成本最低的那个信息。
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct 转码错误 {
-    pub 位置: usize,
+    pub 出错位置: usize,
     pub 说明文字: &'static str,
 }
 
@@ -52,11 +52,11 @@ pub fn base64编码(来源: &[u8]) -> String {
 }
 
 /// 一位 base64 字符 → 6 位值。`=` 与表外字符都算不合法。
-fn 取值(字符表: u8, 位置: usize) -> Result<u32, 转码错误> {
+fn 取值(字符表: u8, 出错位置: usize) -> Result<u32, 转码错误> {
     match base64字母表.iter().position(|字母项| *字母项 == 字符表) {
         Some(序号) => Ok(序号 as u32),
         None => Err(转码错误 {
-            位置: 位置,
+            出错位置: 出错位置,
             说明文字: "base64 里有表外字符",
         }),
     }
@@ -64,11 +64,11 @@ fn 取值(字符表: u8, 位置: usize) -> Result<u32, 转码错误> {
 
 /// base64 字符串 → 字节集。**严格**：长度必须是 4 的倍数；`=` 只许出现在末组；
 /// 末组的空余位必须是 0（否则同一串字节有两种写法，与「重复键」同一类歧义）。
-pub fn base64解码(文本: &str) -> Result<Vec<u8>, 转码错误> {
-    let 字节 = 文本.as_bytes();
+pub fn base64解码(源文本: &str) -> Result<Vec<u8>, 转码错误> {
+    let 字节 = 源文本.as_bytes();
     if !字节.len().is_multiple_of(4) {
         return Err(转码错误 {
-            位置: 字节.len(),
+            出错位置: 字节.len(),
             说明文字: "base64 长度必须是 4 的倍数",
         });
     }
@@ -84,13 +84,13 @@ pub fn base64解码(文本: &str) -> Result<Vec<u8>, 转码错误> {
             (b'=', b'=') => {
                 if !末组 {
                     return Err(转码错误 {
-                        位置: 区间起点 + 2,
+                        出错位置: 区间起点 + 2,
                         说明文字: "`=` 只许出现在最后一组",
                     });
                 }
                 if 次高六位 & 0x0F != 0 {
                     return Err(转码错误 {
-                        位置: 区间起点 + 1,
+                        出错位置: 区间起点 + 1,
                         说明文字: "补齐位不是 0（同一串字节有两种写法）",
                     });
                 }
@@ -98,21 +98,21 @@ pub fn base64解码(文本: &str) -> Result<Vec<u8>, 转码错误> {
             }
             (b'=', _) => {
                 return Err(转码错误 {
-                    位置: 区间起点 + 2,
+                    出错位置: 区间起点 + 2,
                     说明文字: "补齐只能从第三个字符开始",
                 })
             }
             (_, b'=') => {
                 if !末组 {
                     return Err(转码错误 {
-                        位置: 区间起点 + 3,
+                        出错位置: 区间起点 + 3,
                         说明文字: "`=` 只许出现在最后一组",
                     });
                 }
                 let 次低六位 = 取值(字节组[2], 区间起点 + 2)?;
                 if 次低六位 & 0x03 != 0 {
                     return Err(转码错误 {
-                        位置: 区间起点 + 2,
+                        出错位置: 区间起点 + 2,
                         说明文字: "补齐位不是 0（同一串字节有两种写法）",
                     });
                 }
@@ -139,36 +139,36 @@ pub fn base64解码(文本: &str) -> Result<Vec<u8>, 转码错误> {
 pub fn 百分号解码(来源: &str) -> Result<String, 转码错误> {
     let 字节 = 来源.as_bytes();
     let mut 输出缓冲 = Vec::with_capacity(字节.len());
-    let mut 位置 = 0;
-    while 位置 < 字节.len() {
-        if 字节[位置] != b'%' {
-            输出缓冲.push(字节[位置]);
-            位置 += 1;
+    let mut 出错位置 = 0;
+    while 出错位置 < 字节.len() {
+        if 字节[出错位置] != b'%' {
+            输出缓冲.push(字节[出错位置]);
+            出错位置 += 1;
             continue;
         }
-        let 高位值 = 字节.get(位置 + 1).copied().and_then(十六进制字符值);
-        let 低位值 = 字节.get(位置 + 2).copied().and_then(十六进制字符值);
+        let 高位值 = 字节.get(出错位置 + 1).copied().and_then(十六进制字符值);
+        let 低位值 = 字节.get(出错位置 + 2).copied().and_then(十六进制字符值);
         match (高位值, 低位值) {
             (Some(高位值), Some(低位值)) => {
                 输出缓冲.push(高位值 * 16 + 低位值);
-                位置 += 3;
+                出错位置 += 3;
             }
             _ => {
                 return Err(转码错误 {
-                    位置: 位置,
+                    出错位置: 出错位置,
                     说明文字: "`%` 后面必须是两位十六进制",
                 })
             }
         }
     }
     String::from_utf8(输出缓冲).map_err(|_| 转码错误 {
-        位置: 0,
+        出错位置: 0,
         说明文字: "百分号解码后不是合法 UTF-8",
     })
 }
 
 fn 十六进制字符值(字符表: u8) -> Option<u8> {
-    (字符表 as char).to_digit(16).map(|个数| 个数 as u8)
+    (字符表 as char).to_digit(16).map(|整数值| 整数值 as u8)
 }
 
 #[cfg(test)]

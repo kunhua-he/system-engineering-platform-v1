@@ -23,11 +23,11 @@ def 读字节(相对路径):
 
 def 读JSON件(相对路径):
     try:
-        文本 = 读字节(相对路径).decode("utf-8")
+        源文本 = 读字节(相对路径).decode("utf-8")
     except UnicodeDecodeError as 错误:
         raise 生成失败("%s 不是合法 UTF-8：%s" % (相对路径, 错误))
     try:
-        return json.loads(文本)
+        return json.loads(源文本)
     except json.JSONDecodeError as 错误:
         raise 生成失败("%s 不是合法 JSON：%s" % (相对路径, 错误))
 
@@ -46,43 +46,43 @@ def 列目录JSON件(相对目录):
     return [(名字, 相对目录 + "/" + 名字) for 名字 in 名单]
 
 
-def 取整(容器, 键, 来源, 下界值=None, 上界值=None):
-    待处理值 = 容器.get(键)
+def 取整(容器, 字段键, 来源, 下界值=None, 上界值=None):
+    待处理值 = 容器.get(字段键)
     if 待处理值 is None:
-        raise 生成失败("%s 缺字段「%s」" % (来源, 键))
+        raise 生成失败("%s 缺字段「%s」" % (来源, 字段键))
     if isinstance(待处理值, bool) or not isinstance(待处理值, int):
-        raise 生成失败("%s 的「%s」不是整数：%r" % (来源, 键, 待处理值))
+        raise 生成失败("%s 的「%s」不是整数：%r" % (来源, 字段键, 待处理值))
     if 下界值 is not None and 待处理值 < 下界值:
-        raise 生成失败("%s 的「%s」=%d 小于 %d" % (来源, 键, 待处理值, 下界值))
+        raise 生成失败("%s 的「%s」=%d 小于 %d" % (来源, 字段键, 待处理值, 下界值))
     if 上界值 is not None and 待处理值 > 上界值:
-        raise 生成失败("%s 的「%s」=%d 大于 %d" % (来源, 键, 待处理值, 上界值))
+        raise 生成失败("%s 的「%s」=%d 大于 %d" % (来源, 字段键, 待处理值, 上界值))
     return 待处理值
 
 
-def 取串(容器, 键, 来源, 允许空=False):
-    待处理值 = 容器.get(键)
+def 取串(容器, 字段键, 来源, 允许空=False):
+    待处理值 = 容器.get(字段键)
     if 待处理值 is None:
-        raise 生成失败("%s 缺字段「%s」" % (来源, 键))
+        raise 生成失败("%s 缺字段「%s」" % (来源, 字段键))
     if not isinstance(待处理值, str):
-        raise 生成失败("%s 的「%s」不是字符串：%r" % (来源, 键, 待处理值))
+        raise 生成失败("%s 的「%s」不是字符串：%r" % (来源, 字段键, 待处理值))
     if not 允许空 and 待处理值 == "":
-        raise 生成失败("%s 的「%s」是空串" % (来源, 键))
+        raise 生成失败("%s 的「%s」是空串" % (来源, 字段键))
     return 待处理值
 
 
-def 取表(容器, 键, 来源):
-    待处理值 = 容器.get(键)
+def 取表(容器, 字段键, 来源):
+    待处理值 = 容器.get(字段键)
     if 待处理值 is None:
-        raise 生成失败("%s 缺字段「%s」" % (来源, 键))
+        raise 生成失败("%s 缺字段「%s」" % (来源, 字段键))
     if not isinstance(待处理值, list):
-        raise 生成失败("%s 的「%s」不是数组：%r" % (来源, 键, 待处理值))
+        raise 生成失败("%s 的「%s」不是数组：%r" % (来源, 字段键, 待处理值))
     return 待处理值
 
 
-def 取逻辑(容器, 键, 来源):
-    待处理值 = 容器.get(键)
+def 取逻辑(容器, 字段键, 来源):
+    待处理值 = 容器.get(字段键)
     if not isinstance(待处理值, bool):
-        raise 生成失败("%s 的「%s」不是逻辑型：%r" % (来源, 键, 待处理值))
+        raise 生成失败("%s 的「%s」不是逻辑型：%r" % (来源, 字段键, 待处理值))
     return 待处理值
 
 
@@ -91,34 +91,34 @@ def 是标识符(名字):
     return 名字.isidentifier()
 
 
-def 转字符串字面量(文本):
+def 转字符串字面量(源文本):
     """把文本渲染成 Rust 字符串字面量（含引号）。控制字符走 \\u{..}。"""
     输出缓冲 = ['"']
-    for 字符 in 文本:
-        错误码 = ord(字符)
-        if 字符 == "\\":
+    for 单字符 in 源文本:
+        错误码 = ord(单字符)
+        if 单字符 == "\\":
             输出缓冲.append("\\\\")
-        elif 字符 == '"':
+        elif 单字符 == '"':
             输出缓冲.append('\\"')
-        elif 字符 == "\n":
+        elif 单字符 == "\n":
             输出缓冲.append("\\n")
-        elif 字符 == "\r":
+        elif 单字符 == "\r":
             输出缓冲.append("\\r")
-        elif 字符 == "\t":
+        elif 单字符 == "\t":
             输出缓冲.append("\\t")
         elif 错误码 == 0:
             输出缓冲.append("\\0")
         elif 错误码 < 0x20 or 错误码 == 0x7F:
             输出缓冲.append("\\u{%X}" % 错误码)
         else:
-            输出缓冲.append(字符)
+            输出缓冲.append(单字符)
     输出缓冲.append('"')
     return "".join(输出缓冲)
 
 
-def 注释行(文本, 缩进=""):
+def 注释行(源文本, 缩进=""):
     """单行注释；内部换行折成空格，保证产物行数确定。"""
-    平整文本 = " ".join(文本.split())
+    平整文本 = " ".join(源文本.split())
     return "%s// %s" % (缩进, 平整文本) if 平整文本 else "%s//" % 缩进
 
 

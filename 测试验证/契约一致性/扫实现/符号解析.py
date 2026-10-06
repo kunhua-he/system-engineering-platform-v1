@@ -9,17 +9,17 @@ from .小工具 import 找配对界符
 from 构建装配.一键验证.一键验证.剥字面量 import 去字面量
 
 
-def 解整数(文本) -> object:
-    if 文本 is None:
+def 解整数(源文本) -> object:
+    if 源文本 is None:
         return None
-    文本 = 文本.strip()
-    if re.fullmatch(r"\d+", 文本):
-        return int(文本)
-    if re.fullmatch(r"0[xX][0-9a-fA-F]+", 文本):
-        return int(文本, 16)
-    匹配 = re.fullmatch(r"(\d+)\s*(<<|>>|\+|\-|\*|/|\||&)\s*(\d+)", 文本)
-    if 匹配:
-        左值, 运算符, 右值 = int(匹配.group(1)), 匹配.group(2), int(匹配.group(3))
+    源文本 = 源文本.strip()
+    if re.fullmatch(r"\d+", 源文本):
+        return int(源文本)
+    if re.fullmatch(r"0[xX][0-9a-fA-F]+", 源文本):
+        return int(源文本, 16)
+    正则匹配 = re.fullmatch(r"(\d+)\s*(<<|>>|\+|\-|\*|/|\||&)\s*(\d+)", 源文本)
+    if 正则匹配:
+        左值, 运算符, 右值 = int(正则匹配.group(1)), 正则匹配.group(2), int(正则匹配.group(3))
         try:
             return {
                 "<<": 左值 << 右值, ">>": 左值 >> 右值, "+": 左值 + 右值, "-": 左值 - 右值,
@@ -27,20 +27,20 @@ def 解整数(文本) -> object:
             }[运算符]
         except (ValueError, ZeroDivisionError):
             return None
-    匹配 = re.fullmatch(r"(\d+)\s+as\s+\w+", 文本)
-    if 匹配:
-        return int(匹配.group(1))
+    正则匹配 = re.fullmatch(r"(\d+)\s+as\s+\w+", 源文本)
+    if 正则匹配:
+        return int(正则匹配.group(1))
     return None
 
 
-def 解表达式(文本, 项表: dict) -> object:
+def 解表达式(源文本, 项表: dict) -> object:
     """把 `项表` 里的符号代入后求整数（例：`码 / 1000` + {码: 1001} → 1）。解不出 None。"""
-    if 文本 is None:
+    if 源文本 is None:
         return None
-    裸值 = 解整数(文本)
+    裸值 = 解整数(源文本)
     if 裸值 is not None:
         return 裸值
-    代换文本 = 文本
+    代换文本 = 源文本
     for 名称 in sorted(项表, key=len, reverse=True):
         待处理值 = 项表[名称]
         if 待处理值 is None:
@@ -49,11 +49,11 @@ def 解表达式(文本, 项表: dict) -> object:
     return 解整数(代换文本)
 
 
-def 末段(文本: str) -> str:
-    return 文本.strip().split("::")[-1].strip()
+def 末段(源文本: str) -> str:
+    return 源文本.strip().split("::")[-1].strip()
 
 
-def 解构造器(文本: str, 符号表: dict = None, 本表: dict = None) -> object:
+def 解构造器(源文本: str, 符号表: dict = None, 本表: dict = None) -> object:
     """newtype 构造器 → 内层整数。**内层只认「整数字面量」或「本单元常量」**。
 
     为什么要有它：`契约声明` 新增 `#[repr(transparent)]` newtype 后，底座侧字段写成
@@ -70,62 +70,62 @@ def 解构造器(文本: str, 符号表: dict = None, 本表: dict = None) -> ob
     这**不是放宽**：解的仍是**已登记的数**（生成物常量或本单元 `能力号` 表），不是猜。
     只认「内层是单个符号/字面量」：内层是复合表达式（`某值.取号值()` · `a + b`）一律不认。
     """
-    if 文本 is None:
+    if 源文本 is None:
         return None
-    文本 = 文本.strip()
+    源文本 = 源文本.strip()
     # `路径::类型名::新(<内层>)`
-    匹配 = re.fullmatch(r"[\w:]+::新建\s*\(\s*(.+?)\s*\)", 文本)
-    if 匹配:
-        内层 = 匹配.group(1)
-        个数 = 解整数(内层)
-        if 个数 is not None:
-            return 个数
+    正则匹配 = re.fullmatch(r"[\w:]+::构造\s*\(\s*(.+?)\s*\)", 源文本)
+    if 正则匹配:
+        内层 = 正则匹配.group(1)
+        整数值 = 解整数(内层)
+        if 整数值 is not None:
+            return 整数值
         if 符号表 is not None and 本表 is not None:
             return 解符号(内层, 符号表, 本表)
         return None
     # `<整数字面量>.into()`（可带类型后缀：`0u32.into()` / `0_usize.into()`）
-    匹配 = re.fullmatch(r"(\d+)\s*(?:[a-zA-Z]\w*)?\s*\.\s*into\s*\(\s*\)", 文本)
-    if 匹配:
-        return int(匹配.group(1))
+    正则匹配 = re.fullmatch(r"(\d+)\s*(?:[a-zA-Z]\w*)?\s*\.\s*into\s*\(\s*\)", 源文本)
+    if 正则匹配:
+        return int(正则匹配.group(1))
     return None
 
 
-def 解符号(文本, 符号表: dict, 本表: dict) -> object:
+def 解符号(源文本, 符号表: dict, 本表: dict) -> object:
     """把 `类型标签_0005` / `v1_contract::声明数据::类型标签_0005` /
     `命令状态::错误` / `能力号::生成容器 as usize` / `v1_contract::类型标签::新建(0)` 解析成数。
 
     读法（顺序即优先级）：newtype 构造器 → 去 `as` → 全路径（含去掉 `v1_contract::` /
     `crate::` 前缀后的模块限定名）→ 末段 → 表达式代入。解不出返回 None（不许猜）。
     """
-    if 文本 is None:
+    if 源文本 is None:
         return None
-    文本 = 文本.strip()
-    裸值 = 解构造器(文本, 符号表, 本表)
+    源文本 = 源文本.strip()
+    裸值 = 解构造器(源文本, 符号表, 本表)
     if 裸值 is not None:
         return 裸值
-    裸值 = 解整数(文本)
+    裸值 = 解整数(源文本)
     if 裸值 is not None:
         return 裸值
-    匹配 = re.fullmatch(r"(.+?)\s+as\s+\w+", 文本)
-    if 匹配:
-        文本 = 匹配.group(1).strip()
+    正则匹配 = re.fullmatch(r"(.+?)\s+as\s+\w+", 源文本)
+    if 正则匹配:
+        源文本 = 正则匹配.group(1).strip()
     # 先按**全路径**（含模块限定名）找，再退回**末段** —— 同名的常量分属不同 `pub mod` 时，
     # 只有全路径能消歧（`槽标志::空槽标志` 与 `常量排布::无值` 是两个数）。
-    候选 = [文本]
-    for 前缀 in ("v1_contract::", "crate::"):
-        if 文本.startswith(前缀):
-            候选.append(文本[len(前缀):])
-    for 候选 in 候选:
-        if 候选 in 本表:
-            return 本表[候选]
-        if 候选 in 符号表:
-            return 符号表[候选]
-    名称 = 末段(文本)
+    候选名 = [源文本]
+    for 符号前缀 in ("v1_contract::", "crate::"):
+        if 源文本.startswith(符号前缀):
+            候选名.append(源文本[len(符号前缀):])
+    for 候选名 in 候选名:
+        if 候选名 in 本表:
+            return 本表[候选名]
+        if 候选名 in 符号表:
+            return 符号表[候选名]
+    名称 = 末段(源文本)
     if 名称 in 本表:
         return 本表[名称]
     if 名称 in 符号表:
         return 符号表[名称]
-    return 解表达式(文本, {**符号表, **本表})
+    return 解表达式(源文本, {**符号表, **本表})
 
 
 def 解常量值(值文: str) -> object:
@@ -154,17 +154,17 @@ def 建符号表(件表: dict, 掩表: dict = None) -> dict:
     for 键名 in sorted(件表):
         if not (键名.startswith(契约源目录) and 键名.endswith(".rs")):
             continue
-        文本 = 件表.get(键名)
-        if 文本 is None:
+        源文本 = 件表.get(键名)
+        if 源文本 is None:
             continue
-        掩码文本 = 掩表.get(键名) or 去字面量(文本)
+        掩码文本 = 掩表.get(键名) or 去字面量(源文本)
         # `pub const <名>: <t> = <整数字面量>;`（顶层或缩进都认；`pub const fn` 不匹配）
-        for 匹配 in re.finditer(
+        for 正则匹配 in re.finditer(
             r"(?m)^\s*pub\s+const\s+([^\s:]+)\s*:\s*[^=;]*?=\s*([^;]+);", 掩码文本
         ):
-            裸值 = 解常量值(匹配.group(2))
+            裸值 = 解常量值(正则匹配.group(2))
             if 裸值 is not None:
-                项表[匹配.group(1)] = 裸值
+                项表[正则匹配.group(1)] = 裸值
         # `pub mod <M> { … pub const <名>: <t> = <整数字面量>; … }`
         # 同时收**模块限定名**（`M::名`）与**末段名**（`名`）两种键。
         for mm in re.finditer(r"pub\s+mod\s+([^\s{]+)\s*\{", 掩码文本):
@@ -180,8 +180,8 @@ def 建符号表(件表: dict, 掩表: dict = None) -> dict:
                     项表[常量配.group(1)] = 裸值
                     项表[f"{模块名}::{常量配.group(1)}"] = 裸值
         # `pub use <路径>::<原名> as <别名>;`
-        for 匹配 in re.finditer(r"pub\s+use\s+([^\s;]+?)\s+as\s+([^\s;]+)\s*;", 掩码文本):
-            原名 = 匹配.group(1).split("::")[-1]
+        for 正则匹配 in re.finditer(r"pub\s+use\s+([^\s;]+?)\s+as\s+([^\s;]+)\s*;", 掩码文本):
+            原名 = 正则匹配.group(1).split("::")[-1]
             if 原名 in 项表:
-                项表[匹配.group(2)] = 项表[原名]
+                项表[正则匹配.group(2)] = 项表[原名]
     return 项表

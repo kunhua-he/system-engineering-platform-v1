@@ -27,13 +27,13 @@ def 帮助文本():
     ]
 
 
-def 资源声明入口(参数):
+def 资源声明入口(命令行参数):
     声明根参数 = None
     检查模式 = False
     未知 = []
     序号 = 0
-    while 序号 < len(参数):
-        参数词 = 参数[序号]
+    while 序号 < len(命令行参数):
+        参数词 = 命令行参数[序号]
         if 参数词 == "--检查":
             检查模式 = True
         elif 参数词 in ("-h", "--帮助"):
@@ -41,12 +41,12 @@ def 资源声明入口(参数):
                 print(源码行)
             return 0
         elif 参数词 == "--声明根":
-            if 序号 + 1 >= len(参数):
+            if 序号 + 1 >= len(命令行参数):
                 print("--声明根 后面要跟一个目录", file=sys.stderr)
                 print(用法文本, file=sys.stderr)
                 return 2
             序号 += 1
-            声明根参数 = 参数[序号]
+            声明根参数 = 命令行参数[序号]
         elif 参数词.startswith("--声明根="):
             声明根参数 = 参数词.split("=", 1)[1]
         else:

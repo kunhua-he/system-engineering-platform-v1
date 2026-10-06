@@ -74,9 +74,9 @@ def 库读数(库路径=None) -> dict:
         return {"节点": 0, "边": 0, "件": 0, "索引器版本": ""}
     try:
         动态库 = 连库(库路径)
-    except sqlite3.Error as 原因:
+    except sqlite3.Error as 失败原因:
         return {"节点": 0, "边": 0, "件": 0, "索引器版本": "",
-                "错误": "索引库读不动（%s）：%s ⇒ 先跑 `python3 开发工具/代码地图.py 建`" % (库件, 原因)}
+                "错误": "索引库读不动（%s）：%s ⇒ 先跑 `python3 开发工具/代码地图.py 建`" % (库件, 失败原因)}
     try:
         try:
             读数 = {"节点": 动态库.execute("select count(*) from nodes").fetchone()[0],
@@ -88,9 +88,9 @@ def 库读数(库路径=None) -> dict:
             if 元数据行:
                 读数["索引器版本"] = 元数据行[0]
             return 读数
-        except sqlite3.Error as 原因:
+        except sqlite3.Error as 失败原因:
             return {"节点": 0, "边": 0, "件": 0, "索引器版本": "",
-                    "错误": "索引库读不动（%s）：%s ⇒ 先跑 `python3 开发工具/代码地图.py 建`" % (库件, 原因)}
+                    "错误": "索引库读不动（%s）：%s ⇒ 先跑 `python3 开发工具/代码地图.py 建`" % (库件, 失败原因)}
     finally:
         动态库.close()
 
@@ -195,18 +195,18 @@ def 名字所在列(件路径: str, 行号: int, 名字: str, 起始列: int) ->
         起始位 = 命中位 + 1
 
 
-def 节点记录(一行) -> dict:
+def 节点记录(表行) -> dict:
     """库里的 `nodes` 行 ⇒ 统一形状（与 SCIP 那版**同一套字段**，上层不用改）。
 
     `一行` = `(id, kind, name, qualified_name, file_path, start_line, end_line, start_column,
     signature, 引用数)` —— 引用数由调用方的 SQL 一并算好（别在这里单开连接：实测 5897 个节点
     逐个连库要 900 ms，一次 GROUP BY 只要 40 ms）。
     """
-    标识, 种类, 名字, 限定名, 件路径, 起始行, 末行, 起始列, 声明, 引用数 = 一行
+    标识, 扩展种类, 名字, 限定名, 件路径, 起始行, 末行, 起始列, 声明, 引用数 = 表行
     return {
         "名字": 名字,
         "限定名": 限定名,
-        "种类": 种类,
+        "种类": 扩展种类,
         "声明": (声明 or "").replace("\n", " ").strip()[:200],
         "路径": 件路径,
         "行": 起始行,
@@ -232,7 +232,7 @@ def 全部定义(库路径=None) -> list:
         return []
     try:
         try:
-            return [节点记录(一行) for 一行 in 动态库.execute(
+            return [节点记录(表行) for 表行 in 动态库.execute(
                 "select %s from nodes n where n.kind <> ? and n.kind <> ?" % _节点字段,
                 非标识符种类)]
         except sqlite3.Error:
@@ -328,9 +328,9 @@ def 出现位(键名: str, 结果上限: int = 0, 库路径=None) -> dict:
         return {"位置": [], "总数": 0, "口径": "没有索引"}
     try:
         动态库 = 连库(库路径)
-    except sqlite3.Error as 原因:
+    except sqlite3.Error as 失败原因:
         return {"位置": [], "总数": 0,
-                "口径": "索引库读不动：%s ⇒ 先跑 `python3 开发工具/代码地图.py 建`" % 原因}
+                "口径": "索引库读不动：%s ⇒ 先跑 `python3 开发工具/代码地图.py 建`" % 失败原因}
     try:
         try:
             for 匹配列, 口径说明 in (("qualified_name", "限定名（精确）"),
@@ -354,8 +354,8 @@ def 出现位(键名: str, 结果上限: int = 0, 库路径=None) -> dict:
                     去重表 = 去重表[:结果上限]
                 return {"位置": 去重表, "总数": len(set(命中位置表)), "口径": 口径说明}
             return {"位置": [], "总数": 0, "口径": "没找到"}
-        except sqlite3.Error as 原因:
+        except sqlite3.Error as 失败原因:
             return {"位置": [], "总数": 0,
-                    "口径": "索引库读不动：%s ⇒ 先跑 `python3 开发工具/代码地图.py 建`" % 原因}
+                    "口径": "索引库读不动：%s ⇒ 先跑 `python3 开发工具/代码地图.py 建`" % 失败原因}
     finally:
         动态库.close()

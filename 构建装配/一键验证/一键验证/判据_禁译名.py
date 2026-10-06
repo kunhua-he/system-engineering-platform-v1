@@ -73,11 +73,11 @@ def 禁译名字() -> str:
     return _查名().禁译名字
 
 
-def 去词内禁译名(文本: str) -> str:
+def 去词内禁译名(源文本: str) -> str:
     """把白名单词换成**等长空格**（列位置不变）—— 词内的字不算。空表 ⇒ 原样返回。"""
     if not 词内禁译名:
-        return 文本
-    净文本 = 文本
+        return 源文本
+    净文本 = 源文本
     for 白名单词 in 词内禁译名:
         净文本 = 净文本.replace(白名单词, " " * len(白名单词))
     return 净文本
@@ -134,15 +134,15 @@ def 扫禁译名(件表: dict) -> list:
     白名单先剥 ⇒ 逐行找（行号才准）；件里没这个词的直接跳过（C 级、快）。
     """
     禁译名词 = 禁译名字()
-    结果 = []
+    判定汇总 = []
     for 路径 in sorted(件表):
         净文本 = 去词内禁译名(件表[路径] or "")
         if not 净文本 or 禁译名词 not in 净文本:
             continue
         for 行号, 行文本 in enumerate(净文本.split("\n"), 1):
             if 禁译名词 in 行文本:
-                结果.append((路径, 行号))
-    return 结果
+                判定汇总.append((路径, 行号))
+    return 判定汇总
 
 
 def 扫禁译名面(上层读数: dict) -> list:

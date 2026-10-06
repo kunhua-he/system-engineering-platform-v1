@@ -139,14 +139,14 @@ class 库读不动(Exception):
     """规则库读不出来 —— fail-closed，绝不把空名册当「全未登记」用。"""
 
 
-def 读已登记(根) -> set:
+def 读已登记(根目录) -> set:
     """⇒ 库 `命名登记` 表的**全部名字**集合（判定「未登记」只认这一张表）。"""
-    库件 = 表定义.库路径(根)
+    库件 = 表定义.库路径(根目录)
     if not Path(库件).is_file():
         raise 库读不动(f"规则库不在：{库件}（先跑 `python3 开发工具/信息核心/信息核心.py 建库`）")
     连接 = sqlite3.connect("file:%s?mode=ro" % 库件, uri=True)
     try:
-        名字集 = {一行[0] for 一行 in 连接.execute("select 名字 from 命名登记")}
+        名字集 = {文本行[0] for 文本行 in 连接.execute("select 名字 from 命名登记")}
     except sqlite3.Error as 错误:
         raise 库读不动(f"规则库读不动：{错误}") from 错误
     finally:
@@ -154,20 +154,20 @@ def 读已登记(根) -> set:
     return 名字集
 
 
-def 抹跨行块(文本: str, 后缀: str = "") -> str:
+def 抹跨行块(源文本: str, 源码后缀: str = "") -> str:
     """剥掉注释与字符串 ⇒ **等长**净文本（换行原样保留 ⇒ 行号不漂）。
 
     **2026-10-06 收口**：复用 `一键验证.命名扫描.剥后缀` —— 与 `功能=9` 改名器、判据 ㉒ **同一份**剥器。
     本件原先自带的那套正则**漏 Rust 的行尾反斜杠续行串**，债单因此虚高（见上）。未知后缀 ⇒ 原样返回。
     """
-    if 后缀 in 代码后缀:
-        return _命名扫描.剥后缀(后缀, 文本)
-    return 文本
+    if 源码后缀 in 代码后缀:
+        return _命名扫描.剥后缀(源码后缀, 源文本)
+    return 源文本
 
 
-def 剥行(一行: str, 后缀: str = "") -> str:
+def 剥行(文本行: str, 源码后缀: str = "") -> str:
     """注释与字符串已由 `抹跨行块` 整篇剥净 ⇒ 这里只再抹数字字面量（口径见模块 docstring）。"""
-    return 数字字面量.sub(" ", 一行)
+    return 数字字面量.sub(" ", 文本行)
 
 
 def 是仓内(路径: Path) -> bool:
@@ -189,28 +189,28 @@ def 相对路径(路径: Path, 树根) -> str:
     return 路径.resolve().as_posix()
 
 
-def 候选文件(树根, 文件=None) -> list:
+def 候选文件(树根, 件路径=None) -> list:
     """⇒ 待扫文件的绝对路径列表。给了 `文件` ⇒ 只那一个；否则走整棵树。"""
-    if 文件:
-        指定 = Path(文件)
+    if 件路径:
+        指定 = Path(件路径)
         if not 指定.is_absolute():
             指定 = 仓根 / 指定
             if not 指定.is_file():
-                指定 = Path(树根) / 文件
+                指定 = Path(树根) / 件路径
         return [指定] if 指定.is_file() else []
-    结果 = []
+    查询读数 = []
     for 路径 in Path(树根).rglob("*"):
         if not 路径.is_file() or 路径.suffix not in 代码后缀:
             continue
-        if any(段 in 跳过目录 for 段 in 路径.parts):
+        if any(路径段 in 跳过目录 for 路径段 in 路径.parts):
             continue
         if not 是仓内(路径.resolve()):
             continue
-        结果.append(路径)
-    return 结果
+        查询读数.append(路径)
+    return 查询读数
 
 
-def 未登记名(树根, 文件=None) -> list[dict]:
+def 未登记名(树根, 件路径=None) -> list[dict]:
     """扫代码里的标识符名，凡不在库 `命名登记` 表里的 ⇒ 判「未登记」。
     语言关键字与显式内建噪声名已先滤掉（两张名单见模块 docstring）。
 
@@ -220,20 +220,20 @@ def 未登记名(树根, 文件=None) -> list[dict]:
     库读不动 ⇒ 抛 `库读不动`（fail-closed，不返回空表）。
     """
     已登记 = 读已登记(仓根)
-    出 = {}
-    for 路径 in 候选文件(树根, 文件):
-        后缀 = 路径.suffix
+    输出表 = {}
+    for 路径 in 候选文件(树根, 件路径):
+        源码后缀 = 路径.suffix
         try:
-            文本 = 抹跨行块(路径.read_text(encoding="utf-8", errors="ignore"), 后缀)
+            源文本 = 抹跨行块(路径.read_text(encoding="utf-8", errors="ignore"), 源码后缀)
         except OSError:
             continue
         相对 = 相对路径(路径, 树根)
-        for 序号, 一行 in enumerate(文本.splitlines(), 1):
-            for 名, 起始位 in _命名扫描.抽标识符带位置(剥行(一行, 后缀)):
-                if 名 in 已登记 or 名 in 过滤名:
+        for 序号, 文本行 in enumerate(源文本.splitlines(), 1):
+            for 标识符, 起始位 in _命名扫描.抽标识符带位置(剥行(文本行, 源码后缀)):
+                if 标识符 in 已登记 or 标识符 in 过滤名:
                     continue
-                出[(名, 相对, 序号)] = {"名字": 名, "文件": 相对, "行号": 序号}
-    return sorted(出.values(), key=lambda 一条: (一条["文件"], 一条["行号"], 一条["名字"]))
+                输出表[(标识符, 相对, 序号)] = {"名字": 标识符, "文件": 相对, "行号": 序号}
+    return sorted(输出表.values(), key=lambda 记录条: (记录条["文件"], 记录条["行号"], 记录条["名字"]))
 
 
 # ════════════════════════════════════════════════════════════════════════════
@@ -249,15 +249,15 @@ def 未登记名(树根, 文件=None) -> list[dict]:
                 r"|\bstatic|\binterface|\bnamespace|\bfunction|\bvar|\blet|\bpub)\s+")
 
 
-def 判面(骨架: str, 名: str) -> str:
+def 判面(骨架: str, 标识符: str) -> str:
     """尽力判「名在这一行属于哪个面」⇒ 定义面 / 形参面 / 局部面（**启发式，不是真解析器**）。
 
     名紧跟定义关键字 ⇒ 定义面；该行有定义关键字且名落在第一个 `(` 之后 ⇒ 形参面；其余 ⇒ 局部面。
     """
-    if 定义位.search(骨架) and re.search(re.escape(名) + r"\b", 骨架[定义位.search(骨架).end():]):
+    if 定义位.search(骨架) and re.search(re.escape(标识符) + r"\b", 骨架[定义位.search(骨架).end():]):
         return "定义面"
-    左 = 骨架.find("(")
-    if 左 >= 0 and 定义关键字.search(骨架[:左]) and 名 in 骨架[左:]:
+    左括号位 = 骨架.find("(")
+    if 左括号位 >= 0 and 定义关键字.search(骨架[:左括号位]) and 标识符 in 骨架[左括号位:]:
         return "形参面"
     return "局部面"
 
@@ -268,62 +268,62 @@ def 扫出现(树根) -> list:
     与 `未登记名` 的两处不同：**不滤已登记的名**（`命名出现` 是「名字出现在哪」的明细表，
     已登记的名也要记）；同一行同名的重复引用只出一条。关键字与内建噪声照旧跳过。
     """
-    出 = []
+    输出表 = []
     for 路径 in 候选文件(树根):
-        后缀 = 路径.suffix
+        源码后缀 = 路径.suffix
         try:
-            文本 = 抹跨行块(路径.read_text(encoding="utf-8", errors="ignore"), 后缀)
+            源文本 = 抹跨行块(路径.read_text(encoding="utf-8", errors="ignore"), 源码后缀)
         except OSError:
             continue
         相对 = 相对路径(路径, 树根)
-        for 序号, 一行 in enumerate(文本.splitlines(), 1):
-            骨架 = 剥行(一行, 后缀)
+        for 序号, 文本行 in enumerate(源文本.splitlines(), 1):
+            骨架 = 剥行(文本行, 源码后缀)
             本行 = {}
             # ★ 2026-10-06 收口：抽名与 `命名扫描.抽标识符` **同一份** —— 排除紧跟 `.` 的成员访问
             #   （`.end()` / `.key` / `.start()` 是**别人家的名字**）。本件原先用裸 `标识符.findall`
             #   ⇒ 把标准库方法名也当我们的名字记进债单（实测 `小工具` 58 处全是 `.成员` 用法、
             #   `start` 62 处里 55 处是 `.start()`）。与判据 ㉒ 的口径同源。
-            for 名, 起始位 in _命名扫描.抽标识符带位置(骨架):
-                if 名 not in 过滤名:
-                    本行[名] = 本行.get(名, True) and 骨架[:起始位].rstrip().endswith(".")
-            for 名, 全成员 in 本行.items():
-                出.append({"名字": 名, "文件": 相对, "行号": 序号, "面": 判面(骨架, 名), "成员": 全成员})
-    return 出
+            for 标识符, 起始位 in _命名扫描.抽标识符带位置(骨架):
+                if 标识符 not in 过滤名:
+                    本行[标识符] = 本行.get(标识符, True) and 骨架[:起始位].rstrip().endswith(".")
+            for 标识符, 全成员 in 本行.items():
+                输出表.append({"名字": 标识符, "文件": 相对, "行号": 序号, "面": 判面(骨架, 标识符), "成员": 全成员})
+    return 输出表
 
 
-def 读名单(连接, 表: str, 分组: str = "") -> set:
+def 读名单(连接, 表名: str, 分组: str = "") -> set:
     """⇒ 库某张名单表的全部名字；给了 `分组` 再按分组筛（名单住库里，不写死在代码里）。"""
-    return {一行[0] for 一行 in 连接.execute(
-        f"select 名字 from {表}" + (" where 分组=?" if 分组 else ""), (分组,) if 分组 else ())}
+    return {文本行[0] for 文本行 in 连接.execute(
+        f"select 名字 from {表名}" + (" where 分组=?" if 分组 else ""), (分组,) if 分组 else ())}
 
 
-def 判模式(名: str, 动作词表: set) -> str:
+def 判模式(标识符: str, 动作词表: set) -> str:
     """以动作词开头且后面还有对象 ⇒ 「动作+对象」；否则 ⇒ 「对象+说明」（**结构判，不查词源**）。"""
-    return "动作+对象" if any(名.startswith(词) and len(名) > len(词) for 词 in 动作词表) else "对象+说明"
+    return "动作+对象" if any(标识符.startswith(关键词) and len(标识符) > len(关键词) for 关键词 in 动作词表) else "对象+说明"
 
 
-def 判禁止形状(名: str, 泛名表: set) -> str:
+def 判禁止形状(标识符: str, 泛名表: set) -> str:
     """⇒ 命中的禁止形状名（空串＝没命中）。四条口径见 `开发文档/设计哲学.md` §4 命名纪律。
 
     「序数代称」＝含十干字（复用 `查名.py` 的同一份谓词）· 以**单个**数字结尾（`临时2`，错误码/HTTP 码那种多位数结尾不算）· 形如 `第N个`；
     「西文单字母」也复用 `查名.py` 的谓词；「泛名」「单汉字名」本件判（泛名名单在库分组=泛名）。
     """
-    if 名 in 泛名表:
+    if 标识符 in 泛名表:
         return "泛名"
-    if len(名) == 1:
-        return "单汉字名" if not 名.isascii() else ("西文单字母" if 名.isalpha() else "")
-    if 查名.含序数代称作标识符(名) or re.fullmatch(r"第.{1,4}个", 名) or re.search(r"(?<![\d号码])\d$", 名):
+    if len(标识符) == 1:
+        return "单汉字名" if not 标识符.isascii() else ("西文单字母" if 标识符.isalpha() else "")
+    if 查名.含序数代称作标识符(标识符) or re.fullmatch(r"第.{1,4}个", 标识符) or re.search(r"(?<![\d号码])\d$", 标识符):
         return "序数代称"
     return ""
 
 
-def 判状态(名: str, 泛名表: set, 动作词表: set) -> tuple:
+def 判状态(标识符: str, 泛名表: set, 动作词表: set) -> tuple:
     """⇒ `(状态, 模式, 语义)`：落禁止形状 ⇒ `待改名`，否则 `合格`（口径见模块 docstring）。"""
-    模式 = 判模式(名, 动作词表)
-    形状 = 判禁止形状(名, 泛名表)
+    模式 = 判模式(标识符, 动作词表)
+    形状 = 判禁止形状(标识符, 泛名表)
     if 形状:
-        return "待改名", 模式, f"原名{名}，落入禁止形状「{形状}」⇒ 需人工定改法"
-    return "合格", 模式, f"原名{名}，结构为「{模式}」，不落禁止形状"
+        return "待改名", 模式, f"原名{标识符}，落入禁止形状「{形状}」⇒ 需人工定改法"
+    return "合格", 模式, f"原名{标识符}，结构为「{模式}」，不落禁止形状"
 
 
 def 落库(树根, 干跑: bool = False) -> dict:
@@ -333,40 +333,40 @@ def 落库(树根, 干跑: bool = False) -> dict:
     重判 `状态`（新名插入、老名只改状态列 —— `on conflict ... do update set 状态`，**不动**已有语义）。
     `干跑=True` 只算不写。★ 2026-10-06 改：原先只新增、不重判 ⇒ 名单不自洽。
     """
-    记录 = 扫出现(树根)
+    扫描记录 = 扫出现(树根)
     连接 = sqlite3.connect(str(表定义.库路径(仓根)))
     try:
-        已登记 = {一行[0] for 一行 in 连接.execute("select 名字 from 命名登记")}
-        例外 = {一行[0] for 一行 in 连接.execute("select 名字 from 命名例外")}
+        已登记 = {文本行[0] for 文本行 in 连接.execute("select 名字 from 命名登记")}
+        例外 = {文本行[0] for 文本行 in 连接.execute("select 名字 from 命名例外")}
         动作词, 泛名表 = 读名单(连接, "命名字典", "动作"), 读名单(连接, "命名泛名")
         面数, 全成员 = collections.Counter(), collections.defaultdict(lambda: True)
-        for 一条 in 记录:
-            面数[一条["名字"]] += 一条["面"] == "定义面"
-            全成员[一条["名字"]] &= 一条["成员"]
-        全部名 = sorted({一条["名字"] for 一条 in 记录} - 例外)
-        新名 = [名 for 名 in 全部名 if 名 not in 已登记]
-        外来 = {名 for 名 in 新名 if 名.isascii() and 面数[名] == 0 and 全成员[名]}   # 别人家的名字
-        判定 = [(名,) + 判状态(名, 泛名表, 动作词) for 名 in 全部名 if 名 not in 外来]
-        计数 = {"扫描出现": len(记录), "涉及名字": len({一条["名字"] for 一条 in 记录}), "新增": len(新名),
+        for 记录条 in 扫描记录:
+            面数[记录条["名字"]] += 记录条["面"] == "定义面"
+            全成员[记录条["名字"]] &= 记录条["成员"]
+        全部名 = sorted({记录条["名字"] for 记录条 in 扫描记录} - 例外)
+        新名 = [标识符 for 标识符 in 全部名 if 标识符 not in 已登记]
+        外来 = {标识符 for 标识符 in 新名 if 标识符.isascii() and 面数[标识符] == 0 and 全成员[标识符]}   # 别人家的名字
+        判定 = [(标识符,) + 判状态(标识符, 泛名表, 动作词) for 标识符 in 全部名 if 标识符 not in 外来]
+        计数表 = {"扫描出现": len(扫描记录), "涉及名字": len({记录条["名字"] for 记录条 in 扫描记录}), "新增": len(新名),
                "其中外部强加": len(外来), "其中待改名": sum(1 for _, 本条状态, _, _ in 判定 if 本条状态 == "待改名")}
         if 干跑:
-            return 计数
+            return 计数表
         连接.executemany("insert or ignore into 命名例外(名字, 说明) values(?,?)",
-            [(名, "外部强加：只以 .成员 出现且全仓无定义面（标准库 / 第三方 API / DOM 属性）") for 名 in 外来])
+            [(标识符, "外部强加：只以 .成员 出现且全仓无定义面（标准库 / 第三方 API / DOM 属性）") for 标识符 in 外来])
         # ★ 2026-10-06 改：**全部扫到的名都重判状态**（原先只判新增 ⇒ 名单不自洽：实测同一个 `号段`
         #   的 `止` 停在合格、`起` 停在待改名）。`on conflict` **只改 `状态`**，不覆盖已有行的
         #   `语义`/`模式`/`来源`（手工登记的语义是资料，不该被自动文案冲掉）。
         连接.executemany(
             "insert into 命名登记(名字, 语义, 模式, 来源, 状态) values(?,?,?,?,?) "
             "on conflict(名字) do update set 状态=excluded.状态",
-            [(名, 语义, 模式, "新定义", 状态) for 名, 状态, 模式, 语义 in 判定])
+            [(标识符, 语义, 模式, "新定义", 状态) for 标识符, 状态, 模式, 语义 in 判定])
         连接.execute("delete from 命名出现")
         连接.executemany(
             "insert into 命名出现(名字, 文件路径, 行号, 面) values(?,?,?,?)",
-            [(一条["名字"], 一条["文件"], 一条["行号"], 一条["面"]) for 一条 in 记录
-             if 一条["名字"] not in 例外 and 一条["名字"] not in 外来])
+            [(记录条["名字"], 记录条["文件"], 记录条["行号"], 记录条["面"]) for 记录条 in 扫描记录
+             if 记录条["名字"] not in 例外 and 记录条["名字"] not in 外来])
         连接.commit()
-        计数["出现行数"] = 连接.execute("select count(*) from 命名出现").fetchone()[0]
-        return 计数
+        计数表["出现行数"] = 连接.execute("select count(*) from 命名出现").fetchone()[0]
+        return 计数表
     finally:
         连接.close()

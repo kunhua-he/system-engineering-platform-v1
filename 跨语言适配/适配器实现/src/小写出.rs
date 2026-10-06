@@ -23,11 +23,11 @@ pub enum JSON值 {
     空值项,
     真值,
     假值,
-    整数(i64),
-    文本(String),
-    数组(Vec<JSON值>),
+    整数项(i64),
+    文本值(String),
+    数组值(Vec<JSON值>),
     /// 键序 = 插入序（见文件头：确定性）。
-    对象(Vec<(String, JSON值)>),
+    对象值(Vec<(String, JSON值)>),
 }
 
 /// 序列化为**缩进版**（两空格）JSON 文本，**不含**结尾换行。
@@ -54,15 +54,15 @@ fn 写一个值(输出缓冲: &mut String, 待处理值: &JSON值, 层级: usize
         JSON值::空值项 => 输出缓冲.push_str("null"),
         JSON值::真值 => 输出缓冲.push_str("true"),
         JSON值::假值 => 输出缓冲.push_str("false"),
-        JSON值::整数(数) => 输出缓冲.push_str(&数.to_string()),
-        JSON值::文本(文) => 写JSON文本(输出缓冲, 文),
-        JSON值::数组(项) => {
-            if 项.is_empty() {
+        JSON值::整数项(数) => 输出缓冲.push_str(&数.to_string()),
+        JSON值::文本值(文本载荷) => 写JSON文本(输出缓冲, 文本载荷),
+        JSON值::数组值(数组项表) => {
+            if 数组项表.is_empty() {
                 输出缓冲.push_str("[]");
                 return;
             }
             输出缓冲.push('[');
-            for (序号, 数组项) in 项.iter().enumerate() {
+            for (序号, 数组项) in 数组项表.iter().enumerate() {
                 if 序号 > 0 {
                     输出缓冲.push(',');
                 }
@@ -72,18 +72,18 @@ fn 写一个值(输出缓冲: &mut String, 待处理值: &JSON值, 层级: usize
             写缩进(输出缓冲, 层级);
             输出缓冲.push(']');
         }
-        JSON值::对象(成员) => {
-            if 成员.is_empty() {
+        JSON值::对象值(对象成员) => {
+            if 对象成员.is_empty() {
                 输出缓冲.push_str("{}");
                 return;
             }
             输出缓冲.push('{');
-            for (序, (键, 成员值)) in 成员.iter().enumerate() {
-                if 序 > 0 {
+            for (项位次, (成员键, 成员值)) in 对象成员.iter().enumerate() {
+                if 项位次 > 0 {
                     输出缓冲.push(',');
                 }
                 写缩进(输出缓冲, 层级 + 1);
-                写JSON文本(输出缓冲, 键);
+                写JSON文本(输出缓冲, 成员键);
                 输出缓冲.push_str(": ");
                 写一个值(输出缓冲, 成员值, 层级 + 1);
             }
@@ -96,9 +96,9 @@ fn 写一个值(输出缓冲: &mut String, 待处理值: &JSON值, 层级: usize
 /// 写一个 JSON 字符串：只转 `"` `\` 与 `U+0000..U+001F`（见文件头）。
 /// 把一个字符串按 JSON 规则转义着写进去。**公开**：转义表是**正确性资产**
 /// （少转一个控制字符就产出非法 JSON）⇒ 只许有一份，上层复用本函数。
-pub fn 写JSON文本(输出缓冲: &mut String, 文本: &str) {
+pub fn 写JSON文本(输出缓冲: &mut String, 文本值: &str) {
     输出缓冲.push('"');
-    for 字符表 in 文本.chars() {
+    for 字符表 in 文本值.chars() {
         match 字符表 {
             '"' => 输出缓冲.push_str("\\\""),
             '\\' => 输出缓冲.push_str("\\\\"),

@@ -12,16 +12,16 @@ def 解接缝(pe):
     命中 = [导出项 for 导出项 in pe.解导出表() if 导出项[0] == 导出名]
     if not 命中:
         raise 解析错误("导出表里没有 %s" % 导出名.decode())
-    _, 序号, 当前 = 命中[0]
-    导出rva = 当前
-    错误码 = pe.原始字节[pe.转偏移(当前):pe.转偏移(当前) + 16]
+    _, 序号, 当前偏移 = 命中[0]
+    导出rva = 当前偏移
+    错误码 = pe.原始字节[pe.转偏移(当前偏移):pe.转偏移(当前偏移) + 16]
     形式 = []
     for _ in range(4):                       # 最多跟 4 层 thunk
         if 错误码[0] in (0xE8, 0xE9) and (错误码[0] != 0xE8 or 错误码[5] == 0xC3):
-            目标 = 当前 + 5 + struct.unpack_from("<i", 错误码, 1)[0]
-            形式.append(("call" if 错误码[0] == 0xE8 else "jmp") + " 0x%x" % 目标)
-            当前 = 目标
-            错误码 = pe.原始字节[pe.转偏移(当前):pe.转偏移(当前) + 16]
+            跳转目标 = 当前偏移 + 5 + struct.unpack_from("<i", 错误码, 1)[0]
+            形式.append(("call" if 错误码[0] == 0xE8 else "jmp") + " 0x%x" % 跳转目标)
+            当前偏移 = 跳转目标
+            错误码 = pe.原始字节[pe.转偏移(当前偏移):pe.转偏移(当前偏移) + 16]
         else:
             break
     if 错误码[0] == 0xB8 and 错误码[5] == 0xC3:                       # mov eax, imm32 ; ret

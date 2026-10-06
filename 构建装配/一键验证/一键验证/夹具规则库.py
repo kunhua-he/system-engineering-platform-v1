@@ -72,11 +72,11 @@ def 名册表(件表: dict) -> list:
     命名扫描 = 取命名扫描()
     后缀表 = 取命名后缀()
     名集 = set()
-    for 路径, 文本 in 件表.items():
+    for 路径, 源文本 in 件表.items():
         if not 路径.endswith(后缀表):
             continue
-        后缀 = "." + 路径.rsplit(".", 1)[-1]
-        名集.update(命名扫描.抽标识符(命名扫描.剥后缀(后缀, 文本)))
+        源码后缀 = "." + 路径.rsplit(".", 1)[-1]
+        名集.update(命名扫描.抽标识符(命名扫描.剥后缀(源码后缀, 源文本)))
     return sorted(名集)
 
 

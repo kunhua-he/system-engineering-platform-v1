@@ -85,10 +85,10 @@ def 扫自拼(件表: dict) -> dict:
     for 键名 in sorted(件表):
         if 键名.startswith(唯一解析器路径):
             continue
-        文本 = 件表[键名]
-        if not 文本:
+        源文本 = 件表[键名]
+        if not 源文本:
             continue
-        for 源码行 in 文本.split("\n"):
+        for 源码行 in 源文本.split("\n"):
             命中形表 = []
             if _平台数据目录词.search(源码行) and _路径拼接.search(源码行):
                 命中形表.append(形_平台数据目录)
