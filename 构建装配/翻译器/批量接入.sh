@@ -99,16 +99,25 @@ fi
 log ""
 
 # ---------- 接入顺序（计划） ----------
+# 依赖图口径=包级（小队3 v1-100346）：无「接入顺序/模块列表」字段，
+# 从「依赖层级」（0层/1层/2层…）+「模块清单」（层级/文件数）+「依赖边」
+# 推出同形状的批次计划，批次号=层级号+1（1层起批，兼容下方自检/汇总逻辑）。
 PLAN=$(python3 - "$GRAPH" <<'PY'
 import json, sys
 graph = json.load(open(sys.argv[1], encoding="utf-8"))
-layers = {m["层"]: m for m in graph.get("模块列表", [])}
-for batch in graph.get("接入顺序", []):
-    for layer in batch.get("层", []):
-        m = layers.get(layer, {})
-        deps = ",".join(m.get("声明依赖", [])) or "—"
-        print("\t".join([str(batch.get("批次", "?")), layer,
-                         str(m.get("层级", "?")), str(m.get("文件数", "?")), deps]))
+层级表 = graph.get("依赖层级", {})
+清单 = graph.get("模块清单", {})
+边表 = graph.get("依赖边", [])
+依赖映射 = {}
+for 边 in 边表:
+    依赖映射.setdefault(边[0], set()).add(边[1])
+for 层名, 包列表 in sorted(层级表.items(), key=lambda kv: int(kv[0].rstrip("层"))):
+    批次 = int(层名.rstrip("层")) + 1
+    for 包 in 包列表:
+        项 = 清单.get(包, [包, "", 0, 0])
+        文件数 = 项[2] if len(项) > 2 else 0
+        依赖 = ",".join(sorted(依赖映射.get(包, []))) or "—"
+        print("\t".join([str(批次), 包, str(项[3] if len(项) > 3 else 0), str(文件数), 依赖]))
 PY
 )
 
@@ -124,28 +133,27 @@ log "=== 顺序自检（每层依赖须落在更早批次） ==="
 SELFCHECK=$(python3 - "$GRAPH" <<'PY'
 import json, sys
 graph = json.load(open(sys.argv[1], encoding="utf-8"))
-layers = {m["层"]: m for m in graph.get("模块列表", [])}
-order = graph.get("接入顺序", [])
+层级表 = graph.get("依赖层级", {})
+边表 = graph.get("依赖边", [])
+依赖映射 = {}
+for 边 in 边表:
+    依赖映射.setdefault(边[0], set()).add(边[1])
 batch_of = {}
-for batch in order:
-    for name in batch.get("层", []):
-        batch_of[name] = batch.get("批次", 0)
-for batch in order:
-    for name in batch.get("层", []):
-        deps = layers.get(name, {}).get("声明依赖", [])
-        bad = [d for d in deps if d not in batch_of or batch_of[d] >= batch_of[name]]
+for 层名, 包列表 in 层级表.items():
+    批次 = int(层名.rstrip("层")) + 1
+    for 包 in 包列表:
+        batch_of[包] = 批次
+all_packages = set(batch_of)
+for 层名, 包列表 in sorted(层级表.items(), key=lambda kv: int(kv[0].rstrip("层"))):
+    for 包 in 包列表:
+        deps = sorted(依赖映射.get(包, []))
+        bad = [d for d in deps if d not in batch_of or batch_of[d] >= batch_of[包]]
         if bad:
-            print("✗ %s（第%s批）：依赖 %s 未落在更早批次" % (name, batch_of[name], "、".join(bad)))
+            print("✗ %s（第%s批）：依赖 %s 未落在更早批次" % (包, batch_of[包], "、".join(bad)))
         else:
-            print("✓ %s（第%s批）：依赖 %s 均在更早批次" % (name, batch_of[name], "、".join(deps) if deps else "无"))
-missing = [n for n in layers if n not in batch_of]
-ghost = [n for n in batch_of if n not in layers]
-if missing:
-    print("✗ 接入顺序漏了模块列表里的层：%s" % "、".join(missing))
-if ghost:
-    print("✗ 接入顺序里有模块列表没有的层：%s" % "、".join(ghost))
-cyc = graph.get("循环依赖") or []
-print("✗ 存在循环依赖：" + "、".join(cyc) if cyc else "✓ 无循环依赖")
+            print("✓ %s（第%s批）：依赖 %s 均在更早批次" % (包, batch_of[包], "、".join(deps) if deps else "无"))
+循环数 = graph.get("循环依赖") or graph.get("统计", {}).get("循环依赖分量数") or 0
+print("✗ 存在循环依赖：%s 个分量" % 循环数 if 循环数 else "✓ 无循环依赖")
 PY
 )
 while IFS= read -r line; do
@@ -188,14 +196,17 @@ while IFS=$'\t' read -r batch layer level files deps; do
     LAST_BATCH=$batch
   fi
   if [ "$DRY_RUN" = "1" ] || [ "$TRANSLATOR_OK" != "1" ]; then
-    real_files=$(find "$OLD_ROOT/$layer" -name '*.py' -type f 2>/dev/null | wc -l | tr -d ' ')
+    slash="/"
+    layer_path="${layer//./$slash}"
+    real_files=$(find "$OLD_ROOT/$layer_path" -name '*.py' -type f 2>/dev/null | wc -l | tr -d ' ')
     if [ "$DRY_RUN" = "1" ]; then TAG=干跑; else TAG=预检; fi
     log "  [${TAG}] ${layer}：老项目实有 ${real_files} 个 .py（依赖图记 ${files}）"
     DONE=$((DONE + 1))
     continue
   fi
-  log "  翻译 ${layer} ..."
-  if python3 "$TRANSLATOR" --模块 "$layer" >> "$LOGFILE" 2>&1; then
+  module_name="${layer##*.}"
+  log "  翻译 ${layer}（模块名：${module_name}） ..."
+  if python3 "$TRANSLATOR" --模块 "$module_name" >> "$LOGFILE" 2>&1; then
     log "  ✓ ${layer} 翻译成功"
     DONE=$((DONE + 1))
   else
