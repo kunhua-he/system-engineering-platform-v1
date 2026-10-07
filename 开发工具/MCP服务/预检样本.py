@@ -233,18 +233,27 @@ def 扫一遍(仓根: Path) -> list:
     return 输出表
 
 
+def 观测路径表(临时根: Path) -> list:
+    """夹具比对面：全夹具 − 运行数据根的 `日志` 子目录。
+
+    诊断落痕（`诊断记录.py`）按合同写 `<运行数据根>/日志/MCP诊断.log`（与作业日志同一根）
+    —— 它不是「预检写了源码 / 规则库 / 账本 / 索引」那一类写，故不入口径的比对面。
+    """
+    return [路径 for 路径 in 临时根.rglob("*") if "日志" not in 路径.parts]
+
+
 def 跑命令(仓根: Path, 临时根: Path, 参数表: dict, 文件句柄) -> tuple:
     """每帧走同一新MCP进程；全树哈希含账本/库/索引，缓存不许刷新写入凭据。"""
     指纹表 = {路径: hashlib.sha256(路径.read_bytes()).hexdigest()
-             for 路径 in 临时根.rglob("*") if 路径.is_file()}
-    路径表 = {路径 for 路径 in 临时根.rglob("*")}
+             for 路径 in 观测路径表(临时根) if 路径.is_file()}
+    路径表 = {路径 for 路径 in 观测路径表(临时根)}
     请求 = {"jsonrpc": "2.0", "id": 1, "method": "tools/call",
           "params": {"name": "v1_edit", "arguments": 参数表}}
     文件句柄.stdin.write(json.dumps(请求, ensure_ascii=False) + "\n")
     文件句柄.stdin.flush()
     assert select.select([文件句柄.stdout], [], [], 5)[0], "MCP帧超时"
     查询读数 = json.loads(文件句柄.stdout.readline())
-    assert 路径表 == {路径 for 路径 in 临时根.rglob("*")}, "目录或件集合改变"
+    assert 路径表 == {路径 for 路径 in 观测路径表(临时根)}, "目录或件集合改变"
     assert 指纹表 == {路径: hashlib.sha256(路径.read_bytes()).hexdigest()
-                    for 路径 in 临时根.rglob("*") if 路径.is_file()}, "预检/拒绝发生写入"
+                    for 路径 in 观测路径表(临时根) if 路径.is_file()}, "预检/拒绝发生写入"
     return 0, 查询读数["result"]
