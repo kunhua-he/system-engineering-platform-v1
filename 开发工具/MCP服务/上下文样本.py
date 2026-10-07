@@ -1,0 +1,146 @@
+# -*- coding: utf-8 -*-
+"""上下文工具正反样本：临时源与真实MCP子进程。"""
+import json
+import os
+import sqlite3
+import subprocess
+import sys
+import tempfile
+from pathlib import Path
+from unittest.mock import patch
+from 开发工具.信息核心 import 上下文读取, 上下文来源
+from 开发工具.MCP服务.上下文 import 派发
+
+
+def 读盘状态(树根):
+    return {str(文件路径.relative_to(树根)): (文件路径.stat().st_mtime_ns, 文件路径.read_bytes())
+            for 文件路径 in 树根.rglob("*") if 文件路径.is_file()}
+
+
+def 建上下文夹具(树根):
+    (树根 / "开发工具/信息核心").mkdir(parents=True)
+    (树根 / "项目文档").mkdir()
+    (树根 / "README.md").write_text("# 宪法\n活源主题\n## 新节\n新增内容\n", encoding="utf-8")
+    (树根 / 上下文来源.文档账本件).write_text(json.dumps({"件": [{"路径": "README.md", "档": "宪法"}]}, ensure_ascii=False), encoding="utf-8")
+    (树根 / 上下文来源.未完成件).write_text(json.dumps({"行": [[307, "活源主题缺口", "落点", "验证"]]}, ensure_ascii=False), encoding="utf-8")
+    with sqlite3.connect(树根 / "开发工具/信息核心/信息核心.db") as 连接:
+        连接.execute("create table 条款(文档路径 text,序号 integer,标题 text,正文 text,权威档 text)")
+        连接.execute("create table 规则(编号 text,类 text,名 text,内容 text,依据 text)")
+        连接.execute("insert into 条款 values(?,?,?,?,?)", ("README.md", 0, "宪法", "旧镜像主题", "宪法"))
+        连接.executemany("insert into 条款 values(?,?,?,?,?)", [("项目文档/设计哲学.md", 序号值, "哲学", "主题" * 2000 if 序号值 == 4 else "核心唯一物", "设计原则") for 序号值 in range(12)])
+        连接.execute("insert into 规则 values(?,?,?,?,?)", ("规则-1", "命名口径", "规则主题", "中文命名", "规范"))
+
+
+def 上下文样本(仓根, 工具表=None):
+    输出缓冲 = []
+    def 记样本(名称, 条件值):
+        输出缓冲.append((名称, bool(条件值)))
+    with tempfile.TemporaryDirectory(prefix="v1上下文-") as 临时目录:
+        树根 = Path(临时目录) / "夹具"
+        建上下文夹具(树根)
+        def 读夹具(参数表):
+            return json.loads(上下文读取.读取上下文(树根, 参数表, "样本", "样本HEAD"))
+        def 失败样本(参数表, 错误种类):
+            写前状态 = 读盘状态(树根)
+            with patch("开发工具.MCP服务.上下文.跑命令", return_value=(0, "样本")):
+                退出码, 输出文本 = 派发(参数表, 树根)
+            记样本(错误种类 + "零写", 退出码 != 0 and json.loads(输出文本)["错误"]["种类"] == 错误种类 and 写前状态 == 读盘状态(树根))
+        写前状态 = 读盘状态(树根)
+        读数 = 读夹具({})
+        记样本("空主题有界并含状态", 读数["输出字节"] < 8192 and any(条款行["类型"] == "未完成" for 条款行 in 读数["条目"]))
+        读数 = 读夹具({"主题": "活源主题", "包含": ["条款"]})
+        记样本("活源匹配镜像不重复且冲突可见", len(读数["条目"]) == 1 and 读数["条目"][0]["冲突"] and 读数["条目"][0]["来源"]["文件"] == "README.md")
+        读数 = 读夹具({"包含": ["条款"], "文档路径序号表": [{"文档路径": "README.md", "序号": 1}]})
+        记样本("活源新节不依赖镜像", len(读数["条目"]) == 1 and "镜像缺节" in 读数["条目"][0]["冲突"][0])
+        记样本("正向调用零写", 写前状态 == 读盘状态(树根))
+        工作树 = Path(临时目录) / "异树"
+        建上下文夹具(工作树)
+        (工作树 / "README.md").write_text("# 宪法\n异树主题\n", encoding="utf-8")
+        查询结果 = json.loads(上下文读取.读取上下文(工作树, {"主题": "活源主题", "包含": ["条款"]}, "异树", "异树HEAD"))
+        记样本("不同树不串源", not 查询结果["条目"] and 查询结果["树绝对路径"] == str(工作树.resolve()))
+        失败样本({"包含": ["索引"]}, "missing")
+        from 代码地图.落点 import 库目录名, 库文件名
+        索引路径 = 树根 / 库目录名 / 库文件名
+        索引路径.parent.mkdir()
+        索引路径.write_bytes(b"corrupt")
+        失败样本({"包含": ["索引"]}, "corrupt")
+        索引路径.unlink()
+        with sqlite3.connect(索引路径) as 连接:
+            连接.execute("create table nodes(编号 integer)")
+            连接.execute("create table edges(编号 integer)")
+            连接.execute("create table files(编号 integer)")
+            连接.execute("create table project_metadata(key text,value text)")
+        文件路径 = 树根 / "样例.py"
+        文件路径.write_text("样例名称 = 1\n", encoding="utf-8")
+        os.utime(索引路径, (1, 1))
+        写前状态 = 读盘状态(树根)
+        读数 = 读夹具({"包含": ["索引"]})
+        记样本("陈旧索引可见零写", 读数["条目"][0]["新鲜度"] == "陈旧" and 写前状态 == 读盘状态(树根))
+        for 参数表 in ({"条数": True}, {"条数": 51}, {"字节预算": 16385}, {"包含": ["SQL"]}, {"开工ID": "../秘密"}, {"文档路径序号表": [{"文档路径": "../秘密.md", "序号": 0}]}):
+            失败样本(参数表, "参数错误")
+        失败样本({"包含": ["条款"], "文档路径序号表": [{"文档路径": "项目文档/缺失.md", "序号": 0}]}, "missing")
+        参数表 = {"包含": ["条款"], "条数": 2, "字节预算": 2048}
+        读数 = 读夹具(参数表)
+        游标值 = 读数["游标"]
+        查询结果 = 读夹具(dict(参数表, 游标=游标值))
+        记样本("分页无重复", 读数["条目"][0]["来源"] != 查询结果["条目"][0]["来源"])
+        for 预算值 in (1024, 1536, 2048, 8192, 16384):
+            try:
+                输出文本 = 上下文读取.读取上下文(树根, {"字节预算": 预算值, "条数": 50}, "样本", "样本HEAD")
+                记样本("UTF8预算" + str(预算值), len(输出文本.encode()) <= 预算值 and json.loads(输出文本)["输出字节"] == len(输出文本.encode()))
+            except 上下文来源.上下文失败 as 失败原因:
+                记样本("UTF8预算" + str(预算值), 失败原因.错误种类 == "预算不足")
+        读数 = 读夹具({"包含": ["条款"], "字节预算": 2048, "文档路径序号表": [{"文档路径": "项目文档/设计哲学.md", "序号": 4}]})
+        记样本("长条完整来源投影", 读数["预算投影"] == 1 and "状态" in 读数["条目"][0]["内容"])
+        文件路径 = 树根 / "README.md"
+        文件路径.write_text("# 宪法\n已变\n", encoding="utf-8")
+        try:
+            读夹具(dict(参数表, 游标=游标值))
+            记样本("版本变化拒续页", False)
+        except 上下文来源.上下文失败 as 失败原因:
+            记样本("版本变化拒续页", 失败原因.错误种类 == "游标过期")
+        真读取 = 上下文读取.读上下文条目
+        def 变更来源(*参数表):
+            yield from 真读取(*参数表)
+            文件路径.write_text("# 并发变化\n", encoding="utf-8")
+        with patch.object(上下文读取, "读上下文条目", 变更来源):
+            try:
+                读夹具({})
+                记样本("跨源变化拒不一致", False)
+            except 上下文来源.上下文失败 as 失败原因:
+                记样本("跨源变化拒不一致", 失败原因.错误种类 == "不一致")
+        库件 = 树根 / "开发工具/信息核心/信息核心.db"
+        写前内容 = 库件.read_bytes()
+        库件.unlink()
+        失败样本({}, "missing")
+        库件.write_bytes(b"corrupt")
+        失败样本({}, "corrupt")
+        库件.write_bytes(写前内容)
+        (树根 / 上下文来源.未完成件).write_text("{", encoding="utf-8")
+        失败样本({}, "corrupt")
+        (树根 / 上下文来源.未完成件).write_text('{"行":[]}', encoding="utf-8")
+        库件.with_name(库件.name + "-wal").write_bytes("活动事务".encode())
+        失败样本({}, "不一致")
+        库件.with_name(库件.name + "-wal").unlink()
+        with sqlite3.connect(库件) as 连接:
+            连接.execute("pragma journal_mode=wal")
+            连接.execute("pragma wal_autocheckpoint=0")
+            连接.execute("insert into 规则 values(?,?,?,?,?)", ("规则-WAL", "命名口径", "未检查点", "活动WAL内容", "样本"))
+            连接.commit()
+            写前状态 = 读盘状态(树根)
+            失败样本({}, "不一致")
+            记样本("真实WAL未检查点不报当前且零写", 库件.with_name(库件.name + "-wal").stat().st_size > 0 and 写前状态 == 读盘状态(树根))
+    回执 = subprocess.run(["git", "branch", "--show-current"], cwd=仓根, capture_output=True, text=True, timeout=5)
+    分支值 = 回执.stdout.strip()
+    开工号 = 分支值.split("/")[-1] if 分支值.startswith("腿/v1-") else "v1-000000"
+    命令表 = [{"jsonrpc": "2.0", "id": 1, "method": "tools/list"},
+             {"jsonrpc": "2.0", "id": 2, "method": "tools/call", "params": {"name": "v1_context", "arguments": {}}},
+             {"jsonrpc": "2.0", "id": 3, "method": "tools/call", "params": {"name": "v1_context", "arguments": {"开工ID": 开工号}}}]
+    回执 = subprocess.run([sys.executable, "-B", "开发工具/MCP服务.py"], cwd=仓根, input="".join(json.dumps(命令行参数, ensure_ascii=False) + "\n" for 命令行参数 in 命令表), capture_output=True, text=True, timeout=5)
+    响应表 = [json.loads(源码行) for 源码行 in 回执.stdout.splitlines() if 源码行.startswith("{")]
+    记样本("真实MCP发现工具", 回执.returncode == 0 and any(工具项["name"] == "v1_context" for 工具项 in 响应表[0]["result"]["tools"]))
+    输出文本 = 响应表[1]["result"]["content"][0]["text"]
+    记样本("真实MCP数据与预算", not 响应表[1]["result"]["isError"] and json.loads(输出文本)["条目"] and len(输出文本.encode()) <= 8192)
+    读数 = json.loads(响应表[2]["result"]["content"][0]["text"])
+    记样本("正式开工树解析", (not 响应表[2]["result"]["isError"] and 读数["树绝对路径"].endswith(开工号)) if 开工号 != "v1-000000" else (响应表[2]["result"]["isError"] and 读数["错误"]["种类"] == "missing"))
+    return 输出缓冲
