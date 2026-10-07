@@ -216,10 +216,10 @@ def 上下文样本(仓根, 工具表=None):
     服务对象, 监听端口 = http传输样本._起环回(仓根, 登记工具表)
     try:
         标准头 = dict(http传输样本.标准头)
-        标准头["Mcp-Session-Id"] = http传输样本._调用(监听端口, "POST", http传输样本._报文(
+        http传输样本._调用(监听端口, "POST", http传输样本._报文(
             {"jsonrpc": "2.0", "id": 1, "method": "initialize",
              "params": {"protocolVersion": "2025-06-18", "capabilities": {},
-                        "clientInfo": {"name": "同态镜像", "version": "0"}}}), 标准头)[2]
+                        "clientInfo": {"name": "同态镜像", "version": "0"}}}), 标准头)
         镜像信封 = json.loads(json.loads(http传输样本._调用(监听端口, "POST", http传输样本._报文(
             命令表[1]), 标准头)[3])["result"]["content"][0]["text"])
         对照信封 = json.loads(响应表[1]["result"]["content"][0]["text"])
