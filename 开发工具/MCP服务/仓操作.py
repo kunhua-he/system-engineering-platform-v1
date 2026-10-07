@@ -36,10 +36,8 @@ def 跑命令(命令表: list, cwd, 超时秒数=超时秒, 输入文本=None, �
     `子进程环境` 给的键**并进**当前环境（不是替换）。git 的 push/commit 必须带 `GIT_TERMINAL_PROMPT=0`：
     不设超时 + 远端要认证 ⇒ git 会**等着人敲密码**，那是一个没有上限的挂起。
     """
-    import os
-    环境表 = dict(os.environ)
-    if 子进程环境:
-        环境表.update(子进程环境)
+    from .合主干有界跑 import 干净环境
+    环境表 = 干净环境(子进程环境)
     try:
         回执 = subprocess.run(命令表, cwd=str(cwd), capture_output=True, text=True,
                             input=输入文本, timeout=超时秒数, env=环境表)
