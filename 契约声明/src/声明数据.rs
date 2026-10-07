@@ -139,6 +139,7 @@ const fn 取字节串指针(字节串: &'static [u8]) -> *const u8 {
 
 // ── 按表拆出的子件（文件名非 ASCII ⇒ 逐条给 `#[path]`）──
 #[path = "平台与类型数据.rs"] mod 平台与类型数据;
+#[path = "参数默认数据.rs"] mod 参数默认数据;
 #[path = "命令类别数据.rs"] mod 命令类别数据;
 #[path = "错误码数据.rs"] mod 错误码数据;
 #[path = "错误码信息数据.rs"] mod 错误码信息数据;
@@ -147,6 +148,7 @@ const fn 取字节串指针(字节串: &'static [u8]) -> *const u8 {
 
 // ── 再导出：公开面（符号名 · 路径）逐字不变 ──
 pub use 平台与类型数据::*;
+pub use 参数默认数据::*;
 pub use 命令类别数据::*;
 pub use 错误码数据::*;
 pub use 错误码信息数据::*;
