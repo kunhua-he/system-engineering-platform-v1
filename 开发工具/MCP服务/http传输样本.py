@@ -9,6 +9,7 @@
 """
 import http.client
 import json
+import socket
 import threading
 
 from . import 传输_http
@@ -53,6 +54,32 @@ def _错误码(应答数据):
         return (json.loads(应答数据).get("error") or {}).get("code")
     except ValueError:
         return None
+
+
+def _原始请求(监听端口, 原始字节, 读超时=2):
+    """用裸 socket 发原始字节，读回全部响应 ⇒ 响应字节（验 keep-alive 帧与关连接行为）。"""
+    连接 = socket.create_connection(("127.0.0.1", 监听端口), 读超时)
+    try:
+        连接.sendall(原始字节)
+        连接.settimeout(读超时)
+        响应字节 = b""
+        try:
+            while True:
+                响应片段 = 连接.recv(65536)
+                if not 响应片段:
+                    break
+                响应字节 += 响应片段
+        except socket.timeout:
+            pass
+        return 响应字节
+    finally:
+        连接.close()
+
+
+def _原始帧(路径, 请求头, 正文=b""):
+    """拼一条原始 HTTP/1.1 POST 帧 ⇒ 字节（Content-Length 按正文实数）。"""
+    return (b"POST " + 路径.encode("utf-8") + b" HTTP/1.1\r\n" + 请求头
+            + b"Content-Length: " + str(len(正文)).encode("utf-8") + b"\r\n\r\n" + 正文)
 
 
 def 样本列表(仓根, 工具表):
@@ -130,6 +157,63 @@ def 样本列表(仓根, 工具表):
         状态码, _, _, _ = _调用(监听端口, "POST", _报文(
             {"jsonrpc": "2.0", "id": 10, "method": "tools/list", "params": {}}), 标准头, "/wrong-path")
         样本表.append(("错误路径 ⇒ HTTP %s（期望 404）" % 状态码, 状态码 == 404))
+        # —— keep-alive 帧错位回归：真实 ZCode 形态（新版探测头 + 同连接续请求）——
+        连接 = http.client.HTTPConnection("127.0.0.1", 监听端口, timeout=5)
+        try:
+            探测头 = dict(标准头)
+            探测头["MCP-Protocol-Version"] = "2026-07-28"
+            连接.request("POST", 服务路径, body=_报文(
+                {"jsonrpc": "2.0", "id": "server-discover-probe-1", "method": "server/discover",
+                 "params": {"_meta": {"io.modelcontextprotocol/protocolVersion": "2026-07-28",
+                                      "io.modelcontextprotocol/clientInfo": {"name": "zcode",
+                                                                             "version": "0.16.9"}}}}),
+                headers=探测头)
+            应答 = 连接.getresponse()
+            状态码, 应答数据 = 应答.status, 应答.read()
+            样本表.append(("同连接·初始化前无会话新版探测头 ⇒ HTTP %s · 错误码 %s（期望 200 / -32601，不回 400）"
+                     % (状态码, _错误码(应答数据)), 状态码 == 200 and _错误码(应答数据) == -32601))
+            连接.request("POST", 服务路径, body=_报文(
+                {"jsonrpc": "2.0", "id": 101, "method": "initialize",
+                 "params": {"protocolVersion": "2025-06-18", "capabilities": {},
+                            "clientInfo": {"name": "zcode", "version": "0.16.9"}}}), headers=标准头)
+            应答 = 连接.getresponse()
+            状态码, 会话头, 应答数据 = 应答.status, 应答.getheader("Mcp-Session-Id"), 应答.read()
+            样本表.append(("同连接续 initialize ⇒ HTTP %s · 版本 %s · 会话头 %s（探测未污染下一帧）"
+                     % (状态码, (json.loads(应答数据).get("result") or {}).get("protocolVersion"),
+                        bool(会话头)),
+                    状态码 == 200 and bool(会话头)
+                    and (json.loads(应答数据).get("result") or {}).get("protocolVersion") == "2025-06-18"))
+        finally:
+            连接.close()
+
+        # —— 早退必须排空：坏 Host 403 后同连接续请求不得错位（客户端只认 JSON，绝不许 HTML）——
+        探测正文 = _报文({"jsonrpc": "2.0", "id": 102, "method": "ping", "params": {}})
+        坏主机头 = b"Host: evil.example.com\r\nContent-Type: application/json\r\n"
+        好主机头 = b"Host: 127.0.0.1\r\nContent-Type: application/json\r\nConnection: close\r\n"
+        原始字节 = _原始请求(监听端口,
+            _原始帧(服务路径, 坏主机头, 探测正文) + _原始帧(服务路径, 好主机头, 探测正文))
+        样本表.append(("坏 Host 403 后同连接续请求 ⇒ 响应段数 %d · 无 HTML %s · 含 403 %s · 含 200 %s"
+                 % (原始字节.count(b"HTTP/1.1 "), b"<!DOCTYPE" not in 原始字节,
+                    b"HTTP/1.1 403" in 原始字节, b"HTTP/1.1 200" in 原始字节),
+                b"<!DOCTYPE" not in 原始字节 and 原始字节.count(b"HTTP/1.1 ") == 2
+                and b"HTTP/1.1 403" in 原始字节 and b"HTTP/1.1 200" in 原始字节))
+
+        # —— 坏 / 重复 Content-Length、chunked、超限：明确拒 + 关连接 + JSON（不 HTML 污染）——
+        拒绝项 = (
+            ("请求体超上限", b"Content-Length: 99999999\r\n"),
+            ("重复 Content-Length", b"Content-Length: 2\r\nContent-Length: 2\r\n"),
+            ("不支持 chunked", b"Transfer-Encoding: chunked\r\n"),
+        )
+        for 说明, 头块 in 拒绝项:
+            原始字节 = _原始请求(监听端口,
+                b"POST " + 服务路径.encode("utf-8") + b" HTTP/1.1\r\nHost: 127.0.0.1\r\n"
+                b"Content-Type: application/json\r\n" + 头块 + b"\r\n{}")
+            样本表.append(("%s ⇒ 关连接 %s · JSON %s · 非 HTML %s"
+                     % (说明, b"Connection: close" in 原始字节,
+                        b"application/json" in 原始字节, b"<!DOCTYPE" not in 原始字节),
+                    b"Connection: close" in 原始字节 and b"application/json" in 原始字节
+                    and b"<!DOCTYPE" not in 原始字节))
+
     finally:
         服务对象.shutdown()
         服务对象.server_close()
