@@ -1,16 +1,12 @@
 # -*- coding: utf-8 -*-
 """仓状态 —— `v1_repo` 的实现：仓级只读快照（一次给全）＋环境体检。
 
-**为什么要有它**（多路代理实测）：一次「仓现在什么样」要 8+ 条命令拼 —— `git status`（三方差异与
-未跟踪）· `git branch`（未合主干的分支）· `git worktree list`（树在不在）· `rev-list --left-right
---count`（相对主干位次）· 账本查询（已释放但树仍在）· `hash-object`（源库 blob 指纹）。本件把那次
-拼图收成一个**有界只读回执**，只跑查询类 git 子命令 ＋账本 sqlite **只读**连接（零写）。
+**为什么要有它**（多路代理实测）：一次「仓现在什么样」要 8+ 条命令拼（status / branch / worktree
+list / rev-list / 账本查询 / hash-object），逐条一次往返。本件把它收成一个**有界只读回执**，只跑
+查询类 git 子命令 ＋账本 sqlite **只读**连接（零写）。
 
-**bare 仓根**：本仓主目录 `core.bare=true` ⇒ 需要工作树的命令（`status`/`hash-object`）要显式
-给 `GIT_DIR`/`GIT_WORK_TREE`（与 `shell.py` 同一份口径），否则 git 报「must be run in a work tree」。
-
-**位次口径**：`git rev-list --left-right --count 主干...<引用>` 输出 `落后 领先`（落后 = 主干独有），
-这是「旧树读代码被误当现状」的解药 —— 跨树回执必带它（`%(ahead-behind:主干)` 输出是反的，不用）。
+**bare 仓根**：本仓主目录 `core.bare=true` ⇒ 需要工作树的命令（`status`/`hash-object`）要显式给
+`GIT_DIR`/`GIT_WORK_TREE`（与 `shell.py` 同一份口径），否则 git 报「must be run in a work tree」。
 """
 
 import json
@@ -96,14 +92,10 @@ def 相对主干位次(仓根, 引用, 树根=None) -> str:
         return "领先主干 %s（主干后代）" % 段表[1]
     return "分叉：落后 %s · 领先 %s" % (段表[0], 段表[1])
 
-def 账本路径() -> Path:
-    """开工账本落点（只拼路径，不建目录）—— 走 `运行数据根` 包，不自拼。"""
-    return 子目录路径(解析当前环境(), 子目录类别) / 库文件名
-
 def 读开工表() -> tuple:
     """只读开工账本 ⇒ `(行表, 错误)`；库不在 / 读不动如实说，不假装空。"""
     try:
-        库件 = 账本路径()
+        库件 = 子目录路径(解析当前环境(), 子目录类别) / 库文件名
     except 无位置 as 错误:
         return [], "开工账本落点解析不出：%s" % 错误
     if not 库件.is_file():
@@ -145,6 +137,32 @@ def 拒未知(参数表, 键集) -> None:
     未定 = sorted(set(参数表) - set(键集) - {"操作"})
     if 未定:
         raise 参数错("未知键 %s；本操作只认 %s" % ("、".join(未定), "、".join(sorted(键集))))
+
+def 骨架(工具名, 工具说明, 操作表, 分发表, 参数表, 仓根) -> tuple:
+    """三字段入口：`开工ID` / `操作` / `参数`。`操作` 留空 ⇒ **只读发现调用**（返回操作目录）。"""
+    if not isinstance(参数表, dict):
+        return 2, "参数拒绝：arguments 要是对象"
+    操作名 = str(参数表.get("操作") or "").strip()
+    if not 操作名:
+        行表 = ["%s —— %s" % (工具名, 工具说明), "操作（留空 = 本目录）："]
+        for 参名 in 操作表:
+            必需, 可选, 最短例 = 操作表[参名]
+            行表.append("  %s\n    必需[%s] · 可选[%s]\n    最短例 %s"
+                    % (参名, "、".join(必需) or "—", "、".join(可选) or "—", 最短例))
+        return 0, "\n".join(行表)
+    if 操作名 not in 分发表:
+        return 2, "未知 `操作`：%r；可选：%s" % (操作名, "、".join(操作表))
+    实参 = 参数表.get("参数")
+    if 实参 is None:
+        实参 = {}
+    if not isinstance(实参, dict):
+        return 2, "`参数` 要是对象（收到 %r）" % (实参,)
+    if 参数表.get("开工ID") and "开工ID" not in 实参:
+        实参 = dict(实参, **{"开工ID": 参数表["开工ID"]})
+    try:
+        return 分发表[操作名](仓根, 实参)
+    except 参数错 as 错误:
+        return 2, "参数拒绝：%s\n最短例：%s" % (错误, 操作表[操作名][2])
 
 def _三方(仓根, 树根) -> tuple:
     """`git status --porcelain` ⇒ `(差异表, 错误)`（键：暂存 / 未暂存 / 未跟踪）。"""
@@ -323,24 +341,18 @@ def _体检_mcp(仓根) -> list:
             行表.append("  %s → `%s`：★ 模块件不在（%s）" % (服务名, 模块名, 模块件))
     return 行表
 
-def _体检_索引超时(仓根) -> list:
+def _体检_工具面(仓根) -> list:
+    """同步索引的 timeout 读数 + 修改器是否按后缀分流（两项环境体检读数）。"""
     行表 = ["同步索引的 timeout 检查（判据 ㊲：≤5 秒）："]
     for 相对路径 in (索引路径, "开发工具/代码地图.py"):
         件路径 = Path(仓根) / 相对路径
-        if not 件路径.is_file():
-            行表.append("  %s：不在" % 相对路径)
-            continue
-        命中表 = 超时参.findall(件路径.read_text(encoding="utf-8", errors="replace"))
-        行表.append("  %s：timeout 设置 %s" % (相对路径, "、".join(命中表) or "无（不设超时，环境步）"))
-    return 行表
-
-def _体检_修改分流(仓根) -> list:
+        命中表 = 超时参.findall(件路径.read_text(encoding="utf-8", errors="replace")) if 件路径.is_file() else None
+        行表.append("  %s：%s" % (相对路径, "不在" if 命中表 is None
+                 else "timeout 设置 %s" % ("、".join(命中表) or "无（不设超时，环境步）")))
     件路径 = Path(仓根) / "开发工具/MCP服务/修改.py"
-    if not 件路径.is_file():
-        return ["修改器后缀分流：件不在（开发工具/MCP服务/修改.py）"]
-    源码 = 件路径.read_text(encoding="utf-8", errors="replace")
-    按后缀 = "按后缀分流" if ("扫局部绑定" in 源码 and "件后缀" in 源码) else "★ 未见按后缀分流"
-    return ["修改器后缀分流：%s（开发工具/MCP服务/修改.py）" % 按后缀]
+    源码 = 件路径.read_text(encoding="utf-8", errors="replace") if 件路径.is_file() else ""
+    按后缀 = ("按后缀分流" if ("扫局部绑定" in 源码 and "件后缀" in 源码) else "★ 未见按后缀分流") if 源码 else "件不在"
+    return 行表 + ["修改器后缀分流：%s（开发工具/MCP服务/修改.py）" % 按后缀]
 
 def 环境体检(仓根, 参数表) -> tuple:
     拒未知(参数表, ("条数",))
@@ -359,8 +371,7 @@ def 环境体检(仓根, 参数表) -> tuple:
             行表.append("  %s" % 路径)
     行表 += _体检_md账本(仓根, 记录条数)
     行表 += _体检_mcp(仓根)
-    行表 += _体检_索引超时(仓根)
-    行表 += _体检_修改分流(仓根)
+    行表 += _体检_工具面(仓根)
     return 0, 收尾(行表)
 
 工具名 = "v1_repo"
@@ -372,29 +383,15 @@ def 环境体检(仓根, 参数表) -> tuple:
     "仓状态": ((), ("开工ID", "条数"), '{"操作":"仓状态"}'),
     "环境体检": ((), ("条数",), '{"操作":"环境体检"}'),
 }
+分发表 = {"仓状态": 仓状态, "环境体检": 环境体检}
 模式 = {
-    "type": "object", "additionalProperties": False, "required": ["操作"],
+    "type": "object", "additionalProperties": False,
     "properties": {
-        "操作": {"type": "string", "enum": ["仓状态", "环境体检"], "description": "要跑哪个只读操作"},
-        "开工ID": {"type": "string", "description": "仓状态 用；给了只看那条开工的工作树（不给=全仓）"},
-        "条数": {"type": "integer", "minimum": 1, "maximum": 200, "default": 40,
-               "description": "清单类输出的条数上限"},
+        "开工ID": {"type": "string", "description": "开工ID（可选；给了就只看那条开工的工作树）"},
+        "操作": {"type": "string", "description": "要跑哪个只读操作；留空 = 只读发现调用，返回操作目录"},
+        "参数": {"type": "object", "description": "该操作自有的参数（见 操作目录 里各操作的 必需/可选）"},
     },
 }
 
 def 派发(参数表, 仓根) -> tuple:
-    """`v1_repo` 入口 ⇒ `(退出码, 输出文本)`。缺 `操作` / 未知 `操作` / 未知键一次拒并给最短例。"""
-    if not isinstance(参数表, dict):
-        return 2, "参数拒绝：arguments 要是对象"
-    操作名 = str(参数表.get("操作") or "").strip()
-    模板 = "、".join(操作表[参名][2] for 参名 in 操作表)
-    if not 操作名:
-        return 2, "缺 `操作`；可选：%s\n最短例：%s" % ("、".join(操作表), 模板)
-    if 操作名 not in 操作表:
-        return 2, "未知 `操作`：%r；可选：%s\n最短例：%s" % (操作名, "、".join(操作表), 模板)
-    try:
-        if 操作名 == "仓状态":
-            return 仓状态(仓根, 参数表)
-        return 环境体检(仓根, 参数表)
-    except 参数错 as 错误:
-        return 2, "参数拒绝：%s\n最短例：%s" % (错误, 操作表[操作名][2])
+    return 骨架(工具名, 工具说明, 操作表, 分发表, 参数表, 仓根)
