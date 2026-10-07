@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""MCP 工具面 —— 五个工具：开工 · 符号 · 修改器 · 门禁 · 上下文。
+"""MCP 工具面 —— 六个工具：开工 · 符号 · 修改器 · 门禁 · 上下文 · 终端。
 
 **为什么要有 MCP，而不是「仓里放几个脚本」**（华哥原话）：
 「封装工具是没用的，agent 天然的弱点。只有 mcp 这种强制协议才不会漂移」—— 本仓自身就是这条的实证：
@@ -33,6 +33,7 @@ from .修改 import 派发 as 修改派
 from .符号 import 派发 as 符号派
 from .开工 import 派发 as 开工派
 from .上下文 import 派发 as 上下文派
+from .shell import 派发 as 终端派
 
 上下文模式 = {
     "type": "object", "additionalProperties": False,
@@ -47,6 +48,21 @@ from .上下文 import 派发 as 上下文派
         "字节预算": {"type": "integer", "minimum": 1024, "maximum": 16384, "default": 8192},
         "游标": {"type": "string", "maxLength": 1024, "description": "绑定树、查询与来源版本；变更后拒绝续页"},
     },
+}
+
+终端模式 = {
+    "type": "object", "additionalProperties": False,
+    "properties": {
+        "命令": {"type": "string", "minLength": 1, "description":
+               "要执行的 shell 命令（必填）。git status / ls / cat 一段这类只读查询用得多；"
+               "改文件仍走 `v1_edit`。"},
+        "开工ID": {"type": "string", "maxLength": 32, "description":
+                "可选。给了就在这条开工的工作树里跑（问 git 精确定位，如 `v1-100440`）；"
+                "留空=当前服务仓根。**不接任意路径**。"},
+        "超时": {"type": "integer", "minimum": 1, "maximum": 5, "default": 5, "description":
+               "超时秒数，默认 5、硬顶 5（判据 ㊲）；传更大的会被压回 5。"},
+    },
+    "required": ["命令"],
 }
 
 工具表 = {
@@ -194,4 +210,10 @@ from .上下文 import 派发 as 上下文派
                    "只跑这几条判据（给判据名的一段，如 `超时设置` · `命名防回潮`）；留空=全量"},
         },
     }),
+    "v1_shell": (终端派, "终端命令",
+              "本地秒级执行 shell 命令（MCP 长驻进程里跑，省一次往返）。只传 `命令`；"
+              "`开工ID` 可选（在该开工的工作树里跑，不填=当前服务仓根）；`超时` 可选（默认 5、硬顶 5）。"
+              "回执带 退出码 / 工作目录 / 超时 / stdout / stderr；超长输出截断并给完整日志路径。"
+              "改文件仍走 `v1_edit` —— 本工具**不授权**绕 `v1_edit`、跳闸、远端推送、杀陌生进程。",
+              终端模式),
 }
