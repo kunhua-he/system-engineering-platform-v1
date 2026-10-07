@@ -53,11 +53,8 @@ def 印失败(状态行: str, 应答体: dict) -> int:
             print("      为什么不能自愈：{}".format(校验条目.get("为什么不能自愈")))
     elif "协议错误" in 应答体:
         print("  协议错误：{}".format(应答体["协议错误"]))
-    else:
-        print("  返回体：")
-        print(漂亮化应答(应答体))
-    if "耗时微秒" in 应答体:
-        print("  耗时微秒：{}".format(应答体["耗时微秒"]))
+    print("  完整失败应答：")
+    print(漂亮化应答(应答体))
     return 1
 
 
