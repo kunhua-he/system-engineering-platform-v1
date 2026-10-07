@@ -35,6 +35,10 @@ def 入口函数(argv=None):
         return 0 if (工具表 and callable(跑主循环)) else 6
     if "--自检" in 命令行参数:
         return 自检样本.跑自检(仓根, 工具表)
+    if "--长样本" in 命令行参数:
+        # 重事务认领链的 7 场景（1.7–2.8 s，装不进 5 秒硬顶）⇒ 挂在提交长路 `一键验证.py --自测`。
+        from MCP服务 import 认领样本
+        return 认领样本.入口(命令行参数, 仓根, 工具表)
     return 跑主循环(仓根, 工具表)
 
 

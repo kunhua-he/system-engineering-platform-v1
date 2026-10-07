@@ -28,6 +28,16 @@ from 代码地图 import 文件指纹  # noqa: E402  —— 指纹只此一份�
 禁终端提示环境 = {"GIT_TERMINAL_PROMPT": "0"}
 
 
+# Git 的**环境重定向**键：给了它们，git 就**不再认 `cwd` 里的那个仓**。
+# 本件一律把它们从子进程环境里**删掉**（不是置空 —— `GIT_DIR=""` 会让 git 直接报
+# `not a git repository`，实测夹具 `git add` 退出码 128）：每个调用方都用 `cwd` 明确指定目标树，
+# 继承这几个键只会让命令打到别的仓。**实测事故**：父进程带 `GIT_DIR` 时，夹具在临时仓里
+# `git add 样例.py 规则.db`，条目落进了**真仓索引**（`--git-dir` 指真仓、`--show-toplevel` 仍是
+# 临时仓）⇒ 真仓工作区没这两个件 ⇒ 状态呈 `AD`。
+Git重定向键 = ("GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE", "GIT_OBJECT_DIRECTORY",
+            "GIT_ALTERNATE_OBJECT_DIRECTORIES", "GIT_COMMON_DIR", "GIT_PREFIX")
+
+
 def 跑命令(命令表: list, cwd, 超时秒数=超时秒, 输入文本=None, 子进程环境=None) -> tuple:
     """跑一条命令 ⇒ `(退出码, 合并输出)`。超时给 `-1`（**不许当成通过**）。
 
@@ -35,6 +45,7 @@ def 跑命令(命令表: list, cwd, 超时秒数=超时秒, 输入文本=None, �
     `输入文本` 给了就从 stdin 喂进去（`git commit -F -` 用 —— 免得为一条提交信息落临时件）。
     `子进程环境` 给的键**并进**当前环境（不是替换）。git 的 push/commit 必须带 `GIT_TERMINAL_PROMPT=0`：
     不设超时 + 远端要认证 ⇒ git 会**等着人敲密码**，那是一个没有上限的挂起。
+    **`Git重定向键` 一律剔除**（理由见该常量的注释）—— 目标树只由 `cwd` 决定。
     """
     from .合主干有界跑 import 干净环境
     环境表 = 干净环境(子进程环境)
