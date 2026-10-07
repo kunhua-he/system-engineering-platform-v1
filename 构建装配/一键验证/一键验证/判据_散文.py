@@ -17,15 +17,45 @@ LICENSE（不是我们的散文）。
 纪律写在 `开发规范.md` §八.8 里，但**没有判据** —— 于是它只是一条能手跑的命令，会随仓长大而失效。
 本条把它变成常驻判据：读数不为空即红，并逐条指名那份散文。
 
+**git 定位**（2026-10-07）：本仓主目录是 **bare 布局**（`core.bare = true`）⇒
+`git -C <仓根> ls-files` 退 128「must be run in a work tree」。故**显式**给 `--git-dir` /
+`--work-tree`（`.git` 是目录时），并剔除继承的 Git 定位变量；不改全局 Git 配置、不改
+`core.bare`。`.git` 是文件（工作树）⇒ 退 `-C`（同 `开发工具/MCP服务/shell.py` 口径）。
+
 **非 git 仓**（读不出被忽略面）⇒ 报**判不了**（未判），不是通过 —— 空集不算通过。
 故正向样本的合成仓自身 `git init`（见 `合成仓.py`），这样本条在夹具上也有对象。
 """
 from __future__ import annotations
 
+import os
 import subprocess
+from pathlib import Path
 
 from .验证小工具 import 判不了, 违规
 from .常量 import 检查名
+
+
+# 子进程不许继承的 Git 定位变量（会把 git 带到别的树 / 别的 index 上）—— 同 `开发工具/MCP服务/shell.py`
+继承定位变量 = ("GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE", "GIT_OBJECT_DIRECTORY",
+              "GIT_COMMON_DIR", "GIT_ALTERNATE_OBJECT_DIRECTORIES")
+
+
+def 版本库命令(仓根: Path, *子命令: str) -> list:
+    """git 命令**显式定位**这条仓：`.git` 是目录（含 bare 主目录）⇒ 给 `--git-dir` / `--work-tree`；
+    否则（工作树 `.git` 是文件）⇒ 退 `-C`。与 `开发工具/MCP服务/shell.py` 同一份口径。
+    """
+    仓库元目录 = 仓根 / ".git"
+    if 仓库元目录.is_dir():
+        return ["git", "--git-dir", str(仓库元目录), "--work-tree", str(仓根), *子命令]
+    return ["git", "-C", str(仓根), *子命令]
+
+
+def 版本库环境() -> dict:
+    """子进程环境：剔除继承的 Git 定位变量（避免读成被污染的仓）。"""
+    环境表 = dict(os.environ)
+    for 键名 in 继承定位变量:
+        环境表.pop(键名, None)
+    return 环境表
 
 
 # 被忽略面里**按设计允许**的 `.md` 前缀（rustdoc 生成的字体 LICENSE，不是我们的散文）。
@@ -45,8 +75,8 @@ def 忽略条目(仓根) -> tuple:
         return _忽略条目缓存[键名]
     try:
         判定汇总 = subprocess.run(
-            ["git", "-C", 键名, "ls-files", "--others", "--ignored", "--exclude-standard"],
-            capture_output=True, text=True, timeout=5,
+            版本库命令(Path(键名), "ls-files", "--others", "--ignored", "--exclude-standard"),
+            capture_output=True, text=True, timeout=5, env=版本库环境(),
         )
     except (OSError, subprocess.SubprocessError) as 错误:
         待处理值 = ([], f"跑不动 git（{type(错误).__name__}：{错误}）")
