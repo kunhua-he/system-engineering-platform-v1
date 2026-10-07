@@ -13,6 +13,8 @@ GET 回 405（本服务不主动向客户端发起请求 / 通知，故不提供
 DELETE 终止会话；不带会话也照服务（无状态可用）。
 **安全**：只绑环回；`Origin` 有值则须为本机环回，否则 403；`Host` 须为环回，否则 403（防 DNS
 rebinding）；请求体 / 并发连接 / 连接空闲全部有界；不设任何 CORS 头（不开放到 `*`）。
+**断连**：客户端先关连接 / RST 属预期（不是服务缺陷）—— 只把三类网络断开收成**一条有界单行**，
+其余异常照旧冒泡到 `handle_error`（见 `请求处理器.handle_one_request`）。
 
 依据：MCP Streamable HTTP 规格（2025-06-18）· `项目文档/决策记录/2026-09-27_MCP适配层.md`。
 """
@@ -31,6 +33,11 @@ from .服务常量 import (绑定地址, 并发连接上限, 协议版本集, �
 环回主机集 = {"127.0.0.1", "localhost", "::1", "[::1]"}
 # MCP 通知方法统一前缀（如 `notifications/initialized`）：带 id 的才是请求。
 已知通知前缀 = "notifications/"
+# 预期网络断开的三类异常（客户端先关连接 / RST / 中止）：只吞这三类，其余照旧冒泡 ——
+# 见 `请求处理器.handle_one_request`。这是「客户端走了」，不是服务缺陷。
+断连异常类 = (BrokenPipeError, ConnectionResetError, ConnectionAbortedError)
+# 断连日志里路径字段的截断上限（有界：日志不许被一条超长路径撑爆）。
+断连字段上限 = 200
 
 
 def 协商协议版本(客户端版本):
@@ -79,8 +86,32 @@ class 请求处理器(BaseHTTPRequestHandler):
     def log_message(self, 日志格式, *实参):
         """静音：默认把每请求写 stderr —— 服务日志由 `服务管理` 落盘，不污染。"""
 
+    def handle_one_request(self):
+        """按帧处理一条请求；**只吞预期网络断开**（客户端先走 / RST）。
+
+        读请求行撞 `ConnectionResetError`、写响应撞 `BrokenPipeError` / `ConnectionAbortedError`
+        都是客户端已离开，不是服务缺陷 —— 默认 `handle_error` 会把整段 traceback 打到 stderr
+        （服务日志件），一次断连刷十几行且无定位。这里**收成一条有界单行**并关连接；
+        **其余异常照旧冒泡**到 `handle_error`（编程错 / 别的 IO 错必须可见，绝不吞）。
+        """
+        try:
+            super().handle_one_request()
+        except 断连异常类 as 断开原因:
+            self._记断连(断开原因)
+            self.close_connection = True
+
+    def _记断连(self, 断开原因):
+        """一条有界可定位单行（HTTP 方法 / 路径 / MCP 方法 / 报文号 / 原因），不打 traceback。"""
+        路径文本 = (getattr(self, "path", "") or "-")[:断连字段上限]
+        sys.stderr.write("断连：%s %s · MCP方法=%s · 报文号=%s · 原因=%s\n" % (
+            getattr(self, "command", "") or "-", 路径文本,
+            getattr(self, "_当前方法名", None), getattr(self, "_当前报文号", None),
+            type(断开原因).__name__))
+
     def do_POST(self):
         self._本请求体已读 = False
+        self._当前报文号 = None
+        self._当前方法名 = None
         # 先有界读全请求体，再做入口校验：任何早退（路径 / 主机 / 来源 / 版本）都已在
         # keep-alive 上排空，绝不把未读 body 留给下一条请求（否则请求行错位 ⇒ 回 HTML 报错）。
         正文 = self._读请求体()
@@ -190,6 +221,9 @@ class 请求处理器(BaseHTTPRequestHandler):
             return
         报文号 = 请求报文.get("id")
         方法名 = 请求报文.get("method")
+        # 定位给断连日志用：响应写出撞断连时，这一条请求是谁才说得清。
+        self._当前报文号 = 报文号
+        self._当前方法名 = 方法名
         if 报文号 is None and isinstance(方法名, str):
             if 方法名.startswith(已知通知前缀):
                 self._写响应(202, 是否空体=True)
