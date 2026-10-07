@@ -225,12 +225,33 @@ def 取git值(目标路径, 参数表: list) -> str:
     return 输出文本.strip() if 退出码 == 0 else ""
 
 
+# 取树快照：只由调用方显式开启的有限作用域内复用；默认关闭 ⇒ 生产每条现读（不盲长驻缓存）
+树快照 = None
+
+
+def 开树快照():
+    """开启取树快照并返回旧值（供 `关树快照` 还原）—— 同一稳定仓连发多条信封的场景（如自检）。"""
+    global 树快照
+    旧值, 树快照 = 树快照, {}
+    return 旧值
+
+
+def 关树快照(旧值):
+    """还原 `开树快照` 前的状态（作用域结束必须还原，别把快照留成长驻缓存）。"""
+    global 树快照
+    树快照 = 旧值
+
+
 def 取树(开工号: str, 仓根路径) -> dict:
     """信封里的 `树`：`{种类, 路径, 开工ID, 分支, HEAD}`。
 
     给了 `开工ID` ⇒ 问 git 精确定位那条开工的工作树（`找工作树`，**不碰账本、不建库**）；
     问不到 ⇒ 种类「未定」。留空 ⇒ 种类「服务仓根」。分支 / HEAD 由 git 现读（读不到给空串）。
+    开了 `树快照`（有限作用域）⇒ 同键复用；不开 ⇒ 每条现读。分支与 HEAD 合并成一条 git 调用。
     """
+    快照键 = (开工号 or "", str(仓根路径 or ""))
+    if 树快照 is not None and 快照键 in 树快照:
+        return 树快照[快照键]
     种类, 目标路径 = "服务仓根", str(仓根路径 or "")
     if 开工号:
         种类 = "未定"
@@ -241,10 +262,20 @@ def 取树(开工号: str, 仓根路径) -> dict:
             工作树 = None
         if 工作树 is not None:
             种类, 目标路径 = "工作树", str(工作树)
-    分支 = 取git值(目标路径, ["branch", "--show-current"])
-    HEAD = 取git值(目标路径, ["rev-parse", "HEAD"])
-    return {"种类": 种类, "路径": 目标路径, "开工ID": 开工号 or None,
+    from .仓操作 import 跑命令
+    退出码, 输出文本 = 跑命令(["git", "rev-parse", "HEAD", "--abbrev-ref", "HEAD"],
+                       cwd=目标路径, 超时秒数=取树超时秒)
+    行表 = [源码行.strip() for 源码行 in 输出文本.splitlines() if 源码行.strip()]
+    if 退出码 == 0 and len(行表) == 2:
+        分支, HEAD = ("" if 行表[1] == "HEAD" else 行表[1]), 行表[0]
+    else:
+        分支 = 取git值(目标路径, ["branch", "--show-current"])
+        HEAD = 取git值(目标路径, ["rev-parse", "HEAD"])
+    读数 = {"种类": 种类, "路径": 目标路径, "开工ID": 开工号 or None,
             "分支": 分支, "HEAD": HEAD}
+    if 树快照 is not None:
+        树快照[快照键] = 读数
+    return 读数
 
 
 def 有界(原文: str) -> tuple:
