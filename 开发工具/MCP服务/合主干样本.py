@@ -13,6 +13,30 @@ from unittest import mock
 from . import 合主干编排 as 编排, 合主干集成树 as 集成
 from .合主干有界跑 import 跑有界命令
 
+三态样本 = ("动作0源库冲突", "动作非0重放", "无冲突无动作")
+假信息核心源码 = (
+    "import sqlite3, sys\n"
+    "from pathlib import Path\n"
+    "参表 = sys.argv[1:]\n"
+    "键值 = {}\n"
+    "键 = None\n"
+    "for 项 in 参表[1:]:\n"
+    "    if 项.startswith('--'):\n"
+    "        键 = 项[2:]\n"
+    "        键值[键] = ''\n"
+    "    elif 键:\n"
+    "        键值[键] = 项\n"
+    "if 参表[0] != '登记':\n"
+    "    raise SystemExit(3)\n"
+    "连接 = sqlite3.connect(str(Path('开发工具/信息核心/信息核心.db')))\n"
+    "连接.execute('insert or replace into 命名登记 (名字, 语义, 模式, 来源, 状态) values (?,?,?,?,?)',\n"
+    "           (键值.get('名字', ''), 键值.get('语义', ''), 键值.get('模式', '对象+说明'),\n"
+    "            键值.get('来源', '新定义'), 键值.get('状态', '合格')))\n"
+    "连接.commit()\n"
+    "连接.close()\n"
+    "print('登记 ok')\n"
+)
+
 
 def 跑样本仓命令(仓根, *参数表):
     回执 = subprocess.run(["git", *参数表], cwd=仓根, capture_output=True, text=True,
@@ -125,6 +149,7 @@ def 跑样本():
                     跑样本仓命令(仓根, "worktree", "remove", "--force", str(已有树))
     with tempfile.TemporaryDirectory(prefix="v1定位样本-") as 临时目录:
         _验定位同步锁(Path(临时目录))
+    _验源库三态()
     退出码, 输出文本, 日志路径 = 跑有界命令([sys.executable,"-c","import sys;print('OUT-FIRST');sys.stderr.write('ERR-FIRST\\n'+'z'*9000000+'ERR-LAST');print('OUT-LAST')"],tempfile.gettempdir(),超时秒数=5)
     全文 = Path(日志路径).read_text()
     assert 退出码 == 0 and "ERR-FIRST" in 输出文本 and "ERR-LAST" in 全文 and "OUT-LAST" in 全文 and len(全文)>9000000
@@ -189,3 +214,90 @@ def _验定位同步锁(临时根):
                 assert 退出码!=0 and "原始异常" in 报告文本 and "主仓合并忙" not in 报告文本
     assert "主仓合并忙" not in 编排.派发("v1-999001",False,仓根,操作="查看现场")[1]
     print("通过 定位/CLI双路/同步保护/跨进程忙拒/不同仓/异常释放")
+
+
+def _读三态值(库件):
+    """读三态夹具库的**逻辑值**：未完成 号=7 的缺什么 · 命名登记 样本名 的语义 · 规则 编号=1 的内容。"""
+    连接 = sqlite3.connect("file:%s?mode=ro" % 库件, uri=True)
+    try:
+        未完成缺 = 连接.execute("select 缺什么 from 未完成 where 号=7").fetchone()[0]
+        命名语义 = 连接.execute("select 语义 from 命名登记 where 名字='样本名'").fetchone()[0]
+        规则内容 = 连接.execute("select 内容 from 规则 where 编号=1").fetchone()[0]
+    finally:
+        连接.close()
+    return 未完成缺, 命名语义, 规则内容
+
+
+def _建三态夹具(临时根, 名称):
+    """源库重放三态的临时裸主仓夹具 ⇒ (仓根, 腿树)。仓一个字节不改（系统临时目录，跑完删净）。"""
+    仓根, 腿树 = 临时根 / "主目录", 临时根 / "腿目录"
+    仓根.mkdir()
+    for 参数表 in (("init", "-b", "主干"), ("config", "user.name", "样本"),
+                ("config", "user.email", "fixture@example.invalid")):
+        跑样本仓命令(仓根, *参数表)
+    (仓根 / "README.md").write_text("系统工程平台 V1\n")
+    (仓根 / "AGENTS.md").write_text("样本\n")
+    门禁件 = 仓根 / "构建装配/一键验证/闸0.py"
+    门禁件.parent.mkdir(parents=True)
+    门禁件.write_text("print('腿闸通过')\n")
+    假信息核心件 = 仓根 / "开发工具/信息核心/信息核心.py"
+    假信息核心件.parent.mkdir(parents=True)
+    假信息核心件.write_text(假信息核心源码)
+    库件 = 仓根 / 编排.库相对路径
+    with sqlite3.connect(库件) as 连接:
+        连接.execute("create table 规则 (编号 integer primary key, 类 text, 名 text, 内容 text, 依据 text)")
+        连接.execute("insert into 规则 values (1,'样本','语义','基值','')")
+        连接.execute("create table 未完成 (号 integer primary key, 缺什么 text, 落点 text, 验证命令 text)")
+        连接.execute("insert into 未完成 values (7,'基缺','基落点','基验证')")
+        连接.execute("create table 命名登记 (名字 text primary key, 语义 text, 模式 text, 来源 text, 状态 text, 出现次数 integer, 创建时间 text)")
+        连接.execute("insert into 命名登记 values ('样本名','基语义','对象+说明','新定义','合格',0,'')")
+    跑样本仓命令(仓根, "add", ".")
+    跑样本仓命令(仓根, "commit", "-m", "基线")
+    跑样本仓命令(仓根, "worktree", "add", "-b", "腿/v1-999001", str(腿树))
+    (腿树 / "新增.txt").write_text("腿成果\n")
+    主干改库 = False
+    if 名称 == "动作0源库冲突":
+        with sqlite3.connect(仓根 / 编排.库相对路径) as 连接:
+            连接.execute("update 未完成 set 缺什么='主干缺' where 号=7")
+        with sqlite3.connect(腿树 / 编排.库相对路径) as 连接:
+            连接.execute("update 未完成 set 缺什么='腿缺' where 号=7")
+        主干改库 = True
+    elif 名称 == "动作非0重放":
+        with sqlite3.connect(腿树 / 编排.库相对路径) as 连接:
+            连接.execute("update 命名登记 set 语义='腿语义' where 名字='样本名'")
+    if 主干改库:
+        跑样本仓命令(仓根, "add", ".")
+        跑样本仓命令(仓根, "commit", "-m", "主改源库")
+    跑样本仓命令(腿树, "add", ".")
+    跑样本仓命令(腿树, "commit", "-m", "腿成果")
+    钩子 = 仓根 / ".git/hooks/pre-commit"
+    钩子.write_text("#!/bin/sh\nexit 0\n")
+    钩子.chmod(0o755)
+    跑样本仓命令(仓根, "config", "core.bare", "true")
+    return 仓根.resolve(), 腿树
+
+
+def _验源库三态():
+    """源库重放**三态永久样本**：① 动作0 + 源库冲突 ⇒ 取主干版后可正常提交；② 动作非0 ⇒ 腿值完整重放；
+    ③ 无冲突无动作 ⇒ 不额外覆盖。逐态走完整五步，读库核**逻辑主键+值**（不只看 git 状态）。"""
+    for 名称 in 三态样本:
+        with tempfile.TemporaryDirectory(prefix="v1源库三态-") as 临时目录:
+            仓根, 腿树 = _建三态夹具(Path(临时目录), 名称)
+            开工记录 = {"状态":"已释放", "工作树":str(腿树), "分支名":"腿/v1-999001"}
+            with mock.patch.object(编排, "_读开工记录", return_value=开工记录):
+                退出码, 报告文本 = 编排.派发("v1-999001", False, 腿树)
+            未完成缺, 命名语义, 规则内容 = _读三态值(仓根 / 编排.库相对路径)
+            if 名称 == "动作0源库冲突":
+                本条过 = (退出码 == 0 and 集成.找集成树(仓根, "v1-999001") is None
+                      and (仓根 / "新增.txt").read_text() == "腿成果\n" and 未完成缺 == "主干缺"
+                      and 命名语义 == "基语义" and 规则内容 == "基值" and "取主干版" in 报告文本)
+            elif 名称 == "动作非0重放":
+                本条过 = (退出码 == 0 and 集成.找集成树(仓根, "v1-999001") is None
+                      and (仓根 / "新增.txt").read_text() == "腿成果\n" and 未完成缺 == "基缺"
+                      and 命名语义 == "腿语义" and 规则内容 == "基值" and "逐条落库" in 报告文本)
+            else:
+                本条过 = (退出码 == 0 and 集成.找集成树(仓根, "v1-999001") is None
+                      and (仓根 / "新增.txt").read_text() == "腿成果\n" and 未完成缺 == "基缺"
+                      and 命名语义 == "基语义" and 规则内容 == "基值" and "源库已标为已解决" not in 报告文本)
+            assert 本条过, (名称, 退出码, 报告文本)
+            print("通过 源库三态", 名称, "未完成", 未完成缺, "命名登记", 命名语义, "规则", 规则内容)
