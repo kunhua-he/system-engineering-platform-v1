@@ -36,7 +36,18 @@ impl 服务 {
         let 结局表 = {
             let 适配器 =
                 Arc::make_mut(self.适配器.get_mut().unwrap_or_else(|中毒| 中毒.into_inner()));
-            状态.注入(适配器, 已装声明)
+            let 结局表 = 状态.注入(适配器, 已装声明);
+            for (标识串, 结局) in &结局表 {
+                if matches!(结局, 条目结局::拒收(_)) {
+                    for (声明, _) in 已装声明 {
+                        if super::取声明标识串(声明).as_deref() == Some(标识串.as_str()) {
+                            let _ = 适配器.击杀跨进程域(声明);
+                            适配器.收回装载(声明);
+                        }
+                    }
+                }
+            }
+            结局表
         };
         *self.跨进程.get_mut().unwrap_or_else(|中毒| 中毒.into_inner()) = Some(状态);
         结局表

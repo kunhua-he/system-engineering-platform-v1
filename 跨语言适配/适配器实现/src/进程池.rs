@@ -133,6 +133,7 @@ pub(crate) struct 工作进程 {
 pub(crate) struct 域格 {
     标识: 执行域标识,
     工作: Arc<Mutex<工作进程>>,
+    事务锁: Arc<Mutex<()>>,
 }
 
 // ── 子模块：域句柄（一个执行域的短引用 —— 锁收窄的落点）──
@@ -244,6 +245,7 @@ impl 进程池 {
                 配置: self.配置,
                 工作: Arc::clone(&格子.工作),
                 代次源: Arc::clone(&self.上次代次),
+                事务锁: Arc::clone(&格子.事务锁),
             })
     }
 
@@ -269,6 +271,7 @@ impl 进程池 {
         let 进程组号 = i32::try_from(子进程.id()).map_err(|_| 进程池错误::拉起失败)?;
         Ok(域格 {
             标识,
+            事务锁: Arc::new(Mutex::new(())),
             工作: Arc::new(Mutex::new(工作进程 {
                 子进程,
                 通道,
@@ -332,6 +335,7 @@ impl 进程池 {
         let 进程组号 = i32::try_from(子进程.id()).map_err(|_| 进程池错误::拉起失败)?;
         取锁(&self.域表).push(域格 {
             标识,
+            事务锁: Arc::new(Mutex::new(())),
             工作: Arc::new(Mutex::new(工作进程 {
                 子进程,
                 通道: 宿主端,

@@ -60,6 +60,22 @@ fn 子进程没了后调用得结构化0034不是panic() {
     }
 }
 
+#[test]
+fn 同域事务排队计入总预算() {
+    let (宿主端, 对端) = UnixStream::pair().unwrap();
+    let mut 域表 = 跨进程域表::新建(进程池配置::default());
+    let 标识 = 造标识();
+    域表.登记已连域(标识.clone(), 宿主端).unwrap();
+    let 句柄 = 域表.取句柄(&标识).unwrap();
+    let 预算 = 调用帧预算::创建(Instant::now() + Duration::from_millis(200)).unwrap();
+    let 事务守卫 = 句柄.锁事务(&预算).unwrap();
+    let 排队预算 = 调用帧预算::创建(Instant::now() + Duration::from_millis(30)).unwrap();
+    assert!(matches!(句柄.锁事务(&排队预算), Err(进程池错误::预算耗尽)));
+    drop(事务守卫);
+    assert!(句柄.锁事务(&预算).is_ok());
+    drop(对端);
+}
+
 /// 一个**真应答**的对端：在另一条线程上按协议回两帧（通知回执 + 调用结果）。
 ///
 /// 它拿到宿主端那条 `UnixStream` 后：收通知帧答回执、收调用帧答一个内联槽

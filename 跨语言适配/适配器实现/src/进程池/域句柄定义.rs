@@ -34,9 +34,25 @@ pub struct 域句柄 {
     pub(crate) 配置: 进程池配置,
     pub(crate) 工作: Arc<Mutex<工作进程>>,
     pub(crate) 代次源: Arc<Mutex<u64>>,
+    pub(crate) 事务锁: Arc<Mutex<()>>,
 }
 
 impl 域句柄 {
+    pub(crate) fn 锁事务(
+        &self, 预算: &crate::进程帧::调用帧预算,
+    ) -> Result<MutexGuard<'_, ()>, 进程池错误> {
+        loop {
+            预算.检查剩余().map_err(|_| 进程池错误::预算耗尽)?;
+            match self.事务锁.try_lock() {
+                Ok(事务守卫) => return Ok(事务守卫),
+                Err(std::sync::TryLockError::Poisoned(中毒)) => return Ok(中毒.into_inner()),
+                Err(std::sync::TryLockError::WouldBlock) => {
+                    std::thread::sleep(std::time::Duration::from_millis(1));
+                },
+            }
+        }
+    }
+
     /// 取该域的锁（**长执行只在它之内**；跨域互不阻塞）。
     pub(crate) fn 锁(&self) -> MutexGuard<'_, 工作进程> {
         取锁(&self.工作)

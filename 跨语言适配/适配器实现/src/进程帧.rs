@@ -46,6 +46,10 @@ impl 调用帧预算 {
         Ok(Self { 截止时间, 发送剩余: 调用载荷上限, 接收剩余: 调用载荷上限 })
     }
 
+    pub(crate) fn 检查剩余(&self) -> io::Result<()> {
+        self.剩余时限().map(|_| ())
+    }
+
     fn 剩余时限(&self) -> io::Result<Duration> {
         self.截止时间.checked_duration_since(Instant::now())
             .filter(|时长| !时长.is_zero())
@@ -116,9 +120,20 @@ pub fn 发送帧(通信通道: &mut UnixStream, 消息体: &消息帧, 预算: &
 /// 「收一帧、按帧里写的标识答回去」。本函数就是那一口的**唯一实现**；
 /// [`接收帧`] 只是它加一道标识比对（宿主侧「只收同标识的回帧」靠它）。
 pub fn 接收任意帧(通信通道: &mut UnixStream, 预算: &mut 调用帧预算) -> io::Result<消息帧> {
+    接收续帧(通信通道, 预算, None)
+}
+
+pub(crate) fn 接收续帧(
+    通信通道: &mut UnixStream, 预算: &mut 调用帧预算, 首字节: Option<u8>,
+) -> io::Result<消息帧> {
     通信通道.set_nonblocking(true)?;
     let mut 帧头 = [0u8; 帧头字节数];
-    读全帧(通信通道, &mut 帧头, 预算)?;
+    if let Some(首字节) = 首字节 {
+        帧头[0] = 首字节;
+        读全帧(通信通道, &mut 帧头[1..], 预算)?;
+    } else {
+        读全帧(通信通道, &mut 帧头, 预算)?;
+    }
     if &帧头[..4] != b"V1IP" || u16::from_le_bytes([帧头[4], 帧头[5]]) != 1 {
         return Err(io::Error::new(io::ErrorKind::InvalidData, "IPC魔数或版本不符"));
     }

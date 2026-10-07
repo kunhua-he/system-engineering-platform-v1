@@ -36,6 +36,7 @@ use crate::分发::{造应答, 处理请求, 拒绝状态码};
 use crate::报文读写::{报文, 读报文, 写响应};
 use crate::端点路由;
 use crate::常量::{监听地址, 接口端口, 工具根默认, 静态根};
+use std::io::Read;
 use std::net::{TcpListener, TcpStream};
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex, RwLock};
@@ -198,7 +199,23 @@ impl 服务 {
         let 造应答 = match 读报文(&mut 输出流) {
             Ok(报文) => self.造应答(&报文),
             // 请求本身不合法 ⇒ 400（**协议层**失败，不是业务失败）。
-            Err(说明文字) => 造应答::协议错误(400, &说明文字),
+            Err(说明文字) => {
+                let 造应答 = 造应答::协议错误(400, &说明文字);
+                写响应(&mut 输出流, &造应答)?;
+                // 先交出应答再有限排空，避免未读请求体导致TCP复位吞掉拒收对象。
+                let _ = 输出流.shutdown(std::net::Shutdown::Write);
+                输出流.set_read_timeout(Some(Duration::from_millis(50)))?;
+                let 排空截止 = std::time::Instant::now() + Duration::from_millis(200);
+                let mut 排空字节数 = 0usize;
+                let mut 排空缓冲 = [0u8; 4096];
+                while std::time::Instant::now() < 排空截止 && 排空字节数 < 4 * 1024 * 1024 {
+                    match 输出流.read(&mut 排空缓冲) {
+                        Ok(0) | Err(_) => break,
+                        Ok(排空长度) => 排空字节数 += 排空长度,
+                    }
+                }
+                return Ok(());
+            },
         };
         写响应(&mut 输出流, &造应答)
     }
