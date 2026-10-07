@@ -20,6 +20,7 @@
 `isError` 仍由 `退出码 != 0` 折；业务码与 JSON-RPC `-326xx` 分层；业务未知**绝不写成成功**。
 """
 
+import contextvars
 import importlib
 import json
 import os
@@ -225,21 +226,20 @@ def 取git值(目标路径, 参数表: list) -> str:
     return 输出文本.strip() if 退出码 == 0 else ""
 
 
-# 取树快照：只由调用方显式开启的有限作用域内复用；默认关闭 ⇒ 生产每条现读（不盲长驻缓存）
-树快照 = None
+# 取树快照：只由调用方显式开启的有限作用域内复用；默认关闭 ⇒ 生产每条现读（不盲长驻缓存）。
+# 用 ContextVar 而**不是模块全局**：HTTP 自检在同一进程里起真实 HTTP 服务，处理线程与自检线程
+# 必须互不污染（模块全局会让处理线程读到自检线程缓存的旧 HEAD）。
+树快照 = contextvars.ContextVar("取树快照", default=None)
 
 
 def 开树快照():
     """开启取树快照并返回旧值（供 `关树快照` 还原）—— 同一稳定仓连发多条信封的场景（如自检）。"""
-    global 树快照
-    旧值, 树快照 = 树快照, {}
-    return 旧值
+    return 树快照.set({})
 
 
 def 关树快照(旧值):
     """还原 `开树快照` 前的状态（作用域结束必须还原，别把快照留成长驻缓存）。"""
-    global 树快照
-    树快照 = 旧值
+    树快照.reset(旧值)
 
 
 def 取树(开工号: str, 仓根路径) -> dict:
@@ -250,8 +250,9 @@ def 取树(开工号: str, 仓根路径) -> dict:
     开了 `树快照`（有限作用域）⇒ 同键复用；不开 ⇒ 每条现读。分支与 HEAD 合并成一条 git 调用。
     """
     快照键 = (开工号 or "", str(仓根路径 or ""))
-    if 树快照 is not None and 快照键 in 树快照:
-        return 树快照[快照键]
+    当前快照 = 树快照.get()
+    if 当前快照 is not None and 快照键 in 当前快照:
+        return 当前快照[快照键]
     种类, 目标路径 = "服务仓根", str(仓根路径 or "")
     if 开工号:
         种类 = "未定"
@@ -273,8 +274,8 @@ def 取树(开工号: str, 仓根路径) -> dict:
         HEAD = 取git值(目标路径, ["rev-parse", "HEAD"])
     读数 = {"种类": 种类, "路径": 目标路径, "开工ID": 开工号 or None,
             "分支": 分支, "HEAD": HEAD}
-    if 树快照 is not None:
-        树快照[快照键] = 读数
+    if 当前快照 is not None:
+        当前快照[快照键] = 读数
     return 读数
 
 
