@@ -7,11 +7,14 @@
 一个字节都不加，`闸 1` 的墙钟余量不动）。
 
 读数：子进程跑仓内真 git 夹具（系统临时目录，仓一个字节不改）的退出码。
+
+★ **闭包超时走正式口 `自测闭包.跑自测闭包`（60 秒挂起守卫，不是五秒硬顶）** —— `--自测` 是环境步、
+不判顶 ⇒ 别在闭包里硬写 `timeout=5` 把富样本挤瘦（现场恢复腿 v1-100558 实测：4 夹具被迫合到 3）。
 """
 
-import subprocess
-import sys
 from pathlib import Path
+
+from .自测闭包 import 跑自测闭包
 
 
 def 自检_集成接管闭环() -> list:
@@ -24,14 +27,8 @@ def 自检_集成接管闭环() -> list:
           "for 说明, 通过 in 样本表:\n"
           "    print(('OK ' if 通过 else 'XX '), 说明)\n"
           "sys.exit(0 if 样本表 and all(通过 for _, 通过 in 样本表) else 1)\n" % 仓根)
-    try:
-        回执 = subprocess.run([sys.executable, "-c", 脚本], cwd=str(工具目录),
-                          capture_output=True, text=True, timeout=5)
-    except Exception as 错误:
-        return [("集成接管端到端闭环", False, "起不来 / 超 5 秒：%r" % (错误,))]
-    通过 = 回执.returncode == 0
-    说明 = "退出码 %d · 闭环样本：\n%s" % (回执.returncode, (回执.stdout or "")[-1200:])
-    if not 通过:
-        说明 += "\n标准错误：\n" + (回执.stderr or "")[-800:]
+    退出码, 输出文本 = 跑自测闭包(脚本, 工具目录)
+    通过 = 退出码 == 0
+    说明 = "退出码 %d · 闭环样本：\n%s" % (退出码, 输出文本[-1200:])
     return [("集成接管 绑定档 + 拒绝档 + 端到端闭环（接管 → v1_edit → 暂存 → 恢复现场 → 清树 + 解除接管）",
              通过, 说明)]

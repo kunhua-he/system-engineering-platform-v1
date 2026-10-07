@@ -92,14 +92,21 @@ def 派发(参数表: dict, 仓根) -> tuple:
     #   而「只跑某几条」对实现侧没有对应物。
     命令表 = ([sys.executable, "构建装配/一键验证/闸0.py"] if not 词表
             else [sys.executable, "构建装配/一键验证/一键验证.py", "--只跑", ",".join(词表)])
+    # `直跑` = 不套 5 秒同步口（给「带开工ID 直跑闸0」档用 —— 负载高时同步口会把负载红误当判据红）。
+    直跑 = bool(参数表.get("直跑"))
+    负载红 = False
     try:
         回执 = subprocess.run(命令表, cwd=str(查询根), capture_output=True, text=True,
-                            timeout=超时秒)
+                            timeout=(None if 直跑 else 超时秒))
         退出码 = 回执.returncode
         命令输出 = (回执.stdout or "") + (回执.stderr or "")
     except subprocess.TimeoutExpired:
-        return -1, ("超时（%d 秒）—— 五秒硬顶无例外。全量跑不动就说明总 CPU 又涨了"
-                  "（台账记着这条），别改成放宽超时" % 超时秒)
+        # 负载红·非判据红：5 秒同步口把闸 0 杀了 ⇒ **不套口重跑一次**，把闸 1 / 闸 2 各自退出码拿回来
+        # （否则腿只看到「超时」，分不清是负载红还是判据坏了）。
+        负载红 = True
+        回执 = subprocess.run(命令表, cwd=str(查询根), capture_output=True, text=True, timeout=None)
+        退出码 = 回执.returncode
+        命令输出 = (回执.stdout or "") + (回执.stderr or "")
     except OSError as 起不来的原因:
         return -2, "起不了验证器：%r" % (起不来的原因,)
 
@@ -111,6 +118,13 @@ def 派发(参数表: dict, 仓根) -> tuple:
               "\n".join(有效行表[-28:])]
     if 词表:
         输出行表.append("★ 这是**局部**读数 —— 它绿**不代表**全仓绿。放行前必须跑一次全量（不传 `判据`）。")
+    if 负载红:
+        输出行表.insert(0, "★ **负载红·非判据红**：闸 0 被 5 秒同步口杀过（并发腿抢 CPU）⇒ 已不套口重跑；"
+                       "看上面「闸 1 / 闸 2 退出码」才是真读数 —— 两条都 0 ⇒ 不是判据坏了。"
+                       "要直接不套 5 秒同步口：本档带 `直跑` = 真。")
+    elif "超顶" in 命令输出 or "超时" in 命令输出:
+        输出行表.append("★ 疑似**负载红**：闸 0 输出含「超顶/超时」字样（并发腿抢 CPU 把墙钟顶过硬顶）"
+                     "—— 看闸 1 / 闸 2 各自退出码：都 0 ⇒ 非判据红，重跑或降并发；不是你的改动坏了。")
 
     # 绕过检测：这条开工认领集里，盘上指纹 ≠ 账本指纹 ⇒ 有人绕过 MCP 改了它。
     if 认领表 is not None:
