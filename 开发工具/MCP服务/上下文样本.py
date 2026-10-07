@@ -134,13 +134,17 @@ def 上下文样本(仓根, 工具表=None):
     分支值 = 回执.stdout.strip()
     开工号 = 分支值.split("/")[-1] if 分支值.startswith("腿/v1-") else "v1-000000"
     命令表 = [{"jsonrpc": "2.0", "id": 1, "method": "tools/list"},
-             {"jsonrpc": "2.0", "id": 2, "method": "tools/call", "params": {"name": "v1_context", "arguments": {}}},
-             {"jsonrpc": "2.0", "id": 3, "method": "tools/call", "params": {"name": "v1_context", "arguments": {"开工ID": 开工号}}}]
+             {"jsonrpc": "2.0", "id": 2, "method": "tools/call",
+              "params": {"name": "v1_context", "arguments": {"操作": "取条款"}}},
+             {"jsonrpc": "2.0", "id": 3, "method": "tools/call",
+              "params": {"name": "v1_context", "arguments": {"开工ID": 开工号, "操作": "取条款"}}}]
     回执 = subprocess.run([sys.executable, "-B", "开发工具/MCP服务.py"], cwd=仓根, input="".join(json.dumps(命令行参数, ensure_ascii=False) + "\n" for 命令行参数 in 命令表), capture_output=True, text=True, timeout=5)
     响应表 = [json.loads(源码行) for 源码行 in 回执.stdout.splitlines() if 源码行.startswith("{")]
     记样本("真实MCP发现工具", 回执.returncode == 0 and any(工具项["name"] == "v1_context" for 工具项 in 响应表[0]["result"]["tools"]))
-    输出文本 = 响应表[1]["result"]["content"][0]["text"]
-    记样本("真实MCP数据与预算", not 响应表[1]["result"]["isError"] and json.loads(输出文本)["条目"] and len(输出文本.encode()) <= 8192)
-    读数 = json.loads(响应表[2]["result"]["content"][0]["text"])
+    信封 = json.loads(响应表[1]["result"]["content"][0]["text"])
+    记样本("真实MCP数据与预算", not 响应表[1]["result"]["isError"] and 信封["结果"]["条目"]
+          and len(信封["说明"].encode()) <= 8192)
+    信封 = json.loads(响应表[2]["result"]["content"][0]["text"])
+    读数 = 信封["结果"]
     记样本("正式开工树解析", (not 响应表[2]["result"]["isError"] and 读数["树绝对路径"].endswith(开工号)) if 开工号 != "v1-000000" else (响应表[2]["result"]["isError"] and 读数["错误"]["种类"] == "missing"))
     return 输出缓冲
