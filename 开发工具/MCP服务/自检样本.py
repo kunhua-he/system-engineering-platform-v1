@@ -12,6 +12,55 @@ r"""自检样本 —— MCP 工具面自检：协议三帧 · 工具表形状 ·
 """
 from pathlib import Path
 
+隔离样本组 = {"改名样本": 34, "上下文样本": 52, "跨树样本": 18, "库快照样本": 16}
+隔离入口文本 = (
+    "import json,sys; from pathlib import Path; "
+    "sys.path.insert(0,str(Path.cwd()/'开发工具')); "
+    "from MCP服务.自检样本 import 隔离样本入口; "
+    "print(json.dumps(隔离样本入口(sys.argv[1],Path.cwd()),ensure_ascii=False))"
+)
+
+
+def 隔离样本入口(样本组名, 仓根):
+    """每组在独立进程运行一次，沿用全部正式样本与有限取树快照。"""
+    from .工具 import 工具表
+    from .参数规范 import 开树快照, 关树快照
+    from .改名样本 import 批量改名样本
+    from .上下文样本 import 上下文样本
+    from .跨树样本 import 跨树样本
+    from .库快照样本 import 库快照样本
+    旧快照 = 开树快照()
+    try:
+        样本表 = {"改名样本": 批量改名样本, "上下文样本": 上下文样本,
+                 "跨树样本": 跨树样本, "库快照样本": 库快照样本}[样本组名](仓根, 工具表)
+        return {"组": 样本组名, "样本": [(说明, bool(通过)) for 说明, 通过 in 样本表]}
+    finally:
+        关树快照(旧快照)
+
+
+def 跑隔离样本(样本组名, 仓根):
+    """真实子进程有界收敛；失败、超时、缺组或畸形输出都保留为失败样本。"""
+    import json
+    import subprocess
+    import sys
+    from .合主干有界跑 import 干净环境
+    try:
+        回执 = subprocess.run([sys.executable, "-B", "-c", 隔离入口文本, 样本组名],
+                            cwd=仓根, env=干净环境(), capture_output=True, text=True, timeout=5)
+        if 回执.returncode != 0:
+            raise ValueError("退出码 %d：%s" % (回执.returncode, 回执.stderr[-500:]))
+        子组读数 = json.loads(回执.stdout)
+        样本表 = 子组读数["样本"]
+        if (子组读数["组"] != 样本组名 or not isinstance(样本表, list)
+                or len(样本表) != 隔离样本组[样本组名]
+                or not all(isinstance(明细条, list) and len(明细条) == 2
+                           and isinstance(明细条[0], str) and type(明细条[1]) is bool
+                           for 明细条 in 样本表)):
+            raise ValueError("样本组或完整样本数/形状不齐")
+        return [tuple(明细条) for 明细条 in 样本表]
+    except Exception as 错误:
+        return [("隔离样本 %s 未完整完成：%r" % (样本组名, 错误), False)]
+
 
 def _读信封(输出文本: str):
     """底层 / 网关回执是 JSON 信封 ⇒ 解析；否则 `None`。"""
@@ -34,14 +83,18 @@ def 跑自检(仓根, 工具表) -> int:
     全程开**取树快照**（同一稳定仓连发多条信封 ⇒ 复用现读读数），作用域结束即还原。
     """
     from .参数规范 import 开树快照, 关树快照
+    import concurrent.futures
     旧快照 = 开树快照()
     try:
-        return 自检主体(仓根, 工具表)
+        with concurrent.futures.ThreadPoolExecutor(max_workers=3) as 隔离进程池:
+            样本作业表 = {样本组名: 隔离进程池.submit(跑隔离样本, 样本组名, 仓根)
+                      for 样本组名 in 隔离样本组}
+            return 自检主体(仓根, 工具表, 样本作业表)
     finally:
         关树快照(旧快照)
 
 
-def 自检主体(仓根, 工具表) -> int:
+def 自检主体(仓根, 工具表, 样本作业表) -> int:
     """自检实现主体（取树快照作用域由 `跑自检` 管）。"""
     import io
     import json
@@ -134,18 +187,15 @@ def 自检主体(仓根, 工具表) -> int:
 
     # ── ⑥ 工具面样本（动盘的那一类，临时夹具）+ 上下文正反样本 ──
     from . import http传输样本
-    from .改名样本 import 批量改名样本
-    from .库快照样本 import 库快照样本
-    from .上下文样本 import 上下文样本
     from .作业样本 import 作业样本
     from .冲突样本 import 冲突回执样本
     from . import 裸仓回执样本
-    from .跨树样本 import 跨树样本
-    样本表 += (批量改名样本(仓根, 工具表) + 终端样本(仓根, 工具表) + 上下文样本(仓根, 工具表)
+    样本表 += (样本作业表["改名样本"].result() + 终端样本(仓根, 工具表)
+            + 样本作业表["上下文样本"].result()
             + 自愈样本(仓根, 工具表) + 冲突回执样本(仓根, 工具表)
-            + 库快照样本(仓根, 工具表)
+            + 样本作业表["库快照样本"].result()
             + http传输样本.样本列表(仓根, 工具表) + 裸仓回执样本.样本列表(仓根, 工具表)
-            + 跨树样本(仓根, 工具表))
+            + 样本作业表["跨树样本"].result())
     from unittest.mock import patch
     from . import 参数规范
     with patch.object(参数规范, "取树", return_value={}):
