@@ -23,6 +23,7 @@ from pathlib import Path
 
 仓根 = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(仓根 / "开发工具"))
+sys.path.insert(0, str(仓根))
 
 from MCP服务 import 工具表, 跑主循环, 自检样本  # noqa: E402
 
