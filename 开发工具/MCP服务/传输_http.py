@@ -107,7 +107,7 @@ class 请求处理器(BaseHTTPRequestHandler):
 
     def _校验入口(self):
         """路径 / 主机 / 来源 / 协议版本头四关；任一不过 ⇒ 已回错误，回假。"""
-        if urlsplit(self.path).path != 服务路径:
+        if urlsplit(self.path).path.rstrip("/") != 服务路径:
             self._写响应(404, 是否空体=True)
             return False
         if not self._校验主机():
