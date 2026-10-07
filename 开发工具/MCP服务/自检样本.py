@@ -30,7 +30,9 @@ def 批量改名样本(仓根, 工具表) -> list:
 
     临时根 = Path(tempfile.mkdtemp(prefix="v1批量改名自检-"))
     try:
-        return _跑夹具(临时根, 仓根, 工具表, 文件指纹, 批量改名, 开工账本)
+        输出表 = _跑夹具(临时根, 仓根, 工具表, 文件指纹, 批量改名, 开工账本)
+        from .预检样本 import 扫一遍
+        return 输出表 + 扫一遍(Path(仓根))
     finally:
         shutil.rmtree(临时根, ignore_errors=True)
 
