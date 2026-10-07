@@ -7,6 +7,12 @@
 **在哪棵树里跑**：只传 `开工ID`（可选）—— 给了就在那条开工的工作树里跑（问 git 精确定位，
 与 `上下文.py` 同一份口径）；不给就在当前服务仓根跑。**不接任意路径**。
 
+**Git 目标**：目标树若是 **bare 仓根**（本仓主目录 `core.bare=true`），子进程会拿到注入的
+`GIT_DIR`/`GIT_WORK_TREE`（否则那棵树里 git 报「must be run in a work tree」）—— 这两键是**进程级**的，
+会把该回执里的**所有** git（含 `git -C <别的树>`）都带回本仓。回执会如实点明这一点。跨树读用顶层
+`开工ID`（在那条工作树里跑）或 `v1_tree`；要显式点另一棵树用 `git --git-dir=<树>/.git --work-tree=<树>`
+（显式参数盖过环境）。
+
 **超时**：整数 1..5（`bool` 不算整数）；>5 明确拒（schema 已声明 `maximum: 5`）。上限 5 依据判据 ㊲。
 
 **输出有界**：每个流最多留 `输出上限` 字符在内存；超出即把完整输出落到系统临时目录的日志件
@@ -42,24 +48,38 @@ from .仓操作 import 禁终端提示环境, 找工作树
 读块大小 = 65536
 
 
+def _判裸仓根(目标树: Path) -> bool:
+    """目标树是不是 **bare 仓根**（它的 `.git/config` 里 `bare = true`）⇒ 真假。
+
+    **一处实现**：`_执行环境` 的注入判断与派发回执的 Git 目标提示共用这一份。判据是目标树本地的
+    `.git/config`，不看宿主环境（`目标树/.git` 不是目录 ⇒ 假 —— 例如 linked 工作树的 `.git` 是文件）。
+    """
+    仓库元目录 = 目标树 / ".git"
+    if not 仓库元目录.is_dir():
+        return False
+    try:
+        配置文本 = (仓库元目录 / "config").read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return False
+    return bool(re.search(r"^\s*bare\s*=\s*true\s*$", 配置文本, re.M))
+
+
 def _执行环境(目标树: Path) -> dict:
     """子进程环境：剔除继承的 Git 定位变量 + 禁 git 终端提示。目标树若是 **bare 仓根**
-    （本仓主目录 `core.bare=true`），显式给 `GIT_DIR`/`GIT_WORK_TREE` —— 否则子进程 git 会报
-    「must be run in a work tree」。判据是目标树本地的 `.git/config`，不看宿主环境。
+    （判据见 `_判裸仓根`），显式给 `GIT_DIR`/`GIT_WORK_TREE` —— 否则子进程 git 会报
+    「must be run in a work tree」。
+
+    ★ 这两键是**进程级**的 ⇒ 会把子进程里**所有** git（含 `git -C <别的树>`）都带回本仓；
+    派发回执会如实点明（见 `派发` 的 Git 目标提示）。要显式点另一棵树，用
+    `git --git-dir=<树>/.git --work-tree=<树>`（显式参数盖过环境）。
     """
     环境表 = dict(os.environ)
     for 键名 in 继承定位变量:
         环境表.pop(键名, None)
     环境表.update(禁终端提示环境)
-    仓库元目录 = 目标树 / ".git"
-    if 仓库元目录.is_dir():
-        try:
-            配置文本 = (仓库元目录 / "config").read_text(encoding="utf-8", errors="replace")
-        except OSError:
-            配置文本 = ""
-        if re.search(r"^\s*bare\s*=\s*true\s*$", 配置文本, re.M):
-            环境表["GIT_DIR"] = str(仓库元目录)
-            环境表["GIT_WORK_TREE"] = str(目标树)
+    if _判裸仓根(目标树):
+        环境表["GIT_DIR"] = str(目标树 / ".git")
+        环境表["GIT_WORK_TREE"] = str(目标树)
     return 环境表
 
 
@@ -226,6 +246,12 @@ def 派发(参数表: dict, 仓根) -> tuple:
             截断行表.append("★ 完整日志也已到上限 %d 字符（命令输出过大）" % 日志上限)
     输出行 = ["命令：%s" % 命令, "工作目录：%s" % 目标树,
              "退出码：%d" % 回执码, "超时：%d 秒（上限 %d 秒）" % (超时, 超时秒)]
+    if _判裸仓根(目标树):
+        输出行.append("★ Git 目标：本目标是 **bare 仓根**（无工作树）⇒ 已给子进程注入 "
+                  "GIT_DIR/GIT_WORK_TREE = 本仓；故 `git` 一律作用在 **本仓主目录** 上，"
+                  "`git -C <别的树>` 会被环境带回本仓（**不切目标**）。")
+        输出行.append("   跨树：用顶层 `开工ID`（在那条工作树里跑）或 `v1_tree`；要显式点另一棵树，用 "
+                  "`git --git-dir=<树>/.git --work-tree=<树> ...`（显式参数盖过环境）。")
     if 超时了:
         输出行.append("★ 命令超时（%d 秒）⇒ 已杀整进程组；下面是已收到的部分输出" % 超时)
     输出行.append("")
