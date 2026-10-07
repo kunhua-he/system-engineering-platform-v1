@@ -12,8 +12,8 @@ from pathlib import Path
 from 合主干有界跑 import 跑有界命令
 
 
-def _跑(命令表, 工作目录, 超时秒数=None):
-    return 跑有界命令(命令表, 工作目录=工作目录, 超时秒数=超时秒数)
+def _跑(命令表, 工作目录, 超时秒数=None, 输入文本=None):
+    return 跑有界命令(命令表, 工作目录=工作目录, 超时秒数=超时秒数, 输入文本=输入文本)
 
 
 def 建集成树(仓根, 开工号) -> tuple:
