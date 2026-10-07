@@ -191,7 +191,7 @@ def _验定位同步锁(临时根):
     (仓根/"README.md").write_text("系统工程平台 V1\n")
     模块根=Path(__file__).resolve().parents[2]
     for 树根 in (仓根,腿树):
-        for 相对路径 in ("开发工具/MCP服务/合并主干.py","开发工具/MCP服务/合主干编排.py","开发工具/MCP服务/合主干集成树.py","开发工具/MCP服务/合主干有界跑.py","开发工具/MCP服务/合主干源库重放.py","开发工具/MCP服务/合主干现场清理.py","开发工具/信息核心/表定义.py"):
+        for 相对路径 in ("开发工具/MCP服务/合并主干.py","开发工具/MCP服务/合主干编排.py","开发工具/MCP服务/合主干集成树.py","开发工具/MCP服务/合主干有界跑.py","开发工具/MCP服务/合主干源库重放.py","开发工具/MCP服务/合主干现场清理.py","开发工具/MCP服务/合主干重叠.py","开发工具/信息核心/表定义.py"):
             件路径=树根/相对路径
             件路径.parent.mkdir(parents=True,exist_ok=True)
             shutil.copyfile(模块根/相对路径,件路径)
