@@ -56,7 +56,7 @@ def _建库(库路径):
     连接.execute("create table 规则 (编号 integer primary key, 类 text, 名 text, 内容 text, 依据 text)")
     连接.execute("insert into 规则 values (1, '样本', '语义', '基值', '')")
     连接.execute("create table 命名登记 (名字 text primary key, 语义 text, 模式 text, 来源 text, "
-             "状态 text, 出现次数 integer, 创建时间 text)")
+             "状态 text, 出现次数 integer, 创建时间 text DEFAULT (datetime('now', 'localtime')))")
     连接.execute("insert into 命名登记 values ('样本名', '基语义', '对象+说明', '新定义', '合格', 0, '')")
     连接.commit()
     连接.close()
