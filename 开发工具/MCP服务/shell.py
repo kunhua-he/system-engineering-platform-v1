@@ -1,70 +1,139 @@
 # -*- coding: utf-8 -*-
-"""Shell 执行器 —— `v1_shell` 的实现：**本地秒级执行 shell 命令**。
+"""Shell 执行器 —— `v1_shell` 的实现：在 MCP 长驻进程里本地执行 shell 命令。
 
-**为什么要它**（2026-10-05 华哥要的）：`git status` / `ls` / `cat 一段` 这类活，走模型侧的
-Bash 工具每次都要一次往返；MCP 服务是**本地长驻进程** ⇒ 在它里面跑没有那次往返，秒级返回。
+**它不是「适配层」**：其余工具都只转发仓内已有入口，本件自身就是执行器 ⇒ 不在四道闸之内
+（拿它写盘 = 绕过账本）。口径写在工具说明里（改文件仍走 `v1_edit`），靠模型守、不靠机制拦。
 
-**它不是「适配层」**：其余工具都只**转发**仓内已有入口，本件**自身就是执行器**。
-⇒ 它**不在四道闸之内**：拿它写盘 = 绕过账本（认领 / 指纹 / 旧内容定位全不查）。
-口径写在工具说明里（「改文件仍走 `v1_edit`」），**靠模型守，不靠机制拦**。
+**在哪棵树里跑**：只传 `开工ID`（可选）—— 给了就在那条开工的工作树里跑（问 git 精确定位，
+与 `上下文.py` 同一份口径）；不给就在当前服务仓根跑。**不接任意路径**。
 
-**在哪棵树里跑**（2026-10-07 接上工具面时定）：调用方**只传 `开工ID`**（可选）—— 给了就在那条
-开工的工作树里跑（问 git 精确定位，与 `上下文.py` 同一份口径）；不给就在**当前服务仓根**
-（服务进程的 cwd）里跑。**没有「任意路径」参数** —— 不许拿它换到仓外去。
+**超时**：整数 1..5（`bool` 不算整数）；>5 明确拒（schema 已声明 `maximum: 5`）。上限 5 依据判据 ㊲。
 
-**超时上限 5 秒**（判据 ㊲）：默认值与上限都是 5；传更大的 `超时` **压回 5 并在回执里如实报出**
-（不拒收 —— 拒收只会让模型反复试，压回更省事）。
+**输出有界**：每个流最多留 `输出上限` 字符在内存；超出即把完整输出落到系统临时目录的日志件
+（懒创建，至多 `日志上限` 字符），回执给路径；未超则不留件。
 
-**输出有界**：stdout / stderr 各最多回 `输出上限` 字符；超了就截断、把完整输出落到**系统临时
-目录**的一个日志件里，回执给出它的绝对路径（不落仓内源码树 —— 判据 ⑰ / ⑳）。
-
-**用法**：
-    v1_shell(命令="git status")
-    v1_shell(命令="ls -la", 开工ID="v1-100440", 超时=3)
-
-**退出码语义**（与工具面其余件同一张表，见 `工具.py` 顶部）：
-`0` 成功 · `1` 命令本身失败（非零退出码，回执里带 stdout/stderr）·
-`2` 参数错（未知键 / 命令为空 / `开工ID` 形状错或工作树不在 / `超时` 非整数或 ≤0）·
-`-1` 超时（5 秒硬顶）。
-
-**安全边界**：`shell=True` ⇒ 命令原样交给 `/bin/sh`，**不解析、不过滤**（本地开发工具，跑什么
-由调用方负责）；不设 `check` ⇒ 命令失败折成退出码 1 + 回执正文，**不抛异常**（协议层一帧畸形
-输入 = 进程死 = 工具从模型侧全部消失，见 `协议.py` 主循环那段）。本工具**不授权**：绕 `v1_edit`
-改源码 · 跳闸 · 远端推送 · 杀陌生进程。
+**安全边界**：命令原样交给 `/bin/sh`（不解析、不过滤）；失败折成退出码 1 + 回执，不抛异常。
+本工具不授权：绕 `v1_edit` 改源码 · 跳闸 · 远端推送 · 杀陌生进程。
 """
 
 import os
 import re
 import subprocess
 import tempfile
+import threading
 from pathlib import Path
 
 from .仓操作 import 禁终端提示环境, 找工作树
 
-# 默认超时秒数 = 上限（判据 ㊲：全项目 ≤5 秒 —— 它是「容忍度」，不是「目标」）
+# 超时上限 5 秒（判据 ㊲：全项目超时设置 ≤5 秒）
 超时秒 = 5
-# 单个流最多回多少字符；超了截断并把完整输出落到系统临时目录（不落仓）
+# 每个流最多留多少字符在内存；超出走完整日志件
 输出上限 = 16000
+# 完整日志件最多写多少字符（防跑飞占满磁盘）
+日志上限 = 8 * 1024 * 1024
 # 只认这三个键 —— 未知键一次拒（不猜调用方意图）
 有效键 = ("命令", "开工ID", "超时")
 # `开工ID` 的形状（与 `上下文.py` 同一份口径）
 开工号形状 = re.compile(r"v1-[0-9]{6}")
+# 子进程不许继承的 Git 定位变量：会把子进程的 git 带到别的树 / 别的 index 上
+继承定位变量 = ("GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE", "GIT_OBJECT_DIRECTORY",
+             "GIT_COMMON_DIR", "GIT_ALTERNATE_OBJECT_DIRECTORIES")
+# 每次从管道读多少字符
+读块大小 = 65536
 
 
-def _落完整日志(命令: str, 目标树: Path, 标准输出: str, 标准错误: str) -> str:
-    """把完整输出落到**系统临时目录**的一个日志件 ⇒ 它的绝对路径（不落仓内源码树）。"""
-    句柄, 日志路径 = tempfile.mkstemp(prefix="v1_shell_", suffix=".log")
-    with os.fdopen(句柄, "w", encoding="utf-8", errors="replace") as 日志件:
-        日志件.write("命令：%s\n工作目录：%s\n\n=== 标准输出 ===\n%s\n\n=== 标准错误 ===\n%s\n"
-                  % (命令, 目标树, 标准输出, 标准错误))
-    return 日志路径
+def _执行环境(目标树: Path) -> dict:
+    """子进程环境：剔除继承的 Git 定位变量 + 禁 git 终端提示。目标树若是 **bare 仓根**
+    （本仓主目录 `core.bare=true`），显式给 `GIT_DIR`/`GIT_WORK_TREE` —— 否则子进程 git 会报
+    「must be run in a work tree」。判据是目标树本地的 `.git/config`，不看宿主环境。
+    """
+    环境表 = dict(os.environ)
+    for 键名 in 继承定位变量:
+        环境表.pop(键名, None)
+    环境表.update(禁终端提示环境)
+    仓库元目录 = 目标树 / ".git"
+    if 仓库元目录.is_dir():
+        try:
+            配置文本 = (仓库元目录 / "config").read_text(encoding="utf-8", errors="replace")
+        except OSError:
+            配置文本 = ""
+        if re.search(r"^\s*bare\s*=\s*true\s*$", 配置文本, re.M):
+            环境表["GIT_DIR"] = str(仓库元目录)
+            环境表["GIT_WORK_TREE"] = str(目标树)
+    return 环境表
+
+
+def _建日志夹(流名: str) -> dict:
+    """一个流的日志夹：懒开的完整日志件 + 多线程共用的锁。"""
+    return {"流名": 流名, "路径": None, "文件": None, "锁": threading.Lock(),
+            "已写": 0, "截顶": False}
+
+
+def _写溢出(日志夹: dict, 溢出文本: str, 头部文本: str) -> None:
+    """溢出内容落进日志件；首次调用懒开件并落下头部 ⇒ 日志件是完整输出（至多 `日志上限` 字符）。"""
+    with 日志夹["锁"]:
+        if 日志夹["路径"] is None:
+            句柄, 日志夹["路径"] = tempfile.mkstemp(prefix="v1_shell_", suffix=".log")
+            日志夹["文件"] = os.fdopen(句柄, "w", encoding="utf-8", errors="replace")
+            日志夹["文件"].write("=== %s ===\n%s" % (日志夹["流名"], 头部文本))
+            日志夹["已写"] = len(头部文本)
+        if 日志夹["已写"] >= 日志上限:
+            日志夹["截顶"] = True
+            return
+        可写 = 溢出文本[:日志上限 - 日志夹["已写"]]
+        日志夹["文件"].write(可写)
+        日志夹["已写"] += len(可写)
+        if len(可写) < len(溢出文本):
+            日志夹["截顶"] = True
+
+
+def _关日志夹(日志夹: dict) -> None:
+    if 日志夹["文件"] is not None:
+        日志夹["文件"].close()
+
+
+def _收流(输入流, 日志夹: dict) -> tuple:
+    """读干一个流 ⇒ `(内存留存文本, 是否溢出)`。前 `输出上限` 字符留内存；超出即把完整内容
+    （头部 + 后续）落进日志夹。**必须读干** —— 不读干，子进程会堵在写满的管道上（假超时）。
+    """
+    留存表 = []
+    留存长 = 0
+    溢出 = False
+    while True:
+        数据块 = 输入流.read(读块大小)
+        if not 数据块:
+            break
+        if 留存长 < 输出上限:
+            头部块 = 数据块[:输出上限 - 留存长]
+            留存表.append(头部块)
+            留存长 += len(头部块)
+            数据块 = 数据块[len(头部块):]
+        if 数据块:
+            溢出 = True
+            _写溢出(日志夹, 数据块, "".join(留存表))
+    return "".join(留存表), 溢出
+
+
+def _取工作树(仓根, 开工号):
+    """问 git 定位这条开工的工作树 —— **先剔除宿主继承的 Git 定位变量**（否则问的是被污染的仓，
+    不是本仓）。与 `上下文.py` 同一份 `找工作树`，只是把环境摆干净。
+    """
+    暂存表 = {键名: os.environ.pop(键名) for 键名 in 继承定位变量 if 键名 in os.environ}
+    try:
+        return 找工作树(仓根, 开工号)
+    finally:
+        os.environ.update(暂存表)
 
 
 def _杀进程组(子进程) -> None:
-    """超时 ⇒ 杀**整个进程组**（shell 及其子进程）⇒ 不留孤儿（`start_new_session` 开的组）。"""
+    """超时 ⇒ 杀整个进程组（shell 及其子进程）⇒ 不留孤儿（`start_new_session` 开的组）。
+
+    `start_new_session=True` ⇒ 子进程就是组长，组号 = 子进程号 ⇒ 直接 `killpg(pid)`，
+    不再 `getpgid`（组长已退出时 `getpgid` 会抛，反而漏杀组内残留）。
+    """
     import signal
     try:
-        os.killpg(os.getpgid(子进程.pid), signal.SIGKILL)
+        os.killpg(子进程.pid, signal.SIGKILL)
     except (ProcessLookupError, PermissionError):
         pass
     try:
@@ -74,89 +143,96 @@ def _杀进程组(子进程) -> None:
 
 
 def 派发(参数表: dict, 仓根) -> tuple:
-    """`v1_shell` 的入口。
+    """`v1_shell` 的入口 ⇒ `(退出码, 输出文本)`。
 
-    参数：
-        命令: 要执行的 shell 命令（必填）
-        开工ID: 可选；给了就在这条开工的工作树里跑，不给就在当前服务仓根跑
-        超时: 超时秒数（可选，默认 5；>5 会被压回 5）
-
-    返回：
-        (退出码, 输出文本)
+    参数：`命令`（必填，非空字符串）· `开工ID`（可选，字符串）· `超时`（可选，整数 1..5）。
     """
     if not isinstance(参数表, dict):
         return 2, "参数拒绝：arguments 要是对象"
     未知键 = sorted(set(参数表) - set(有效键))
     if 未知键:
-        return 2, "参数拒绝：未知键 %s；本工具只认 %s" % (
-            "、".join(未知键), "、".join(有效键))
-    命令 = str(参数表.get("命令") or "").strip()
-    if not 命令:
-        return 2, "参数拒绝：缺 `命令`（要执行的 shell 命令，必填）"
+        return 2, "参数拒绝：未知键 %s；本工具只认 %s" % ("、".join(未知键), "、".join(有效键))
+    命令 = 参数表.get("命令")
+    if not isinstance(命令, str) or not 命令.strip():
+        return 2, "参数拒绝：`命令` 要是非空字符串（收到 %r）" % (命令,)
+    命令 = 命令.strip()
 
-    # 超时：缺省取默认；给了就要整数且 > 0；超过上限**压回并如实报出**（判据 ㊲）
+    # 超时：严格整数 1..5（`bool` 不算整数）；>5 明确拒（schema 已声明 maximum: 5）
     超时 = 超时秒
-    压回行 = ""
-    if 参数表.get("超时") not in (None, ""):
-        try:
-            请求超时 = int(参数表["超时"])
-        except (TypeError, ValueError):
-            return 2, "参数拒绝：`超时` 要是整数秒，收到 %r" % (参数表.get("超时"),)
-        if 请求超时 <= 0:
-            return 2, "参数拒绝：`超时` 要 > 0 秒，收到 %r" % (请求超时,)
-        if 请求超时 > 超时秒:
-            压回行 = ("★ 传的超时 %d 秒 > 上限 %d 秒 ⇒ 压回 %d 秒（判据 ㊲：全项目超时设置 ≤5 秒）"
-                    % (请求超时, 超时秒, 超时秒))
-        else:
-            超时 = 请求超时
+    if "超时" in 参数表:
+        超时值 = 参数表["超时"]
+        if type(超时值) is not int:
+            return 2, "参数拒绝：`超时` 要是整数 1..%d，收到 %r" % (超时秒, 超时值)
+        if not 1 <= 超时值 <= 超时秒:
+            return 2, "参数拒绝：`超时` 要在 1..%d 之间（schema 声明 maximum=%d），收到 %d" % (
+                超时秒, 超时秒, 超时值)
+        超时 = 超时值
+
+    开工号 = 参数表.get("开工ID")
+    if 开工号 is not None and not isinstance(开工号, str):
+        return 2, "参数拒绝：`开工ID` 要是字符串（收到 %r）" % (开工号,)
+    开工号 = (开工号 or "").strip()
 
     # 目标树：给了 `开工ID` 就问 git 精确定位那条开工的工作树；不给就用当前服务仓根。
-    # **不接任意路径** —— 不许拿它换到仓外去。
-    开工号 = str(参数表.get("开工ID") or "").strip()
+    # 不接任意路径 —— 不许拿它换到仓外去。
     目标树 = Path(仓根).resolve()
     if 开工号:
         if not 开工号形状.fullmatch(开工号):
             return 2, "参数拒绝：`开工ID` 形状要是 `v1-` 加六位数字，收到 %r" % (开工号,)
-        工作树 = 找工作树(仓根, 开工号)
+        工作树 = _取工作树(仓根, 开工号)
         if 工作树 is None or not 工作树.is_dir():
             return 2, "参数拒绝：开工 %s 的工作树不在（问 git 问不到）⇒ 不执行" % (开工号,)
         目标树 = 工作树.resolve()
 
-    # 执行：命令原样交给 /bin/sh（不解析、不过滤）；带上 git 禁终端提示（远端认证会永挂）。
-    # 超时**杀整个进程组**（`start_new_session` + `killpg`）—— 只杀 shell 会留下它的子进程（孤儿）。
-    环境表 = dict(os.environ)
-    环境表.update(禁终端提示环境)
+    # 执行：命令原样交给 /bin/sh；stdout/stderr 由两条线程**边读边截断**（前 `输出上限` 字符留内存，
+    # 超出落日志件）—— 不整块进内存、不堵管道；编码 utf-8 + errors=replace（坏字节不炸工具）。
+    环境表 = _执行环境(目标树)
     try:
         子进程 = subprocess.Popen(命令, shell=True, cwd=str(目标树),
                              stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                             text=True, env=环境表, start_new_session=True)
+                             encoding="utf-8", errors="replace",
+                             env=环境表, start_new_session=True)
     except OSError as 起不来:
         return 1, "起不了：%r\n命令：%s" % (起不来, 命令)
+
+    标准输出夹 = _建日志夹("标准输出")
+    标准错误夹 = _建日志夹("标准错误")
+    收集表 = {}
+    线程表 = [
+        threading.Thread(target=lambda: 收集表.update({"out": _收流(子进程.stdout, 标准输出夹)})),
+        threading.Thread(target=lambda: 收集表.update({"err": _收流(子进程.stderr, 标准错误夹)})),
+    ]
+    for 线程 in 线程表:
+        线程.start()
+    超时了 = False
     try:
-        标准输出, 标准错误 = 子进程.communicate(timeout=超时)
+        子进程.wait(timeout=超时)
     except subprocess.TimeoutExpired:
+        超时了 = True
         _杀进程组(子进程)
-        return -1, "命令超时（%d 秒）：%s\n工作目录：%s" % (超时, 命令, 目标树)
-    回执码 = 子进程.returncode
+    for 线程 in 线程表:
+        线程.join(timeout=3)
+    _关日志夹(标准输出夹)
+    _关日志夹(标准错误夹)
+    标准输出, 输出溢出 = 收集表.get("out", ("", False))
+    标准错误, 错误溢出 = 收集表.get("err", ("", False))
+    回执码 = -1 if 超时了 else 子进程.returncode
 
-    标准输出 = 标准输出 or ""
-    标准错误 = 标准错误 or ""
     截断行表 = []
-    if len(标准输出) > 输出上限 or len(标准错误) > 输出上限:
-        完整日志路径 = _落完整日志(命令, 目标树, 标准输出, 标准错误)
-        标准输出 = 标准输出[:输出上限]
-        标准错误 = 标准错误[:输出上限]
-        截断行表.append("★ 输出超 %d 字符已截断；完整日志：%s" % (输出上限, 完整日志路径))
-
+    if 输出溢出 or 错误溢出:
+        日志件表 = [日志夹["路径"] for 日志夹 in (标准输出夹, 标准错误夹) if 日志夹["路径"]]
+        截断行表.append("★ 输出超 %d 字符已截断；完整日志：%s" % (输出上限, " ；".join(日志件表)))
+        if 标准输出夹["截顶"] or 标准错误夹["截顶"]:
+            截断行表.append("★ 完整日志也已到上限 %d 字符（命令输出过大）" % 日志上限)
     输出行 = ["命令：%s" % 命令, "工作目录：%s" % 目标树,
              "退出码：%d" % 回执码, "超时：%d 秒（上限 %d 秒）" % (超时, 超时秒)]
-    if 压回行:
-        输出行.append(压回行)
+    if 超时了:
+        输出行.append("★ 命令超时（%d 秒）⇒ 已杀整进程组；下面是已收到的部分输出" % 超时)
     输出行.append("")
     if 标准输出:
         输出行 += ["=== 标准输出 ===", 标准输出.rstrip(), ""]
     if 标准错误:
         输出行 += ["=== 标准错误 ===", 标准错误.rstrip(), ""]
     输出行 += 截断行表
-    输出文本 = "\n".join(输出行)
-    return (1 if 回执码 != 0 else 0), 输出文本
+    # 工具面退出码：0 成功 · 1 命令失败 · -1 超时（回执里带命令的真实退出码）
+    return (-1 if 超时了 else (1 if 回执码 != 0 else 0)), "\n".join(输出行)
