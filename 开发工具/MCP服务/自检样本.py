@@ -12,7 +12,7 @@ r"""自检样本 —— MCP 工具面自检：协议三帧 · 工具表形状 ·
 """
 from pathlib import Path
 
-隔离样本组 = {"改名样本": 34, "上下文样本": 71, "跨树样本": 18}
+隔离样本组 = {"改名样本": 34, "上下文样本": 71, "跨树样本": 18, "重叠样本": 4}
 隔离入口文本 = (
     "import json,sys; from pathlib import Path; "
     "sys.path.insert(0,str(Path.cwd()/'开发工具')); "
@@ -28,10 +28,11 @@ def 隔离样本入口(样本组名, 仓根):
     from .改名样本 import 批量改名样本
     from .上下文样本 import 上下文样本
     from .跨树样本 import 跨树样本
+    from . import 合主干重叠样本
     旧快照 = 开树快照()
     try:
         样本表 = {"改名样本": 批量改名样本, "上下文样本": 上下文样本,
-                 "跨树样本": 跨树样本}[样本组名](仓根, 工具表)
+                 "跨树样本": 跨树样本, "重叠样本": 合主干重叠样本.样本列表}[样本组名](仓根, 工具表)
         return {"组": 样本组名, "样本": [(说明, bool(通过)) for 说明, 通过 in 样本表]}
     finally:
         关树快照(旧快照)
@@ -85,7 +86,7 @@ def 跑自检(仓根, 工具表) -> int:
     import concurrent.futures
     旧快照 = 开树快照()
     try:
-        with concurrent.futures.ThreadPoolExecutor(max_workers=3) as 隔离进程池:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=4) as 隔离进程池:
             样本作业表 = {样本组名: 隔离进程池.submit(跑隔离样本, 样本组名, 仓根)
                       for 样本组名 in 隔离样本组}
             return 自检主体(仓根, 工具表, 样本作业表)
@@ -195,13 +196,14 @@ def 自检主体(仓根, 工具表, 样本作业表) -> int:
     from .开工记忆样本 import 开工记忆样本
     from .诊断样本 import 诊断样本
     from .易用样本 import 样本列表 as 易用样本表
+    from . import 合主干重叠样本
     样本表 += (样本作业表["改名样本"].result() + 终端样本(仓根, 工具表)
             + 样本作业表["上下文样本"].result() + 符号样本(仓根, 工具表)
             + 自愈样本(仓根, 工具表) + 冲突回执样本(仓根, 工具表) + 查询样本(仓根, 工具表)
             + 库快照样本(仓根, 工具表)
             + http传输样本.样本列表(仓根, 工具表) + 裸仓回执样本.样本列表(仓根, 工具表)
             + 样本作业表["跨树样本"].result() + 开工记忆样本(仓根, 工具表)
-            + 写盘样本.样本列表(仓根, 工具表) + 诊断样本(仓根, 工具表) + 易用样本表(仓根, 工具表))
+            + 写盘样本.样本列表(仓根, 工具表) + 诊断样本(仓根, 工具表) + 易用样本表(仓根, 工具表) + 样本作业表["重叠样本"].result())
     from unittest.mock import patch
     from . import 参数规范
     with patch.object(参数规范, "取树", return_value={}):
@@ -311,6 +313,15 @@ def 自检_隔离边界(仓根):
         跑命令(["git", "status"], cwd=仓根, 子进程环境={"GIT_DIR": "显式目标"})
         合规 = 合规 and 启动替身.call_args.kwargs["env"]["GIT_DIR"] == "显式目标"
     样本表[-1] = (样本表[-1][0] + "·Git继承定位剔除且显式覆盖保留", 样本表[-1][1] and 合规)
+    子组读数 = {"组": "重叠样本", "样本": [["重叠%02d" % 序号, True] for 序号 in range(4)]}
+    for 故障读数 in (子组读数, {"组": "重叠样本", "样本": 子组读数["样本"][:-1]},
+                 {"组": "重叠样本", "样本": [["失败", False]] + 子组读数["样本"][1:]}):
+        with patch.object(subprocess, "run", return_value=subprocess.CompletedProcess(
+                [], 0, json.dumps(故障读数), "")) as 启动替身:
+            结果表 = 跑隔离样本("重叠样本", 仓根)
+        合规 = (结果表 == [tuple(明细条) for 明细条 in 子组读数["样本"]] if 故障读数 is 子组读数
+              else bool(结果表) and not all(通过 for _, 通过 in 结果表))
+        样本表.append(("隔离边界·重叠4条同序完整或缺1失败1拒且恰一次", 合规 and 启动替身.call_count == 1))
     return 样本表
 
 
