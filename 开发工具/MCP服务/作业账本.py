@@ -41,7 +41,7 @@ from 运行数据根 import 解析当前环境, 确保子目录  # noqa: E402
 可抢态集 = (状态_启动中, 状态_运行中)
 终态集 = (状态_已完成, 状态_失败, 状态_已取消, 状态_崩溃失联)
 # 允许 `改行` 写的栏（栏名要进 SQL ⇒ 白名单，不拿调用方的键直接拼）。
-可改栏 = ("状态", "完成时间", "退出码", "组号", "组代次", "命令组号", "命令代次", "截断", "说明")
+可改栏 = ("开工ID", "状态", "完成时间", "退出码", "组号", "组代次", "命令组号", "命令代次", "截断", "说明")
 
 建表语句 = (
     """create table if not exists 作业 (
@@ -49,6 +49,7 @@ from 运行数据根 import 解析当前环境, 确保子目录  # noqa: E402
         状态     text not null,
         命令     text not null,
         工作树   text not null,
+        开工ID   text,
         开始时间 text not null,
         完成时间 text,
         退出码   integer,
@@ -83,17 +84,33 @@ def 连账本() -> sqlite3.Connection:
     连接.row_factory = sqlite3.Row
     for 建表语句行 in 建表语句:
         连接.execute(建表语句行)
+    _补列(连接)
     连接.commit()
     return 连接
 
 
-def 落新行(任务ID: str, 命令: str, 工作树: str, 开始时间: str) -> None:
-    """登记一条新作业（状态 = `启动中`，组号留空 —— 由调用方随后补）。"""
+def _补列(连接) -> None:
+    """老库补列：`作业.开工ID`（2026-10-08 加 —— 「作业 → 开工」一眼可查）。
+
+    `create table if not exists` 只对新库生效 ⇒ 老库要显式补。判定走 `pragma table_info`，
+    补过就不动（**幂等**）；只 `add column`、不重建表 ⇒ 既有行一个字节都不丢。
+    """
+    列名集 = {文本行[1] for 文本行 in 连接.execute("pragma table_info(作业)")}
+    if "开工ID" not in 列名集:
+        连接.execute("alter table 作业 add column 开工ID text")
+
+
+def 落新行(任务ID: str, 命令: str, 工作树: str, 开始时间: str, 开工ID: str = "") -> None:
+    """登记一条新作业（状态 = `启动中`，组号留空 —— 由调用方随后补）。
+
+    `开工ID` = 这条作业服务的那条开工（`v1_job` 顶层开工号；`合主线` 用目标开工ID）——
+    落列后「作业 → 开工」一眼可查，不必再靠命令文本 / 工作树路径猜。
+    """
     连接 = 连账本()
     try:
         连接.execute(
-            "insert into 作业 (任务ID, 状态, 命令, 工作树, 开始时间) values (?, ?, ?, ?, ?)",
-            (任务ID, 状态_启动中, 命令, 工作树, 开始时间))
+            "insert into 作业 (任务ID, 状态, 命令, 工作树, 开工ID, 开始时间) values (?, ?, ?, ?, ?, ?)",
+            (任务ID, 状态_启动中, 命令, 工作树, 开工ID, 开始时间))
         连接.commit()
     finally:
         连接.close()
