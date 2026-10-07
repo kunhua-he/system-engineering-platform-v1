@@ -54,7 +54,8 @@ def 样本列表(仓根, 工具表) -> list:
     连接 = sqlite3.connect(str(账本库))
     for 建表行 in 账本.建表语句:
         连接.execute(建表行)
-    连接.execute("insert into 开工 values (?,?,?,?,?,?,?)",
+    连接.execute("insert into 开工 (开工号, 工作内容, 分支名, 工作树, 状态, 开工时间, 释放时间) "
+               "values (?,?,?,?,?,?,?)",
                ("v1-样本", "样本", "样本", str(工作树), 账本.状态_进行中, "样本", None))
     连接.commit()
     连接.close()
