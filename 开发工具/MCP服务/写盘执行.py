@@ -40,7 +40,7 @@ def 内容指纹(内容值: str) -> str:
     return hashlib.sha256(内容值.encode("utf-8")).hexdigest()[:16]
 
 
-def 写文件(件路径: Path, 全文: str) -> str:
+def 写文件(件路径: Path, 全文: str, 预期指纹=None) -> str:
     """**临时件 + rename**（同目录、同文件系统 ⇒ 原子的）⇒ 错误说明（空 = 成功）。
 
     为什么不 `write_text`：它是「截断 + 写」，中途崩了会留一个**半截文件** ——
@@ -54,15 +54,27 @@ def 写文件(件路径: Path, 全文: str) -> str:
     新件（原件不存在）照旧吃 umask —— 与 `write_text` 建新件同一口径。模式位读 / 设不动
     ⇒ 同 `OSError` 一并走失败分支：临时件删掉，**原文件一个字节不动**。
     """
-    临时路径 = 件路径.with_name(件路径.name + 写盘后缀)
+    import tempfile
+    if 预期指纹 is None:
+        预期指纹 = 文件指纹(str(件路径)) if 件路径.is_file() else ""
+    临时路径 = None
+    原父目录 = 件路径.parent.resolve()
     try:
+        文件描述符, 临时文件名 = tempfile.mkstemp(prefix=件路径.name + ".", suffix=写盘后缀, dir=件路径.parent)
+        os.close(文件描述符)
+        临时路径 = Path(临时文件名)
         原模式 = 件路径.stat().st_mode & 0o7777 if 件路径.exists() else None
         临时路径.write_text(全文, encoding="utf-8", newline="\n")
         if 原模式 is not None:
             os.chmod(临时路径, 原模式)
+        当前指纹 = 文件指纹(str(件路径)) if 件路径.is_file() else ""
+        if 件路径.is_symlink() or 件路径.parent.resolve() != 原父目录 or 当前指纹 != 预期指纹:
+            临时路径.unlink(missing_ok=True)
+            return "替换前指纹漂移：未替换原件"
         os.replace(临时路径, 件路径)
     except OSError as 写不动的原因:
-        临时路径.unlink(missing_ok=True)
+        if 临时路径 is not None:
+            临时路径.unlink(missing_ok=True)
         return "写盘失败：%r" % (写不动的原因,)
     return ""
 
@@ -160,7 +172,8 @@ def 执行写盘(连接, 工作树: Path, 开工号: str, 项表: list, 盘上�
         if 功能号 == 功能_删除:
             错误 = 删除文件(件路径)
         else:
-            错误 = 写文件(件路径, 新全文)
+            当前指纹 = 文件指纹(str(件路径)) if 件路径.is_file() else ""
+            错误 = "落盘前指纹漂移" if 当前指纹 != 写前指纹 else 写文件(件路径, 新全文)
         if 错误:
             残留 = _平意图(连接, 开工号, 路径)
             失败说明 = "第 %d 条 `%s`：%s（盘上未改）%s" % (序号, 路径, 错误, 残留)
@@ -175,5 +188,41 @@ def 执行写盘(连接, 工作树: Path, 开工号: str, 项表: list, 盘上�
                     % (序号, 路径, 写后指纹 or "（件没了）", 收尾错))
             失败阶段 = "记账"
             break
+        盘上表[路径] = 写后指纹
         完成表.append("%s（%s）" % (路径, 功能名))
     return 完成表, 失败说明, 失败阶段
+
+
+class 写盘占用(Exception):
+    """已有写入者时立即拒绝。"""
+
+
+from contextlib import contextmanager
+
+
+@contextmanager
+def 开工写盘锁(开工号):
+    """同一账本、同一开工共享非阻塞进程锁。"""
+    import fcntl
+    from .开工账本 import 连账本
+    if not isinstance(开工号, str) or not 开工号.startswith("v1-") or "/" in 开工号 or ".." in 开工号 or "\\" in 开工号:
+        raise 写盘占用("开工号形状错误")
+    锁连接 = 连账本()
+    try:
+        树记录 = 锁连接.execute("select 工作树 from 开工 where 开工号 = ?", (开工号,)).fetchone()
+    finally:
+        锁连接.close()
+    if not 树记录 or not Path(树记录[0]).is_dir():
+        raise 写盘占用("没有这条开工工作树")
+    锁描述符 = os.open(Path(树记录[0]), os.O_RDONLY)
+    try:
+        try:
+            fcntl.flock(锁描述符, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            raise 写盘占用("开工写盘锁已占用，未写盘")
+        try:
+            yield
+        finally:
+            fcntl.flock(锁描述符, fcntl.LOCK_UN)
+    finally:
+        os.close(锁描述符)

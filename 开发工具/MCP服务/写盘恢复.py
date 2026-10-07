@@ -76,6 +76,8 @@ def 恢复一次(连接, 工作树: Path, 开工号: str) -> tuple:
     未写成件：只销意图；外部漂移：逐件报出、**一个字节都不碰**，退出码 3。
     """
     意图表 = 列写盘意图(连接, 开工号)
+    if any(意图行["功能"].startswith("恢复已记账写后:") for 意图行 in 意图表):
+        return 3, "存在已记账恢复意图，须同改动编号/候选全文调用恢复已记账写后", [], []
     if not 意图表:
         return 0, "没有未决的写盘意图 —— 盘账已是一致态（不必恢复）", [], []
     认领表 = 账本.读认领(连接, 开工号)
@@ -194,3 +196,106 @@ def 恢复开工(仓根, 开工号: str) -> tuple:
         return 退出码, "%s 写盘恢复（只据写盘意图，不洗指纹、不造历史）：\n%s" % (开工号, 说明)
     finally:
         连接.close()
+
+
+def 核恢复路径(仓根, 开工号, 工作树, 路径):
+    """公共仓真实登记树和无链接的规范相对路径。"""
+    from .仓操作 import 找工作树, 跑命令
+    if not isinstance(路径, str) or not 路径 or Path(路径).is_absolute() or str(Path(路径)) != 路径 or ".." in Path(路径).parts:
+        raise ValueError("路径须为规范仓内相对路径")
+    if 工作树.is_symlink() or not 工作树.is_dir():
+        raise ValueError("工作树不存在或为链接")
+    登记树 = 找工作树(仓根, 开工号)
+    if 登记树 is None or 登记树.resolve() != 工作树.resolve():
+        raise ValueError("工作树与公共仓真实登记不同")
+    当前路径 = 工作树
+    for 路径段 in Path(路径).parts:
+        当前路径 = 当前路径 / 路径段
+        if 当前路径.is_symlink():
+            raise ValueError("路径含链接")
+    if not 当前路径.is_file() or not 当前路径.resolve().is_relative_to(工作树.resolve()):
+        raise ValueError("目标不是树内普通文件")
+    公共值 = []
+    for 树路径 in (仓根, 工作树):
+        退出码, 输出文本 = 跑命令(["git", "rev-parse", "--path-format=absolute", "--git-common-dir"], cwd=树路径)
+        if 退出码:
+            raise ValueError("公共仓定位失败")
+        公共值.append(Path(输出文本.strip()).resolve())
+    if 公共值[0] != 公共值[1]:
+        raise ValueError("目标属于外仓")
+    return 当前路径
+
+
+def 核已记账记录(连接, 开工号, 改动编号, 路径):
+    """只认可最新成功修改行及仍等于原写后的认领。"""
+    开工行 = 账本.读开工(连接, 开工号)
+    if not 开工行 or 开工行["状态"] != 账本.状态_进行中:
+        raise ValueError("目标开工不是进行中")
+    记录 = 连接.execute("select * from 改动 where 编号 = ? and 开工号 = ? and 路径 = ?", (改动编号, 开工号, 路径)).fetchone()
+    if not 记录 or 记录["功能"] != "修改" or not 记录["写前指纹"] or not 记录["写后指纹"] or 记录["写前指纹"] == 记录["写后指纹"]:
+        raise ValueError("没有确切成功修改记录")
+    if 连接.execute("select 1 from 改动 where 开工号 = ? and 路径 = ? and 编号 > ?", (开工号, 路径, 改动编号)).fetchone():
+        raise ValueError("原记录之后存在合法改动")
+    if 账本.读认领(连接, 开工号).get(路径) != 记录["写后指纹"]:
+        raise ValueError("未认领或认领指纹不是原写后")
+    return 开工行, dict(记录)
+
+
+def 恢复已记账写后(仓根, 开工号, 参数表):
+    """精确恢复既有成功记录，原历史和认领保持不变。"""
+    import hashlib
+    import sqlite3
+    from .写盘执行 import 开工写盘锁, 写盘占用, 写文件
+    改动编号, 路径, 候选全文 = 参数表.get("改动编号"), 参数表.get("路径"), 参数表.get("候选全文")
+    if type(改动编号) is not int or 改动编号 <= 0 or not isinstance(候选全文, str):
+        return 2, "改动编号须为正整数，候选全文须为准确完整文本"
+    try:
+        with 开工写盘锁(开工号):
+            连接 = 账本.连账本()
+            try:
+                开工行, 记录 = 核已记账记录(连接, 开工号, 改动编号, 路径)
+                工作树 = Path(开工行["工作树"])
+                件路径 = 核恢复路径(仓根, 开工号, 工作树, 路径)
+                候选指纹 = hashlib.sha256(候选全文.encode("utf-8")).hexdigest()
+                if 候选指纹[:16] != 记录["写后指纹"]:
+                    raise ValueError("候选全文指纹不是原记录写后")
+                盘上字节 = 件路径.read_bytes()
+                盘上指纹 = hashlib.sha256(盘上字节).hexdigest()[:16]
+                if 盘上指纹 not in (记录["写前指纹"], 记录["写后指纹"]):
+                    raise ValueError("盘上不是原写前或原写后，拒绝第三版本")
+                from .禁改面 import 禁改原因
+                from .修改 import _未登记绑定名
+                from .语法闸 import 查最终态语法
+                for 全文 in (盘上字节.decode("utf-8"), 候选全文):
+                    原因 = 禁改原因(路径, 全文)
+                    if 原因:
+                        raise ValueError(原因)
+                if 查最终态语法({路径: 候选全文}):
+                    raise ValueError("候选语法不合法")
+                未登记, 错误 = _未登记绑定名(工作树, [(路径, 1, "", 候选全文)])
+                if 未登记 or 错误:
+                    return 5, "命名闸拒：%s" % (错误 or 未登记)
+                意图表 = [意图行 for 意图行 in 列写盘意图(连接, 开工号) if 意图行["路径"] == 路径]
+                恢复功能 = "恢复已记账写后:%d" % 改动编号
+                if 意图表 and (意图表[0]["功能"] != 恢复功能 or 意图表[0]["写前指纹"] != 记录["写前指纹"] or 意图表[0]["期望写后指纹"] != 记录["写后指纹"]):
+                    raise ValueError("目标存在其他未决意图")
+                if 盘上指纹 == 记录["写后指纹"] and not 意图表:
+                    return 0, "幂等零写：原记录%d %s 写后%s，候选SHA256=%s" % (改动编号, 路径, 盘上指纹, 候选指纹)
+                from .写盘账本 import 记写盘意图, 记已记账恢复
+                补意图表(连接)
+                if 盘上指纹 == 记录["写前指纹"]:
+                    记写盘意图(连接, 开工号, 路径, 恢复功能, 记录["写前指纹"], 记录["写后指纹"])
+                    核已记账记录(连接, 开工号, 改动编号, 路径)
+                    核恢复路径(仓根, 开工号, 工作树, 路径)
+                    错误 = 写文件(件路径, 候选全文, 盘上指纹)
+                    if 错误:
+                        return 4, "%s；原记录未改，恢复意图保留，可用同参重试" % 错误
+                if 文件指纹(str(件路径)) != 记录["写后指纹"]:
+                    return 4, "替换后漂移：保留恢复意图与现场"
+                核已记账记录(连接, 开工号, 改动编号, 路径)
+                记已记账恢复(连接, 开工号, 路径, 记录, 候选指纹)
+                return 0, "恢复已记账写后：原记录%d %s 写前%s → 写后%s；原历史/认领未改；候选SHA256=%s；恢复动作已记账" % (改动编号, 路径, 记录["写前指纹"], 记录["写后指纹"], 候选指纹)
+            finally:
+                连接.close()
+    except (ValueError, OSError, UnicodeError, sqlite3.Error, 写盘占用) as 错误:
+        return 3, "恢复拒或未收尾（保留现场）：%s" % 错误

@@ -131,6 +131,9 @@ def 自检主体(仓根, 工具表, 样本作业表) -> int:
                 模式.get("additionalProperties") is False and set(属性表) == 期望字段
                 and "required" not in 模式))
 
+    from .已记账恢复样本 import 样本列表
+    样本表.extend(样本列表(仓根))
+
     # ── ③ 畸形帧（必须判失败：不抛异常、不回假成功）──
     for 源文本 in ("123", "null", "[1,2]", '"x"',
                '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":"x"}',
