@@ -5,7 +5,8 @@
 （HTTP 面与 stdio 面共用同一份自检）。**只用标准库**（仓内 Python 零第三方依赖）。
 
 覆盖：initialize 协商版本 + 会话头 · tools/list 与 stdio 合同一致 · 通知 202 · 只读 tools/call ·
-坏帧 / 批量 / 未知方法 / 未知会话 / 坏 Origin / 坏 Host / GET 405 / DELETE 终止 / 错路径。
+坏帧 / 批量 / 未知方法 / 未知会话 / 坏 Origin / 坏 Host / GET 405 / DELETE 终止 / 错路径 ·
+客户端断连（三例 + 其他异常仍可见 + 断连后仍通 + 名额回收，住 `http断连样本.py`）。
 """
 import http.client
 import json
@@ -17,11 +18,13 @@ from .服务常量 import 服务路径
 
 # 自检客户端默认头：Accept 同时列 JSON 与 SSE（规格要求），Content-Type 为 JSON。
 标准头 = {"Accept": "application/json, text/event-stream", "Content-Type": "application/json"}
+# 裸 socket 样本用的请求头字节（`_原始帧` 走字节，不给 dict；断连样本从本件引它）。
+裸请求头 = b"Host: 127.0.0.1\r\nContent-Type: application/json\r\n"
 
 
-def _起环回(仓根, 工具表):
-    """在 127.0.0.1 的临时端口起传输 ⇒ (服务对象, 监听端口)。"""
-    服务对象 = 传输_http.传输服务(("127.0.0.1", 0), 传输_http.请求处理器, 仓根, 工具表,
+def _起环回(仓根, 工具表, 处理器类=None):
+    """在 127.0.0.1 的临时端口起传输 ⇒ (服务对象, 监听端口)。`处理器类` 缺省用真处理器。"""
+    服务对象 = 传输_http.传输服务(("127.0.0.1", 0), 处理器类 or 传输_http.请求处理器, 仓根, 工具表,
                             传输_http.会话表())
     监听端口 = 服务对象.server_address[1]
     运行线程 = threading.Thread(target=服务对象.serve_forever,
@@ -213,6 +216,10 @@ def 样本列表(仓根, 工具表):
                         b"application/json" in 原始字节, b"<!DOCTYPE" not in 原始字节),
                     b"Connection: close" in 原始字节 and b"application/json" in 原始字节
                     and b"<!DOCTYPE" not in 原始字节))
+
+        # —— 客户端断连：三例 + 其他异常仍可见 + 断连后仍通 + 名额回收 ——
+        from .http断连样本 import 断连日志样本
+        样本表 += 断连日志样本(仓根, 工具表)
 
     finally:
         服务对象.shutdown()
