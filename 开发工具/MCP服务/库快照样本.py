@@ -10,7 +10,12 @@ r"""库快照样本 —— `v1_db` 快照差集的正反样本（临时 git 仓 
   · **`目标=摘要`** ⇒ 只出每表 count，不出 `+ - ~` 行；
   · **`条数=0` 非法** ⇒ 退出码 2（参数错）；
   · **坏 ref** ⇒ 退出码非 0；
-  · **源库只读**：跑前后源库 sha256 不变。
+  · **缺失源库**（该 ref 下没有源库件）⇒ 退出码非 0；
+  · **仓外路径冒充 ref**（`/etc/passwd`）与 **首字符 `-` 的选项注入形 ref** ⇒ 均拒（非 0）——
+    这两条是旧 527 包 `_核引用` 形状守卫的承接口径：568 由 `_取提交` 的 rev-parse 验存在承担；
+  · **源库只读**：跑前后源库 sha256 不变；
+  · **唯一临时目录**：重入两次各开各的目录，绝不交叉覆盖；工具两次调用报的落点不同；
+  · **含空格路径清理正确**：清理命令由 `shlex.quote` 引用，目录真被删；越界一律不删。
 
 ★ 自建临时仓 + 真运行数据根临时件，跑完即删 ⇒ **真仓一个字节都不改**。
 """
@@ -55,11 +60,36 @@ def _建样本仓(临时根: Path) -> Path:
     return 仓根
 
 
+def _建无库仓(临时根: Path) -> Path:
+    """自建临时 git 仓，**不放源库件**（验「该 ref 下没有源库」⇒ 退出码非 0）。"""
+    import subprocess
+    from .合主干有界跑 import 干净环境
+    环境表 = 干净环境()
+    仓根 = 临时根 / "无库仓"
+    仓根.mkdir(parents=True)
+    (仓根 / "占位.txt").write_text("占位\n", encoding="utf-8")
+    身份 = ["-c", "user.name=样本", "-c", "user.email=样本@例"]
+    subprocess.run(["git", "init", "-q"], cwd=仓根, check=True, env=环境表)
+    subprocess.run(["git"] + 身份 + ["add", "."], cwd=仓根, check=True, env=环境表)
+    subprocess.run(["git"] + 身份 + ["commit", "-q", "-m", "无库"], cwd=仓根, check=True, env=环境表)
+    return 仓根
+
+
+def _落点行(回执文本: str) -> str:
+    """从回执（JSON 信封或纯文本）里取「快照落点」那一段（取不到 ⇒ 空串）。"""
+    命中表 = [文本行 for 文本行 in 回执文本.replace("\\n", "\n").split("\n")
+             if 文本行.startswith("快照落点")]
+    return 命中表[0] if 命中表 else ""
+
+
 def 库快照样本(仓根, 工具表) -> list:
     """⇒ 样本表（`(说明, 通过?)`）；自建临时仓 + 真运行数据根临时件，跑完即删，**真仓一个字节都不改**。"""
     import hashlib
+    import shlex
     import shutil
     import tempfile
+
+    from .库快照 import _取临时根, _开快照目录, _清快照目录
 
     def 跑(参数表):
         退出码, 输出文本 = 工具表["v1_db"][0]({"操作": "快照差集", "参数": 参数表}, 样本仓)
@@ -101,6 +131,46 @@ def 库快照样本(仓根, 工具表) -> list:
         样本表.append(("源库只读（读前后 sha256 不变）：%s"
                  % ("是" if hashlib.sha256(源库.read_bytes()).hexdigest() == 源库前 else "否"),
                  hashlib.sha256(源库.read_bytes()).hexdigest() == 源库前))
+
+        真临时根 = _取临时根()
+        目录前 = _开快照目录(真临时根)
+        目录后 = _开快照目录(真临时根)
+        样本表.append(("唯一临时目录（重入不覆盖）：两次开的目录不同且在（%s ≠ %s）"
+                 % (目录前.name, 目录后.name),
+                 目录前 != 目录后 and 目录前.is_dir() and 目录后.is_dir()))
+        _清快照目录(目录前, 真临时根)
+        _清快照目录(目录后, 真临时根)
+        前码, 前文 = 跑({"基准": "HEAD~1", "对照": "HEAD"})
+        后码, 后文 = 跑({"基准": "HEAD~1", "对照": "HEAD"})
+        落点前, 落点后 = _落点行(前文), _落点行(后文)
+        样本表.append(("工具两次调用各报各的唯一落点（不复用固定名）：%s ≠ %s"
+                 % (落点前 or "（缺）", 落点后 or "（缺）"),
+                 前码 == 0 and 后码 == 0 and bool(落点前) and bool(落点后) and 落点前 != 落点后))
+        空格目录 = Path(tempfile.mkdtemp(prefix="v1 空格 样本-", dir=str(真临时根)))
+        清命令 = _清快照目录(空格目录, 真临时根)
+        引用对 = bool(清命令) and shlex.quote(str(空格目录.resolve())) in 清命令
+        样本表.append(("含空格路径清理正确：命令引用对 %s · 目录已删 %s（命令 %s）"
+                 % ("是" if 引用对 else "否", "是" if not 空格目录.exists() else "否", 清命令 or "（空）"),
+                 引用对 and not 空格目录.exists()))
+        界外目录 = Path(tempfile.mkdtemp(prefix="v1越界样本-"))
+        越界命令 = _清快照目录(界外目录, 真临时根)
+        样本表.append(("越界拒删：临时件根之外的目录 ⇒ 空命令 %s · 目录仍在 %s"
+                 % ("是" if not 越界命令 else "否", "是" if 界外目录.is_dir() else "否"),
+                 越界命令 == "" and 界外目录.is_dir()))
+        shutil.rmtree(界外目录, ignore_errors=True)
+        无库仓 = _建无库仓(临时根)
+        退出码, 输出文本 = 工具表["v1_db"][0](
+            {"操作": "快照差集", "参数": {"基准": "HEAD", "对照": "盘上"}}, 无库仓)
+        样本表.append(("缺失源库（该 ref 下没有 信息核心.db）⇒ 退出码 %d（非 0）" % 退出码,
+                 退出码 != 0))
+        # ★ 527 承接（2026-10-08）：527 独有 `_核引用` 形状守卫（拒首字符 `-` 的选项注入面、
+        #   拒仓外路径冒充 ref）在 568 由 `_取提交` 的 rev-parse 承担 —— 补正反读它仍拒。
+        退出码, 输出文本 = 跑({"基准": "/etc/passwd"})
+        样本表.append(("非本库路径冒充 ref（/etc/passwd）⇒ 退出码 %d（非 0）" % 退出码,
+                 退出码 != 0))
+        退出码, 输出文本 = 跑({"基准": "--all"})
+        样本表.append(("选项注入形 ref（首字符 `-`）⇒ 退出码 %d（非 0）" % 退出码,
+                 退出码 != 0))
     finally:
         shutil.rmtree(临时根, ignore_errors=True)
     return 样本表
