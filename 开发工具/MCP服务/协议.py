@@ -19,7 +19,8 @@ import os
 import select
 import sys
 
-from .服务指纹 import 过期提示行
+from . import 自愈预检
+from .服务指纹 import 算服务指纹, 过期提示行
 
 协议版本 = "2024-11-05"
 服务名 = "v1-devkit"
@@ -83,7 +84,7 @@ def 派发(协议方法, 命令行参数, 仓根, 工具表):
         实现 = 工具表[名称][0]
         退出码, 输出文本 = 实现(实参, 仓根)
         # ⑤ 服务代码过期自查：MCP 是长驻进程，改了 `MCP服务/**` 不重启就跑旧码 ⇒ 回执头如实报一行。
-        过期行 = 过期提示行()
+        过期行 = 自愈预检.拒绝提示行() or 过期提示行()
         if 过期行 and 名称 != "v1_context":
             输出文本 = 过期行 + "\n" + 输出文本
         return {"content": [{"type": "text", "text": 输出文本}], "isError": 退出码 != 0}, None
@@ -128,18 +129,34 @@ def 跑主循环(仓根, 工具表, 输入流=None, 输出=None):
         if 可自愈 and not 兜底 and not 缓冲:
             过期行 = 过期提示行()
             if 过期行:
-                print("★ 服务代码已变 ⇒ 自愈重启（同一 stdio 管道，下一帧即新码）", file=sys.stderr)
-                sys.stderr.flush()
-                try:
-                    os.execv(sys.executable, _重启参数())
-                except OSError as 错误:
-                    print("★ 自愈重启失败：%s ⇒ 继续用旧码" % (错误,), file=sys.stderr)
-                    兜底 = True
-                    continue               # 不再重试 ⇒ 回顶正常读帧（旧码）
+                # ★ 有界预检：新码真起得来才 exec —— 起不来就留着旧码。坏代码 exec = 新进程
+                #   import 即崩 = stdio 连接断 = 四个工具全消失（实测 pid 4487）。同一坏指纹只预检一次。
+                当前指纹 = 算服务指纹()
+                放行重启, 拒绝原因, 首记坏版 = 自愈预检.判定重启(当前指纹)
+                if 首记坏版:
+                    print(自愈预检.拒绝记录(拒绝原因), file=sys.stderr)
+                    sys.stderr.flush()
+                if 放行重启 and 算服务指纹() != 当前指纹:
+                    continue               # 预检与 exec 之间又变了 ⇒ 回顶重判（不 exec）
+                if 放行重启:
+                    # 当前帧的响应已在回循环顶之前写完并 flush；再兜底 flush 一次，
+                    # 保证「写成功回执」不被 exec 截断。
+                    输出.flush()
+                    sys.stderr.flush()
+                    print("★ 服务代码已变且预检通过 ⇒ 自愈重启（同一 stdio 管道，下一帧即新码）",
+                          file=sys.stderr)
+                    sys.stderr.flush()
+                    try:
+                        os.execv(sys.executable, _重启参数())
+                    except OSError as 错误:
+                        print("★ 自愈重启失败：%s ⇒ 继续用旧码" % (错误,), file=sys.stderr)
+                        sys.stderr.flush()
+                        兜底 = True
+                        continue           # 不再重试 ⇒ 回顶正常读帧（旧码）
             if not select.select([输入流], [], [], 停等秒)[0]:
                 continue                   # 空闲超时 ⇒ 回顶再比一次指纹
-            if 过期提示行():
-                continue                   # 帧已到但**未读** ⇒ 回顶 exec（帧留在管道，不丢）
+            if 过期提示行() and not 自愈预检.拒绝提示行():
+                continue                   # 帧已到但**未读**且可自愈 ⇒ 回顶 exec（帧留在管道，不丢）
         if 可自愈:
             while b"\n" not in 缓冲:
                 字节 = os.read(输入流.fileno(), 65536)
