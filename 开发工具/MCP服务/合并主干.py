@@ -3,7 +3,7 @@
 """合并主干 —— 把一条已释放/待合并的腿在隔离集成树里合进主干的仓内入口（命令行，不是 MCP 工具）。
 
 用法（在仓根跑）：
-    python3 开发工具/MCP服务/合并主干.py <开工ID> [--推送]
+    python3 开发工具/MCP服务/合并主干.py <开工ID> [--推送 | --查看现场 | --恢复现场 | --清理现场]
 
 入参最小：开工ID（必填，形状 `v1-` 加六位数字）· 推送（可选，默认假）。
 出参：成功/退出码 · 目标树与 HEAD · 合并前后 SHA · 门禁读数摘要 + 完整日志路径 ·
@@ -25,15 +25,18 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from 构建装配.门禁 import 报告环境步  # noqa: E402
-from 合主干编排 import 派发  # noqa: E402
+from 开发工具.MCP服务.合主干编排 import 派发  # noqa: E402
 
 
 def 入口函数(命令行参数):
     开工号 = ""
     推送 = False
+    现场操作 = "合并"
     for 一个参数 in 命令行参数:
         if 一个参数 in ("--推送", "-p"):
             推送 = True
+        elif 一个参数 in ("--查看现场", "--恢复现场", "--清理现场"):
+            现场操作 = 一个参数[2:]
         elif 一个参数 in ("--help", "-h"):
             print(__doc__)
             return 0
@@ -45,7 +48,7 @@ def 入口函数(命令行参数):
         else:
             print("只认一个开工ID；多给了 %r" % 一个参数, file=sys.stderr)
             return 2
-    退出码, 输出文本 = 派发(开工号, 推送, Path(__file__).resolve().parents[2])
+    退出码, 输出文本 = 派发(开工号, 推送, Path(__file__).resolve().parents[2], 操作=现场操作)
     print(输出文本)
     return 退出码
 

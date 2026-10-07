@@ -5,19 +5,93 @@
 且**不在仓内自建以「系统工程平台V1」开头的目录名**（那会踩判据 ㉕）。
 """
 
+import hashlib
+import os
+import stat
 import shutil
 import tempfile
 from pathlib import Path
 
-from 合主干有界跑 import 跑有界命令
+from .合主干有界跑 import 跑有界命令
 
 
 def _跑(命令表, 工作目录, 超时秒数=None, 输入文本=None):
-    return 跑有界命令(命令表, 工作目录=工作目录, 超时秒数=超时秒数, 输入文本=输入文本)
+    return 跑有界命令(命令表, 工作目录=工作目录, 超时秒数=超时秒数, 输入文本=输入文本, 保留日志=True)
+
+
+def 定位主仓(候选目录):
+    """从脚本所在树的公共 Git 元目录定位本项目主仓，拒绝元目录自身。"""
+    候选目录 = Path(候选目录).resolve()
+    退出码, 输出文本, 日志路径 = _跑(["git", "rev-parse", "--path-format=absolute", "--git-common-dir"], 候选目录, 超时秒数=5)
+    if 退出码 != 0:
+        return 退出码, "主仓定位失败：%s · 日志 %s" % (输出文本, 日志路径)
+    元目录 = Path(输出文本.strip()).resolve()
+    主目录 = 元目录.parent
+    if 元目录.name != ".git" or 候选目录 == 元目录 or not 元目录.is_dir():
+        return 1, "公共元目录不是本项目主目录/.git：%s" % 元目录
+    try:
+        if "系统工程平台 V1" not in (主目录 / "README.md").read_text(encoding="utf-8") or not (主目录 / "AGENTS.md").is_file():
+            return 1, "主仓标识不符：%s" % 主目录
+    except OSError as 错误:
+        return 1, "主仓标识读不出：%s" % 错误
+    退出码, 输出文本, 日志路径 = _跑(["git", "rev-parse", "--verify", "refs/heads/主干"], 主目录, 超时秒数=5)
+    if 退出码 != 0:
+        return 退出码, "主干引用读不出：%s · 日志 %s" % (输出文本, 日志路径)
+    return 0, 主目录
+
+
+def 找集成树(仓根, 开工号):
+    退出码, 输出文本, _ = _跑(["git", "worktree", "list", "--porcelain"], 仓根, 超时秒数=5)
+    if 退出码 != 0:
+        return None
+    当前路径 = None
+    for 数据行 in 输出文本.splitlines():
+        if 数据行.startswith("worktree "):
+            当前路径 = Path(数据行[9:]).resolve()
+        elif 数据行 == "branch refs/heads/集成/" + 开工号:
+            return 当前路径
+    return None
+
+
+def 核工作文件(主目录, 引用):
+    """逐件核真实字节与模式，不信任 index 的跳过检查标记。"""
+    命令头 = ["git", "--git-dir", str(Path(主目录) / ".git"), "--work-tree", str(主目录)]
+    退出码, 输出文本, 日志路径 = _跑(命令头 + ["ls-tree", "-rz", 引用], 主目录, 超时秒数=5)
+    if 退出码 != 0:
+        return 退出码, "读提交文件失败：%s · 日志 %s" % (输出文本, 日志路径)
+    # ls-tree 返回可能超过回执上限，完整内容从日志的标准输出段读取。
+    全文 = Path(日志路径).read_text(encoding="utf-8")
+    输出文本 = 全文.split("=== 标准输出 ===\n", 1)[1].split("=== 标准错误 ===\n", 1)[0]
+    差异表 = []
+    文件数 = 0
+    for 数据行 in 输出文本.split("\0"):
+        if not 数据行.strip():
+            continue
+        元信息, 路径 = 数据行.split("\t", 1)
+        模式, 类型, 指纹 = 元信息.split()
+        件路径 = Path(主目录) / 路径
+        文件数 += 1
+        try:
+            if 类型 != "blob":
+                差异表.append(路径 + "（不支持的提交类型）")
+                continue
+            文件字节 = os.readlink(件路径).encode() if 模式 == "120000" else 件路径.read_bytes()
+            实际指纹 = hashlib.sha1(b"blob " + str(len(文件字节)).encode() + b"\0" + 文件字节).hexdigest()
+            实际模式 = "120000" if 件路径.is_symlink() else ("100755" if 件路径.stat().st_mode & stat.S_IXUSR else "100644")
+            if 实际指纹 != 指纹 or 实际模式 != 模式:
+                差异表.append(路径)
+        except OSError:
+            差异表.append(路径)
+    if 差异表:
+        return 1, "实际工作文件与 %s 不等：%s（共%d件，现场 %s）" % (引用, " · ".join(差异表[:20]), len(差异表), 主目录)
+    return 0, "实际工作文件 %d 件字节及模式 == %s（目标 %s）" % (文件数, 引用, 主目录)
 
 
 def 建集成树(仓根, 开工号) -> tuple:
     """从主干建隔离集成工作树 ⇒ (退出码, 路径 或 说明)。"""
+    已有树 = 找集成树(仓根, 开工号)
+    if 已有树:
+        return 1, "已有集成现场 %s ⇒ 用 --查看现场 / --恢复现场 / --清理现场，不再建树" % 已有树
     路径 = tempfile.mkdtemp(prefix="v1集成-")
     分支 = "集成/" + 开工号
     退出码, 输出文本, _ = _跑(["git", "worktree", "add", "-b", 分支, 路径, "主干"], 工作目录=仓根, 超时秒数=None)
@@ -29,13 +103,13 @@ def 建集成树(仓根, 开工号) -> tuple:
 
 def 合腿(集成树, 腿分支) -> tuple:
     """在集成树里合腿 ⇒ (退出码, 说明, 冲突文件表)。--no-ff 保证造合并提交（不走 ff）。"""
-    退出码, 输出文本, _ = _跑(["git", "merge", "--no-commit", "--no-ff", 腿分支], 工作目录=集成树, 超时秒数=None)
+    退出码, 输出文本, 日志路径 = _跑(["git", "merge", "--no-commit", "--no-ff", 腿分支], 工作目录=集成树, 超时秒数=None)
     _, 输出2, _ = _跑(["git", "diff", "--name-only", "--diff-filter=U"], 工作目录=集成树)
     冲突表 = [数据行.strip() for 数据行 in 输出2.splitlines() if 数据行.strip()]
     if 冲突表:
-        return 0, "合腿有冲突（源库交重放解；其余交人裁）", 冲突表
+        return 0, "合腿有冲突 · 原始退出码 %d · 是否超时 %s · 日志 %s\n%s" % (退出码, 退出码 == -1, 日志路径, 输出文本[:1500]), 冲突表
     if 退出码 != 0:
-        return 退出码, "合腿失败：%s" % 输出文本.strip()[-500:], []
+        return 退出码, "合腿失败 · 退出码 %d · 是否超时 %s · 日志 %s\n%s" % (退出码, 退出码 == -1, 日志路径, 输出文本[:1500]), []
     return 0, "合腿干净（无冲突）", []
 
 
@@ -88,40 +162,55 @@ def 推进主干(仓根, 集成提交, 集成树) -> tuple:
     return 0, "主干 %s → %s（%s）" % (旧提交[:8], 集成提交[:8], 说明)
 
 
-def 同步主工作区(主目录) -> tuple:
-    """显式 --git-dir/--work-tree 把主目录工作区与 index 同步到主干 ⇒ (退出码, 说明)。
+def 核主索引(主目录, 引用):
+    命令头 = ["git", "--git-dir", str(Path(主目录) / ".git"), "--work-tree", str(主目录)]
+    退出码, 索引, 日志路径 = _跑(命令头 + ["write-tree"], 主目录, 超时秒数=5)
+    退出码2, 提交树, _ = _跑(命令头 + ["rev-parse", 引用 + "^{tree}"], 主目录, 超时秒数=5)
+    if 退出码 != 0 or 退出码2 != 0 or 索引.strip() != 提交树.strip():
+        return 1, "index 与旧提交不同，保留 %s · 日志 %s" % (主目录, 日志路径)
+    return 0, "index == 旧提交树"
 
-    ★ 这是**显式同步**：主目录原有改动会被覆盖（列在说明里，不静默）—— 收口工具的本义就是让
-      主目录跟上主干；主目录不是编辑面（编辑在一腿一工作树里）。
-    """
-    元目录 = Path(主目录) / ".git"
-    命令头 = ["git", "--git-dir", str(元目录), "--work-tree", str(主目录)]
-    退出码, 输出文本, _ = _跑(命令头 + ["status", "--porcelain", "-uall"], 工作目录=主目录)
+
+def 同步主工作区(主目录, 同步前提交=None):
+    """仅从已核旧提交更新已跟踪件，未知差异与未跟踪碰撞拒绝。"""
+    主目录 = Path(主目录).resolve()
+    退出码, 定位 = 定位主仓(主目录)
+    if 退出码 != 0 or 定位 != 主目录:
+        return 1, "同步目标不是公共主仓：%s（%s）" % (主目录, 定位)
+    命令头 = ["git", "--git-dir", str(主目录 / ".git"), "--work-tree", str(主目录)]
+    同步前提交 = 同步前提交 or "主干"
+    退出码, 说明 = 核工作文件(主目录, 同步前提交)
     if 退出码 != 0:
-        return 退出码, "读主目录状态失败：%s" % 输出文本.strip()[-300:]
-    已改 = [数据行 for 数据行 in 输出文本.splitlines() if 数据行.strip() and not 数据行.startswith("??")]
-    退出码, 输出文本, _ = _跑(命令头 + ["reset", "--hard", "主干"], 工作目录=主目录, 超时秒数=None)
+        return 退出码, "同步保护拒绝：" + 说明
+    退出码, 说明 = 核主索引(主目录, 同步前提交)
     if 退出码 != 0:
-        return 退出码, "同步主工作区失败：%s" % 输出文本.strip()[-400:]
-    _, 头提交, _ = _跑(命令头 + ["rev-parse", "HEAD"], 工作目录=主目录)
-    _, 索引, _ = _跑(命令头 + ["write-tree"], 工作目录=主目录)
-    _, 提交树, _ = _跑(命令头 + ["rev-parse", "HEAD^{tree}"], 工作目录=主目录)
-    _, 脏输出, _ = _跑(命令头 + ["status", "--porcelain", "-uall"], 工作目录=主目录)
-    遗留 = [数据行 for 数据行 in 脏输出.splitlines() if 数据行.strip() and not 数据行.startswith("??")]
-    if 遗留 or 索引.strip() != 提交树.strip():
-        return 1, "同步后仍不一致（index %s ≠ HEAD 树 %s；遗留 %s）" % (
-            索引.strip(), 提交树.strip(), 遗留[:5])
-    说明 = "主目录 HEAD %s · index == HEAD 树 · 工作盘已跟踪件干净（三方一致）" % 头提交.strip()[:8]
-    if 已改:
-        说明 += "\n   ★ 主目录原有 %d 处已跟踪改动，被本次显式同步覆盖：%s" % (
-            len(已改), " · ".join(数据行.strip() for 数据行 in 已改[:20]))
-    return 0, 说明
+        return 退出码, "同步保护拒绝：" + 说明
+    退出码, 输出文本, 日志路径 = _跑(命令头 + ["read-tree", "-u", "-m", 同步前提交, "主干"], 主目录, 超时秒数=5)
+    if 退出码 != 0:
+        return 退出码, "同步目标 %s · 退出码 %d · 是否超时 %s · 日志 %s\n%s" % (主目录, 退出码, 退出码 == -1, 日志路径, 输出文本[:1500])
+    退出码, 说明 = 核工作文件(主目录, "主干")
+    退出码2, 索引, _ = _跑(命令头 + ["write-tree"], 主目录, 超时秒数=5)
+    退出码3, 提交树, _ = _跑(命令头 + ["rev-parse", "主干^{tree}"], 主目录, 超时秒数=5)
+    if 退出码 != 0 or 退出码2 != 0 or 退出码3 != 0 or 索引.strip() != 提交树.strip():
+        return 1, "同步核验失败：%s；index %s · 提交树 %s" % (说明, 索引.strip(), 提交树.strip())
+    return 0, "%s；index == 提交树 %s；未跟踪件保留" % (说明, 提交树.strip())
 
 
-def 清集成树(仓根, 集成树, 开工号) -> tuple:
-    """移除集成工作树 + 删集成分支（幂等）⇒ (退出码, 说明)。"""
-    if Path(集成树).is_dir():
-        _跑(["git", "worktree", "remove", "--force", str(集成树)], 工作目录=仓根, 超时秒数=None)
-        shutil.rmtree(集成树, ignore_errors=True)
-    _跑(["git", "branch", "-D", "集成/" + 开工号], 工作目录=仓根)
-    return 0, "集成树与集成分支已清"
+def 清集成树(仓根, 集成树, 开工号):
+    """只清可证明干净且已入主干的已知集成树。"""
+    已有树 = 找集成树(仓根, 开工号)
+    if 已有树 is None:
+        return 1, "查不到已知集成树，拒绝清理"
+    if 已有树 != Path(集成树).resolve():
+        return 1, "集成目标不符，拒绝清理"
+    退出码, 输出文本, 日志路径 = _跑(["git", "status", "--porcelain", "-uall"], 已有树, 超时秒数=5)
+    if 退出码 != 0 or 输出文本.strip():
+        return 1, "现场有未提交/未跟踪成果，拒绝清理：%s · 日志 %s" % (已有树, 日志路径)
+    退出码, _, 日志路径 = _跑(["git", "merge-base", "--is-ancestor", "集成/" + 开工号, "主干"], 仓根, 超时秒数=5)
+    if 退出码 != 0:
+        return 1, "集成提交尚未进入主干，拒绝清理：%s · 日志 %s" % (已有树, 日志路径)
+    退出码, 输出文本, 日志路径 = _跑(["git", "worktree", "remove", str(已有树)], 仓根)
+    if 退出码 != 0:
+        return 退出码, "清理失败：%s · 日志 %s" % (输出文本, 日志路径)
+    退出码, 输出文本, 日志路径 = _跑(["git", "branch", "-d", "集成/" + 开工号], 仓根)
+    return 退出码, "集成树清理退出码 %d · 日志 %s\n%s" % (退出码, 日志路径, 输出文本)

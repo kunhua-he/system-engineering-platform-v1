@@ -20,7 +20,7 @@ import sqlite3
 import sys
 from pathlib import Path
 
-from 合主干有界跑 import 跑有界命令
+from .合主干有界跑 import 跑有界命令
 
 # 本件在 开发工具/MCP服务/ ⇒ parents[1] = 开发工具（parents[2] 已是仓根，取不到信息核心）。
 _信息核心目录 = Path(__file__).resolve().parents[1] / "信息核心"
@@ -191,7 +191,7 @@ def 重放动作表(集成树, 动作表, 主干库) -> tuple:
     for 序号, 动作 in enumerate(动作表, 1):
         退出码, 说明 = _重放一条(集成树, 动作)
         if 退出码 != 0:
-            return 退出码, 行表 + ["重放失败（%s 主键 %r）：%s" % (动作["表"], 动作["键"], 说明[-400:])]
+            return 退出码, 行表 + ["重放失败（%s 主键 %r）：%s" % (动作["表"], 动作["键"], 说明[:1500])]
         首行 = 说明.strip().splitlines()[0] if 说明.strip() else ""
         行表.append("%d. %s：%s" % (序号, 动作["表"], 首行))
     return 0, 行表
