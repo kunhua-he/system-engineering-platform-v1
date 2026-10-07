@@ -94,6 +94,52 @@ def 建工作树索引(工作树: Path) -> tuple:
     return 跑命令([sys.executable, "开发工具/代码地图.py", "建"], cwd=工作树, 超时秒数=None)
 
 
+def 检查提交门禁(工作树) -> tuple:
+    """缺失或不可执行的提交钩子不能证明自测与案例已过。"""
+    import os
+    退出码, 输出文本 = 跑命令(["git", "rev-parse", "--git-path", "hooks/pre-commit"], cwd=工作树)
+    钩子路径 = Path(输出文本.strip())
+    if not 钩子路径.is_absolute():
+        钩子路径 = Path(工作树) / 钩子路径
+    if 退出码 != 0 or not 钩子路径.is_file() or not os.access(钩子路径, os.X_OK):
+        return 1, "提交门禁钩子缺失或不可执行 ⇒ 不提交、不释放"
+    return 0, "提交门禁已安装"
+
+
+def 跑空改门禁(工作树) -> tuple:
+    """复用 Git 实际生效的 pre-commit；缺钩子或钩子失败都拒绝空改释放。"""
+    return 跑命令(["git", "hook", "run", "pre-commit"], cwd=工作树,
+                 超时秒数=None, 子进程环境=禁终端提示环境)
+
+
+def 检查清树安全(仓根, 开工号: str, 工作树) -> tuple:
+    """清理前证明没有未提交改动，且支线已进入主工作树当前历史。"""
+    if Path(工作树).is_dir():
+        退出码, 输出文本 = 跑命令(["git", "status", "--porcelain", "-uall"], cwd=工作树)
+        if 退出码 != 0 or 输出文本.strip():
+            return 1, "工作树有未提交改动或状态读不出 ⇒ 拒绝清理，保留树与支线：\n%s" % 输出文本[-400:]
+    退出码, 输出文本 = 跑命令(["git", "worktree", "list", "--porcelain"], cwd=仓根)
+    if 退出码 != 0 or not 输出文本.startswith("worktree "):
+        return 1, "无法确定主工作树 ⇒ 拒绝清理"
+    主树路径 = Path(输出文本.splitlines()[0][len("worktree "):])
+    if 主树路径.resolve() == Path(工作树).resolve():
+        return 1, "目标是主工作树 ⇒ 拒绝清理"
+    退出码, 主树提交 = 跑命令(["git", "rev-parse", "HEAD"], cwd=主树路径)
+    if 退出码 != 0:
+        return 1, "无法读取主工作树提交 ⇒ 拒绝清理"
+    退出码, 输出文本 = 跑命令(["git", "show-ref", "--verify", "--quiet",
+                              "refs/heads/" + 分支名(开工号)], cwd=仓根)
+    if 退出码 == 1:
+        return 0, "支线已不存在"
+    if 退出码 != 0:
+        return 1, "无法读取支线引用 ⇒ 拒绝清理"
+    退出码, 输出文本 = 跑命令(["git", "merge-base", "--is-ancestor", 分支名(开工号),
+                              主树提交.strip()], cwd=仓根)
+    if 退出码 != 0:
+        return 1, "支线尚未合并到主工作树或无法确认 ⇒ 拒绝清理，保留提交与支线"
+    return 0, "支线已合并到主工作树"
+
+
 def 清工作树(仓根, 开工号: str) -> tuple:
     """移工作树 + 删支线 ⇒ `(退出码, 一句话说明)`。**幂等**：树与支线都不在 ⇒ 什么都不做、返回成功。
 
@@ -121,11 +167,10 @@ def 清工作树(仓根, 开工号: str) -> tuple:
             说明表.append("工作树已移除")
         else:
             说明表.append("工作树**没**移除掉（退出码 %d）：%s" % (码一, 出一.strip()[-300:]))
-    if 支线在:
+    if 支线在 and 码一 == 0:
         码二, 出二 = 跑命令(["git", "branch", "-D", 分支名(开工号)], cwd=仓根)
         if 码二 == 0:
-            说明表.append("分支 `%s` 已删（提交仍在 origin/%s 与主干历史里）"
-                      % (分支名(开工号), 分支名(开工号)))
+            说明表.append("分支 `%s` 已删" % 分支名(开工号))
         else:
             说明表.append("分支 `%s` **没**删掉（退出码 %d）：%s"
                       % (分支名(开工号), 码二, 出二.strip()[-300:]))
