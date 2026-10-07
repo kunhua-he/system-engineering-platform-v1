@@ -299,9 +299,34 @@ pub(crate) struct 静态命令表(pub(crate) [命令信息; 命令表项数]);
 
 // SAFETY: 表一旦构造即终生不变；不提供 &mut 通道，对外只交出 *const 指针。
 unsafe impl Sync for 静态命令表 {}
+unsafe impl Send for 静态命令表 {}
 
 /// 命令表（下标 = 编号 − 表首号）。
+#[cfg(test)]
 pub(crate) static 命令表存储: 静态命令表 = 静态命令表(造命令表());
+
+use std::sync::LazyLock;
+
+struct 参数缓存存储(Vec<Box<[参数信息]>>);
+// SAFETY: 所有参数指针仅指向生成字符串字面量；Box数组初始化后不再修改，保留至进程结束。
+unsafe impl Send for 参数缓存存储 {}
+unsafe impl Sync for 参数缓存存储 {}
+static 生成参数缓存: LazyLock<参数缓存存储> = LazyLock::new(|| {
+    参数缓存存储((1101..=1107).map(|编号| {
+        (0..).map_while(|序号| crate::声明派生::取生成参数(编号, 序号))
+            .collect::<Vec<_>>().into_boxed_slice()
+    }).collect())
+});
+
+pub(crate) static 生成命令缓存: LazyLock<静态命令表> = LazyLock::new(|| {
+    let mut 本表 = 造命令表();
+    for (序号, 参数存储) in 生成参数缓存.0.iter().enumerate() {
+        本表[序号] = crate::声明派生::取生成命令表(本表[序号].编号.取号值()).expect("已声明命令");
+        本表[序号].参数个数 = 参数存储.len() as u32;
+        本表[序号].参数表 = 参数存储.as_ptr();
+    }
+    静态命令表(本表)
+});
 
 /// 保留项执行函数：**当前无一条命令走它**（七条全已真实现），它是**兵底** ——
 /// `造函数表` 的初值，也是「命令表加了位而函数表漏覆写」时的诚实状态：
