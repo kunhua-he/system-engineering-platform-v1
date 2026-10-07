@@ -50,6 +50,18 @@ def 跑命令(命令表: list, cwd, 超时秒数=超时秒, 输入文本=None, �
     return 回执.returncode, (回执.stdout or "") + (回执.stderr or "")
 
 
+def 跑验证复跑超顶(工作树) -> tuple:
+    """跑 `闸0.py`；**瞬时超顶**（并发腿抢 CPU）自动复跑一次 ⇒ `(退出码, 输出, 复跑过)`。
+
+    口径**单源**在 `构建装配/门禁/复跑.py`（pre-commit 钩子共用同一份）—— 本件只把「跑一次」
+    接到 `跑命令` 上。原先 `释放` 只跑一次 ⇒ 机器一忙（实测闸 0 墙钟 4816 > 4800 ms）就假红、
+    逼人重试（实测 545 腿）。
+    """
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2]))   # 仓根：取共享门禁
+    from 构建装配.门禁 import 跑并复跑超顶
+    return 跑并复跑超顶(lambda: 跑命令([sys.executable, "构建装配/一键验证/闸0.py"], cwd=工作树))
+
+
 def 分支名(开工号: str) -> str:
     return "腿/" + 开工号
 

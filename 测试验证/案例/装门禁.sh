@@ -161,29 +161,34 @@ cd "$ROOT" || exit 1
 #    ★ 瞬时超顶自动复跑一次（2026-10-05 修 · 审计 B-10）：并发腿抢 CPU 会把闸 0 顶过 5 秒
 #      （实测 5578/5793/6688 ms），那是读数被污染、不是代码坏了 ⇒ 复跑一次，仍超才红。
 run_gate0() {
-  python3 -c '
-import subprocess, sys
-try:
-    sys.exit(subprocess.run([sys.executable, "构建装配/一键验证/闸0.py"], timeout=5).returncode)
-except subprocess.TimeoutExpired:
-    sys.stderr.write("门禁：闸 0 超时（> 5 s）—— 五秒硬顶无例外\n")
-    sys.exit(3)
-'
+  python3 - "$ROOT" <<'PY'
+import subprocess
+import sys
+
+sys.path.insert(0, sys.argv[1])
+from 构建装配.门禁 import 跑并复跑超顶
+
+
+def 执行一次():
+    try:
+        回执 = subprocess.run([sys.executable, "构建装配/一键验证/闸0.py"],
+                             timeout=5, capture_output=True, text=True)
+    except subprocess.TimeoutExpired:
+        return 3, "门禁：闸 0 超时（> 5 s）—— 五秒硬顶无例外"
+    return 回执.returncode, (回执.stdout or "") + (回执.stderr or "")
+
+
+退出码, 输出文本, 复跑过 = 跑并复跑超顶(执行一次)
+if 复跑过:
+    sys.stderr.write("门禁：闸 0 瞬时超顶（并发腿抢 CPU 的可能）—— 已自动复跑一次%s\n"
+                     % ("，通过" if 退出码 == 0 else ""))
+if 退出码 != 0:
+    sys.stderr.write(输出文本 + "\n")
+sys.exit(退出码)
+PY
 }
 GATE0_OUT=$(run_gate0 2>&1)
 CODE=$?
-if [ "$CODE" -ne 0 ]; then
-  case "$GATE0_OUT" in
-    *超顶*|*超时*)
-      echo "门禁：闸 0 瞬时超顶（并发腿抢 CPU 的可能）—— 自动复跑一次…" >&2
-      GATE0_OUT=$(run_gate0 2>&1)
-      CODE=$?
-      if [ "$CODE" -eq 0 ]; then
-        echo "门禁：闸 0 瞬时超顶（已复跑）⇒ 通过" >&2
-      fi
-      ;;
-  esac
-fi
 if [ "$CODE" -ne 0 ]; then
   printf '%s\n' "${GATE0_OUT}" >&2
   echo "门禁：闸 0 不过（退出码 ${CODE}）⇒ 拒提交" >&2
