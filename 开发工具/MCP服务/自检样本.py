@@ -173,6 +173,15 @@ def 自检主体(仓根, 工具表, 样本作业表) -> int:
     样本表.append(("v1_task 未知操作 ⇒ 退出码 %d（期望 2）" % 退出码,
              退出码 == 2 and _有种类(输出文本, "未知操作")))
 
+    # ── ④b 跑命令**剔 Git 重定向键**（541 缺陷的机制身份证）：注入 GIT_DIR ⇒ 子进程看不到 ──
+    import os
+    from unittest.mock import patch
+    from .仓操作 import 跑命令
+    with patch.dict(os.environ, {"GIT_DIR": "/哨兵/不许出现在子进程"}):
+        退出码, 输出文本 = 跑命令(["sh", "-c", "printf '%s' \"${GIT_DIR:-EMPTY}\""], cwd=仓根)
+    样本表.append(("`仓操作.跑命令` 剔 Git 重定向键：注入 GIT_DIR 后子进程读到 %r（期望 EMPTY）"
+             % 输出文本.strip(), 退出码 == 0 and 输出文本.strip() == "EMPTY"))
+
     # ── ⑤ 只读发现调用：每工具 `{}` 回操作目录（有操作表者目录非空且最短例齐）──
     规范表 = 载入操作表()
     for 名称 in 名表:
@@ -184,6 +193,11 @@ def 自检主体(仓根, 工具表, 样本作业表) -> int:
                  % (名称, len(目录), "是" if 最短例齐 else "否"),
                  退出码 == 0 and 读数 is not None and 最短例齐
                  and (bool(目录) if 名称 in 规范表 else True)))
+
+    # ── ⑤b 长样本入口的**发现/接口**（只验入口与场景表在；重场景由提交长路 `--长样本` 跑）──
+    from .认领样本 import 场景表
+    样本表.append(("长样本入口 `MCP服务.py --长样本` 声明 %d 个事务场景（≥7 · 名非空）" % len(场景表),
+             len(场景表) >= 7 and all(场景名.strip() for 场景名 in 场景表)))
 
     # ── ⑥ 工具面样本（动盘的那一类，临时夹具）+ 上下文正反样本 ──
     from . import http传输样本

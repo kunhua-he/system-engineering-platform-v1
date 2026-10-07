@@ -11,6 +11,7 @@ from unittest.mock import patch
 from 开发工具.信息核心 import 上下文读取, 上下文来源
 from 开发工具.信息核心.表定义 import 派生库路径
 from 开发工具.MCP服务.上下文 import 派发
+from 开发工具.MCP服务.合主干有界跑 import 干净环境
 
 
 def 读盘状态(树根):
@@ -251,7 +252,7 @@ def 上下文样本(仓根, 工具表=None):
             写前状态 = 读盘状态(树根)
             失败样本({}, "不一致")
             记样本("真实WAL未检查点不报当前且零写", 库件.with_name(库件.name + "-wal").stat().st_size > 0 and 写前状态 == 读盘状态(树根))
-    回执 = subprocess.run(["git", "branch", "--show-current"], cwd=仓根, capture_output=True, text=True, timeout=5)
+    回执 = subprocess.run(["git", "branch", "--show-current"], cwd=仓根, capture_output=True, text=True, env=干净环境(), timeout=5)
     分支值 = 回执.stdout.strip()
     开工号 = 分支值.split("/")[-1] if 分支值.startswith("腿/v1-") else "v1-000000"
     命令表 = [{"jsonrpc": "2.0", "id": 1, "method": "tools/list"},
