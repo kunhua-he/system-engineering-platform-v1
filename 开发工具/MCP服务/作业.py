@@ -19,6 +19,7 @@
 
 import os
 import re
+import shlex
 import subprocess
 import sys
 import threading
@@ -42,9 +43,9 @@ from .作业进程 import (  # noqa: E402
 启动握手上限秒 = 5          # start 等「工作进程报回命令组号」的上限（同步路硬顶，判据 ㊲）
 任务号形状 = re.compile(r"^[0-9a-f]{32}$")
 日志片段上限 = 输出上限      # 与 shell 同一份有界口径（16000 字符）
-作业有效键 = ("操作", "命令", "具名", "开工ID", "超时秒", "任务ID", "偏移", "流")
 # 长活具名表：名字 → 命令。`放行` = 提交放行三件套（与 pre-commit 钩子同一组命令，fail-fast）。
 具名作业表 = {
+    "合主线": None,
     "闸0": "python3 构建装配/一键验证/闸0.py",
     "自测": "python3 构建装配/一键验证/一键验证.py --自测",
     "案例": "cargo run --quiet --locked -p v1-case-runner",
@@ -306,58 +307,75 @@ def _取任务ID(参数表: dict):
     return 参数值.strip()
 
 
-def 起具名作业(具名: str, 开工号: str, 握手秒: int, 仓根) -> tuple:
-    """起一条**具名作业**（`闸0` · `自测` · `案例` · `建库` · `放行`）—— `v1_gate` 放行档用这个。"""
-    if 具名 not in 具名作业表:
-        return 2, "参数拒绝：没有这个具名作业 `%s`；只认 %s" % (具名, "、".join(sorted(具名作业表)))
-    return 起作业(具名作业表[具名], 开工号, 握手秒, 仓根)
+def 合主线命令(作业参数, 仓根):
+    """复用唯一主仓定位；固定合并入口，不接受调用方路径或代码。"""
+    if set(作业参数) - {"目标开工ID", "推送"}:
+        return 2, "合主线作业参数只认目标开工ID、推送"
+    开工号 = 作业参数.get("目标开工ID")
+    if not isinstance(开工号, str) or not 开工号形状.fullmatch(开工号):
+        return 2, "合主线需作业参数.目标开工ID（v1-加六位数字）"
+    推送 = 作业参数.get("推送", False)
+    if type(推送) is not bool:
+        return 2, "推送须逻辑型，默认假"
+    try:
+        from .合主干集成树 import 定位主仓
+    except ImportError:
+        return 2, "合主线依赖唯一主仓定位与合并互斥修复，接口未就绪 ⇒ 不启动"
+    退出码, 主仓路径 = 定位主仓(仓根)
+    if 退出码:
+        return 退出码, str(主仓路径)
+    入口路径 = Path(主仓路径) / "开发工具/MCP服务/合并主干.py"
+    if not 入口路径.is_file():
+        return 2, "主仓合并入口不在 ⇒ 不启动合主线"
+    命令表 = [sys.executable, str(入口路径), 开工号]
+    if 推送:
+        命令表.append("--推送")
+    return 0, shlex.join(命令表)
 
 
-def 派发(参数表: dict, 仓根) -> tuple:
-    """`v1_job` 入口 ⇒ `(退出码, 输出文本)`。四操作：start / status / log / cancel。"""
+def 起具名作业(具名: str, 开工号: str, 握手秒: int, 仓根, 作业参数=None) -> tuple:
+    """固定具名作业；合主线参数转发唯一合并入口。"""
+    if not isinstance(具名, str) or 具名 not in 具名作业表:
+        return 2, "未知具名作业；只认 %s" % "、".join(sorted(具名作业表))
+    if 作业参数 is None:
+        作业参数 = {}
+    if not isinstance(作业参数, dict):
+        return 2, "作业参数须对象"
+    命令文本 = 具名作业表[具名]
+    if 具名 == "合主线":
+        退出码, 命令文本 = 合主线命令(作业参数, 仓根)
+        if 退出码:
+            return 退出码, 命令文本
+    elif 作业参数:
+        return 2, "此具名作业不接受作业参数"
+    return 起作业(命令文本, 开工号, 握手秒, 仓根)
+
+
+def 启动作业(开工号, 参数表, 仓根):
+    """W3 start 具名参数值校验；键解析由参数规范完成。"""
     收僵尸()
-    if not isinstance(参数表, dict):
-        return 2, "参数拒绝：arguments 要是对象"
-    未知键 = sorted(set(参数表) - set(作业有效键))
-    if 未知键:
-        return 2, "参数拒绝：未知键 %s；本工具只认 %s" % ("、".join(未知键), "、".join(作业有效键))
-    操作名 = 参数表.get("操作")
-    if 操作名 not in ("start", "status", "log", "cancel"):
-        return 2, "参数拒绝：`操作` 要是 start / status / log / cancel 之一（收到 %r）" % (操作名,)
-    if 操作名 == "start":
-        命令文本 = 参数表.get("命令")
-        具名 = 参数表.get("具名")
-        if 具名 is not None and not isinstance(具名, str):
-            return 2, "参数拒绝：`具名` 要是字符串（收到 %r）" % (具名,)
-        if isinstance(具名, str) and 具名.strip():
-            命令文本 = 具名作业表.get(具名.strip())
-            if 命令文本 is None:
-                return 2, "参数拒绝：没有这个具名作业 `%s`；只认 %s" % (
-                    具名.strip(), "、".join(sorted(具名作业表)))
-        if not isinstance(命令文本, str) or not 命令文本.strip():
-            return 2, "参数拒绝：start 要 `命令` 非空字符串，或 `具名` 之一（收到 %r）" % (命令文本,)
-        开工号 = 参数表.get("开工ID")
-        if 开工号 is not None and not isinstance(开工号, str):
-            return 2, "参数拒绝：`开工ID` 要是字符串（收到 %r）" % (开工号,)
-        开工号 = (开工号 or "").strip()
-        if 开工号 and not 开工号形状.fullmatch(开工号):
-            return 2, "参数拒绝：`开工ID` 形状要是 `v1-` 加六位数字，收到 %r" % (开工号,)
-        握手秒 = 参数表.get("超时秒", 启动握手上限秒)
-        if type(握手秒) is not int or not 1 <= 握手秒 <= 启动握手上限秒:
-            return 2, "参数拒绝：`超时秒` 要是整数 1..%d（启动握手用，不是作业预算），收到 %r" % (
-                启动握手上限秒, 参数表.get("超时秒"))
-        return 起作业(命令文本.strip(), 开工号, 握手秒, 仓根)
+    if 开工号 and not 开工号形状.fullmatch(开工号):
+        return 2, "开工ID形状须v1-加六位数字"
+    握手秒 = 参数表.get("超时秒", 启动握手上限秒)
+    if type(握手秒) is not int or not 1 <= 握手秒 <= 启动握手上限秒:
+        return 2, "超时秒须整数1..5（启动握手）"
+    return 起具名作业(参数表.get("具名"), 开工号, 握手秒, 仓根, 参数表.get("作业参数"))
+
+
+def 查询作业(操作名, 开工号, 参数表, 仓根):
+    """W3 status/log/cancel 复用实际状态、日志与取消实现。"""
+    收僵尸()
     任务ID = _取任务ID(参数表)
     if 任务ID is None:
-        return 2, "参数拒绝：%s 要 `任务ID`（start 返回的 32 位十六进制）" % 操作名
+        return 2, "任务ID须start返回的32位十六进制"
     if 操作名 == "status":
         return 查状态(任务ID)
     if 操作名 == "cancel":
         return 取消作业(任务ID)
     起点字节 = 参数表.get("偏移", 0)
     if type(起点字节) is not int or 起点字节 < 0:
-        return 2, "参数拒绝：`偏移` 要是非负整数（字节起点；超出日志长度会被夹到末尾）"
+        return 2, "偏移须非负整数字节起点"
     流名称 = 参数表.get("流", "标准输出")
     if 流名称 not in ("标准输出", "标准错误"):
-        return 2, "参数拒绝：`流` 要是 标准输出 / 标准错误（收到 %r）" % (流名称,)
+        return 2, "流须标准输出/标准错误"
     return 读日志片段(任务ID, 起点字节, 流名称 == "标准错误")
