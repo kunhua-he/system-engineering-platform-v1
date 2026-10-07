@@ -137,9 +137,10 @@ def 自检主体(仓根, 工具表) -> int:
     from .上下文样本 import 上下文样本
     from .作业样本 import 作业样本
     from .冲突样本 import 冲突回执样本
+    from . import 裸仓回执样本
     样本表 += (批量改名样本(仓根, 工具表) + 终端样本(仓根, 工具表) + 上下文样本(仓根, 工具表)
             + 自愈样本(仓根, 工具表) + 冲突回执样本(仓根, 工具表)
-            + http传输样本.样本列表(仓根, 工具表))
+            + http传输样本.样本列表(仓根, 工具表) + 裸仓回执样本.样本列表(仓根, 工具表))
     from unittest.mock import patch
     from . import 参数规范
     with patch.object(参数规范, "取树", return_value={}):
