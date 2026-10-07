@@ -161,29 +161,34 @@ cd "$ROOT" || exit 1
 #    ★ 瞬时超顶自动复跑一次（2026-10-05 修 · 审计 B-10）：并发腿抢 CPU 会把闸 0 顶过 5 秒
 #      （实测 5578/5793/6688 ms），那是读数被污染、不是代码坏了 ⇒ 复跑一次，仍超才红。
 run_gate0() {
-  python3 -c '
-import subprocess, sys
-try:
-    sys.exit(subprocess.run([sys.executable, "构建装配/一键验证/闸0.py"], timeout=5).returncode)
-except subprocess.TimeoutExpired:
-    sys.stderr.write("门禁：闸 0 超时（> 5 s）—— 五秒硬顶无例外\n")
-    sys.exit(3)
-'
+  python3 - "$ROOT" <<'PY'
+import subprocess
+import sys
+
+sys.path.insert(0, sys.argv[1])
+from 构建装配.门禁 import 跑并复跑超顶
+
+
+def 执行一次():
+    try:
+        回执 = subprocess.run([sys.executable, "构建装配/一键验证/闸0.py"],
+                             timeout=5, capture_output=True, text=True)
+    except subprocess.TimeoutExpired:
+        return 3, "门禁：闸 0 超时（> 5 s）—— 五秒硬顶无例外"
+    return 回执.returncode, (回执.stdout or "") + (回执.stderr or "")
+
+
+退出码, 输出文本, 复跑过 = 跑并复跑超顶(执行一次)
+if 复跑过:
+    sys.stderr.write("门禁：闸 0 瞬时超顶（并发腿抢 CPU 的可能）—— 已自动复跑一次%s\n"
+                     % ("，通过" if 退出码 == 0 else ""))
+if 退出码 != 0:
+    sys.stderr.write(输出文本 + "\n")
+sys.exit(退出码)
+PY
 }
 GATE0_OUT=$(run_gate0 2>&1)
 CODE=$?
-if [ "$CODE" -ne 0 ]; then
-  case "$GATE0_OUT" in
-    *超顶*|*超时*)
-      echo "门禁：闸 0 瞬时超顶（并发腿抢 CPU 的可能）—— 自动复跑一次…" >&2
-      GATE0_OUT=$(run_gate0 2>&1)
-      CODE=$?
-      if [ "$CODE" -eq 0 ]; then
-        echo "门禁：闸 0 瞬时超顶（已复跑）⇒ 通过" >&2
-      fi
-      ;;
-  esac
-fi
 if [ "$CODE" -ne 0 ]; then
   printf '%s\n' "${GATE0_OUT}" >&2
   echo "门禁：闸 0 不过（退出码 ${CODE}）⇒ 拒提交" >&2
@@ -196,11 +201,37 @@ fi
 #     故与案例同进每提交路径。它红有两种可能：① 某条判据的反向样本没了 / 不再报红 /
 #     理由退化成空话 ⇒ 那条判据的「会红」没有证据；② ⑱「命令墙钟」正向样本被本机负载顶红。
 #     成功时只吞掉它的长读数（77 条各数行）；红了把原文透传出来。
-SELFTEST_OUT=$(python3 构建装配/一键验证/一键验证.py --自测 2>&1)
+#    ★ 瞬时超顶自动复跑一次（2026-10-08 与 ①闸0 同一份口径 `构建装配/门禁/复跑.py`）：
+#      机器一忙，⑱「命令墙钟」在 `--自测` 的嵌套里会假红（读数带「已越过 N ms」）⇒ 复跑一次，仍红才拒。
+run_selftest() {
+  python3 - "$ROOT" <<'PY'
+import subprocess
+import sys
+
+sys.path.insert(0, sys.argv[1])
+from 构建装配.门禁 import 跑并复跑超顶
+
+
+def 执行一次():
+    回执 = subprocess.run([sys.executable, "构建装配/一键验证/一键验证.py", "--自测"],
+                        capture_output=True, text=True)
+    return 回执.returncode, (回执.stdout or "") + (回执.stderr or "")
+
+
+退出码, 输出文本, 复跑过 = 跑并复跑超顶(执行一次)
+if 复跑过:
+    sys.stderr.write("门禁：判据自测瞬时超顶假红（⑱ 命令墙钟在嵌套里被负载顶红）—— 已自动复跑一次%s\n"
+                     % ("，通过" if 退出码 == 0 else ""))
+if 退出码 != 0:
+    sys.stderr.write(输出文本)
+sys.exit(退出码)
+PY
+}
+SELFTEST_OUT=$(run_selftest 2>&1)
 CODE=$?
 if [ "$CODE" -ne 0 ]; then
   printf '%s\n' "${SELFTEST_OUT}" >&2
-  echo "门禁：判据自测不过（退出码 ${CODE}）⇒ 先看上面 ✗ 的真读数，两种可能：① 某条判据的反向样本缺失 / 不再报红 / 理由退化成空话；② ⑱「命令墙钟不超五秒」的正向样本被本机负载顶红（并发腿抢 CPU；读数远大于一条命令该有的量级 = 负载，不是判据坏了）⇒ 拒提交" >&2
+  echo "门禁：判据自测不过（退出码 ${CODE}）⇒ 先看上面 ✗ 的真读数，两种可能：① 某条判据的反向样本缺失 / 不再报红 / 理由退化成空话；② ⑱「命令墙钟不超五秒」的正向样本被本机负载顶红（并发 CPU；读数带「已越过」= 负载红，不是判据坏了；本步已自动复跑一次仍红）⇒ 拒提交" >&2
   exit 1
 fi
 

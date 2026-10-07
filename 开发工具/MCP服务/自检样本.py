@@ -12,7 +12,7 @@ r"""自检样本 —— MCP 工具面自检：协议三帧 · 工具表形状 ·
 """
 from pathlib import Path
 
-隔离样本组 = {"改名样本": 34, "上下文样本": 76, "跨树样本": 18, "重叠样本": 4}
+隔离样本组 = {"改名样本": 34, "上下文样本": 80, "跨树样本": 18, "重叠样本": 4}
 隔离入口文本 = (
     "import json,sys; from pathlib import Path; "
     "sys.path.insert(0,str(Path.cwd()/'开发工具')); "
@@ -309,7 +309,7 @@ def 自检_隔离边界(仓根):
                                                else {"return_value": 返回替身})):
             结果表 = 跑隔离样本("跨树样本", 仓根)
         样本表.append(("隔离边界·" + 说明, bool(结果表) and not all(通过 for _, 通过 in 结果表)))
-    子组读数 = {"组": "上下文样本", "样本": [["上下文%02d" % 序号, True] for 序号 in range(76)]}
+    子组读数 = {"组": "上下文样本", "样本": [["上下文%02d" % 序号, True] for 序号 in range(80)]}
     for 故障读数 in (
         {"组": "上下文样本", "样本": 子组读数["样本"][:-1]},
         {"组": "上下文样本", "样本": [["失败", False]] + 子组读数["样本"][1:]},
@@ -317,7 +317,7 @@ def 自检_隔离边界(仓根):
         with patch.object(subprocess, "run", return_value=subprocess.CompletedProcess(
                 [], 0, json.dumps(故障读数), "")):
             结果表 = 跑隔离样本("上下文样本", 仓根)
-        样本表.append(("隔离边界·上下文76条（原66及551与566各5）缺1或失败1拒绝", bool(结果表) and not all(通过 for _, 通过 in 结果表)))
+        样本表.append(("隔离边界·上下文80条（原66及551与566各5及560增4）缺1或失败1拒绝", bool(结果表) and not all(通过 for _, 通过 in 结果表)))
     import os
     from .仓操作 import 跑命令
     from .合主干有界跑 import 继承定位变量
