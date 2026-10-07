@@ -34,10 +34,11 @@ from .落点 import 库文件名, 库目录名
 from .落点 import 库路径 as 默认库路径
 
 索引器命令 = "codegraph"
-# ★ **有意不设超时**（与仓里 `cargo` / `nm` / 闸 0 起子进程同一口径）：建索引是**环境步**，
-#   它一趟就是它自身的长度；给它一个「容忍度」只会把五秒硬顶让给被调方。判据 ㊲ 也不许
-#   任何 `超时设置 > 5 秒`（实测撞过：先写了 `建库超时秒 = 300`，门禁当场红）。
-#   墙钟照实报（`建` 的返回值里有），但**不判顶** —— 判顶的是查询那三条。
+# ★ **给索引器上 5 秒超时**（判据 ㊲：全仓超时设置一律 ≤5 秒）：`v1_edit` 写盘后要 `同步索引`
+#   刷索引 —— 索引器一旦卡死，没有超时就把 `v1_edit` 一起挂死。故建 / 刷都带
+#   `timeout=索引器超时秒`，超时**如实报**（不静默成功）。墙钟照实报（`建` 的返回值里有）。
+#   名称以「秒」结尾 ⇒ 值必须 ≤5（判据 ㊲ 形①）；`timeout=索引器超时秒` 是标识符不是数字 ⇒ 不触形③。
+索引器超时秒 = 5
 # 「定义面」剔掉的两类：`file` 是件本身；`import` 是**模块绑定**（`sys` · `crate` · `std` ·
 # `v1_contract`），不是作者给某个符号起的名字 —— 留着它只会让「查符号」命中一堆导入行、
 # 让「检名」的西文档灌水（实测多 1901 条，全是模块名）。
@@ -111,7 +112,11 @@ def 建索引(仓根: Path) -> tuple:
     计时起点 = time.monotonic()
     try:
         回执 = subprocess.run([命令, 动作, str(仓根)], cwd=str(仓根),
-                            capture_output=True, text=True)     # 不设超时，见 `索引器命令` 上方
+                            capture_output=True, text=True, timeout=索引器超时秒)
+    except subprocess.TimeoutExpired:
+        墙钟毫秒 = int((time.monotonic() - 计时起点) * 1000)
+        return -3, 墙钟毫秒, ("代码地图：索引器 %d 秒没跑完（超时上限 %d 秒）⇒ 如实报、不静默；"
+                           "大仓先 `sync` 增量或分批：`%s %s`" % (索引器超时秒, 索引器超时秒, 命令, 动作))
     except OSError as 起不来的原因:
         return -2, 0, "代码地图：起不了索引器：%r" % (起不来的原因,)
     墙钟毫秒 = int((time.monotonic() - 计时起点) * 1000)
@@ -133,8 +138,14 @@ def 同步索引(仓根: Path) -> tuple:
     命令 = 找索引器命令()
     if not 命令:
         return 1, "索引器不在（`%s`）⇒ 索引没刷，下次查符号会读到旧行号" % 索引器命令
-    回执 = subprocess.run([命令, "sync", str(仓根)], cwd=str(仓根),
-                       capture_output=True, text=True)     # 不设超时，见 `索引器命令` 上方
+    try:
+        回执 = subprocess.run([命令, "sync", str(仓根)], cwd=str(仓根),
+                           capture_output=True, text=True, timeout=索引器超时秒)
+    except subprocess.TimeoutExpired:
+        return 1, "索引器 %d 秒没跑完（超时上限 %d 秒）⇒ 索引没刷，如实报、不静默成功" % (
+            索引器超时秒, 索引器超时秒)
+    except OSError as 起不来的原因:
+        return 1, "起不了索引器：%r ⇒ 索引没刷" % (起不来的原因,)
     if 回执.returncode != 0:
         return 回执.returncode, (回执.stderr or 回执.stdout or "").strip()[-300:]
     return 0, "索引已同步"
@@ -249,7 +260,8 @@ def 全部定义(库路径=None) -> list:
 def 索引陈旧(仓根, 件表) -> tuple:
     """真索引比它该覆盖的源件**旧**（或**不在**）吗 ⇒ `(是否 fail-closed, 说明)`。
 
-    **口径**：`件表` 里任一源件的 mtime > 库文件的 mtime ⇒ 陈旧（库里没有它的新样子）。
+    **口径**：`件表` 里任一源件的 mtime > 库文件的 mtime ⇒ 陈旧（库里没有它的新样子）；
+    件表里有件、盘上 stat 不到（已删 / 刚被移走）⇒ 也算陈旧（索引可能仍留着它）。
     库**不在**也算 fail-closed（定义面会静默空 ⇒ 假绿）。`件表` = 该面的件表
     （`{相对路径: 文本}`）；`仓根` = **被扫的仓**（一开工一工作树时判的必须是那条树的索引，
     不是主树的）。夹具仓的合成索引落在 `<仓根>._合成索引_/` ⇒ 这里看不到真库 ⇒ 由
@@ -268,12 +280,15 @@ def 索引陈旧(仓根, 件表) -> tuple:
     except OSError:
         return True, "索引库不在（%s）" % 库文件
     源件 = ""
+    缺失件 = ""
     for 键名 in 件表:
         if not 键名.endswith(命名后缀):
             continue
         try:
             时刻 = (Path(仓根) / 键名).stat().st_mtime
         except OSError:
+            if not 缺失件:
+                缺失件 = 键名                 # 件表有、盘上 stat 不到 ⇒ 已删 / 刚被移走
             continue
         if 时刻 > 时间戳:
             时间戳, 源件 = 时刻, 键名
@@ -281,6 +296,8 @@ def 索引陈旧(仓根, 件表) -> tuple:
         return True, "索引库比源件旧：最新源件 `%s` 改于 %s，而索引库改于 %s" % (
             源件, time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(时间戳)),
             time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(库文件.stat().st_mtime)))
+    if 缺失件:
+        return True, "件表里有件在盘上 stat 不到（已删 / 刚被移走）：`%s` ⇒ 索引可能仍留着它" % 缺失件
     return False, "索引新鲜"
 
 

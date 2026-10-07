@@ -121,8 +121,10 @@ def 跑自检(仓根, 工具表) -> int:
 
     # ── ⑥ 工具面样本（动盘的那一类，临时夹具）+ 上下文正反样本 ──
     from .上下文样本 import 上下文样本
+    from .符号样本 import 符号样本
     from .作业样本 import 作业样本
-    样本表 += 批量改名样本(仓根, 工具表) + 终端样本(仓根, 工具表) + 上下文样本(仓根, 工具表)
+    样本表 += (批量改名样本(仓根, 工具表) + 终端样本(仓根, 工具表)
+            + 上下文样本(仓根, 工具表) + 符号样本(仓根, 工具表))
     from unittest.mock import patch
     from . import 参数规范
     with patch.object(参数规范, "取树", return_value={}):
