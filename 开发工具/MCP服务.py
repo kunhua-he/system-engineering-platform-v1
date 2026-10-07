@@ -30,6 +30,9 @@ from MCP服务 import 工具表, 跑主循环, 自检样本  # noqa: E402
 
 def 入口函数(argv=None):
     命令行参数 = list(sys.argv[1:] if argv is None else argv)
+    if "--启动预检" in 命令行参数:
+        # 模块级 import 全图已过；再核公开面非空（不光「import 包空壳」）⇒ 自愈预检用它。
+        return 0 if (工具表 and callable(跑主循环)) else 6
     if "--自检" in 命令行参数:
         return 自检样本.跑自检(仓根, 工具表)
     return 跑主循环(仓根, 工具表)
