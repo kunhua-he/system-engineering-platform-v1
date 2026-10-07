@@ -190,7 +190,7 @@ def 自检主体(仓根, 工具表, 样本作业表) -> int:
     from .符号样本 import 符号样本
     from .作业样本 import 作业样本
     from .冲突样本 import 冲突回执样本
-    from . import 裸仓回执样本
+    from . import 裸仓回执样本, 写盘样本
     from .查询样本 import 查询样本
     from .开工记忆样本 import 开工记忆样本
     样本表 += (样本作业表["改名样本"].result() + 终端样本(仓根, 工具表)
@@ -198,7 +198,8 @@ def 自检主体(仓根, 工具表, 样本作业表) -> int:
             + 自愈样本(仓根, 工具表) + 冲突回执样本(仓根, 工具表) + 查询样本(仓根, 工具表)
             + 库快照样本(仓根, 工具表)
             + http传输样本.样本列表(仓根, 工具表) + 裸仓回执样本.样本列表(仓根, 工具表)
-            + 样本作业表["跨树样本"].result() + 开工记忆样本(仓根, 工具表))
+            + 样本作业表["跨树样本"].result() + 开工记忆样本(仓根, 工具表)
+            + 写盘样本.样本列表(仓根, 工具表))
     from unittest.mock import patch
     from . import 参数规范
     with patch.object(参数规范, "取树", return_value={}):

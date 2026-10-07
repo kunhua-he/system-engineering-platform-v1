@@ -15,6 +15,8 @@
 「盘上 == 期望写后」认收敛、按「盘上 == 写前」认「没写成」，其余一律拒（**不洗指纹**）。
 """
 
+import sqlite3
+
 from . import 开工账本 as 账本
 
 意图建表语句 = (
@@ -56,9 +58,20 @@ def 销写盘意图(连接, 开工号: str, 路径: str) -> int:
 
 
 def 列写盘意图(连接, 开工号: str) -> list:
-    """列出一条开工的全部未决意图（按路径定序，便于逐条报）。"""
-    return [dict(数据行) for 数据行 in 连接.execute(
-        "select * from 写盘意图 where 开工号 = ? order by 路径", (开工号,))]
+    """列出一条开工的全部未决意图（按路径定序，便于逐条报）。
+
+    ★ **意图表不在 = 没有未决意图**（2026-10-08）：建表是惰性的（`补意图表` 只在真有写盘时跑）
+    ⇒ 一本从没写过盘的账本没有它，而 `门禁.py` 的漂移归因与释放前的漂移检查都会先列意图 ——
+    不设这一条，它们会在「从没写过盘的干净账本」上抛 `no such table` 把门禁打崩。
+    只吞**缺表**那一种；别的 sqlite 错（锁 / 腐坏）照旧抛。
+    """
+    try:
+        return [dict(数据行) for 数据行 in 连接.execute(
+            "select * from 写盘意图 where 开工号 = ? order by 路径", (开工号,))]
+    except sqlite3.OperationalError as 读不动:
+        if "no such table" not in str(读不动):
+            raise
+        return []
 
 
 def 记一件写盘(连接, 开工号: str, 路径: str, 功能名: str, 写前指纹: str, 写后指纹: str,
