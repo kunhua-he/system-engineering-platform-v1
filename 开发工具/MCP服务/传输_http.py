@@ -80,19 +80,24 @@ class 请求处理器(BaseHTTPRequestHandler):
         """静音：默认把每请求写 stderr —— 服务日志由 `服务管理` 落盘，不污染。"""
 
     def do_POST(self):
-        if not self._校验入口():
-            return
+        self._本请求体已读 = False
+        # 先有界读全请求体，再做入口校验：任何早退（路径 / 主机 / 来源 / 版本）都已在
+        # keep-alive 上排空，绝不把未读 body 留给下一条请求（否则请求行错位 ⇒ 回 HTML 报错）。
         正文 = self._读请求体()
         if 正文 is None:
+            return
+        if not self._校验入口():
             return
         self._处理请求(正文)
 
     def do_GET(self):
+        self._本请求体已读 = False
         if not self._校验入口():
             return
         self._写响应(405, 是否空体=True)
 
     def do_DELETE(self):
+        self._本请求体已读 = False
         if not self._校验入口():
             return
         会话编号 = self.headers.get("Mcp-Session-Id")
@@ -103,6 +108,7 @@ class 请求处理器(BaseHTTPRequestHandler):
 
     def do_OPTIONS(self):
         # 不提供 CORS：任何预检一律 403（不开放到 `*`）。
+        self._本请求体已读 = False
         self._写响应(403, 是否空体=True)
 
     def _校验入口(self):
@@ -114,8 +120,12 @@ class 请求处理器(BaseHTTPRequestHandler):
             return False
         if not self._校验来源():
             return False
+        # 协议版本门：只对**已初始化（带会话）**的请求按规范拦不支持的新版头（安全 400 JSON）；
+        # 初始化前的探测（无会话，如新版客户端的 `server/discover`）不在此拦 —— 放它走方法
+        # 派发（未知方法回 -32601），否则会把整条新客户端的连接判死。本服务的协议版本集
+        # **不声明**未实现的新版兼容，故这里只放行「探测」，不假装支持新版。
         版本头 = self.headers.get("MCP-Protocol-Version")
-        if 版本头 and 版本头 not in 协议版本集:
+        if 版本头 and 版本头 not in 协议版本集 and self.headers.get("Mcp-Session-Id"):
             self._写错误(400, None, -32000, "不支持的 MCP-Protocol-Version：%s" % 版本头)
             return False
         return True
@@ -141,14 +151,29 @@ class 请求处理器(BaseHTTPRequestHandler):
         return True
 
     def _读请求体(self):
+        """有界读全请求体。**任何无法安全排空的情形都明确拒并关连接** —— 绝不把未读 body
+
+        留在 keep-alive 上（否则下一条请求行错位，客户端只收到 HTML 报错）。超限**不读**，
+        免得为排空把 > 上限的体读进来。
+        """
+        if self.headers.get("Transfer-Encoding"):
+            self._写错误(400, None, -32700, "不支持 Transfer-Encoding（本服务只认 Content-Length）")
+            return None
+        if len(self.headers.get_all("Content-Length") or []) != 1:
+            self._写错误(400, None, -32700, "Content-Length 缺失或重复")
+            return None
         try:
             正文长度 = int(self.headers.get("Content-Length") or "0")
         except ValueError:
             self._写错误(400, None, -32700, "Content-Length 不是整数")
             return None
-        if 正文长度 < 0 or 正文长度 > 请求体上限字节:
+        if 正文长度 < 0:
+            self._写错误(400, None, -32700, "Content-Length 为负")
+            return None
+        if 正文长度 > 请求体上限字节:
             self._写错误(413, None, -32600, "请求体超过上限 %d 字节" % 请求体上限字节)
             return None
+        self._本请求体已读 = True
         return self.rfile.read(正文长度) if 正文长度 else b""
 
     def _处理请求(self, 原始字节):
@@ -215,6 +240,7 @@ class 请求处理器(BaseHTTPRequestHandler):
         if 是否空体:
             self.send_response(状态码)
             self.send_header("Content-Length", "0")
+            self._补连接收尾头()
             self.end_headers()
         else:
             self._写正文(状态码, b"", {})
@@ -225,9 +251,31 @@ class 请求处理器(BaseHTTPRequestHandler):
         self.send_header("Content-Length", str(len(正文)))
         for 头名, 头值 in 额外头.items():
             self.send_header(头名, 头值)
+        self._补连接收尾头()
         self.end_headers()
         if 正文:
             self.wfile.write(正文)
+
+    def _补连接收尾头(self):
+        """本请求若仍留着未读 body（超限未读 / 非 POST 带体 / 坏 Content-Length / chunked）
+
+        ⇒ 显式关连接。HTTP/1.1 keep-alive 下把未读 body 留着，下一条请求行会被拼进 body 尾部，
+        服务端只能回 HTML 400/501 —— 而 MCP 客户端只认 JSON，就判「连不上」。
+        """
+        if self._有未读请求体():
+            self.send_header("Connection", "close")
+            self.close_connection = True
+
+    def _有未读请求体(self):
+        """本请求是否还留着未读 body（已成功读全 ⇒ 假）。"""
+        if getattr(self, "_本请求体已读", False):
+            return False
+        if self.headers.get("Transfer-Encoding"):
+            return True
+        try:
+            return int(self.headers.get("Content-Length") or "0") > 0
+        except ValueError:
+            return True
 
 
 def 起传输(仓根, 工具表, 监听端口=默认监听端口, 绑定=绑定地址):
