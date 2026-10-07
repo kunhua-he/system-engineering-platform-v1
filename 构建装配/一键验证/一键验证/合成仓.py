@@ -10,6 +10,7 @@ import json as _json
 from pathlib import Path
 
 from .冻结形状 import 形状指纹
+from .注入_MCP自检 import 可控自检入口文本
 
 
 def 转JSON文本(待处理对象):
@@ -360,6 +361,9 @@ def 干净合成仓() -> dict:
         ".git/config": "[core]\n\trepositoryformatversion = 0\n\tfilemode = true\n\tbare = false\n",
         ".git/objects/占位": "",
         ".git/refs/heads/占位": "",
+        # 判据 ㊽ 的正向样本：夹具**自带一份可控等价**入口（exit 0）—— 不带它时 ㊽ 会退回
+        # **本验证器所在仓**跑真命令（3157 ms）⇒ 夹具全量判据被拖成 3.5 s（见 注入_MCP自检 的可控入口）。
+        "开发工具/MCP服务.py": 可控自检入口文本(),
     }
     # ㉗–㊱（外部支持库准入判据）的夹具从 合成仓_准入.py 并入（拆件控行数）。
     # ★ 就地 import：`合成仓_准入` 反过来要 `from .合成仓 import 转JSON文本` ⇒ 模块级会成环。
