@@ -4,8 +4,9 @@
 `MCP服务_http.py --自检` 调 `跑自检`；`MCP服务.py --自检`（判据 ㊽）也调它一次
 （HTTP 面与 stdio 面共用同一份自检）。**只用标准库**（仓内 Python 零第三方依赖）。
 
-覆盖：initialize 协商版本 + 会话头 · tools/list 与 stdio 合同一致 · 通知 202 · 只读 tools/call ·
-坏帧 / 批量 / 未知方法 / 未知会话 / 坏 Origin / 坏 Host / GET 405 / DELETE 终止 / 错路径。
+覆盖：initialize 协商版本 + **无会话头** · tools/list 与 stdio 合同一致 · 通知 202 · 只读 tools/call ·
+坏帧 / 批量 / 未知方法 / 陈旧会话头被忽略 / 坏 Origin / 坏 Host / GET 405 / DELETE 405 /
+版本头（豁免 vs 400 JSON）/ 错路径 · **真 socket 跨重启恢复**（同 SDK client 形态）。
 """
 import http.client
 import json
@@ -21,8 +22,7 @@ from .服务常量 import 服务路径
 
 def _起环回(仓根, 工具表):
     """在 127.0.0.1 的临时端口起传输 ⇒ (服务对象, 监听端口)。"""
-    服务对象 = 传输_http.传输服务(("127.0.0.1", 0), 传输_http.请求处理器, 仓根, 工具表,
-                            传输_http.会话表())
+    服务对象 = 传输_http.传输服务(("127.0.0.1", 0), 传输_http.请求处理器, 仓根, 工具表)
     监听端口 = 服务对象.server_address[1]
     运行线程 = threading.Thread(target=服务对象.serve_forever,
                           kwargs={"poll_interval": 0.01}, daemon=True)
@@ -92,46 +92,45 @@ def 样本列表(仓根, 工具表):
              "params": {"protocolVersion": "2025-06-18", "capabilities": {},
                         "clientInfo": {"name": "自检", "version": "0"}}}), 标准头)
         初始化读数 = json.loads(应答数据).get("result") or {}
-        样本表.append(("initialize：HTTP %s · JSON %s · 版本 %s · 会话头 %s"
-                 % (状态码, 内容类型, 初始化读数.get("protocolVersion"), bool(会话头)),
+        样本表.append(("initialize：HTTP %s · JSON %s · 版本 %s · **无会话头** %s"
+                 % (状态码, 内容类型, 初始化读数.get("protocolVersion"), not 会话头),
                 状态码 == 200 and (内容类型 or "").startswith("application/json")
-                and 初始化读数.get("protocolVersion") == "2025-06-18" and bool(会话头)
+                and 初始化读数.get("protocolVersion") == "2025-06-18" and not 会话头
                 and (初始化读数.get("serverInfo") or {}).get("name") == "v1-devkit"))
-        带会话 = dict(标准头)
-        带会话["Mcp-Session-Id"] = 会话头
         状态码, _, _, 应答数据 = _调用(监听端口, "POST", _报文(
-            {"jsonrpc": "2.0", "id": 2, "method": "tools/list", "params": {}}), 带会话)
+            {"jsonrpc": "2.0", "id": 2, "method": "tools/list", "params": {}}), 标准头)
         名单 = sorted(工具项.get("name")
                  for 工具项 in (json.loads(应答数据).get("result") or {}).get("tools", []))
         样本表.append(("tools/list：HTTP %s · 与 stdio 工具表同一份名单 %s"
                  % (状态码, 名单 == sorted(工具表)), 状态码 == 200 and 名单 == sorted(工具表)))
         状态码, _, _, 应答数据 = _调用(监听端口, "POST", _报文(
-            {"jsonrpc": "2.0", "method": "notifications/initialized"}), 带会话)
+            {"jsonrpc": "2.0", "method": "notifications/initialized"}), 标准头)
         样本表.append(("通知 notifications/initialized ⇒ HTTP %s（期望 202）· 空体 %s"
                  % (状态码, 应答数据 == b""), 状态码 == 202 and 应答数据 == b""))
         状态码, _, _, 应答数据 = _调用(监听端口, "POST", _报文(
             {"jsonrpc": "2.0", "id": 3, "method": "tools/call",
-             "params": {"name": "v1_context", "arguments": {}}}), 带会话)
+             "params": {"name": "v1_context", "arguments": {}}}), 标准头)
         结果值 = json.loads(应答数据).get("result") or {}
         应答文本 = (结果值.get("content") or [{}])[0].get("text") or ""
         样本表.append(("tools/call v1_context 只读：HTTP %s · isError=%s · 信封含「操作目录」%s"
                  % (状态码, 结果值.get("isError"), "操作目录" in 应答文本),
                 状态码 == 200 and not 结果值.get("isError") and "操作目录" in 应答文本))
-        状态码, _, _, 应答数据 = _调用(监听端口, "POST", "{不是JSON".encode("utf-8"), 带会话)
+        状态码, _, _, 应答数据 = _调用(监听端口, "POST", "{不是JSON".encode("utf-8"), 标准头)
         样本表.append(("坏帧（非法 JSON）⇒ HTTP %s（期望 400）· -32700 %s"
                  % (状态码, _错误码(应答数据)), 状态码 == 400 and _错误码(应答数据) == -32700))
-        状态码, _, _, 应答数据 = _调用(监听端口, "POST", b"[{}]", 带会话)
+        状态码, _, _, 应答数据 = _调用(监听端口, "POST", b"[{}]", 标准头)
         样本表.append(("批量请求 ⇒ HTTP %s（期望 400）· -32600 %s"
                  % (状态码, _错误码(应答数据)), 状态码 == 400 and _错误码(应答数据) == -32600))
         状态码, _, _, 应答数据 = _调用(监听端口, "POST", _报文(
-            {"jsonrpc": "2.0", "id": 4, "method": "没有这个方法", "params": {}}), 带会话)
+            {"jsonrpc": "2.0", "id": 4, "method": "没有这个方法", "params": {}}), 标准头)
         样本表.append(("未知方法 ⇒ HTTP %s（期望 200）· -32601 %s"
                  % (状态码, _错误码(应答数据)), 状态码 == 200 and _错误码(应答数据) == -32601))
-        坏会话 = dict(标准头)
-        坏会话["Mcp-Session-Id"] = "no-such-session-id"
+        陈旧会话 = dict(标准头)
+        陈旧会话["Mcp-Session-Id"] = "no-such-session-id"
         状态码, _, _, _ = _调用(监听端口, "POST", _报文(
-            {"jsonrpc": "2.0", "id": 5, "method": "tools/list", "params": {}}), 坏会话)
-        样本表.append(("未知会话 ⇒ HTTP %s（期望 404）" % 状态码, 状态码 == 404))
+            {"jsonrpc": "2.0", "id": 5, "method": "tools/list", "params": {}}), 陈旧会话)
+        样本表.append(("陈旧 / 未知会话头在无状态下被忽略 ⇒ HTTP %s（期望 200，不再 404）" % 状态码,
+                状态码 == 200))
         坏来源 = dict(标准头)
         坏来源["Origin"] = "http://evil.example.com"
         状态码, _, _, _ = _调用(监听端口, "POST", _报文(
@@ -149,13 +148,26 @@ def 样本列表(仓根, 工具表):
         样本表.append(("非法 Host ⇒ HTTP %s（期望 403）" % 状态码, 状态码 == 403))
         状态码, _, _, _ = _调用(监听端口, "GET", None, 标准头)
         样本表.append(("GET（不提供服务端 SSE 流）⇒ HTTP %s（期望 405）" % 状态码, 状态码 == 405))
-        状态码, _, _, _ = _调用(监听端口, "DELETE", None, 带会话)
-        样本表.append(("DELETE 终止会话 ⇒ HTTP %s（期望 204）" % 状态码, 状态码 == 204))
+        状态码, _, _, _ = _调用(监听端口, "DELETE", None, 陈旧会话)
+        样本表.append(("DELETE（无会话模式无可终止会话）⇒ HTTP %s（期望 405）" % 状态码,
+                状态码 == 405))
+        带版本 = dict(标准头)
+        带版本["MCP-Protocol-Version"] = "2026-07-28"
+        状态码, _, _, 应答数据 = _调用(监听端口, "POST", _报文(
+            {"jsonrpc": "2.0", "id": 9, "method": "tools/list", "params": {}}), 带版本)
+        样本表.append(("非豁免方法带不支持版本头 ⇒ HTTP %s（期望 400 JSON · -32000 %s · 非 HTML %s）"
+                 % (状态码, _错误码(应答数据), b"<!DOCTYPE" not in 应答数据),
+                状态码 == 400 and _错误码(应答数据) == -32000 and b"<!DOCTYPE" not in 应答数据))
+        状态码, _, _, 应答数据 = _调用(监听端口, "POST", _报文(
+            {"jsonrpc": "2.0", "id": 10, "method": "initialize",
+             "params": {"protocolVersion": "2026-07-28", "capabilities": {},
+                        "clientInfo": {"name": "自检", "version": "0"}}}), 带版本)
+        样本表.append(("initialize 带不支持版本头（豁免）⇒ HTTP %s · 版本回落 %s"
+                 % (状态码, (json.loads(应答数据).get("result") or {}).get("protocolVersion")),
+                状态码 == 200
+                and (json.loads(应答数据).get("result") or {}).get("protocolVersion") == "2025-06-18"))
         状态码, _, _, _ = _调用(监听端口, "POST", _报文(
-            {"jsonrpc": "2.0", "id": 9, "method": "tools/list", "params": {}}), 带会话)
-        样本表.append(("终止后再用该会话 ⇒ HTTP %s（期望 404）" % 状态码, 状态码 == 404))
-        状态码, _, _, _ = _调用(监听端口, "POST", _报文(
-            {"jsonrpc": "2.0", "id": 10, "method": "tools/list", "params": {}}), 标准头, "/wrong-path")
+            {"jsonrpc": "2.0", "id": 11, "method": "tools/list", "params": {}}), 标准头, "/wrong-path")
         样本表.append(("错误路径 ⇒ HTTP %s（期望 404）" % 状态码, 状态码 == 404))
         # —— keep-alive 帧错位回归：真实 ZCode 形态（新版探测头 + 同连接续请求）——
         连接 = http.client.HTTPConnection("127.0.0.1", 监听端口, timeout=5)
@@ -178,10 +190,10 @@ def 样本列表(仓根, 工具表):
                             "clientInfo": {"name": "zcode", "version": "0.16.9"}}}), headers=标准头)
             应答 = 连接.getresponse()
             状态码, 会话头, 应答数据 = 应答.status, 应答.getheader("Mcp-Session-Id"), 应答.read()
-            样本表.append(("同连接续 initialize ⇒ HTTP %s · 版本 %s · 会话头 %s（探测未污染下一帧）"
+            样本表.append(("同连接续 initialize ⇒ HTTP %s · 版本 %s · 无会话头 %s（探测未污染下一帧）"
                      % (状态码, (json.loads(应答数据).get("result") or {}).get("protocolVersion"),
-                        bool(会话头)),
-                    状态码 == 200 and bool(会话头)
+                        not 会话头),
+                    状态码 == 200 and not 会话头
                     and (json.loads(应答数据).get("result") or {}).get("protocolVersion") == "2025-06-18"))
         finally:
             连接.close()
@@ -217,6 +229,41 @@ def 样本列表(仓根, 工具表):
     finally:
         服务对象.shutdown()
         服务对象.server_close()
+    样本表 += _跨重启样本(仓根, 工具表)
+    return 样本表
+
+
+def _跨重启样本(仓根, 工具表):
+    """同 SDK client 形态的**跨重启**验证：真 socket 上 initialize（无会话）→ tools/list，
+    每轮换一个**全新服务实例**（第二轮即「服务重启后」）⇒ 两轮都必须 200。
+
+    证的是**去会话依赖**：客户端从不持有会话，服务重启（进程换了、内存状态没了）后重新
+    initialize 就能继续用 —— 正是 ZCode 打包 SDK 的 `StreamableHTTPClientTransport` 唯一
+    走得通的路（它只判 401/403/400/202，无 404 重初始化分支）。
+    """
+    样本表 = []
+    for 重启轮次 in (1, 2):
+        服务对象, 监听端口 = _起环回(仓根, 工具表)
+        try:
+            状态码, _, 会话头, 应答数据 = _调用(监听端口, "POST", _报文(
+                {"jsonrpc": "2.0", "id": "跨重启初始化-%d" % 重启轮次, "method": "initialize",
+                 "params": {"protocolVersion": "2025-06-18", "capabilities": {},
+                            "clientInfo": {"name": "sdk样", "version": "0"}}}), 标准头)
+            初始化读数 = json.loads(应答数据).get("result") or {}
+            名单状态, _, _, 名单应答 = _调用(监听端口, "POST", _报文(
+                {"jsonrpc": "2.0", "id": "跨重启列工具-%d" % 重启轮次, "method": "tools/list",
+                 "params": {}}), 标准头)
+            名单 = sorted(工具项.get("name")
+                     for 工具项 in (json.loads(名单应答).get("result") or {}).get("tools", []))
+            样本表.append(("跨重启第 %d 轮（%s）· 真 socket：initialize 无会话头 %s · tools/list HTTP %s · 名单一致 %s"
+                     % (重启轮次, "首起" if 重启轮次 == 1 else "重启后", not 会话头, 名单状态,
+                        名单 == sorted(工具表)),
+                    状态码 == 200 and not 会话头 and 名单状态 == 200
+                    and 名单 == sorted(工具表)
+                    and 初始化读数.get("protocolVersion") == "2025-06-18"))
+        finally:
+            服务对象.shutdown()
+            服务对象.server_close()
     return 样本表
 
 
