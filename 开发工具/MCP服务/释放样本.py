@@ -5,7 +5,7 @@ import tempfile
 from pathlib import Path
 from unittest import mock
 
-from . import 开工, 开工账本, 仓操作
+from . import 开工, 开工账本, 仓操作, 写盘账本
 
 
 def 释放样本() -> list:
@@ -57,6 +57,9 @@ def _跑释放夹具(临时根, 名称):
     连接 = 连样本账本()
     for 建表行 in 开工账本.建表语句:
         连接.execute(建表行)
+    # 真账本由 v1_edit / 写盘恢复 懒建 `写盘意图` 表；夹具直写盘不走 v1_edit ⇒ 这里补上，与生产同形
+    # （否则释放的越界检测调 `列写盘意图` 报 no such table）
+    写盘账本.补意图表(连接)
     开工账本.登记开工(连接, 开工号, "释放样本", 仓操作.分支名(开工号), str(工作树))
     if 名称 not in ("空改", "空改钩子失败", "坏推送参数"):
         (工作树 / "样本.txt").write_text("新内容\n", encoding="utf-8")

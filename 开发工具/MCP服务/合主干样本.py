@@ -190,8 +190,11 @@ def _验定位同步锁(临时根):
     assert 集成.定位主仓(腿树)[0] != 0
     (仓根/"README.md").write_text("系统工程平台 V1\n")
     模块根=Path(__file__).resolve().parents[2]
+    # 按包 glob 取模块件（不再手列）：新增 `合主干*.py` 自动带进来，不再因漏列而夹具缺件
+    模块件表=sorted(str(件路径.relative_to(模块根)) for 件路径 in (模块根/"开发工具/MCP服务").glob("合主干*.py"))
+    模块件表+=["开发工具/MCP服务/合并主干.py","开发工具/信息核心/表定义.py"]
     for 树根 in (仓根,腿树):
-        for 相对路径 in ("开发工具/MCP服务/合并主干.py","开发工具/MCP服务/合主干编排.py","开发工具/MCP服务/合主干集成树.py","开发工具/MCP服务/合主干有界跑.py","开发工具/MCP服务/合主干源库重放.py","开发工具/MCP服务/合主干现场清理.py","开发工具/信息核心/表定义.py"):
+        for 相对路径 in 模块件表:
             件路径=树根/相对路径
             件路径.parent.mkdir(parents=True,exist_ok=True)
             shutil.copyfile(模块根/相对路径,件路径)

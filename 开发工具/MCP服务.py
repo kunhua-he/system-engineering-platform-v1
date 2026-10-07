@@ -35,6 +35,10 @@ def 入口函数(argv=None):
         return 0 if (工具表 and callable(跑主循环)) else 6
     if "--自检" in 命令行参数:
         return 自检样本.跑自检(仓根, 工具表)
+    if "--长样本" in 命令行参数:
+        # 长回归（合主干 + 释放），塞不进 `--自检` 的 5 秒硬顶 ⇒ 单独一档（惰性 import 免得拖慢服务启动）
+        from MCP服务 import 长样本
+        return 长样本.长样本(仓根)
     return 跑主循环(仓根, 工具表)
 
 
