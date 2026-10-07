@@ -11,6 +11,7 @@
   反向 —— 关键词无命中**补一句**「查单号请用顶层 `开工ID`」；上限非法（非数 / 越界）⇒ 退出码 2。
 """
 import re
+import subprocess
 from pathlib import Path
 
 
@@ -28,6 +29,15 @@ def 查询样本(仓根, 工具表) -> list:
         旁树 = 临时根 / "旁树"
         主树.mkdir()
         旁树.mkdir()
+        # 主树 必须是**真 Git 仓**：单号查询按 《查询渲染.拼单号明细》 现读真 `分支/HEAD`（40 位哈希）。
+        # 夹具若不建仓，`读树头` 只能给空串 ⇒ 该正向断言永不可过（曾漏成假红，退回一步）。
+        _跑Git(主树, "init", "-b", "腿/v1-自检主")
+        _跑Git(主树, "config", "user.name", "样本")
+        _跑Git(主树, "config", "user.email", "fixture@example.invalid")
+        (主树 / "样本.txt").write_text("样本基线\n", encoding="utf-8")
+        _跑Git(主树, "add", "样本.txt")
+        _跑Git(主树, "commit", "-m", "样本基线")
+        主树头 = _跑Git(主树, "rev-parse", "HEAD").strip()
         账本路径 = 临时根 / "账本.db"
         连接 = sqlite3.connect(str(账本路径))
         连接.row_factory = sqlite3.Row
@@ -53,13 +63,17 @@ def 查询样本(仓根, 工具表) -> list:
             退出码, 回执 = 出口({"开工ID": "v1-自检主", "操作": "查询"}, 仓根)
             单号净 = ("v1-自检主" in 回执 and "v1-自检旁" not in 回执
                    and "工作树仍在" not in 回执 and "僵尸开工" not in 回执)
-            样本表.append(("v1_task 查询 单号：退出码 %d · 只给本号%s · 不附全局诊断%s · 分支 HEAD 是 40 位哈希 %s"
+            分支头对 = re.search(r"分支 HEAD：%s %s\b" % (re.escape("腿/v1-自检主"), 主树头), 回执) is not None
+            样本表.append(("v1_task 查询 单号：退出码 %d · 只给本号%s · 不附全局诊断%s · 分支HEAD 真读(腿/v1-自检主 %s)%s"
                     % (退出码, "" if ("v1-自检主" in 回执 and "v1-自检旁" not in 回执) else "**没**",
                        "" if ("工作树仍在" not in 回执 and "僵尸开工" not in 回执) else "**仍附**",
-                       "是" if re.search(r"分支 HEAD：\S+ [0-9a-f]{40}\b", 回执) else "否"),
-                     退出码 == 0 and 单号净
-                     and re.search(r"分支 HEAD：\S+ [0-9a-f]{40}\b", 回执) is not None
+                       主树头[:12], "是" if 分支头对 else "否"),
+                     退出码 == 0 and 单号净 and 分支头对
                      and "Traceback" not in 回执))
+            退出码, 回执 = 出口({"开工ID": "v1-自检僵尸", "操作": "查询"}, 仓根)
+            样本表.append(("v1_task 查询 单号（工作树不在 ⇒ 分支HEAD 读不到 · 不崩）：退出码 %d · 报读不到%s"
+                    % (退出码, "是" if "分支 HEAD：（读不到" in 回执 else "否"),
+                     退出码 == 0 and "分支 HEAD：（读不到" in 回执 and "Traceback" not in 回执))
             退出码, 回执 = 出口({"操作": "查询", "参数": {"上限": 1}}, 仓根)
             折叠 = ("工作树仍在的开工 2 条" in 回执 and "默认折叠" in 回执
                   and "v1-自检主" not in 回执 and "僵尸开工 1 条" in 回执)
@@ -102,3 +116,12 @@ def 查询样本(仓根, 工具表) -> list:
         return 样本表
     finally:
         shutil.rmtree(临时根, ignore_errors=True)
+
+
+def _跑Git(工作树, *命令表) -> str:
+    """夹具里跑一条 git ⇒ stdout；**干净环境**（剔 Git 定位变量）⇒ 不动外仓索引。"""
+    from .合主干有界跑 import 干净环境
+    回执 = subprocess.run(["git", *命令表], cwd=str(工作树), capture_output=True, text=True,
+                       env=干净环境(), timeout=5)
+    assert 回执.returncode == 0, (命令表, 回执.stdout, 回执.stderr)
+    return 回执.stdout
