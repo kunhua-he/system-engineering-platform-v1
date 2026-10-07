@@ -79,8 +79,29 @@ fn main() {
         源文件.write_text(json.dumps(声明内容, ensure_ascii=False))
         类型文件 = 声明目录 / "类型声明/0100.json"
         类型内容 = json.loads(类型文件.read_text())
-        类型内容["元素表"] = [{"名称": "元素", "类型标签": 4, "说明": "正式结构字段"}]
+        # 正向：合法非空 元素表（`契约声明/格式说明.md` §四 形状 {名称,类型标签,说明}）⇒ 过，
+        # 且生成物照常可编译消费（下一条 --检查 即“生成物可被消费”）；4 是底座标签、100 是本声明标签。
+        类型内容["元素表"] = [{"名称": "元素", "类型标签": 4, "说明": "正式结构字段"},
+                            {"名称": "另一元素", "类型标签": 100, "说明": "复用本声明类型"}]
         类型文件.write_text(json.dumps(类型内容, ensure_ascii=False))
         读数 = subprocess.run(生成命令, cwd=仓库, capture_output=True)
-        assert 读数.returncode == 2 and "元素表" in 读数.stderr.decode(), 读数.stderr
-        print("真实生成负样本：错默认形状8种/非空结构子表 明确拒绝退出2")
+        assert 读数.returncode == 0, 读数.stderr
+        subprocess.run(生成命令 + ["--检查"], cwd=仓库, check=True, capture_output=True)
+        # 反向：形状错四类（缺字段 / 类型标签非整 / 类型标签不在表 / 重名）⇒ 红且定位到位
+        for 元素表样本 in (
+            [{"名称": "缺类型标签", "说明": "x"}],
+            [{"名称": "非整型标签", "类型标签": "4", "说明": "x"}],
+            [{"名称": "表里没有的标签", "类型标签": 9999, "说明": "x"}],
+            [{"名称": "重名", "类型标签": 4, "说明": "a"},
+             {"名称": "重名", "类型标签": 1, "说明": "b"}],
+        ):
+            类型内容["元素表"] = 元素表样本
+            类型文件.write_text(json.dumps(类型内容, ensure_ascii=True))
+            读数 = subprocess.run(生成命令, cwd=仓库, capture_output=True)
+            assert 读数.returncode == 2 and "元素表" in 读数.stderr.decode(), 读数.stderr
+        # 空表仍过（原行为不变）
+        类型内容["元素表"] = []
+        类型文件.write_text(json.dumps(类型内容, ensure_ascii=False))
+        读数 = subprocess.run(生成命令, cwd=仓库, capture_output=True)
+        assert 读数.returncode == 0, 读数.stderr
+        print("真实生成：合法非空元素表过且生成物可编译消费 · 错形状4类红且定位到位 · 空表仍过")
