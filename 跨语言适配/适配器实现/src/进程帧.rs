@@ -6,7 +6,11 @@ use std::time::{Duration, Instant};
 
 const 帧头字节数: usize = 24;
 const 单帧载荷上限: usize = 1024 * 1024;
-const 调用载荷上限: usize = 4 * 1024 * 1024;
+/// 单次调用的载荷上限（发送与接收两侧各自累计，先校界限再分配的上界之一）。
+///
+/// **公开**：`线协议.rs` 的数据区累计字节判据（冻结件 §二 第 ④ 条）与帧层用的是
+/// **同一个上界** —— 两处各写一个数就是第二套口径。
+pub const 调用载荷上限: usize = 4 * 1024 * 1024;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(u16)]
@@ -105,7 +109,13 @@ pub fn 发送帧(通信通道: &mut UnixStream, 消息体: &消息帧, 预算: &
     写全帧(通信通道, &消息体.载荷, 预算)
 }
 
-pub fn 接收帧(通信通道: &mut UnixStream, 请求标识: NonZeroU64, 预算: &mut 调用帧预算) -> io::Result<消息帧> {
+/// 收一帧，**不校请求标识**：把帧头与载荷读全、校完魔数 / 版本 / 类别 / 长度 / 预算，
+/// 原样交出帧里的那个请求标识。
+///
+/// 收调用侧（工作进程）收到的帧是**对方发起的**，它事先不知道请求标识 —— 只能
+/// 「收一帧、按帧里写的标识答回去」。本函数就是那一口的**唯一实现**；
+/// [`接收帧`] 只是它加一道标识比对（宿主侧「只收同标识的回帧」靠它）。
+pub fn 接收任意帧(通信通道: &mut UnixStream, 预算: &mut 调用帧预算) -> io::Result<消息帧> {
     通信通道.set_nonblocking(true)?;
     let mut 帧头 = [0u8; 帧头字节数];
     读全帧(通信通道, &mut 帧头, 预算)?;
@@ -126,9 +136,8 @@ pub fn 接收帧(通信通道: &mut UnixStream, 请求标识: NonZeroU64, 预算
         .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "IPC请求标识为零"))?;
     let 载荷长度 = u32::from_le_bytes(帧头[16..20].try_into().unwrap()) as usize;
     let 剩余毫秒 = u32::from_le_bytes(帧头[20..24].try_into().unwrap());
-    if 帧请求标识 != 请求标识 || 载荷长度 > 单帧载荷上限
-        || 载荷长度 > 预算.接收剩余 || 剩余毫秒 == 0 || 剩余毫秒 > 5000 {
-        return Err(io::Error::new(io::ErrorKind::InvalidData, "IPC请求、长度或预算不符"));
+    if 载荷长度 > 单帧载荷上限 || 载荷长度 > 预算.接收剩余 || 剩余毫秒 == 0 || 剩余毫秒 > 5000 {
+        return Err(io::Error::new(io::ErrorKind::InvalidData, "IPC长度或预算不符"));
     }
     let 远端截止 = Instant::now() + Duration::from_millis(u64::from(剩余毫秒));
     预算.截止时间 = 预算.截止时间.min(远端截止);
@@ -136,6 +145,15 @@ pub fn 接收帧(通信通道: &mut UnixStream, 请求标识: NonZeroU64, 预算
     let mut 载荷 = vec![0u8; 载荷长度];
     读全帧(通信通道, &mut 载荷, 预算)?;
     Ok(消息帧 { 消息类型, 请求标识: 帧请求标识, 载荷 })
+}
+
+/// 收一帧并校请求标识（宿主侧用法）。
+pub fn 接收帧(通信通道: &mut UnixStream, 请求标识: NonZeroU64, 预算: &mut 调用帧预算) -> io::Result<消息帧> {
+    let 帧体 = 接收任意帧(通信通道, 预算)?;
+    if 帧体.请求标识 != 请求标识 {
+        return Err(io::Error::new(io::ErrorKind::InvalidData, "IPC请求、长度或预算不符"));
+    }
+    Ok(帧体)
 }
 
 pub struct 有界帧队列 {

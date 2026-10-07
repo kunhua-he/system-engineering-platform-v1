@@ -16,7 +16,7 @@ use std::time::{Duration, Instant};
 
 use v1_contract::{类型标签, 数据槽};
 
-use crate::进程帧::{调用帧预算, 接收帧, 发送帧, 消息帧, 消息类别};
+use crate::进程帧::{调用帧预算, 接收任意帧, 接收帧, 发送帧, 消息帧, 消息类别};
 use crate::进程调用::{造跨进程错误槽, 域部署, 跨进程域表};
 use crate::进程池::{进程池配置, 进程池错误, 执行域标识};
 use crate::线协议::{编码调用结果, 解码调用请求};
@@ -113,6 +113,82 @@ fn 跨进程往返_真收到回值() {
         }
         Err(码值) => panic!("这条路必须能往返；拿到了错误码 {码值}"),
     }
+}
+
+/// 一条**慢应答**环：收下调用后先睡一会儿再回结果。
+///
+/// 用它造「一个慢域」：宿主侧真发出调用后卡在收帧上；同一条线程里对健康域发调用，
+/// 若域表锁被慢域持着，健康域就会被拖到慢域醒来 —— 那就是本测试要拒的旧行为。
+fn 起慢应答环(宿主端: UnixStream, 回值: u64, 拖延: Duration) -> thread::JoinHandle<()> {
+    let mut 对端 = 宿主端;
+    thread::spawn(move || {
+        let Ok(mut 预算) = 调用帧预算::创建(Instant::now() + Duration::from_millis(3000)) else {
+            return;
+        };
+        if let Ok(收到帧) = 接收任意帧(&mut 对端, &mut 预算) {
+            let 回执 = 消息帧 {
+                消息类型: 消息类别::通知回执,
+                请求标识: 收到帧.请求标识,
+                载荷: Vec::new(),
+            };
+            let _ = 发送帧(&mut 对端, &回执, &mut 预算);
+        }
+        if let Ok(调用帧) = 接收任意帧(&mut 对端, &mut 预算) {
+            thread::sleep(拖延);
+            let 回槽 = 数据槽::内联槽(类型标签::构造(1), 回值, 0);
+            if let Ok(载荷) = 编码调用结果(协议结果::成功, &回槽) {
+                let 回帧 = 消息帧 { 消息类型: 消息类别::调用结果, 请求标识: 调用帧.请求标识, 载荷 };
+                let _ = 发送帧(&mut 对端, &回帧, &mut 预算);
+            }
+        }
+    })
+}
+
+/// 一条**快应答**环：收到调用立即回（健康域）。
+fn 起快应答环(宿主端: UnixStream, 回值: u64) -> thread::JoinHandle<()> {
+    起慢应答环(宿主端, 回值, Duration::from_millis(0))
+}
+
+#[test]
+fn 慢域不阻塞健康域_锁收窄验收() {
+    // ★ 冻结件 §五 验收行：一个慢域 + 一个健康域同时调用，健康域不被拖住。
+    //
+    // 现场：慢域的对端拖延 800 ms；健康域立即答。若域表锁被慢域持着（旧行为），
+    // 健康域的调用会排到慢域之后 ⇒ 耗时 > 800 ms。收窄后健康域应远早于慢域完成。
+    let (慢宿主端, 慢对端) = UnixStream::pair().unwrap();
+    let (快宿主端, 快对端) = UnixStream::pair().unwrap();
+    let 慢等 = 起慢应答环(慢对端, 1111, Duration::from_millis(800));
+    let 快等 = 起快应答环(快对端, 2222);
+    let mut 域表本体 = 跨进程域表::新建(进程池配置::default());
+    let 慢标识 = 执行域标识 {
+        适配器实例号: 7, 扩展标识串: String::from("扩展慢"), 制品版本: (1, 0, 0),
+    };
+    let 快标识 = 执行域标识 {
+        适配器实例号: 7, 扩展标识串: String::from("扩展快"), 制品版本: (1, 0, 0),
+    };
+    域表本体.登记已连域(慢标识.clone(), 慢宿主端).unwrap();
+    域表本体.登记已连域(快标识.clone(), 快宿主端).unwrap();
+    let 域表 = std::sync::Arc::new(域表本体);
+    // 慢域先发（它的收发在本域那把锁里等）。
+    let 慢域表 = std::sync::Arc::clone(&域表);
+    let 慢标识副本 = 慢标识.clone();
+    let 慢任务 = thread::spawn(move || {
+        let 开始 = Instant::now();
+        let 读数 = 慢域表.送一调用(&慢标识副本, 1101, &[数据槽::空槽()]);
+        (读数, 开始.elapsed())
+    });
+    // 健康域稍后发：它必须在慢域醒来之前回来。
+    thread::sleep(Duration::from_millis(80));
+    let 快开始 = Instant::now();
+    let 快读数 = 域表.送一调用(&快标识, 1101, &[数据槽::空槽()]);
+    let 快耗时 = 快开始.elapsed();
+    let (慢读数, 慢耗时) = 慢任务.join().unwrap();
+    let _ = 慢等.join();
+    let _ = 快等.join();
+    assert_eq!(快读数.unwrap().槽值, 2222, "健康域必须拿到本域的回值");
+    assert_eq!(慢读数.unwrap().槽值, 1111, "慢域也拿到本域的回值");
+    assert!(快耗时 < Duration::from_millis(500), "健康域被拖住了：耗时 {快耗时:?}（慢域睡 800 ms）");
+    assert!(慢耗时 >= Duration::from_millis(700), "慢域本就该慢：{慢耗时:?}");
 }
 
 #[test]
