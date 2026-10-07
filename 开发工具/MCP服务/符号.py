@@ -120,6 +120,8 @@ def 派发(参数表: dict, 仓根) -> tuple:
         记录条数 = int(参数表.get("条数") or 20)
     except (TypeError, ValueError):
         return 2, "`条数` 要是整数"
+    if not 1 <= 记录条数 <= 100:
+        return 2, "`条数` 要在 1..100（默认 20）—— 回执有界，别一次灌爆上下文"
     要源码 = bool(参数表.get("带源码"))
 
     if 关键词 and 限定名:
