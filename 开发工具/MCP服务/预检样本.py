@@ -47,7 +47,8 @@ def 扫一遍(仓根: Path) -> list:
         连接 = sqlite3.connect(str(库件))
         for 文本行 in 账本.建表语句:
             连接.execute(文本行)
-        连接.execute("insert into 开工 values (?,?,?,?,?,?,?)",
+        连接.execute("insert into 开工 (开工号, 工作内容, 分支名, 工作树, 状态, 开工时间, 释放时间) "
+                   "values (?,?,?,?,?,?,?)",
                    ("v1-样本", "样本", "样本", str(工作树), 账本.状态_进行中, "样本", None))
         连接.executemany("insert into 认领 values (?,?,?)", [
             ("v1-样本", "漂移.py", "旧指纹"),
