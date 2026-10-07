@@ -12,7 +12,7 @@ r"""自检样本 —— MCP 工具面自检：协议三帧 · 工具表形状 ·
 """
 from pathlib import Path
 
-隔离样本组 = {"改名样本": 34, "上下文样本": 66, "跨树样本": 18}
+隔离样本组 = {"改名样本": 34, "上下文样本": 71, "跨树样本": 18}
 隔离入口文本 = (
     "import json,sys; from pathlib import Path; "
     "sys.path.insert(0,str(Path.cwd()/'开发工具')); "
@@ -194,13 +194,14 @@ def 自检主体(仓根, 工具表, 样本作业表) -> int:
     from .查询样本 import 查询样本
     from .开工记忆样本 import 开工记忆样本
     from .诊断样本 import 诊断样本
+    from .易用样本 import 样本列表 as 易用样本表
     样本表 += (样本作业表["改名样本"].result() + 终端样本(仓根, 工具表)
             + 样本作业表["上下文样本"].result() + 符号样本(仓根, 工具表)
             + 自愈样本(仓根, 工具表) + 冲突回执样本(仓根, 工具表) + 查询样本(仓根, 工具表)
             + 库快照样本(仓根, 工具表)
             + http传输样本.样本列表(仓根, 工具表) + 裸仓回执样本.样本列表(仓根, 工具表)
             + 样本作业表["跨树样本"].result() + 开工记忆样本(仓根, 工具表)
-            + 写盘样本.样本列表(仓根, 工具表) + 诊断样本(仓根, 工具表))
+            + 写盘样本.样本列表(仓根, 工具表) + 诊断样本(仓根, 工具表) + 易用样本表(仓根, 工具表))
     from unittest.mock import patch
     from . import 参数规范
     with patch.object(参数规范, "取树", return_value={}):
@@ -291,7 +292,7 @@ def 自检_隔离边界(仓根):
                                                else {"return_value": 返回替身})):
             结果表 = 跑隔离样本("跨树样本", 仓根)
         样本表.append(("隔离边界·" + 说明, bool(结果表) and not all(通过 for _, 通过 in 结果表)))
-    子组读数 = {"组": "上下文样本", "样本": [["上下文%02d" % 序号, True] for 序号 in range(66)]}
+    子组读数 = {"组": "上下文样本", "样本": [["上下文%02d" % 序号, True] for 序号 in range(71)]}
     for 故障读数 in (
         {"组": "上下文样本", "样本": 子组读数["样本"][:-1]},
         {"组": "上下文样本", "样本": [["失败", False]] + 子组读数["样本"][1:]},
@@ -299,7 +300,7 @@ def 自检_隔离边界(仓根):
         with patch.object(subprocess, "run", return_value=subprocess.CompletedProcess(
                 [], 0, json.dumps(故障读数), "")):
             结果表 = 跑隔离样本("上下文样本", 仓根)
-        样本表.append(("隔离边界·上下文66条缺1或失败1拒绝", bool(结果表) and not all(通过 for _, 通过 in 结果表)))
+        样本表.append(("隔离边界·上下文71条（原66及新增5）缺1或失败1拒绝", bool(结果表) and not all(通过 for _, 通过 in 结果表)))
     import os
     from .仓操作 import 跑命令
     from .合主干有界跑 import 继承定位变量

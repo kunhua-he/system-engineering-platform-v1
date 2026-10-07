@@ -57,7 +57,8 @@ from 运行数据根 import 解析当前环境, 确保子目录  # noqa: E402
         命令组号 integer,
         命令代次 text,
         截断     integer not null default 0,
-        说明     text
+        说明     text,
+        具名     text
     )""",
 )
 
@@ -83,17 +84,25 @@ def 连账本() -> sqlite3.Connection:
     连接.row_factory = sqlite3.Row
     for 建表语句行 in 建表语句:
         连接.execute(建表语句行)
+    _补列(连接)
     连接.commit()
     return 连接
 
 
-def 落新行(任务ID: str, 命令: str, 工作树: str, 开始时间: str) -> None:
+def _补列(连接) -> None:
+    """老账本补列：`具名`（列作业要报具名；`create table if not exists` 对老库不补）。幂等。"""
+    列名集 = {文本行[1] for 文本行 in 连接.execute("pragma table_info(作业)")}
+    if "具名" not in 列名集:
+        连接.execute("alter table 作业 add column 具名 text")
+
+
+def 落新行(任务ID: str, 命令: str, 工作树: str, 开始时间: str, 具名: str = "") -> None:
     """登记一条新作业（状态 = `启动中`，组号留空 —— 由调用方随后补）。"""
     连接 = 连账本()
     try:
         连接.execute(
-            "insert into 作业 (任务ID, 状态, 命令, 工作树, 开始时间) values (?, ?, ?, ?, ?)",
-            (任务ID, 状态_启动中, 命令, 工作树, 开始时间))
+            "insert into 作业 (任务ID, 状态, 命令, 工作树, 开始时间, 具名) values (?, ?, ?, ?, ?, ?)",
+            (任务ID, 状态_启动中, 命令, 工作树, 开始时间, 具名))
         连接.commit()
     finally:
         连接.close()
@@ -106,6 +115,14 @@ def 读行(任务ID: str):
         return 连接.execute("select * from 作业 where 任务ID=?", (任务ID,)).fetchone()
     finally:
         连接.close()
+
+
+def 列作业(连接: sqlite3.Connection, 结果上限: int = 20) -> list:
+    """最近作业 ⇒ `list[dict]`。**非终态在前**（好一眼看到在途的），再按开始时间倒序；有界。"""
+    终态占位 = ",".join(["?"] * len(终态集))
+    return [dict(数据行) for 数据行 in 连接.execute(
+        "select * from 作业 order by (状态 in (%s)) asc, 开始时间 desc limit ?" % 终态占位,
+        tuple(终态集) + (结果上限,))]
 
 
 def 改行(任务ID: str, 允许状态集, 字段表: dict) -> int:

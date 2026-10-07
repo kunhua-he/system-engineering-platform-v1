@@ -17,7 +17,7 @@ def 作业样本(仓根, 工具表):
     """检查真实工具声明、拒绝与固定合并命令的目标转发。"""
     from . import 作业
     样本表 = []
-    for 工具名, 期望操作 in (("v1_job", {"start", "status", "log", "cancel"}), ("v1_search", {"搜索"})):
+    for 工具名, 期望操作 in (("v1_job", {"start", "list", "status", "log", "cancel"}), ("v1_search", {"搜索"})):
         if 工具名 not in 工具表:
             样本表.append((工具名 + "注册缺失", False))
             continue
@@ -52,6 +52,9 @@ def 作业样本(仓根, 工具表):
         with patch.object(作业, "起作业") as 启动替身:
             退出码, 输出文本 = 作业.起具名作业("合主线", "", 1, 仓根, {"目标开工ID": "v1-100001"})
             样本表.append(("唯一定位拒绝透传不启动", 退出码 == 2 and not 启动替身.called))
+    样本表.append(("标准具名·自测 / 案例在册（一次调用拿结论，不必回落 Bash）",
+             作业.具名作业表.get("自测", "").endswith("一键验证.py --自测")
+             and 作业.具名作业表.get("案例", "").endswith("-p v1-case-runner")))
     return 样本表 + 异步短样本(仓根, 工具表)
 
 
@@ -78,6 +81,13 @@ def 异步短样本(仓根, 工具表):
                 说明 = json.loads(输出文本)["说明"]
                 样本表.append(("真实" + 操作名 + "短作业", 退出码 == 0 and (
                     "退出码：0" in 说明 if 操作名 == "status" else "12345" in 说明 if 操作名 == "log" else "终态" in 说明)))
+            退出码, 输出文本 = 工具表["v1_job"][0]({"操作": "list"}, 仓根)
+            说明 = json.loads(输出文本)["说明"]
+            样本表.append(("真实 list 短作业：含该任务ID与「非终态在前」", 退出码 == 0
+                      and 任务ID in 说明 and "非终态在前" in 说明))
+            退出码, 输出文本 = 工具表["v1_job"][0]({"操作": "list", "参数": {"条数": 999}}, 仓根)
+            样本表.append(("list 反向：条数越界 ⇒ 退出码 %d（期望 2）" % 退出码,
+                      退出码 == 2 and "条数" in json.loads(输出文本)["说明"]))
             if 作业.读行(任务ID)["状态"] not in 作业.终态集:
                 作业.取消作业(任务ID)
             作业.收僵尸()

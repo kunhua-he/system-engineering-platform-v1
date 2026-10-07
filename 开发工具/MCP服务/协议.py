@@ -20,7 +20,7 @@ import select
 import sys
 
 from . import 自愈预检
-from .服务指纹 import 算服务指纹, 过期提示行
+from .服务指纹 import 算服务指纹, 过期提示行, 过期提示一次
 
 协议版本 = "2024-11-05"
 服务名 = "v1-devkit"
