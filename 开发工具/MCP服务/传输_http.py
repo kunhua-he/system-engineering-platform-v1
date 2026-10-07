@@ -9,8 +9,15 @@
 
 **响应类型**：请求一律 `Content-Type: application/json`（单对象）；通知 / 客户端响应回 202 空体。
 GET 回 405（本服务不主动向客户端发起请求 / 通知，故不提供服务端 SSE 流 —— 规格允许）。
-**会话**：initialize 时发 `Mcp-Session-Id`；后续带未知 / 已回收会话 ⇒ 404（客户端据此重初始化）；
-DELETE 终止会话；不带会话也照服务（无状态可用）。
+**无状态（2026-10-08）**：本服务**不分配、不校验** `Mcp-Session-Id`（会话在 MCP 里本就可选，
+且**从未参与授权** ⇒ 去掉不回退任何安全口径）：initialize 不回会话头；请求带陈旧 / 未知会话头
+一律**忽略**（不再 404）；DELETE 无可终止的会话 ⇒ 405。**为何必须去会话依赖**：ZCode 打包
+SDK 的 `StreamableHTTPClientTransport` 只判 401/403/400/202、**没有 404 分支**，规范要求的
+「带会话 404 ⇒ 重新 initialize」它不做 ⇒ 有会话的服务端一旦回收会话就整条客户端不可用。
+每请求自带全部上下文 ⇒ 服务可重启、可多实例（同宪法「多实例安全」）。
+**版本门**：无状态 ⇒ 每请求按官方 `MCP-Protocol-Version` 规则判 —— `initialize` 与新版探测
+`server/discover` 豁免（`协议.初始化前方法集`），其余方法带了**不支持的**版本头回 400 JSON
+（不是 HTML）；头缺省按官方口径视作 2025-03-26，不拦。
 **安全**：只绑环回；`Origin` 有值则须为本机环回，否则 403；`Host` 须为环回，否则 403（防 DNS
 rebinding）；请求体 / 并发连接 / 连接空闲全部有界；不设任何 CORS 头（不开放到 `*`）。
 **断连**：客户端先关连接 / RST 属预期（不是服务缺陷）—— 只把三类网络断开收成**一条有界单行**，
@@ -25,7 +32,6 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlsplit
 
 from . import 协议
-from .http会话 import 会话表
 from .服务常量 import (绑定地址, 并发连接上限, 协议版本集, 协议版本最高, 服务标识,
                   服务路径, 连接空闲秒, 默认监听端口, 请求体上限字节)
 
@@ -51,10 +57,9 @@ class 传输服务(ThreadingHTTPServer):
     daemon_threads = True
     allow_reuse_address = True
 
-    def __init__(self, 监听地址, 处理器类, 仓根, 工具表, 会话登记):
+    def __init__(self, 监听地址, 处理器类, 仓根, 工具表):
         self.仓根 = 仓根
         self.工具表 = 工具表
-        self.会话登记 = 会话登记
         self._名额 = threading.BoundedSemaphore(并发连接上限)
         super().__init__(监听地址, 处理器类)
 
@@ -131,11 +136,8 @@ class 请求处理器(BaseHTTPRequestHandler):
         self._本请求体已读 = False
         if not self._校验入口():
             return
-        会话编号 = self.headers.get("Mcp-Session-Id")
-        if 会话编号 and self.server.会话登记.删除(会话编号):
-            self._写响应(204, 是否空体=True)
-        else:
-            self._写响应(404, 是否空体=True)
+        # 无状态：本服务不分配会话 ⇒ 没有可终止的会话。按规格回 405（不假装删过什么）。
+        self._写响应(405, 是否空体=True)
 
     def do_OPTIONS(self):
         # 不提供 CORS：任何预检一律 403（不开放到 `*`）。
@@ -143,7 +145,7 @@ class 请求处理器(BaseHTTPRequestHandler):
         self._写响应(403, 是否空体=True)
 
     def _校验入口(self):
-        """路径 / 主机 / 来源 / 协议版本头四关；任一不过 ⇒ 已回错误，回假。"""
+        """路径 / 主机 / 来源三关；任一不过 ⇒ 已回错误，回假。"""
         if urlsplit(self.path).path.rstrip("/") != 服务路径:
             self._写响应(404, 是否空体=True)
             return False
@@ -151,14 +153,8 @@ class 请求处理器(BaseHTTPRequestHandler):
             return False
         if not self._校验来源():
             return False
-        # 协议版本门：只对**已初始化（带会话）**的请求按规范拦不支持的新版头（安全 400 JSON）；
-        # 初始化前的探测（无会话，如新版客户端的 `server/discover`）不在此拦 —— 放它走方法
-        # 派发（未知方法回 -32601），否则会把整条新客户端的连接判死。本服务的协议版本集
-        # **不声明**未实现的新版兼容，故这里只放行「探测」，不假装支持新版。
-        版本头 = self.headers.get("MCP-Protocol-Version")
-        if 版本头 and 版本头 not in 协议版本集 and self.headers.get("Mcp-Session-Id"):
-            self._写错误(400, None, -32000, "不支持的 MCP-Protocol-Version：%s" % 版本头)
-            return False
+        # 协议版本门不在这里 —— 无状态下它按**方法名**分流（initialize / server/discover 豁免），
+        # 而方法名要解析过请求体才知道 ⇒ 落在 `_处理请求` 里（见那里的版本门）。
         return True
 
     def _校验主机(self):
@@ -224,6 +220,15 @@ class 请求处理器(BaseHTTPRequestHandler):
         # 定位给断连日志用：响应写出撞断连时，这一条请求是谁才说得清。
         self._当前报文号 = 报文号
         self._当前方法名 = 方法名
+        # 版本门（无状态 · 每请求按官方 `MCP-Protocol-Version` 规则）：`initialize` 与新版探测
+        # `server/discover` 豁免（初始化前客户端还不知道服务端版本，拦它会把整条新客户端连接
+        # 判死）；其余方法带了**不支持的**版本头 ⇒ 400 JSON（不是 HTML）。头缺省按官方口径
+        # 视作 2025-03-26，不拦。**会话头一律忽略**（无状态：不分配、不校验）。
+        if isinstance(方法名, str) and 方法名 not in 协议.初始化前方法集:
+            版本头 = self.headers.get("MCP-Protocol-Version")
+            if 版本头 and 版本头 not in 协议版本集:
+                self._写错误(400, 报文号, -32000, "不支持的 MCP-Protocol-Version：%s" % 版本头)
+                return
         if 报文号 is None and isinstance(方法名, str):
             if 方法名.startswith(已知通知前缀):
                 self._写响应(202, 是否空体=True)
@@ -237,11 +242,6 @@ class 请求处理器(BaseHTTPRequestHandler):
         if not isinstance(方法名, str):
             self._写错误(400, 报文号, -32600, "缺少 method")
             return
-        # 会话先核后派发：未知 / 已终止会话 ⇒ 404，**绝不**在死会话上跑写工具（防重复执行）。
-        会话编号 = self.headers.get("Mcp-Session-Id")
-        if 会话编号 and not self.server.会话登记.触碰(会话编号):
-            self._写错误(404, 报文号, -32000, "会话不存在或已终止")
-            return
         实参 = 请求报文.get("params")
         if 实参 is None:
             实参 = {}
@@ -249,15 +249,14 @@ class 请求处理器(BaseHTTPRequestHandler):
             self._写错误(200, 报文号, -32602, "params 须是对象")
             return
         try:
-            读数, 错误 = 协议.派发(方法名, 实参, self.server.仓根, self.server.工具表)
+            读数, 错误 = 协议.派发(方法名, 实参, self.server.仓根, self.server.工具表, "http")
         except Exception:
             self._写错误(200, 报文号, -32603, "内部错误：%s" % (sys.exc_info()[1],))
             return
-        额外头 = {}
         if 方法名 == "initialize" and 错误 is None and isinstance(读数, dict):
+            # 无状态：initialize **不**回 `Mcp-Session-Id`（不分配会话 ⇒ 后续请求也不带、不校验）。
             读数["protocolVersion"] = 协商协议版本(实参.get("protocolVersion"))
-            额外头 = {"Mcp-Session-Id": self.server.会话登记.新建()}
-        self._写报文(报文号, 读数, 错误, 额外头)
+        self._写报文(报文号, 读数, 错误, {})
 
     def _写报文(self, 报文号, 读数, 错误, 额外头, 状态码=200):
         应答 = {"jsonrpc": "2.0", "id": 报文号}
@@ -314,8 +313,7 @@ class 请求处理器(BaseHTTPRequestHandler):
 
 def 起传输(仓根, 工具表, 监听端口=默认监听端口, 绑定=绑定地址):
     """起 HTTP 传输（**永不返回**）：监听 `绑定:监听端口`，一个 `服务路径` 端点。"""
-    会话登记 = 会话表()
-    服务对象 = 传输服务((绑定, 监听端口), 请求处理器, 仓根, 工具表, 会话登记)
+    服务对象 = 传输服务((绑定, 监听端口), 请求处理器, 仓根, 工具表)
     try:
         服务对象.serve_forever()
     except KeyboardInterrupt:
