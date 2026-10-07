@@ -135,6 +135,43 @@ fn 生命周期_申报号段到优雅卸载真跑通() {
     println!("扩展共收到通知 {} 次", 收到通知数.load(Ordering::SeqCst));
 }
 
+/// 升级专用计数：旧版 / 新版各收过几次通知（验「升级后通知发给新版端点」）。
+static 旧版收到: AtomicUsize = AtomicUsize::new(0);
+static 新版收到: AtomicUsize = AtomicUsize::new(0);
+
+/// 旧版端点：只计数（升级后不应再被调）。
+unsafe extern "C" fn 旧版通知(_通知号: v1_contract::通知号, _参数一: usize, _参数二: usize) -> isize {
+    旧版收到.fetch_add(1, Ordering::SeqCst);
+    通知返回::成功
+}
+
+/// 新版端点：只计数（升级后应由它接住通知）。
+unsafe extern "C" fn 新版通知(_通知号: v1_contract::通知号, _参数一: usize, _参数二: usize) -> isize {
+    新版收到.fetch_add(1, Ordering::SeqCst);
+    通知返回::成功
+}
+
+#[test]
+fn 升级后通知端点归新版() {
+    // C3：同身份升级后，通知端点必须指向**新版**函数
+    // （旧口径：通道保留先注册者 ⇒ 升级后通知一直发旧版）。
+    旧版收到.store(0, Ordering::SeqCst);
+    新版收到.store(0, Ordering::SeqCst);
+    let 旧版 = 造生命周期扩展(旧版通知);
+    let 新版 = 造生命周期扩展(新版通知);
+    let mut 适配器 = 适配器::装载声明根(&[v1_loader::底座声明(), 旧版])
+        .expect("旧版必须载得进来");
+    let 旧版装载时 = 旧版收到.load(Ordering::SeqCst);
+    assert!(旧版装载时 >= 1, "装载时给旧版端点发过一次装载通知");
+    assert_eq!(新版收到.load(Ordering::SeqCst), 0, "升级前新版端点不该被调");
+    // 同身份升级：先摘旧版端点、再装新版（新版装载通知应发给新版）。
+    适配器.升级装载(新版).expect("同身份新版必须升级得动");
+    assert_eq!(适配器.通知端点数(), 1, "同标识串仍恰好 1 个端点");
+    let 新版升级后 = 新版收到.load(Ordering::SeqCst);
+    assert!(新版升级后 >= 1, "升级后端点归新版：装载通知发给新版");
+    assert_eq!(旧版收到.load(Ordering::SeqCst), 旧版装载时, "升级后旧版不再收通知");
+}
+
 /// **按标识（文本）的卸载路**（HTTP 面走的就是这一组）：
 /// 文本 → 指针 → 问通道 → 成功则**完整卸载**（摘端点索引 + 收回路由 + 注销台账身份）；
 /// 标识没注册过 ⇒ `未命中`（不是错误）。
