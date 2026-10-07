@@ -89,6 +89,7 @@ if [ -z "$HOOKS_DIR" ] || [ ! -d "$HOOKS_DIR" ]; then
   exit 1
 fi
 HOOK="$HOOKS_DIR/pre-commit"
+HOOK_MERGE="$HOOKS_DIR/pre-merge-commit"
 
 # ★ 钩子目录**不在本仓内** ⇒ 这是「一腿一工作树」的情形：git 把钩子放在**公共** git 目录里，
 #   那一份是**所有工作树共享**的。在这里装 = 给**全仓每一棵树**（含主树）装门禁 ——
@@ -106,12 +107,14 @@ case "$HOOKS_DIR" in
     ;;
 esac
 
-# ── 幂等与不踩别人 ──
-if [ -f "$HOOK" ] && ! grep -qF "$MARK" "$HOOK"; then
-  echo "装门禁：$HOOK 已经存在且不是本门禁装的 —— 拒绝覆盖。" >&2
-  echo "        要装就先自身处置那个钩子（本脚本不替你做这个决定）。" >&2
-  exit 1
-fi
+# ── 幂等与不踩别人（两个落点都查：pre-commit 与 pre-merge-commit）──
+for TARGET in "$HOOK" "$HOOK_MERGE"; do
+  if [ -f "$TARGET" ] && ! grep -qF "$MARK" "$TARGET"; then
+    echo "装门禁：$TARGET 已经存在且不是本门禁装的 —— 拒绝覆盖。" >&2
+    echo "        要装就先自身处置那个钩子（本脚本不替你做这个决定）。" >&2
+    exit 1
+  fi
+done
 
 TMP="$HOOK.new"
 cat > "$TMP" <<'HOOK_BODY'
@@ -120,6 +123,10 @@ cat > "$TMP" <<'HOOK_BODY'
 #
 # 端到端主门禁（形状见 测试验证/案例/形状.md）。
 # **只判「拒或不拒」，绝不 git commit。**
+#
+# ★ 本件同时装成 `pre-commit` 与 `pre-merge-commit`（两个落点同一份体）—— **实测**：`git merge`
+#   造合并提交时**只跑 `pre-merge-commit`、不跑 `pre-commit`**（fast-forward 与 `update-ref`
+#   更是零钩子）⇒ 只装 `pre-commit` 时，合入主干**根本不过闸**。两个落点都装，合并提交才过闸。
 #
 # 六步：
 #   ① 跑**闸 0**（声明侧 + 实现侧）—— 实测 2.4 s 级，进得去 5 秒硬顶 ⇒ 与案例同进每提交路径。
@@ -242,13 +249,17 @@ echo "门禁：案例全过，回执绑在 $HEAD_SHA 上（父提交）· 回执
 exit 0
 HOOK_BODY
 
-mv "$TMP" "$HOOK"
-chmod +x "$HOOK"
+for TARGET in "$HOOK" "$HOOK_MERGE"; do
+  cp "$TMP" "$TARGET"
+  chmod +x "$TARGET"
+done
+rm -f "$TMP"
 
-echo "装门禁：已装到 $HOOK"
+echo "装门禁：已装到 $HOOK 与 $HOOK_MERGE"
 echo "        行为：先跑闸 0（声明侧 + 实现侧），再跑判据自测（--自测），再比 HEAD 与回执里的提交哈希，再跑全部案例，任一失败即拒提交；"
 echo "              跑案例的程序把读数追加进 测试验证/案例/运行回执.jsonl，"
 echo "              该回执**不进版本库**（只落本机 —— 它是只增日志，进版本库会让每条支线"
 echo "              都改同一个件，合并必冲突；见 .gitignore 里那段）。"
 echo "              回执里的提交哈希是**跑那一刻的 HEAD**（= 本次提交的父提交）。"
-echo "        卸载：删掉那个文件即可（本脚本没有留任何别的东西）。"
+echo "        两个落点：pre-commit（普通提交）· pre-merge-commit（合并提交）—— 同一份体。"
+echo "        卸载：把这两个文件删掉即可（本脚本没有留任何别的东西）。"
