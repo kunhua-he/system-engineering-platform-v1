@@ -1,5 +1,6 @@
 """命令 —— 四条子命令 · 命令表 · 命令行主流程与退出码。"""
 
+import http.client
 import json
 import sys
 import urllib.error
@@ -38,7 +39,11 @@ def 命令调用(监听端口: int, 命令行参数: list, 显示: bool) -> int:
     try:
         解析后 = json.loads(造应答)
     except ValueError:
-        print("HTTP {} —— 应答不是合法 JSON，原样贴出：".format(状态))
+        print("HTTP {} —— 应答不是合法 JSON，无法确认执行结果，原样贴出：".format(状态))
+        print(造应答)
+        return 3
+    if not isinstance(解析后, dict) or not isinstance(解析后.get("成功"), bool):
+        print("HTTP {} —— 未知应答，无法确认执行结果：".format(状态))
         print(造应答)
         return 3
     if 解析后.get("成功") is True:
@@ -91,7 +96,7 @@ def 跑命令行(命令行参数: list) -> None:
     except FileNotFoundError as 错误:
         print("文件读不到：{}".format(错误), file=sys.stderr)
         sys.exit(2)
-    except urllib.error.URLError as 错误:
+    except (urllib.error.URLError, OSError, http.client.HTTPException) as 错误:
         # 报的是**本次真正用的那个端口**（可能是 --端口 或环境变量给的），不报默认值。
         sys.exit(报连不上(当前端口, 错误.reason if hasattr(错误, "reason") else 错误))
     except ValueError as 错误:
