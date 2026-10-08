@@ -21,7 +21,7 @@ import tempfile
 from pathlib import Path
 
 from .合主干有界跑 import 干净环境, 跑有界命令, 命令记录
-from .合主干源库重放 import 合并三方库, 重放动作表
+from .合主干源库重放 import 合并三方库, 重放动作表, 建源库重抽
 from . import 合主干集成树 as 集成
 from . import 合主干现场清理 as 现场清理
 from . import 合主干腿树门禁 as 腿树门禁
@@ -104,7 +104,7 @@ def _重放源库(仓根, 集成路径, 腿分支) -> tuple:
         if 退出码 != 0:
             return 1, 行表
         if 跳过表:
-            行表.append("   （跳过 %d 条：源件权威，建库 重抽）" % len(跳过表))
+            行表.append("   （跳过 %d 条：源件权威，改由 建源库 重抽）" % len(跳过表))
         核验码, 核验行表 = 集成接管.核验重放(集成路径, 动作表)
         行表.extend(核验行表)
         if 核验码 != 0:
@@ -124,6 +124,11 @@ def _重放源库(仓根, 集成路径, 腿分支) -> tuple:
             if 退出码 != 0:
                 return 1, 行表 + ["   源库 git add（标记已解决）失败：%s" % 输出文本.strip()[-300:]]
             行表.append("   源库已标为已解决（git add）")
+        # ★ 重放后真跑仓内建源库（重抽源件权威：未完成.json · 活 md）＋ 核源库 ＋ 暂存；失败即拒。
+        重抽码, 重抽行表 = 建源库重抽(集成路径)
+        行表.extend(重抽行表)
+        if 重抽码 != 0:
+            return 1, 行表
         return 0, 行表
     finally:
         for 路径 in (基库, 腿库, 主干库):

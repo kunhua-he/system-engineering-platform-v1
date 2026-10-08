@@ -42,12 +42,23 @@ def _建规则库(路径):
 
 
 def _建假信息核心(路径):
-    """迷你 `信息核心.py`：只认 `记规则`（源库重放用），真改库 ⇒ `核验重放` 读得到。"""
+    """迷你 `信息核心.py`：认 `记规则`（源库重放用）与 `建源库` / `核源库`（重抽用），真改库 ⇒ 读得到。"""
     路径.parent.mkdir(parents=True, exist_ok=True)
     路径.write_text(
         "import sqlite3, sys\n"
         "from pathlib import Path\n"
         "参表 = sys.argv[1:]\n"
+        "子命令 = 参表[0] if 参表 else ''\n"
+        "if 子命令 == '建源库':\n"
+        "    连接 = sqlite3.connect(str(Path('开发工具/信息核心/信息核心.db')))\n"
+        "    连接.execute('create table if not exists 未完成 (号 integer primary key, 缺什么 text, 落点 text, 验证命令 text)')\n"
+        "    连接.commit()\n"
+        "    连接.close()\n"
+        "    print('建源库 ok')\n"
+        "    raise SystemExit(0)\n"
+        "if 子命令 == '核源库':\n"
+        "    print('核源库 ok')\n"
+        "    raise SystemExit(0)\n"
         "键值 = {}\n"
         "键 = None\n"
         "for 项 in 参表[1:]:\n"
@@ -56,7 +67,7 @@ def _建假信息核心(路径):
         "        键值[键] = ''\n"
         "    elif 键:\n"
         "        键值[键] = 项\n"
-        "if 参表[0] != '记规则':\n"
+        "if 子命令 != '记规则':\n"
         "    raise SystemExit(3)\n"
         "连接 = sqlite3.connect(str(Path('开发工具/信息核心/信息核心.db')))\n"
         "连接.execute('update 规则 set 类=?, 名=?, 内容=?, 依据=? where 编号=?',\n"
