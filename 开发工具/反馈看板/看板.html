@@ -46,6 +46,7 @@ tr.e:hover td{background:#fafbfc}
 .tag.待核{background:#fef5e7;color:#9c640c}
 .tag.ok{background:#e8f5e9;color:#1d6b2f}
 .tag.no{background:#fdecea;color:#a93226}
+.tag.已关闭{background:#e8eef7;color:#2b4a6f}
 .unk{color:#9c640c}
 .pg{display:flex;gap:8px;align-items:center;margin-top:10px;font-size:12.5px;color:#4a555f}
 footer{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid #dfe3e8;
@@ -80,7 +81,7 @@ footer{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px sol
 </div>
 <div class="wrap">
   <div class="note" id="口径"></div>
-  <h2>资料组（按现行判词的关联目标；<b>组数 ≠ 独立问题数</b>）</h2>
+  <h2>资料组（按现行判词的关联目标；<b>组数 ≠ 独立问题数</b>；已关闭单列）</h2>
   <table id="组表"><thead><tr>
     <th>资料组</th><th>关联种类</th><th>关联目标</th><th>关联状态</th><th>承接</th><th>条数</th>
   </tr></thead><tbody></tbody></table>
@@ -94,6 +95,7 @@ footer{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px sol
 <footer>
   <span>只读：不写库 · 不暴露任意文件 / SQL 接口</span>
   <span>旧 474 簇 / 58 债务摘要的映射未落盘 ⇒ 本页不做旧映射，只按现行关联实时归组</span>
+  <span>债务(判词) 含已关闭 ⇒ 已关闭 / 未关闭单列，不叫剩余债务；已关闭条目归「已关闭」组，不并进缺关联</span>
 </footer>
 <script>
 const 状态 = {页码: 1, 组: ""};
@@ -115,8 +117,9 @@ function 拼查询() {
 function 画KPI(载荷) {
   const t = 载荷.总览 || {};
   const 卡 = [
-    ["来源", t.来源], ["条目", t.条目], ["判词", t.判词], ["债务", t.债务],
-    ["证据", t.证据], ["关闭", t.关闭], ["台账现量", (载荷.台账 || {}).现量],
+    ["来源", t.来源], ["条目", t.条目], ["判词", t.判词], ["债务(判词)", t.债务],
+    ["已关闭", t.已关闭], ["未关闭", t.未关闭],
+    ["证据", t.证据], ["关闭(总)", t.关闭], ["台账现量", (载荷.台账 || {}).现量],
   ];
   $("kpis").innerHTML = 卡.map(([k, v]) =>
     `<div class="kpi"><b>${转义(v === undefined ? "—" : v)}</b><span>${转义(k)}</span></div>`).join("");
@@ -126,7 +129,8 @@ function 画组(载荷) {
   const 组表 = 载荷.组 || [];
   $("组表").querySelector("tbody").innerHTML = 组表.map((g) => {
     const 选 = (状态.组 && g.组键 === 状态.组) ? " sel" : "";
-    const 承接 = g.承接有效 ? '<span class="tag ok">有效</span>' : '<span class="tag no">缺</span>';
+    const 承接 = g.已关闭 ? '<span class="tag 已关闭">已关闭</span>'
+      : (g.承接有效 ? '<span class="tag ok">有效</span>' : '<span class="tag no">缺</span>');
     return `<tr class="g${选}" data-键="${转义(g.组键)}">`
       + `<td class="ph">${转义(g.组名)}</td>`
       + `<td>${转义(g.关联种类 || "—")}</td><td class="mono">${转义(g.关联目标 || "—")}</td>`
