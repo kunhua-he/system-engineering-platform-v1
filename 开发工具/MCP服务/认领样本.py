@@ -21,7 +21,7 @@ def 认领样本(仓根=None, 工具表=None, 输出表=None):
     import sqlite3
     import tempfile
     from unittest.mock import patch
-    from . import 开工, 开工账本, 修改, 认领隔离, 命名闸
+    from . import 开工, 开工账本, 修改, 认领隔离, 命名闸, 登记编排, 清树门禁
     from .仓操作 import 跑命令
 
     if 输出表 is None:
@@ -73,9 +73,9 @@ def 认领样本(仓根=None, 工具表=None, 输出表=None):
 
         with patch.object(开工账本, "连账本", 开账), \
                 patch.object(认领隔离, "跑命令", 路径命令), \
-                patch.object(开工, "建工作树", 建树), \
-                patch.object(开工, "清工作树", 清树), \
-                patch.object(开工, "建工作树索引", lambda 工作树: (0, "样本索引")), \
+                patch.object(登记编排, "建工作树", 建树), \
+                patch.object(清树门禁, "清工作树", 清树), \
+                patch.object(登记编排, "建工作树索引", lambda 工作树: (0, "样本索引")), \
                 patch.object(修改, "同步索引", lambda 工作树: (0, "样本索引")), \
                 patch.object(命名闸, "读名册", lambda 工作树: ({"前段函数", "后段函数"}, set())):
             for 工作内容 in ("前段修改", "后段修改"):

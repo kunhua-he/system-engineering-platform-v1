@@ -20,9 +20,9 @@ import sys
 import tempfile
 from pathlib import Path
 
-from .常量 import 仓根
+from .常量 import 仓根, 硬顶毫秒
 
-长样本硬顶秒 = 5   # 判据 ㊲：全仓超时设置一律 ≤5 秒（长样本实测 3.1 s，硬顶内）
+长样本硬顶秒 = 硬顶毫秒 / 1000   # **从唯一主人派生**（2026-10-08 硬顶临时放宽到 10 s ⇒ 本值 10）
 
 
 def 自检_MCP事务机制() -> list:

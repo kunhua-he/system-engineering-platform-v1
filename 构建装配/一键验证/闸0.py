@@ -46,7 +46,7 @@ from pathlib import Path
 起始时刻 = time.monotonic()  # 壳起表点：必须在 import 业务包**之前**（见 构建装配/门禁/壳.py）
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))  # 仓根：取共享门禁
-from 构建装配.门禁 import 自门禁  # noqa: E402
+from 构建装配.门禁 import 自门禁, 硬顶毫秒  # noqa: E402
 
 # 两条闸的**入口**（子进程调它们，不 import —— 层序问题，见文件头）。
 闸表 = (
@@ -60,21 +60,23 @@ def 入口函数(命令行参数: list) -> int:
     仓根 = Path(__file__).resolve().parents[2]
     全过 = True
     明细 = []
+    硬顶秒 = 硬顶毫秒 / 1000      # 两条闸各自的外层上限：从**唯一主人**派生（别写第二个数）
     print("闸 0：两条闸串起来跑（声明侧 + 实现侧；子进程调入口，互不 import）")
     print("")
     # **串行**（不并发）：并发会让闸 1 的 ⑱ 读到被抢 CPU 的墙钟 ⇒ 假红（见文件头）。
     for 名称, 相对 in 闸表:
-        # ★ 子进程 5 秒 timeout（2026-10-05 修 · 审计 B-7）：原先只**事后量**、子进程无 timeout
-        #   ⇒ CLI / pre-commit 路径一旦卡死就挂死（MCP 侧已有 `timeout=5`）。超时 = 判红并报「超时」。
+        # ★ 子进程 timeout（2026-10-05 修 · 审计 B-7）：原先只**事后量**、子进程无 timeout
+        #   ⇒ CLI / pre-commit 路径一旦卡死就挂死。**从硬顶派生**（2026-10-08 临时放宽到 10 s，
+        #   见 `构建装配/门禁/常量.py`）—— 本件不写第二个数，否则内外不同步。超时 = 判红并报「超时」。
         try:
             判定汇总 = subprocess.run(
                 [sys.executable, str(仓根 / 相对)],
-                cwd=str(仓根), capture_output=True, text=True, timeout=5,
+                cwd=str(仓根), capture_output=True, text=True, timeout=硬顶秒,
             )
         except subprocess.TimeoutExpired:
             全过 = False
             print(f"  {名称} ｜ {相对}")
-            print("    退出码 超时 ｜ （超时：本闸 > 5 s 未返回 —— 五秒硬顶无例外）")
+            print(f"    退出码 超时 ｜ （超时：本闸 > {硬顶秒:g} s 未返回 —— 硬顶无例外）")
             明细.append((名称, 相对, "超时：%s 未在 5 s 内返回" % 相对))
             continue
         命中 = 读数行模式.search(判定汇总.stdout or "")

@@ -216,8 +216,9 @@ def 核恢复路径(仓根, 开工号, 工作树, 路径):
     if not 当前路径.is_file() or not 当前路径.resolve().is_relative_to(工作树.resolve()):
         raise ValueError("目标不是树内普通文件")
     公共值 = []
+    from .仓状态 import 跑git
     for 树路径 in (仓根, 工作树):
-        退出码, 输出文本 = 跑命令(["git", "rev-parse", "--path-format=absolute", "--git-common-dir"], cwd=树路径)
+        退出码, 输出文本 = 跑git(树路径, ["rev-parse", "--path-format=absolute", "--git-common-dir"])
         if 退出码:
             raise ValueError("公共仓定位失败")
         公共值.append(Path(输出文本.strip()).resolve())

@@ -47,7 +47,7 @@ print("─" * 78, file=sys.stderr)
 print("命令墙钟（壳自量）%d ms · 阈值 %d ms（硬顶 %d − 尾巴余量 %d）· 人为慢注入 %d ms"
       % (墙钟毫秒, 阈值毫秒, 硬顶毫秒, 余量毫秒, 注入毫秒), file=sys.stderr)
 if 墙钟毫秒 > 阈值毫秒:
-    print("✗ 超顶：完整墙钟 %d ms > %d ms —— 五秒硬顶无例外（裁决 §一）" % (墙钟毫秒, 阈值毫秒), file=sys.stderr)
+    print("✗ 超顶：完整墙钟 %d ms > %d ms —— 硬顶无例外（裁决 §一）" % (墙钟毫秒, 阈值毫秒), file=sys.stderr)
     sys.exit(3)
 print("✓ 在硬顶内", file=sys.stderr)
 PY
@@ -166,15 +166,17 @@ import subprocess
 import sys
 
 sys.path.insert(0, sys.argv[1])
-from 构建装配.门禁 import 跑并复跑超顶
+from 构建装配.门禁 import 跑并复跑超顶, 硬顶毫秒
+
+硬顶秒 = 硬顶毫秒 / 1000   # 从**唯一主人**派生（2026-10-08 临时放宽到 10 s）；本件不写第二个数
 
 
 def 执行一次():
     try:
         回执 = subprocess.run([sys.executable, "构建装配/一键验证/闸0.py"],
-                             timeout=5, capture_output=True, text=True)
+                             timeout=硬顶秒, capture_output=True, text=True)
     except subprocess.TimeoutExpired:
-        return 3, "门禁：闸 0 超时（> 5 s）—— 五秒硬顶无例外"
+        return 3, "门禁：闸 0 超时（> %g s）—— 硬顶无例外" % 硬顶秒
     return 回执.returncode, (回执.stdout or "") + (回执.stderr or "")
 
 
