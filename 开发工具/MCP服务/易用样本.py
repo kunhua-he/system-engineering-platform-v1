@@ -170,8 +170,10 @@ def 易用样本(仓根, 工具表) -> list:
             patch.object(作业, "读行", return_value=运行行), \
             patch.object(作业, "读日志片段", return_value=(0, "闸 0：跑着\n")):
         退出码, 回执 = 门禁.全量转作业(仓根, "", 仓根, "主工作树", None, set())
-    记样本("v1_gate 全量转作业：非终态 ⇒ 退出码 -1 + 指路 v1_job status/log",
-          退出码 == -1 and 假任务号 in 回执 and "v1_job" in 回执)
+    记样本("v1_gate 全量转作业：非终态 ⇒ 退出码 待取作业码（%d，不是 -1）+ 错误.种类 待取作业"
+          " + 指路 v1_job status/log" % 门禁.待取作业码,
+          退出码 == 门禁.待取作业码 and 退出码 != -1 and 假任务号 in 回执 and "v1_job" in 回执
+          and 参数规范.错误种类(退出码) == "待取作业")
 
     with patch.object(作业, "起具名作业", return_value=(0, "任务ID：%s" % 假任务号)), \
             patch.object(门禁.time, "monotonic", side_effect=[0.0, 5.0]), \
