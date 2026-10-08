@@ -14,6 +14,7 @@
 
 import json
 import os
+import random
 import shutil
 import sqlite3
 import tempfile
@@ -21,47 +22,60 @@ from pathlib import Path
 
 from 运行数据根.口径 import 覆盖变量名, 解析当前环境, 子目录路径
 
-接缝开工号 = "v1-900005"
+
+def 取探针号() -> str:
+    """每次运行唯一的随机探针号（`v1-9xxxxx` 高位段）—— 与历史开工号、固定样本号都不撞。"""
+    return "v1-9%05d" % random.randrange(50000, 100000)
 
 
-def 生产零写样本() -> list:
-    """样本跑完 ⇒ 生产运行数据根里没有本样本号的反馈 / 开工行（**只读**打开，零写核对）。"""
-    from . import 开工账本
-    暂存 = os.environ.pop(覆盖变量名, None)
-    try:
-        生产根 = 解析当前环境()
-    finally:
-        if 暂存 is not None:
-            os.environ[覆盖变量名] = 暂存
-    库件 = 子目录路径(生产根, "数据库") / 开工账本.库文件名
-    if not 库件.is_file():
-        return [("生产零写核对：生产库不存在（无对象可写）⇒ 零写", True)]
-    连接 = sqlite3.connect("file:%s?mode=ro" % 库件, uri=True)
-    try:
-        有表 = 连接.execute("select count(*) from sqlite_master where type = 'table' and name = ?",
-                       ("反馈来源",)).fetchone()[0]
-        有开工表 = 连接.execute("select count(*) from sqlite_master where type = 'table' and name = ?",
-                         ("开工",)).fetchone()[0]
-        反馈行数 = 连接.execute("select count(*) from 反馈来源 where 开工号 = ?",
-                          (接缝开工号,)).fetchone()[0] if 有表 else 0
-        开工行数 = 连接.execute("select count(*) from 开工 where 开工号 = ?",
-                          (接缝开工号,)).fetchone()[0] if 有开工表 else 0
-    finally:
-        连接.close()
-    return [("生产零写核对：生产运行数据根里 反馈来源 %d 条 · 开工 %d 条（本样本号 %s · 只读打开）"
-             % (反馈行数, 开工行数, 接缝开工号), 反馈行数 == 0 and 开工行数 == 0)]
-
-
-def 清树接缝样本(仓根) -> list:
-    """真接缝：`清树门禁`（615 真实现）真调 `反馈关联.未蒸馏反馈集`（613 真实现）⇒ 样本表。
-
-    **本件自带隔离**：把运行数据根指到临时根，不靠调用方 —— 本件会被 `长样本.py` 直接调
-    （外层无覆盖）⇒ 不隔离就会把夹具开工与反馈**写进生产库**（实测踩到，`生产零写样本` 当场红）。
-    """
-    from . import 开工账本, 反馈账本, 反馈提交, 反馈判词, 反馈审完, 清树门禁
-    临时根 = Path(tempfile.mkdtemp(prefix="v1反馈接缝-"))
+def 圈定临时根(目录前缀) -> tuple:
+    """把运行数据根**显式圈定**到新临时根 ⇒ `(临时根, 旧值)`；调用方负责 `还原根`。"""
+    临时根 = Path(tempfile.mkdtemp(prefix=目录前缀))
     旧值 = os.environ.get(覆盖变量名)
     os.environ[覆盖变量名] = str(临时根)
+    return 临时根, 旧值
+
+
+def 还原根(旧值) -> None:
+    """还原 `圈定临时根` 之前的覆盖值（原来没设 ⇒ 摘掉）。"""
+    if 旧值 is None:
+        os.environ.pop(覆盖变量名, None)
+    else:
+        os.environ[覆盖变量名] = 旧值
+
+
+def 生产零写样本(生产根, 临时根, 探针号) -> list:
+    """**圈定前**解析出的真实根上只读探针：本次唯一号零行；并断言探针根 ≠ 临时根（防退化自查）。"""
+    from . import 开工账本
+    if Path(生产根).resolve() == Path(临时根).resolve():
+        return [("生产零写探针：探针根 == 临时根（%s）⇒ 退化成临时自查，**不作数**" % 生产根, False)]
+    库件 = 子目录路径(生产根, "数据库") / 开工账本.库文件名
+    if not 库件.is_file():
+        return [("生产零写探针：真实根 %s 下无账本件（无对象可写）⇒ 零写" % 生产根, True)]
+    连接 = sqlite3.connect("file:%s?mode=ro" % 库件, uri=True)
+    try:
+        表集 = {数据行[0] for 数据行 in 连接.execute(
+            "select name from sqlite_master where type = 'table'")}
+        反馈行数 = 连接.execute("select count(*) from 反馈来源 where 开工号 = ?",
+                          (探针号,)).fetchone()[0] if "反馈来源" in 表集 else 0
+        开工行数 = 连接.execute("select count(*) from 开工 where 开工号 = ?",
+                          (探针号,)).fetchone()[0] if "开工" in 表集 else 0
+    finally:
+        连接.close()
+    return [("生产零写探针：真实根 %s（≠ 临时根 %s）里 探针号 %s 反馈来源 %d 行 · 开工 %d 行"
+             % (生产根, 临时根, 探针号, 反馈行数, 开工行数), 反馈行数 == 0 and 开工行数 == 0)]
+
+
+def 清树接缝样本(仓根, 接缝号) -> list:
+    """真接缝：`清树门禁`（615 真实现）真调 `反馈关联.未蒸馏反馈集`（613 真实现）⇒ 样本表。
+
+    **本件自带隔离**：把运行数据根显式圈定到临时根，不靠调用方 —— 本件会被 `长样本.py` 直接调
+    （外层无覆盖）⇒ 不隔离就会把夹具开工与反馈**写进真实库**（实测踩到，探针当场红）。
+    `接缝号` 由调用方给**本次运行唯一**的随机号（探针按它追，不撞历史）。
+    """
+    from . import 开工账本, 反馈账本, 反馈提交, 反馈判词, 反馈审完, 清树门禁
+    接缝开工号 = 接缝号
+    临时根, 旧值 = 圈定临时根("v1反馈接缝-")
     样本表 = []
 
     def 记样本(说明, 通过):
@@ -137,31 +151,111 @@ def 清树接缝样本(仓根) -> list:
         finally:
             清树门禁.检查清树安全, 清树门禁.非终态作业 = 真检查, 真作业
     finally:
-        if 旧值 is None:
-            os.environ.pop(覆盖变量名, None)
-        else:
-            os.environ[覆盖变量名] = 旧值
+        还原根(旧值)
         shutil.rmtree(临时根, ignore_errors=True)
     return 样本表
 
 
 def 反馈长样本(仓根) -> tuple:
-    """跑反馈专项（全套样本）+ 真实清树接缝 + 生产零写核对 ⇒ `(退出码, 行表)`。"""
+    """反馈专项 + 真实清树接缝 + 六表形态 + 生产零写探针 ⇒ `(退出码, 行表)`。
+
+    **全程显式圈定临时根**（覆盖 + 回读校验），探针拿的是**圈定前**解析出的真实根。
+    """
     from . import 反馈样本
+    生产根 = 解析当前环境()          # 只读解析（不建目录）；= 真实根（除非外部已覆盖）
+    探针号 = 取探针号()
+    接缝号 = 取探针号()
+    临时根, 旧值 = 圈定临时根("v1反馈长样本-")
     样本表 = []
     try:
-        样本表 += 反馈样本.跑全套(仓根)
-    except BaseException as 错误:
-        样本表.append(("反馈专项异常：%r" % (错误,), False))
-    try:
-        样本表 += 清树接缝样本(仓根)
-    except BaseException as 错误:
-        样本表.append(("清树接缝异常：%r" % (错误,), False))
-    try:
-        样本表 += 生产零写样本()
-    except BaseException as 错误:
-        样本表.append(("生产零写核对异常：%r" % (错误,), False))
+        生效根 = 解析当前环境()
+        样本表.append(("圈定校验：覆盖后回读运行数据根 == 临时根（%s · %s）" % (生效根 == 临时根, 临时根),
+                 生效根 == 临时根))
+        样本表 += 反馈样本.跑全套(仓根, 临时根)
+        样本表 += 清树接缝样本(仓根, 接缝号)
+        样本表 += 表形态样本()
+    finally:
+        还原根(旧值)
+        shutil.rmtree(临时根, ignore_errors=True)
+    样本表 += 生产零写样本(生产根, 临时根, 探针号)
     行表 = ["  %s %s" % ("✓" if 通过 else "✗", 说明) for 说明, 通过 in 样本表]
     失败表 = [说明 for 说明, 通过 in 样本表 if not 通过]
     行表.append("反馈专项与清树接缝：共 %d 条 · 失败 %d 条" % (len(样本表), len(失败表)))
     return (1 if 失败表 else 0), 行表
+
+
+def 数行(连接, 现存表) -> int:
+    """现存反馈表里的行数合计（只数 `反馈来源` / `反馈条目`）—— 断言调用未动原库行。"""
+    合计 = 0
+    for 表名 in ("反馈来源", "反馈条目"):
+        if 表名 in 现存表:
+            合计 += 连接.execute("select count(*) from %s" % 表名).fetchone()[0]
+    return 合计
+
+
+def 表形态样本() -> list:
+    """反馈六表形态的正反样本（临时独立库 + **真实**清树口）⇒ 样本表。**不碰真实根**。"""
+    from . import 开工账本, 反馈账本, 清树门禁
+    全六表 = tuple(反馈账本.反馈表名表)
+    建表语句表 = dict(zip(反馈账本.反馈表名表, 反馈账本.建表语句))
+    形态表 = (
+        ("旧库形态：六表全不存在 ⇒ 允许（返空）", (), (), 0, False),
+        ("六表齐 + 零反馈行 ⇒ 允许（返空）", 全六表, (), 0, False),
+        ("六表齐 + 一行未审完来源 ⇒ 拒", 全六表, (), 1, True),
+        ("缺 `反馈来源`（其余五表齐且有行）⇒ 拒", 全六表, ("反馈来源",), 1, True),
+        ("缺 `反馈条目` ⇒ 拒", 全六表, ("反馈条目",), 1, True),
+        ("缺 `反馈判词` ⇒ 拒", 全六表, ("反馈判词",), 1, True),
+        ("缺 `反馈证据` ⇒ 拒", 全六表, ("反馈证据",), 1, True),
+        ("缺 `反馈批次` ⇒ 拒", 全六表, ("反馈批次",), 1, True),
+        ("缺 `反馈关闭` ⇒ 拒", 全六表, ("反馈关闭",), 1, True),
+        ("部分迁移（缺 `反馈判词` + `反馈证据` + `反馈关闭`）⇒ 拒",
+         全六表, ("反馈判词", "反馈证据", "反馈关闭"), 1, True),
+    )
+    样本表 = []
+    临时根, 旧值 = 圈定临时根("v1反馈表形态-")
+    try:
+        for 序号, (形态名, 建集, 删集, 造行数, 期望拒) in enumerate(形态表, 1):
+            形态号 = "v1-9%05d" % (910000 + 序号)
+            连接 = 开工账本.连账本()
+            try:
+                开工账本.登记开工(连接, 形态号, "表形态样本腿", "腿/" + 形态号, str(临时根 / 形态号))
+                for 表名 in 建集:
+                    连接.execute(建表语句表[表名])
+                for 表名 in 删集:
+                    连接.execute("drop table if exists %s" % 表名)
+                现存表 = set(建集) - set(删集)
+                if 造行数 and "反馈来源" in 现存表:
+                    连接.execute("insert into 反馈来源 (开工号, 来源标识, 内容指纹, 读取状态, 登记时刻) "
+                             "values (?, ?, ?, ?, ?)",
+                             (形态号, "表形态/来源.md", "ab" * 16, "未读", "2026-01-01T00:00:00+0800"))
+                if 造行数 and "反馈条目" in 现存表:
+                    连接.execute("insert into 反馈条目 (来源号, 开工号, 现象, 证据, 条目指纹, 登记时刻) "
+                             "values (?, ?, ?, ?, ?, ?)",
+                             (1, 形态号, "表形态样本现象", "读数", "cd" * 16, "2026-01-01T00:00:00+0800"))
+                连接.commit()
+                行前 = 数行(连接, 现存表)
+                拒行 = 清树门禁.未蒸馏反馈行(连接, 临时根, 形态号)
+                行后 = 数行(连接, 现存表)
+            finally:
+                连接.close()
+            样本表.append(("表形态·%s（未蒸馏 %d 条 · 原库行 %d→%d 未动）"
+                     % (形态名, len(拒行), 行前, 行后),
+                    (bool(拒行) == 期望拒) and 行前 == 行后))
+        异常号 = "v1-999999"
+        连接 = 开工账本.连账本()
+        try:
+            开工账本.登记开工(连接, 异常号, "表形态样本腿", "腿/" + 异常号, str(临时根 / 异常号))
+            for 表名 in 全六表:
+                连接.execute(建表语句表[表名])
+            连接.execute("drop table 反馈来源")
+            连接.execute("create table 反馈来源 (来源号 integer primary key autoincrement, 别的列 text)")
+            连接.commit()
+            拒行 = 清树门禁.未蒸馏反馈行(连接, 临时根, 异常号)
+        finally:
+            连接.close()
+        样本表.append(("表形态·查询异常（六表齐但 `反馈来源` 无 `开工号` 列）⇒ 真实清树口 fail-closed（%d 条）"
+                 % len(拒行), bool(拒行)))
+    finally:
+        还原根(旧值)
+        shutil.rmtree(临时根, ignore_errors=True)
+    return 样本表
