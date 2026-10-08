@@ -25,11 +25,13 @@ from pathlib import Path
 sys.path.insert(0, str(仓根 / "开发工具"))
 sys.path.insert(0, str(仓根))
 
-from MCP服务 import 工具表, 服务管理, 传输_http, http传输样本  # noqa: E402
+from MCP服务 import 工具表, 服务管理, 传输_http, http传输样本, http自愈  # noqa: E402
 from MCP服务.服务常量 import 默认监听端口  # noqa: E402
 
 
 def 入口函数(命令行参数):
+    if "--启动预检" in 命令行参数:
+        return 0
     if "--自检" in 命令行参数:
         return http传输样本.跑自检(仓根, 工具表)
     监听端口 = 默认监听端口

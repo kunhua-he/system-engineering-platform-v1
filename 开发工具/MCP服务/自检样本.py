@@ -8,7 +8,6 @@ from pathlib import Path
     "from MCP服务.自检样本 import 隔离样本入口; "
     "print(json.dumps(隔离样本入口(sys.argv[1],Path.cwd()),ensure_ascii=False))"
 )
-
 def 隔离样本入口(样本组名, 仓根):
     """每组在独立进程运行一次，沿用全部正式样本与有限取树快照。"""
     from .工具 import 工具表
@@ -31,7 +30,6 @@ def 隔离样本入口(样本组名, 仓根):
         return {"组": 样本组名, "样本": [(说明, bool(通过)) for 说明, 通过 in 样本表]}
     finally:
         关树快照(旧快照)
-
 def 跑隔离样本(样本组名, 仓根):
     """真实子进程有界收敛；失败、超时、缺组或畸形输出都保留为失败样本。"""
     import json, subprocess, sys
@@ -365,6 +363,8 @@ def 自愈样本(仓根, 工具表) -> list:
     样本表.append(("自愈预检：真入口 --启动预检 ⇒ 可启动=%s（%s）"
               % (入口可启, 预检说明 or "无说明"), 入口可启))
 
+    入口可启, 预检说明 = 自愈预检.预检入口(Path(仓根) / "开发工具/MCP服务_http.py", Path(仓根))
+    样本表.append(("HTTP真入口 --启动预检可启动且不监听端口", 入口可启))
     临时根 = Path(tempfile.mkdtemp(prefix="v1自愈预检-"))
     try:
         坏件 = 临时根 / "MCP服务.py"
