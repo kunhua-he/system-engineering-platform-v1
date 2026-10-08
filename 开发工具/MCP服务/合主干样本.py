@@ -146,7 +146,9 @@ def 跑样本():
                     assert 编排.派发("v1-999001",False,仓根)[0] != 0
                     assert 跑样本仓命令(仓根,"worktree","list","--porcelain").count("branch refs/heads/集成/v1-999001") == 1
                     if 名称 == "验证失败":
-                        assert "③ 集成验证" in 报告文本 and "退出码 23" in 报告文本 and "ORIGINAL-IMPORT-FIRST" in 报告文本
+                        # 门禁随**提交那一下**跑（同一份内容只跑一遍）⇒ 钩子打的读数经 `git commit` 原样透传；
+                        # 顶层退出码是 git 的（钩子非 0 ⇒ git 回 1）；钩子的码由钩子那侧打印，本层不再转述。
+                        assert "③ 集成验证" in 报告文本 and "ORIGINAL-IMPORT-FIRST" in 报告文本
                         钩子.write_text("#!/bin/sh\nexit 0\n")
                         恢复码, 恢复报告 = 编排.派发("v1-999001",False,仓根,操作="恢复现场")
                         assert 恢复码 == 0 and 集成.找集成树(仓根,"v1-999001") is None, 恢复报告
