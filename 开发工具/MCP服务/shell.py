@@ -44,6 +44,11 @@ from .仓操作 import 禁终端提示环境, 找工作树
 # 子进程不许继承的 Git 定位变量：会把子进程的 git 带到别的树 / 别的 index 上
 继承定位变量 = ("GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE", "GIT_OBJECT_DIRECTORY",
              "GIT_COMMON_DIR", "GIT_ALTERNATE_OBJECT_DIRECTORIES")
+# Git 的**配置注入**键（`git -c …` ⇒ `GIT_CONFIG_PARAMETERS`；新版 ⇒ `GIT_CONFIG_COUNT` +
+# `GIT_CONFIG_KEY_<n>` / `GIT_CONFIG_VALUE_<n>`）：与定位键同属**进程级注入** ⇒ 子进程会跑外层钩子、
+# 读外层配置（实测 v1-100675）。`GIT_CONFIG_PARAMETERS` 与 `GIT_CONFIG_COUNT` 是**整名**；
+# `GIT_CONFIG_KEY_` 与 `GIT_CONFIG_VALUE_` 的键名**带序号** ⇒ 只能按**前缀**剔。
+继承配置键 = ("GIT_CONFIG_PARAMETERS", "GIT_CONFIG_COUNT", "GIT_CONFIG_KEY_", "GIT_CONFIG_VALUE_")
 # 每次从管道读多少字符
 读块大小 = 65536
 
@@ -76,6 +81,9 @@ def _执行环境(目标树: Path) -> dict:
     环境表 = dict(os.environ)
     for 键名 in 继承定位变量:
         环境表.pop(键名, None)
+    for 键前缀 in 继承配置键:
+        for 键名 in [键名 for 键名 in 环境表 if 键名.startswith(键前缀)]:
+            环境表.pop(键名, None)
     环境表.update(禁终端提示环境)
     if _判裸仓根(目标树):
         环境表["GIT_DIR"] = str(目标树 / ".git")
@@ -135,10 +143,14 @@ def _收流(输入流, 日志夹: dict) -> tuple:
 
 
 def _取工作树(仓根, 开工号):
-    """问 git 定位这条开工的工作树 —— **先剔除宿主继承的 Git 定位变量**（否则问的是被污染的仓，
-    不是本仓）。与 `上下文.py` 同一份 `找工作树`，只是把环境摆干净。
+    """问 git 定位这条开工的工作树 —— **先剔除宿主继承的 Git 定位键与配置注入键**（否则问的是被
+    污染的仓，不是本仓）。与 `上下文.py` 同一份 `找工作树`，只是把环境摆干净。
     """
-    暂存表 = {键名: os.environ.pop(键名) for 键名 in 继承定位变量 if 键名 in os.environ}
+    暂存表 = {}
+    for 键名 in [键名 for 键名 in os.environ
+              if 键名 in 继承定位变量
+              or any(键名.startswith(键前缀) for 键前缀 in 继承配置键)]:
+        暂存表[键名] = os.environ.pop(键名)
     try:
         return 找工作树(仓根, 开工号)
     finally:
