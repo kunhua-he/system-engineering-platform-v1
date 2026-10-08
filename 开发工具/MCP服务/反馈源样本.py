@@ -314,6 +314,21 @@ def 快照样本() -> list:
             记样本("读有界可分段：0..4 + 4..8 逐字节对",
                 段码 == 0 and 首页 == b"abcd" and 段码二 == 0 and 次页 == b"efgh")
 
+            穿根 = Path(tempfile.mkdtemp(prefix="v1穿根-"))
+            穿外 = Path(tempfile.mkdtemp(prefix="v1穿外-")) / "外部"
+            穿外.mkdir(parents=True, exist_ok=True)
+            os.symlink(穿外, Path(穿根) / "临时件", target_is_directory=True)
+            os.environ[覆盖变量名] = str(穿根)
+            造开工(穿根, (快照开工号,))
+            穿码, _ = 提交反馈(穿根, 快照开工号,
+                            {"幂等键": "穿-001", "来源标识": "agent-穿",
+                             "报告路径": str(_造报告件(穿根, "穿源.txt", "穿正文".encode("utf-8"))),
+                             "报告指纹": hashlib.sha256("穿正文".encode("utf-8")).hexdigest(),
+                             "读取状态": "未读", "条目": [{"现象": "穿", "未测": "夹具"}]})
+            记样本("反例：临时件父目录为 symlink ⇒ 码2 且根外零写",
+                穿码 == 2 and not list(穿外.rglob("*.txt")))
+            os.environ[覆盖变量名] = str(临时根)
+
             二号件 = _造报告件(临时根, "二号.txt", 正文)
             退出码, 回执文本 = 提交反馈(临时根, 快照二号,
                                   dict(基础, 幂等键="快照-011", 来源标识="agent-二号",
