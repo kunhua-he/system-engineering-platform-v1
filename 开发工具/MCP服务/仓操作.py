@@ -19,6 +19,8 @@
 
 import subprocess
 import sys
+import threading
+import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))     # 开发工具/
@@ -62,16 +64,63 @@ def 跑命令(命令表: list, cwd, 超时秒数=超时秒, 输入文本=None, �
     return 回执.returncode, (回执.stdout or "") + (回执.stderr or "")
 
 
-def 跑验证复跑超顶(工作树) -> tuple:
-    """跑 `闸0.py`；**瞬时超顶**（并发腿抢 CPU）自动复跑一次 ⇒ `(退出码, 输出, 复跑过)`。
+# 跨阈看门狗：轮询间隔（秒）。它不是超时设置 —— 是「多久看一眼墙钟」的采样步长。
+跨阈轮询秒 = 0.2
 
-    口径**单源**在 `构建装配/门禁/复跑.py`（pre-commit 钩子共用同一份）—— 本件只把「跑一次」
-    接到 `跑命令` 上。原先 `释放` 只跑一次 ⇒ 机器一忙（实测闸 0 墙钟 4816 > 4800 ms）就假红、
-    逼人重试（实测 545 腿）。
+
+def 跑验证带跨阈(工作树, 跨阈回调=None) -> tuple:
+    """跑 `闸0.py` 到**真实终态** ⇒ `(退出码, 输出, 复跑过)`。
+
+    **不许拿 5 秒去卡它**：闸 0 是**长活**（真跑实测 3.6–5.2 s，负载高时更长）—— 拿命令级 5 秒
+    去卡就是把「还要跑」误杀成 `-1`，再被当成「负载红 / 判据红」。**安全上限**是**后台作业预算**
+    （`作业进程` 从规则库读、fail-closed），不是这里再抄一个数（判据 ㊲ 只扫源码字面量）。
+
+    **跨阈即一次反馈**：看门狗盯墙钟，**跨过效率阈值的那一刻**立刻调一次 `跨阈回调(已耗时毫秒)`
+    —— 不等它跑完（华哥 2026-10-08：「超过 5 秒就自动的提交一个反馈而已」）。回调由调用方注入
+    （`作业任务ID` 等上下文只有它有）；本函数只负责**准时**叫它、**每跑一遍只叫一次**。
+
+    **瞬时超顶自动复跑一次**：口径单源 `构建装配/门禁/复跑.py`（与 pre-commit 钩子同一份）。
     """
     sys.path.insert(0, str(Path(__file__).resolve().parents[2]))   # 仓根：取共享门禁
     from 构建装配.门禁 import 跑并复跑超顶
-    return 跑并复跑超顶(lambda: 跑命令([sys.executable, "构建装配/一键验证/闸0.py"], cwd=工作树))
+    return 跑并复跑超顶(lambda: 跑一次带跨阈(工作树, 跨阈回调))
+
+
+def 跑一次带跨阈(工作树, 跨阈回调=None) -> tuple:
+    """跑一遍 `闸0.py`：主线程看门狗盯跨阈，子进程在**旁路线程**里跑到自然退出 ⇒ `(退出码, 输出)`。
+
+    **不设命令级超时**（`subprocess.run` 不带 `timeout`）：长活跑到真终态；上限由后台作业预算兜。
+    也不开新会话组：留在作业的命令组里，作业预算到顶时杀整组能一并收掉它。
+    """
+    from .合主干有界跑 import 干净环境
+    from .耗时反馈 import 阈值毫秒
+    留存 = {}
+
+    def 跑一遍():
+        留存["回"] = subprocess.run([sys.executable, "构建装配/一键验证/闸0.py"], cwd=str(工作树),
+                              capture_output=True, text=True, encoding="utf-8", errors="replace",
+                              env=干净环境())
+
+    线程 = threading.Thread(target=跑一遍)
+    线程.start()
+    起点 = time.monotonic()
+    已报 = False
+    while 线程.is_alive():
+        已过毫秒 = int((time.monotonic() - 起点) * 1000)
+        if not 已报 and 已过毫秒 > 阈值毫秒:
+            已报 = True
+            if 跨阈回调:
+                跨阈回调(已过毫秒)
+        time.sleep(跨阈轮询秒)
+    线程.join()
+    # 收尾再判一次：跑完那一刻正好跨阈（采样步长错过）也要报到，不许漏报。
+    已过毫秒 = int((time.monotonic() - 起点) * 1000)
+    if not 已报 and 已过毫秒 > 阈值毫秒:
+        已报 = True
+        if 跨阈回调:
+            跨阈回调(已过毫秒)
+    回执 = 留存["回"]
+    return 回执.returncode, (回执.stdout or "") + (回执.stderr or "")
 
 
 def 分支名(开工号: str) -> str:
