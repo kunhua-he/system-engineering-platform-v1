@@ -71,6 +71,7 @@ from . import 开工账本 as 账本
         来源标识  text not null,
         内容指纹  text not null,
         报告路径  text,
+        快照路径  text,
         读取状态  text not null,
         提取条数  integer not null default 0,
         判词条数  integer not null default 0,
@@ -181,11 +182,16 @@ def 连反馈库() -> sqlite3.Connection:
 
 
 def _补列(连接) -> None:
-    """老库补列（`反馈关闭` 的 `输出指纹` / `日志指针`）—— `create table if not exists` 只对新库生效。"""
+    """老库补列（`反馈关闭` 的 `输出指纹` / `日志指针`；`反馈来源` 的 `快照路径`）
+    —— `create table if not exists` 只对新库生效。"""
     列名集 = {文本行[1] for 文本行 in 连接.execute("pragma table_info(反馈关闭)")}
     for 栏名 in ("输出指纹", "日志指针"):
         if 栏名 not in 列名集:
             连接.execute("alter table 反馈关闭 add column %s text" % 栏名)
+    来源列名集 = {文本行[1] for 文本行 in 连接.execute("pragma table_info(反馈来源)")}
+    from .反馈源快照 import 快照列名
+    if 快照列名 not in 来源列名集:
+        连接.execute("alter table 反馈来源 add column %s text" % 快照列名)
 
 
 def 开工在吗(连接, 开工号: str) -> bool:
