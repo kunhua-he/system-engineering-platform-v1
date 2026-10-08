@@ -213,11 +213,15 @@ def 跑样本(仓根, 临时根) -> list:
             + 反馈核验样本.重启与迁移样本(仓根, Path(临时根)))
 
 
-def 入口(仓根, 临时根=None) -> int:
-    """独立跑全套反馈样本（含并发）⇒ 退出码（0 全过 · 1 有失败）。**不碰真账本**。"""
+def 跑全套(仓根, 临时根=None) -> list:
+    """自建 / 复用临时根 ⇒ 跑全部反馈样本（正反 / 核验 / 重启迁移 / 并发 / 真 stdio+HTTP 帧）⇒ 样本表。
+
+    **env 用完还原**（不是直接 pop）—— 长样本入口把它嵌在别的套件里跑时，pop 会把外层覆盖一起清掉。
+    """
     自建 = 临时根 is None
     临时根 = Path(临时根) if 临时根 else Path(tempfile.mkdtemp(prefix="v1反馈样本-"))
     临时根.mkdir(parents=True, exist_ok=True)
+    旧值 = os.environ.get(覆盖变量名)
     os.environ[覆盖变量名] = str(临时根)
     try:
         from . import 反馈并发样本, 反馈帧样本
@@ -226,9 +230,18 @@ def 入口(仓根, 临时根=None) -> int:
         样本表 += 反馈并发样本.并发样本(仓根, 临时根)
         样本表 += 反馈帧样本.跑帧样本(仓根)
     finally:
-        os.environ.pop(覆盖变量名, None)
+        if 旧值 is None:
+            os.environ.pop(覆盖变量名, None)
+        else:
+            os.environ[覆盖变量名] = 旧值
         if 自建:
             shutil.rmtree(临时根, ignore_errors=True)
+    return 样本表
+
+
+def 入口(仓根, 临时根=None) -> int:
+    """独立跑全套反馈样本（含并发与真帧）⇒ 退出码（0 全过 · 1 有失败）。**不碰真账本**。"""
+    样本表 = 跑全套(仓根, 临时根)
     for 说明, 通过 in 样本表:
         print("%s %s" % ("✓" if 通过 else "✗", 说明))
     失败表 = [说明 for 说明, 通过 in 样本表 if not 通过]

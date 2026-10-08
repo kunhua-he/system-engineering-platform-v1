@@ -131,22 +131,40 @@ def 开工记忆样本(仓根, 工具表) -> list:
             清树门禁.反馈保护启用 = lambda: False
             样本表.append(("反馈保护口未合入 ⇒ 未启用返回空（不阻断）",
                     真反馈(开账(), 仓根, 收口号) == []))
+            from . import 反馈关联
+            旧模块 = sys.modules.get("MCP服务.反馈关联")
+            样本表.append(("替身前置：真 `反馈关联` 已加载（旧模块非空 %s）" % (旧模块 is not None),
+                    旧模块 is not None))
             假模块 = types.ModuleType("MCP服务.反馈关联")
 
             def 坏口(连接, 仓根, 开工号):
                 raise RuntimeError("口坏")
 
-            假模块.未蒸馏反馈集 = 坏口
-            sys.modules["MCP服务.反馈关联"] = 假模块
-            清树门禁.反馈保护启用 = lambda: True
-            失败行 = 真反馈(开账(), 仓根, 收口号)
-            样本表.append(("反馈保护口在场但出错 ⇒ fail-closed（非空且明说）",
-                    失败行 and "fail-closed" in 失败行[0]))
-            假模块.未蒸馏反馈集 = lambda 连接, 仓根, 开工号: ["反馈Y：未判词"]
-            样本表.append(("反馈保护口在场且非空 ⇒ 原样返回",
-                    真反馈(开账(), 仓根, 收口号) == ["反馈Y：未判词"]))
-            del sys.modules["MCP服务.反馈关联"]
+            # ★ 替身模块用完**必须还原真模块对象**（不是 `del`）：真 `反馈关联` 已被 import 过时，
+            #   `del sys.modules[...]` 会把那份**真模块对象**从缓存里抹掉（身份丢失）—— 同进程
+            #   后续接缝调用拿到的就不是同一份实现了。`旧模块` 存原值 + try/finally 还原。
+            try:
+                假模块.未蒸馏反馈集 = 坏口
+                sys.modules["MCP服务.反馈关联"] = 假模块
+                清树门禁.反馈保护启用 = lambda: True
+                失败行 = 真反馈(开账(), 仓根, 收口号)
+                样本表.append(("反馈保护口在场但出错 ⇒ fail-closed（非空且明说）",
+                        失败行 and "fail-closed" in 失败行[0]))
+                假模块.未蒸馏反馈集 = lambda 连接, 仓根, 开工号: ["反馈Y：未判词"]
+                样本表.append(("反馈保护口在场且非空 ⇒ 原样返回",
+                        真反馈(开账(), 仓根, 收口号) == ["反馈Y：未判词"]))
+            finally:
+                if 旧模块 is None:
+                    sys.modules.pop("MCP服务.反馈关联", None)
+                else:
+                    sys.modules["MCP服务.反馈关联"] = 旧模块
             清树门禁.反馈保护启用 = 真启用
+            还原模块 = sys.modules.get("MCP服务.反馈关联")
+            样本表.append(("替身用完 ⇒ 真模块**身份与功能**都还原（身份同旧 %s · 口可调 %s）"
+                    % (还原模块 is 旧模块,
+                       callable(getattr(还原模块, "未蒸馏反馈集", None))),
+                    还原模块 is 旧模块
+                    and callable(getattr(还原模块, "未蒸馏反馈集", None))))
         finally:
             开工账本.连账本, 清树门禁.检查清树安全, 清树门禁.非终态作业 = 真连, 真清树, 真作业
             清树门禁.消费者行, 清树门禁.读未完成行, 清树门禁.未蒸馏反馈行 = 真消费者, 真台账, 真反馈

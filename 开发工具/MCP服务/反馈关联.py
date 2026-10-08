@@ -21,6 +21,18 @@ from . import 反馈账本 as 账本
 台账相对路径 = ("开发工具", "信息核心", "未完成.json")
 
 
+def 有反馈表(连接) -> bool:
+    """库里是否已有反馈表（`反馈来源`）—— **没有 ⇒ 从未记过反馈**（合法空态，不是错误）。
+
+    为什么要有它（2026-10-08 承接实测）：本件在场 ⇒ `清树门禁.未蒸馏反馈行` 走 fail-closed；
+    可一本**从没记过反馈**的账本（老库 / 样本夹具）根本没有六表 ⇒ 裸 SQL 抛 `no such table`
+    ⇒ 被当「保护口读不出」⇒ **每次单纯释放都被误拒**。缺表 = 无反馈 ⇒ 未蒸馏必空。
+    """
+    数据行 = 连接.execute("select count(*) from sqlite_master where type = 'table' and name = ?",
+                     ("反馈来源",)).fetchone()
+    return bool(数据行 and 数据行[0])
+
+
 def 读台账号集(仓根) -> set:
     """`未完成.json` 的**现行条目号**集；件不在 / 读不动 ⇒ 空集（调用方 fail-closed 当无效）。"""
     台账件 = Path(仓根).joinpath(*台账相对路径)
@@ -60,6 +72,8 @@ def 未蒸馏反馈集(连接, 仓根, 开工号: str) -> list:
     `仓根` **必须显式传入**（要读该树的 `未完成.json`）—— 不许猜主干 / 旧树。
     """
     行表 = []
+    if not 有反馈表(连接):
+        return 行表
     for 数据行 in 连接.execute(
             "select 来源号, 来源标识, 读取状态, 提取条数 from 反馈来源 "
             "where 开工号 = ? and 审完时刻 is null order by 来源号", (开工号,)):
