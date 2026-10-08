@@ -12,12 +12,32 @@ from pathlib import Path
 from unittest import mock
 from . import 合主干编排 as 编排, 合主干集成树 as 集成
 from .合主干有界跑 import 跑有界命令
+from .合主干源件重抽样本 import 验源件重抽
 
 三态样本 = ("动作0源库冲突", "动作非0重放", "无冲突无动作")
 假信息核心源码 = (
-    "import sqlite3, sys\n"
+    "import json, sqlite3, sys\n"
     "from pathlib import Path\n"
     "参表 = sys.argv[1:]\n"
+    "子命令 = 参表[0] if 参表 else ''\n"
+    "库路径 = '开发工具/信息核心/信息核心.db'\n"
+    "if 子命令 == '建源库':\n"
+    "    连接 = sqlite3.connect(库路径)\n"
+    "    连接.execute('create table if not exists 未完成 (号 integer primary key, 缺什么 text, 落点 text, 验证命令 text)')\n"
+    "    源件 = Path('开发工具/信息核心/未完成.json')\n"
+    "    if 源件.is_file():\n"
+    "        行表 = json.loads(源件.read_text(encoding='utf-8')).get('行', [])\n"
+    "        现表 = [tuple(行) for 行 in 连接.execute('select 号, 缺什么, 落点, 验证命令 from 未完成')]\n"
+    "        if sorted(现表, key=repr) != sorted((tuple(行) for 行 in 行表), key=repr):\n"
+    "            连接.execute('delete from 未完成')\n"
+    "            连接.executemany('insert or replace into 未完成 values(?,?,?,?)', [tuple(行) for 行 in 行表])\n"
+    "    连接.commit()\n"
+    "    连接.close()\n"
+    "    print('建源库 ok')\n"
+    "    raise SystemExit(0)\n"
+    "if 子命令 == '核源库':\n"
+    "    print('核源库 ok')\n"
+    "    raise SystemExit(0)\n"
     "键值 = {}\n"
     "键 = None\n"
     "for 项 in 参表[1:]:\n"
@@ -26,9 +46,9 @@ from .合主干有界跑 import 跑有界命令
     "        键值[键] = ''\n"
     "    elif 键:\n"
     "        键值[键] = 项\n"
-    "if 参表[0] != '登记':\n"
+    "if 子命令 != '登记':\n"
     "    raise SystemExit(3)\n"
-    "连接 = sqlite3.connect(str(Path('开发工具/信息核心/信息核心.db')))\n"
+    "连接 = sqlite3.connect(库路径)\n"
     "连接.execute('insert or replace into 命名登记 (名字, 语义, 模式, 来源, 状态) values (?,?,?,?,?)',\n"
     "           (键值.get('名字', ''), 键值.get('语义', ''), 键值.get('模式', '对象+说明'),\n"
     "            键值.get('来源', '新定义'), 键值.get('状态', '合格')))\n"
@@ -58,6 +78,8 @@ def _建夹具(临时根, 名称):
     门禁件.write_text("print('腿闸通过')\n")
     库件 = 仓根 / 编排.库相对路径
     库件.parent.mkdir(parents=True)
+    信息核心件 = 仓根 / "开发工具/信息核心/信息核心.py"
+    信息核心件.write_text(假信息核心源码, encoding="utf-8")
     with sqlite3.connect(库件) as 连接:
         连接.execute("create table 规则 (编号 integer primary key, 类 text, 名 text, 内容 text, 依据 text)")
         连接.execute("insert into 规则 values (1,'样本','语义','基值','')")
@@ -158,6 +180,7 @@ def 跑样本():
     assert 退出码 == 0 and "ERR-FIRST" in 输出文本 and "ERR-LAST" in 全文 and "OUT-LAST" in 全文 and len(全文)>9000000
     退出码, _, 日志路径 = 跑有界命令(["/不存在的样本命令"],tempfile.gettempdir(),超时秒数=5)
     assert 退出码 == -2 and "退出码 -2" in Path(日志路径).read_text()
+    验源件重抽()
     print("通过 全文日志与启动失败；总墙钟 %.3f 秒（time.monotonic）" % (time.monotonic()-起始时刻))
     return 0
 
