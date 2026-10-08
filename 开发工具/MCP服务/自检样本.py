@@ -201,13 +201,23 @@ def 自检主体(仓根, 工具表, 样本作业表) -> int:
     样本表.append(("v1_task 未知操作 ⇒ 退出码 %d（期望 2）" % 退出码,
              退出码 == 2 and _有种类(输出文本, "未知操作")))
 
-    # ── ④b 跑命令**剔 Git 重定向键**（541 缺陷的机制身份证）：注入 GIT_DIR ⇒ 子进程看不到 ──
+    # ── ④b 跑命令**剔 Git 重定向键 + 配置注入键**（541 / 677 缺陷的机制身份证）──
+    #   真起子进程：注入 GIT_DIR 与 GIT_CONFIG_PARAMETERS 后，子进程**既**读不到 GIT_DIR，
+    #   **也**读不到注入的配置（子进程里的 git `config --get` 取不到注入键）。实测 v1-100675：
+    #   夹具 commit 继承 GIT_CONFIG_PARAMETERS ⇒ 跑外层钩子 ⇒ `ROOT` 解析成临时仓 ⇒ 闸 0 红。
     import os; from unittest.mock import patch
     from .仓操作 import 跑命令
-    with patch.dict(os.environ, {"GIT_DIR": "/哨兵/不许出现在子进程"}):
-        退出码, 输出文本 = 跑命令(["sh", "-c", "printf '%s' \"${GIT_DIR:-EMPTY}\""], cwd=仓根)
-    样本表.append(("`仓操作.跑命令` 剔 Git 重定向键：注入 GIT_DIR 后子进程读到 %r（期望 EMPTY）"
-             % 输出文本.strip(), 退出码 == 0 and 输出文本.strip() == "EMPTY"))
+    注入表 = {"GIT_DIR": "/哨兵/不许出现在子进程",
+            "GIT_CONFIG_PARAMETERS": "'core.hooksPath=/哨兵/外层钩子' 'v1probe.injectedkey=/哨兵/注入值'",
+            "GIT_CONFIG_COUNT": "1", "GIT_CONFIG_KEY_0": "core.hooksPath",
+            "GIT_CONFIG_VALUE_0": "/哨兵/外层钩子"}
+    with patch.dict(os.environ, 注入表):
+        退出码, 输出文本 = 跑命令(
+            ["sh", "-c", "printf '%s|%s' \"${GIT_DIR:-EMPTY}\" "
+                       "\"$(git config --get v1probe.injectedkey || printf EMPTY)\""], cwd=仓根)
+    样本表.append(("`仓操作.跑命令` 剔 Git 重定向键与配置注入键：注入 GIT_DIR 与 GIT_CONFIG_PARAMETERS "
+             "后子进程读到 %r（期望 EMPTY|EMPTY）" % 输出文本.strip(),
+             退出码 == 0 and 输出文本.strip() == "EMPTY|EMPTY"))
 
     # ── ⑤ 只读发现调用：每工具 `{}` 回操作目录（有操作表者目录非空且最短例齐）──
     规范表 = 载入操作表()

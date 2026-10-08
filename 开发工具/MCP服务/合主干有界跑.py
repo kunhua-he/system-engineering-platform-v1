@@ -13,13 +13,23 @@ import threading
 禁终端提示环境 = {"GIT_TERMINAL_PROMPT": "0"}
 继承定位变量 = ("GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE", "GIT_OBJECT_DIRECTORY",
              "GIT_COMMON_DIR", "GIT_ALTERNATE_OBJECT_DIRECTORIES", "GIT_PREFIX")
+# Git 的**配置注入**键：`git -c key=value` 把值编码进 `GIT_CONFIG_PARAMETERS`；新版 git 走
+# `GIT_CONFIG_COUNT` + `GIT_CONFIG_KEY_<n>` / `GIT_CONFIG_VALUE_<n>`。它们与定位键同属**进程级注入**
+# ⇒ 夹具子进程会跑外层钩子、读外层配置（实测 v1-100675：夹具 commit 跑了外层钩子，`ROOT` 解析成
+# 临时仓 ⇒ `from 构建装配…` ModuleNotFoundError ⇒ 闸 0 红）。`GIT_CONFIG_PARAMETERS` 与
+# `GIT_CONFIG_COUNT` 是**整名**（按前缀剔是超集，无害）；`GIT_CONFIG_KEY_` 与 `GIT_CONFIG_VALUE_`
+# 的键名**带序号** ⇒ 只能按**前缀**剔。
+继承配置键 = ("GIT_CONFIG_PARAMETERS", "GIT_CONFIG_COUNT", "GIT_CONFIG_KEY_", "GIT_CONFIG_VALUE_")
 
 
 def 干净环境(子进程环境=None) -> dict:
-    """当前环境剔除 Git 定位变量 + 禁终端提示，再并入调用方给的键（并进，不是替换）。"""
+    """当前环境剔除 Git 定位键 + 配置注入键 + 禁终端提示，再并入调用方给的键（并进，不是替换）。"""
     环境表 = dict(os.environ)
     for 键名 in 继承定位变量:
         环境表.pop(键名, None)
+    for 键前缀 in 继承配置键:
+        for 键名 in [键名 for 键名 in 环境表 if 键名.startswith(键前缀)]:
+            环境表.pop(键名, None)
     环境表.update(禁终端提示环境)
     if 子进程环境:
         环境表.update(子进程环境)
