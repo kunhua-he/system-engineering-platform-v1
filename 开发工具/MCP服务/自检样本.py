@@ -2,14 +2,13 @@
 """MCP 工具面自检：正式隔离样本、协议及拒绝断言。"""
 from pathlib import Path
 
-隔离样本组 = {"改名样本": 34, "上下文样本": 80, "跨树样本": 18, "重叠样本": 4, "库快照样本": 16, "账本差集样本": 5, "基线并入样本": 8}
+隔离样本组 = {"改名样本": 34, "上下文样本": 80, "跨树样本": 18, "重叠样本": 4, "库快照样本": 16, "账本差集样本": 5, "基线并入样本": 8, "易用样本一": 17, "易用样本二": 38}
 隔离入口文本 = (
     "import json,sys; from pathlib import Path; "
     "sys.path.insert(0,str(Path.cwd()/'开发工具')); "
     "from MCP服务.自检样本 import 隔离样本入口; "
     "print(json.dumps(隔离样本入口(sys.argv[1],Path.cwd()),ensure_ascii=False))"
 )
-
 
 def 隔离样本入口(样本组名, 仓根):
     """每组在独立进程运行一次，沿用全部正式样本与有限取树快照。"""
@@ -22,22 +21,21 @@ def 隔离样本入口(样本组名, 仓根):
     from .库快照样本 import 库快照样本
     from .账本差集样本 import 账本差集样本
     from .基线并入样本 import 基线并入样本
+    from .易用样本 import 样本列表, 易用样本
     旧快照 = 开树快照()
     try:
         样本表 = {"改名样本": 批量改名样本, "上下文样本": 上下文样本,
                  "跨树样本": 跨树样本, "重叠样本": 合主干重叠样本.样本列表,
                  "库快照样本": 库快照样本, "账本差集样本": 账本差集样本,
-                 "基线并入样本": 基线并入样本}[样本组名](仓根, 工具表)
+                 "基线并入样本": 基线并入样本, "易用样本一": 样本列表,
+                 "易用样本二": 易用样本}[样本组名](仓根, 工具表)
         return {"组": 样本组名, "样本": [(说明, bool(通过)) for 说明, 通过 in 样本表]}
     finally:
         关树快照(旧快照)
 
-
 def 跑隔离样本(样本组名, 仓根):
     """真实子进程有界收敛；失败、超时、缺组或畸形输出都保留为失败样本。"""
-    import json
-    import subprocess
-    import sys
+    import json, subprocess, sys
     from .合主干有界跑 import 干净环境
     try:
         回执 = subprocess.run([sys.executable, "-B", "-c", 隔离入口文本, 样本组名],
@@ -56,7 +54,6 @@ def 跑隔离样本(样本组名, 仓根):
     except Exception as 错误:
         return [("隔离样本 %s 未完整完成：%r" % (样本组名, 错误), False)]
 
-
 def _读信封(输出文本: str):
     """底层 / 网关回执是 JSON 信封 ⇒ 解析；否则 `None`。"""
     import json
@@ -65,12 +62,10 @@ def _读信封(输出文本: str):
     except (TypeError, ValueError):
         return None
 
-
 def _有种类(输出文本: str, 种类: str) -> bool:
     """信封 `错误.种类` 是否等于 `种类`（参数面拒绝的分类断言）。"""
     读数 = _读信封(输出文本)
     return bool(读数) and (读数.get("错误") or {}).get("种类") == 种类
-
 
 def 跑自检(仓根, 工具表) -> int:
     """MCP 工具面自检 ⇒ 退出码（0 全过 · 1 有样本没过）。
@@ -83,19 +78,16 @@ def 跑自检(仓根, 工具表) -> int:
     import concurrent.futures
     旧快照 = 开树快照()
     try:
-        with concurrent.futures.ThreadPoolExecutor(max_workers=4) as 隔离进程池:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=len(隔离样本组)) as 隔离进程池:
             样本作业表 = {样本组名: 隔离进程池.submit(跑隔离样本, 样本组名, 仓根)
                       for 样本组名 in 隔离样本组}
             return 自检主体(仓根, 工具表, 样本作业表)
     finally:
         关树快照(旧快照)
 
-
 def 自检主体(仓根, 工具表, 样本作业表) -> int:
     """自检实现主体（取树快照作用域由 `跑自检` 管）。"""
-    import io
-    import json
-    import re
+    import io, json, re
 
     from .参数规范 import 载入操作表
     from .协议 import 派发, 跑主循环, 协议版本
@@ -171,8 +163,7 @@ def 自检主体(仓根, 工具表, 样本作业表) -> int:
              退出码 == 2 and _有种类(输出文本, "未知操作")))
 
     # ── ④b 跑命令**剔 Git 重定向键**（541 缺陷的机制身份证）：注入 GIT_DIR ⇒ 子进程看不到 ──
-    import os
-    from unittest.mock import patch
+    import os; from unittest.mock import patch
     from .仓操作 import 跑命令
     with patch.dict(os.environ, {"GIT_DIR": "/哨兵/不许出现在子进程"}):
         退出码, 输出文本 = 跑命令(["sh", "-c", "printf '%s' \"${GIT_DIR:-EMPTY}\""], cwd=仓根)
@@ -206,15 +197,18 @@ def 自检主体(仓根, 工具表, 样本作业表) -> int:
     from .查询样本 import 查询样本
     from .开工记忆样本 import 开工记忆样本
     from .诊断样本 import 诊断样本
-    from .易用样本 import 样本列表 as 易用样本表
-    样本表 += (样本作业表["改名样本"].result() + 终端样本(仓根, 工具表)
-            + 样本作业表["上下文样本"].result() + 符号样本(仓根, 工具表)
-            + 自愈样本(仓根, 工具表) + 冲突回执样本(仓根, 工具表) + 查询样本(仓根, 工具表)
-            + 样本作业表["库快照样本"].result()
-            + http传输样本.样本列表(仓根, 工具表) + 裸仓回执样本.样本列表(仓根, 工具表)
-            + 样本作业表["跨树样本"].result() + 开工记忆样本(仓根, 工具表)
-            + 写盘样本.样本列表(仓根, 工具表) + 诊断样本(仓根, 工具表) + 易用样本表(仓根, 工具表) + 样本作业表["重叠样本"].result() + 名册僵尸样本(仓根, 工具表)
-            + 样本作业表["账本差集样本"].result() + 样本作业表["基线并入样本"].result())
+    输出缓冲 = ([终端样本(仓根, 工具表)] +
+                 [符号样本(仓根, 工具表)] +
+                 [自愈样本(仓根, 工具表)] +
+                 [冲突回执样本(仓根, 工具表)] +
+                 [查询样本(仓根, 工具表)] +
+                 [http传输样本.样本列表(仓根, 工具表)] +
+                 [裸仓回执样本.样本列表(仓根, 工具表)] +
+                 [开工记忆样本(仓根, 工具表)] +
+                 [写盘样本.样本列表(仓根, 工具表)] +
+                 [诊断样本(仓根, 工具表)] +
+                 [名册僵尸样本(仓根, 工具表)])
+    样本表 += (样本作业表["改名样本"].result() + 输出缓冲[0] + 样本作业表["上下文样本"].result() + 输出缓冲[1] + 输出缓冲[2] + 输出缓冲[3] + 输出缓冲[4] + 样本作业表["库快照样本"].result() + 输出缓冲[5] + 输出缓冲[6] + 样本作业表["跨树样本"].result() + 输出缓冲[7] + 输出缓冲[8] + 输出缓冲[9] + 样本作业表["重叠样本"].result() + 输出缓冲[10] + 样本作业表["账本差集样本"].result() + 样本作业表["基线并入样本"].result() + 样本作业表["易用样本一"].result() + 样本作业表["易用样本二"].result())
     from unittest.mock import patch
     from . import 参数规范
     with patch.object(参数规范, "取树", return_value={}):
@@ -244,7 +238,6 @@ def 自检主体(仓根, 工具表, 样本作业表) -> int:
         print("★ 拒绝样本没过 %d 条" % len(失败))
     return 0 if not 失败 else 1
 
-
 def 终端样本(仓根, 工具表) -> list:
     """`v1_shell` 的正向 + 反向样本 ⇒ 样本表（只跑系统自带命令，不落仓、不碰真索引）。
 
@@ -272,7 +265,6 @@ def 终端样本(仓根, 工具表) -> list:
               % (退出码, "是" if "工作树不在" in 回执 else "否"),
             退出码 == 2 and "工作树不在" in 回执))
     return 样本表
-
 
 def 自检_隔离边界(仓根):
     """采样完成后故障注入，完整组、失败组及异常缺失均不能假绿。"""
@@ -342,8 +334,18 @@ def 自检_隔离边界(仓根):
         合规 = (结果表 == [tuple(明细条) for 明细条 in 子组读数["样本"]] if 故障读数 is 子组读数
               else bool(结果表) and not all(通过 for _, 通过 in 结果表))
         样本表.append(("隔离边界·库快照16条同序完整或缺1失败1拒且恰一次", 合规 and 启动替身.call_count == 1))
+    for 样本组名 in ("易用样本一", "易用样本二"):
+        子组读数 = {"组": 样本组名, "样本": [["易用%02d" % 序号, True]
+                   for 序号 in range(隔离样本组[样本组名])]}
+        for 故障读数 in (子组读数, dict(子组读数, 样本=子组读数["样本"][:-1]),
+                     dict(子组读数, 样本=[["失败", False]] + 子组读数["样本"][1:])):
+            with patch.object(subprocess, "run", return_value=subprocess.CompletedProcess(
+                    [], 0, json.dumps(故障读数), "")) as 启动替身:
+                结果表 = 跑隔离样本(样本组名, 仓根)
+            合规 = (结果表 == [tuple(明细条) for 明细条 in 子组读数["样本"]]
+                  if 故障读数 is 子组读数 else bool(结果表) and not all(通过 for _, 通过 in 结果表))
+            样本表.append(("隔离边界·" + 样本组名 + "完整同序或缺1失败1拒且恰一次", 合规 and 启动替身.call_count == 1))
     return 样本表
-
 
 def 自愈样本(仓根, 工具表) -> list:
     """自愈预检的正反样本 ⇒ 样本表（真入口 + 临时坏件 + 替身决策；不动仓、不 exec）。
@@ -352,8 +354,7 @@ def 自愈样本(仓根, 工具表) -> list:
     反向：临时件带冲突标记 ⇒ 预检判「不可启动」，说明带 SyntaxError。
     决策：坏指纹只预检一次（替身计数 = 1）· 同指纹再判不重复预检 · 指纹变 + 预检过 ⇒ 放行。
     """
-    import shutil
-    import tempfile
+    import shutil, tempfile
 
     from . import 自愈预检
 

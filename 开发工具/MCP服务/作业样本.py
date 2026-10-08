@@ -17,7 +17,8 @@ def 作业样本(仓根, 工具表):
     """检查真实工具声明、拒绝与固定合并命令的目标转发。"""
     from . import 作业
     样本表 = []
-    for 工具名, 期望操作 in (("v1_job", {"start", "list", "status", "log", "cancel"}), ("v1_search", {"搜索"})):
+    for 工具名, 期望操作 in (("v1_job", {"start", "list", "status", "log", "cancel", "启动", "查", "日志", "取消"}),
+                        ("v1_search", {"搜索"})):
         if 工具名 not in 工具表:
             样本表.append((工具名 + "注册缺失", False))
             continue
