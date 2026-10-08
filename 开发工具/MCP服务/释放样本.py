@@ -2,22 +2,44 @@
 """释放行为样本：临时 Git 仓与账本，真实提交钩子，push 替身只记录调用。"""
 import sqlite3
 import subprocess
+import sys
 import tempfile
 from pathlib import Path
 from unittest import mock
 
 from . import 释放作业, 开工, 开工账本, 仓操作, 写盘账本
+from .搭腿夹具 import 搭腿夹具
+
+# `并行执行` 住 `开发工具/并行执行.py`（全仓唯一一份 fork 进程池口径，不另抄一份）——
+# 本件可能被多种方式装载 ⇒ 显式把仓根插上 sys.path 再取，不依赖调用方。
+仓根目录 = str(Path(__file__).resolve().parents[2])
+if 仓根目录 not in sys.path:
+    sys.path.insert(0, 仓根目录)
+
+from 开发工具.并行执行 import 并行执行  # noqa: E402
+
+
+# 十八个释放夹具档（**互相独立**：各自一片临时真仓 + 独立样本账本）⇒ 可并行。
+释放档名表 = ("本地提交", "默认推送", "推送失败", "提交失败", "空改", "已提交", "建后删除",
+            "空改钩子失败", "门禁失败", "门禁瞬时超顶", "门禁真实超顶", "指纹漂移", "越界改动",
+            "强制释放", "跳过验证", "坏推送参数", "缺提交钩子", "钩子产生改动")
+释放档位 = 8
+
+
+def _跑一个释放档(名称: str) -> tuple:
+    """一个释放夹具档的完整运行（**整段跑在子进程里**）：临时目录 + 真 git 夹具 + 真断言。"""
+    with tempfile.TemporaryDirectory(prefix="v1释放样本-") as 临时目录:
+        _跑释放夹具(Path(临时目录), 名称)
+    return (名称, True)
 
 
 def 释放样本() -> list:
-    """正反样本不访问真实远端，不碰真实开工账本。"""
-    样本表 = []
-    for 名称 in ("本地提交", "默认推送", "推送失败", "提交失败", "空改", "已提交", "建后删除",
-                 "空改钩子失败", "门禁失败", "门禁瞬时超顶", "门禁真实超顶", "指纹漂移", "越界改动",
-                 "强制释放", "跳过验证", "坏推送参数", "缺提交钩子", "钩子产生改动"):
-        with tempfile.TemporaryDirectory(prefix="v1释放样本-") as 临时目录:
-            _跑释放夹具(Path(临时目录), 名称)
-        样本表.append((名称, True))
+    """正反样本不访问真实远端，不碰真实开工账本。
+
+    **十八档并行**（2026-10-08 提速）：各档一片临时真仓、互不依赖 ⇒ 走 fork 进程池；
+    返回表的形状与顺序与旧版逐字一致（工人炸 ⇒ 照抛 ⇒ 照样算不过，不静默丢）。
+    """
+    样本表 = 并行执行(_跑一个释放档, list(释放档名表), 释放档位)
     样本表 += 单纯释放门禁样本()
     样本表 += 登记回滚样本()
     样本表 += 基线消费边样本()
@@ -174,45 +196,6 @@ def _跑释放夹具(临时根, 名称):
         if 名称 in ("空改", "已提交", "建后删除"):
             assert "未创建空提交" in 输出文本
             assert (仓根 / ".git/门禁读数").read_text().strip()
-
-
-def 搭腿夹具(临时根, 开工号="v1-900001"):
-    """搭一条「已合主干 + 净树」的真腿：临时真仓 + 真工作树 + 临时账本 ⇒ `(仓根, 工作树, 账本件)`。
-
-    主干 `--ff-only` 合入腿支线 ⇒ `仓操作.检查清树安全`（真跑）判「已合主干且净树」为真。
-    """
-    from .合主干有界跑 import 干净环境
-    仓根 = 临时根 / "主工作树"
-    工作树 = 临时根 / "工作树"
-    仓根.mkdir()
-
-    def 执行命令(参数表, cwd=仓根):
-        回执 = subprocess.run(["git", *参数表], cwd=str(cwd), capture_output=True, text=True,
-                           env=干净环境(), timeout=5)
-        assert 回执.returncode == 0, (参数表, 回执.stdout, 回执.stderr)
-        return 回执.stdout.strip()
-
-    执行命令(["init", "-b", "主干"])
-    执行命令(["config", "user.name", "清树门禁样本"])
-    执行命令(["config", "user.email", "gate@example.invalid"])
-    (仓根 / "件.txt").write_text("基\n", encoding="utf-8")
-    执行命令(["add", "件.txt"])
-    执行命令(["commit", "-m", "基"])
-    执行命令(["worktree", "add", "-b", "腿/" + 开工号, str(工作树)])
-    (工作树 / "成果.txt").write_text("腿成果\n", encoding="utf-8")
-    执行命令(["add", "成果.txt"], cwd=工作树)
-    执行命令(["commit", "-m", "腿成果"], cwd=工作树)
-    执行命令(["merge", "--ff-only", "腿/" + 开工号])
-    账本件 = 临时根 / "账本.db"
-    连接 = sqlite3.connect(str(账本件))
-    连接.row_factory = sqlite3.Row
-    for 建表行 in 开工账本.建表语句:
-        连接.execute(建表行)
-    开工账本.登记开工(连接, 开工号, "清树门禁样本", "腿/" + 开工号, str(工作树))
-    开工账本.置状态(连接, 开工号, 开工账本.状态_已释放)
-    连接.commit()
-    连接.close()
-    return 仓根, 工作树, 账本件
 
 
 def 单纯释放门禁样本() -> list:

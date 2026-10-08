@@ -10,7 +10,11 @@
 
 **为什么用子进程**：本件在 `构建装配/`（横切），`开发工具/` 不在产品层序里 ⇒ 直接 import
 会踩层序；与 `判据_MCP自检.py` 同一口径（子进程调入口，互不 import）。**读数** = 子进程退出码
-与逐场景 ✓/✗ 行；**超时 5 s**（判据 ㊲ 的硬性上限；重场景实测 3.1 s，硬顶内）。
+与逐场景 ✓/✗ 行。
+
+★ **不设子进程超时**（同 `自测闭包.py` 的「环境步不判顶」）：`--自测` 是环境步，把**判据面的
+硬顶**拿来卡它，正是 `自测闭包.py` 件头禁止的那件事（作者会为塞进超时而把富样本拆瘦；
+实测：并发档 3 / 5 下本单元报超时，load 29–40 ⇒ 负载假红，调用方只能重跑）。
 """
 from __future__ import annotations
 
@@ -20,9 +24,7 @@ import sys
 import tempfile
 from pathlib import Path
 
-from .常量 import 仓根, 硬顶毫秒
-
-长样本硬顶秒 = 硬顶毫秒 / 1000   # **从唯一主人派生**（2026-10-08 硬顶临时放宽到 10 s ⇒ 本值 10）
+from .常量 import 仓根
 
 
 def 自检_MCP事务机制() -> list:
@@ -46,15 +48,14 @@ def 自检_MCP事务机制() -> list:
         # 注入重定向键（源头同 541 实测）⇒ 跑 `--长样本`：剔键正确则别仓索引零写。
         环境表["GIT_DIR"] = str(别仓 / ".git")
         环境表["GIT_INDEX_FILE"] = str(路径)
-        try:
-            子进程 = subprocess.run(
-                [sys.executable, str(入口件), "--长样本"],
-                cwd=str(仓根), capture_output=True, text=True,
-                timeout=长样本硬顶秒, env=环境表,
-            )
-        except subprocess.TimeoutExpired:
-            return [("MCP 重事务 7 场景 + 样本 git 隔离（子进程 `MCP服务.py --长样本`）", False,
-                     "超 %d s 未返回 ⇒ 长样本卡死（它是提交长路的一步，卡死即拒）" % 长样本硬顶秒)]
+        # ★ 不设超时（走 `自测闭包.跑自测闭包` 同口径）：`--自测` 是**环境步、不判顶**，
+        #   原先按 `硬顶毫秒 / 1000`（临时放宽后 = 10 s）卡它 = 把判据面硬顶误用到环境步。
+        #   实测：并发档 3 / 档 5 下本单元报「超时」（load 29–40）—— 负载假红。
+        #   不设超时 ≠ 永不红：子进程真挂住只是拖长墙钟（环境步允许），退出码非 0 照样报红。
+        子进程 = subprocess.run(
+            [sys.executable, str(入口件), "--长样本"],
+            cwd=str(仓根), capture_output=True, text=True, env=环境表,
+        )
         输出 = (子进程.stdout or "") + (子进程.stderr or "")
         通过数 = 输出.count("✓")
         失败数 = 输出.count("✗")
