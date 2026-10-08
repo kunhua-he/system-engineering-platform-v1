@@ -3,7 +3,8 @@
 
 **隔离**：全程把运行数据根覆盖变量（`口径.覆盖变量名`）指到临时根 ⇒ **不碰真开工账本**；`仓根` 只**读**
 （`未完成.json` 台账 + `git rev-parse`），一个字节都不写。
-另两件：`反馈核验样本.py`（未蒸馏判据 / 空报告 / 缺件 / 重启 / 迁移）· `反馈并发样本.py`（真多进程）。
+另三件：`反馈核验样本.py`（未蒸馏判据 / 空报告 / 缺件 / 重启 / 迁移）· `反馈并发样本.py`（真多进程）·
+`反馈帧样本.py`（**真网关帧**：stdio JSON-RPC 子进程 + 独立运行数据根，补函数级直调漏掉的参数面）。
 本件**不带 `__main__` 块**（带了就被判据 ⑲ 当入口件，超 120 行即红）；独立跑法：
   python3 -c 'import sys;from pathlib import Path;sys.path.insert(0, "开发工具");'
   'from MCP服务 import 反馈样本;raise SystemExit(反馈样本.入口(Path.cwd()))'
@@ -219,10 +220,11 @@ def 入口(仓根, 临时根=None) -> int:
     临时根.mkdir(parents=True, exist_ok=True)
     os.environ[覆盖变量名] = str(临时根)
     try:
-        from . import 反馈并发样本
+        from . import 反馈并发样本, 反馈帧样本
         造开工(临时根, (反馈开工号, 核验开工号, 并发号))
         样本表 = 跑样本(仓根, 临时根)
         样本表 += 反馈并发样本.并发样本(仓根, 临时根)
+        样本表 += 反馈帧样本.跑帧样本(仓根)
     finally:
         os.environ.pop(覆盖变量名, None)
         if 自建:
