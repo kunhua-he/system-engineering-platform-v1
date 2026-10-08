@@ -14,6 +14,22 @@ from . import 合主干编排 as 编排, 合主干集成树 as 集成
 from .合主干有界跑 import 跑有界命令
 from .合主干源件重抽样本 import 验源件重抽
 
+# `并行执行` 住 `开发工具/并行执行.py`（全仓唯一一份 fork 进程池口径，不另抄一份）——
+# 本件可能被多种方式装载 ⇒ 显式把仓根插上 sys.path 再取，不依赖调用方。
+仓根目录 = str(Path(__file__).resolve().parents[2])
+if 仓根目录 not in sys.path:
+    sys.path.insert(0, 仓根目录)
+
+from 开发工具.并行执行 import 并行执行  # noqa: E402
+
+# ── 十二个合并回归单元与并行档 ──
+# 前八 = 真 git 合并夹具八例（与 `_建夹具` 的档名一一对应）；后四 = 定位锁 / 源库三态 /
+# 有界跑 / 源件重抽。档位取「仍全绿且最快」那一档（实测见提交说明）—— 本批最大两个单元
+# （超时例 10.7 s · 源件重抽 10.6 s）决定墙钟下限，故档位取满 12（一波起完）。
+单元名表 = ("成功", "代码冲突", "源库异义", "验证失败", "超时", "重放失败", "导库失败", "同步保护",
+           "定位同步锁", "源库三态", "有界跑", "源件重抽")
+合主干档位 = 12
+
 三态样本 = ("动作0源库冲突", "动作非0重放", "无冲突无动作")
 假信息核心源码 = (
     "import json, sqlite3, sys\n"
@@ -126,63 +142,111 @@ def _建夹具(临时根, 名称):
 
 def 跑样本():
     起始时刻 = time.monotonic()
-    for 名称 in ("成功", "代码冲突", "源库异义", "验证失败", "超时", "重放失败", "导库失败", "同步保护"):
-        with tempfile.TemporaryDirectory(prefix="v1合并样本-") as 临时目录:
-            仓根, 腿树, 钩子 = _建夹具(Path(临时目录), 名称)
-            开工记录 = {"状态":"已释放", "工作树":str(腿树), "分支名":"腿/v1-999001"}
-            旧主干 = 跑样本仓命令(仓根, "rev-parse", "主干")
-            with mock.patch.object(编排, "_读开工记录", return_value=开工记录):
-                退出码, 报告文本 = 编排.派发("v1-999001", False, 腿树)
-                assert "主仓目标 " + str(仓根) in 报告文本, 报告文本
-                if 名称 == "成功":
-                    assert 退出码 == 0 and 集成.找集成树(仓根, "v1-999001") is None, 报告文本
-                    assert (仓根 / "新增.txt").read_text() == "腿成果\n" and "实际工作文件" in 报告文本
-                else:
-                    assert 退出码 != 0 and 集成.找集成树(仓根, "v1-999001"), 报告文本
-                    assert 跑样本仓命令(仓根, "rev-parse", "主干") == 旧主干
-                    assert "失败现场保留" in 报告文本
-                    assert "原完整报告" in 编排.派发("v1-999001",False,仓根,操作="查看现场")[1]
-                    assert 编排.派发("v1-999001",False,仓根,操作="清理现场")[0] != 0
-                    assert 编排.派发("v1-999001",False,仓根)[0] != 0
-                    assert 跑样本仓命令(仓根,"worktree","list","--porcelain").count("branch refs/heads/集成/v1-999001") == 1
-                    if 名称 == "验证失败":
-                        assert "③ 集成验证" in 报告文本 and "退出码 23" in 报告文本 and "ORIGINAL-IMPORT-FIRST" in 报告文本
-                        钩子.write_text("#!/bin/sh\nexit 0\n")
-                        恢复码, 恢复报告 = 编排.派发("v1-999001",False,仓根,操作="恢复现场")
-                        assert 恢复码 == 0 and 集成.找集成树(仓根,"v1-999001") is None, 恢复报告
-                    if 名称 == "超时":
-                        assert "③ 集成验证" in 报告文本 and "退出码 -1" in 报告文本 and "是否超时 True" in 报告文本 and "真实超时首因" in 报告文本
-                    if 名称 == "重放失败":
-                        assert "退出码 29" in 报告文本 and "ORIGINAL-REPLAY-FIRST" in 报告文本
-                    if 名称 == "代码冲突":
-                        assert "CONFLICT" in 报告文本
-                    if 名称 == "源库异义":
-                        assert all(规则正文 in 报告文本 for 规则正文 in ("主干值", "腿值", "基值"))
-                if 名称 == "成功":
-                    (腿树 / "续作.txt").write_text("恢复同步成果")
-                    跑样本仓命令(腿树,"add","续作.txt")
-                    跑样本仓命令(腿树,"commit","-m","续作成果")
-                    with mock.patch.object(集成,"同步主工作区",return_value=(31,"原始同步失败替身")):
-                        同步失败码,同步失败报告=编排.派发("v1-999001",False,仓根)
-                        assert 同步失败码!=0 and "⑤ 同步主目录" in 同步失败报告 and "原始同步失败替身" in 同步失败报告
-                    恢复码,恢复报告=编排.派发("v1-999001",False,仓根,操作="恢复现场")
-                    assert 恢复码==0 and (仓根/"续作.txt").read_text()=="恢复同步成果",恢复报告
-                    assert 集成.找集成树(仓根,"v1-999001") is None
-                print("通过", 名称, "编排退出码", 退出码)
-                已有树 = 集成.找集成树(仓根, "v1-999001")
-                if 已有树:
-                    跑样本仓命令(仓根, "worktree", "remove", "--force", str(已有树))
-    with tempfile.TemporaryDirectory(prefix="v1定位样本-") as 临时目录:
-        _验定位同步锁(Path(临时目录))
-    _验源库三态()
+    结果表 = 并行执行(_跑合并单元, list(range(len(单元名表))), 合主干档位)
+    for 单元果 in 结果表:
+        if 单元果["回显"]:
+            print(单元果["回显"], end="")
+        if 单元果["异常"] is not None:
+            raise AssertionError("合并样本「%s」不过：%s" % (单元名表[单元果["序号"]], 单元果["异常"]))
+    print("通过 全文日志与启动失败；总墙钟 %.3f 秒（time.monotonic）" % (time.monotonic()-起始时刻))
+    return 0
+
+
+def _跑一个合并单元(名称: str) -> None:
+    """一个合并回归单元（真 git 夹具 + 真编排）；断言与打印与旧版逐字相同。"""
+    if 名称 == "定位同步锁":
+        with tempfile.TemporaryDirectory(prefix="v1定位样本-") as 临时目录:
+            _验定位同步锁(Path(临时目录))
+        return
+    if 名称 == "源库三态":
+        _验源库三态()
+        return
+    if 名称 == "有界跑":
+        _验有界跑两档()
+        return
+    if 名称 == "源件重抽":
+        验源件重抽()
+        return
+    with tempfile.TemporaryDirectory(prefix="v1合并样本-") as 临时目录:
+        仓根, 腿树, 钩子 = _建夹具(Path(临时目录), 名称)
+        开工记录 = {"状态":"已释放", "工作树":str(腿树), "分支名":"腿/v1-999001"}
+        旧主干 = 跑样本仓命令(仓根, "rev-parse", "主干")
+        # ★ 2026-10-08 提速（拆人工地板）：本档原先**等 10 s 预算到点才被杀** ⇒ 固定耗 ≈10.5 s，
+        #   成为整条 `--自测` 的硬地板。改成**把预算压到 0.4 s** ⇒ 同一件事（超时被检出 ·
+        #   首因如实上报）在 0.4 s 处发生。**断言一条不改**：`退出码 -1` / `是否超时 True` /
+        #   `真实超时首因` 都不依赖预算数值。这里挂在**阈值的主人**
+        #   `构建装配.门禁.常量.硬顶毫秒`（`门禁预算.硬顶秒()` 每次调用现读它）
+        #   ⇒ 不管消费点住 `合主干编排` 还是 `合主干门禁` 都生效（两条腿都在改这一带）。
+        import contextlib
+        if 名称 == "超时":
+            import 构建装配.门禁.常量 as 阈值主人
+            预算替身 = mock.patch.object(阈值主人, "硬顶毫秒", 400)
+        else:
+            预算替身 = contextlib.nullcontext()
+        with 预算替身, mock.patch.object(编排, "_读开工记录", return_value=开工记录):
+            退出码, 报告文本 = 编排.派发("v1-999001", False, 腿树)
+            assert "主仓目标 " + str(仓根) in 报告文本, 报告文本
+            if 名称 == "成功":
+                assert 退出码 == 0 and 集成.找集成树(仓根, "v1-999001") is None, 报告文本
+                assert (仓根 / "新增.txt").read_text() == "腿成果\n" and "实际工作文件" in 报告文本
+            else:
+                assert 退出码 != 0 and 集成.找集成树(仓根, "v1-999001"), 报告文本
+                assert 跑样本仓命令(仓根, "rev-parse", "主干") == 旧主干
+                assert "失败现场保留" in 报告文本
+                assert "原完整报告" in 编排.派发("v1-999001",False,仓根,操作="查看现场")[1]
+                assert 编排.派发("v1-999001",False,仓根,操作="清理现场")[0] != 0
+                assert 编排.派发("v1-999001",False,仓根)[0] != 0
+                assert 跑样本仓命令(仓根,"worktree","list","--porcelain").count("branch refs/heads/集成/v1-999001") == 1
+                if 名称 == "验证失败":
+                    assert "③ 集成验证" in 报告文本 and "退出码 23" in 报告文本 and "ORIGINAL-IMPORT-FIRST" in 报告文本
+                    钩子.write_text("#!/bin/sh\nexit 0\n")
+                    恢复码, 恢复报告 = 编排.派发("v1-999001",False,仓根,操作="恢复现场")
+                    assert 恢复码 == 0 and 集成.找集成树(仓根,"v1-999001") is None, 恢复报告
+                if 名称 == "超时":
+                    assert "③ 集成验证" in 报告文本 and "退出码 -1" in 报告文本 and "是否超时 True" in 报告文本 and "真实超时首因" in 报告文本
+                if 名称 == "重放失败":
+                    assert "退出码 29" in 报告文本 and "ORIGINAL-REPLAY-FIRST" in 报告文本
+                if 名称 == "代码冲突":
+                    assert "CONFLICT" in 报告文本
+                if 名称 == "源库异义":
+                    assert all(规则正文 in 报告文本 for 规则正文 in ("主干值", "腿值", "基值"))
+            if 名称 == "成功":
+                (腿树 / "续作.txt").write_text("恢复同步成果")
+                跑样本仓命令(腿树,"add","续作.txt")
+                跑样本仓命令(腿树,"commit","-m","续作成果")
+                with mock.patch.object(集成,"同步主工作区",return_value=(31,"原始同步失败替身")):
+                    同步失败码,同步失败报告=编排.派发("v1-999001",False,仓根)
+                    assert 同步失败码!=0 and "⑤ 同步主目录" in 同步失败报告 and "原始同步失败替身" in 同步失败报告
+                恢复码,恢复报告=编排.派发("v1-999001",False,仓根,操作="恢复现场")
+                assert 恢复码==0 and (仓根/"续作.txt").read_text()=="恢复同步成果",恢复报告
+                assert 集成.找集成树(仓根,"v1-999001") is None
+            print("通过", 名称, "编排退出码", 退出码)
+            已有树 = 集成.找集成树(仓根, "v1-999001")
+            if 已有树:
+                跑样本仓命令(仓根, "worktree", "remove", "--force", str(已有树))
+
+
+def _验有界跑两档() -> None:
+    """有界跑两档：9 MB 溢出日志（完整落盘 · 内存只留头部）· 起不来的命令 ⇒ -2。"""
     退出码, 输出文本, 日志路径 = 跑有界命令([sys.executable,"-c","import sys;print('OUT-FIRST');sys.stderr.write('ERR-FIRST\\n'+'z'*9000000+'ERR-LAST');print('OUT-LAST')"],tempfile.gettempdir(),超时秒数=5)
     全文 = Path(日志路径).read_text()
     assert 退出码 == 0 and "ERR-FIRST" in 输出文本 and "ERR-LAST" in 全文 and "OUT-LAST" in 全文 and len(全文)>9000000
     退出码, _, 日志路径 = 跑有界命令(["/不存在的样本命令"],tempfile.gettempdir(),超时秒数=5)
     assert 退出码 == -2 and "退出码 -2" in Path(日志路径).read_text()
-    验源件重抽()
-    print("通过 全文日志与启动失败；总墙钟 %.3f 秒（time.monotonic）" % (time.monotonic()-起始时刻))
-    return 0
+
+
+def _跑合并单元(序号: int) -> dict:
+    """一个合并回归单元的入口（**整段跑在子进程里**）；回显与异常都带回父进程按原序打印。"""
+    import contextlib
+    import io
+
+    回显 = io.StringIO()
+    try:
+        with contextlib.redirect_stdout(回显):
+            _跑一个合并单元(单元名表[序号])
+        return {"序号": 序号, "回显": 回显.getvalue(), "异常": None}
+    except BaseException as 错误:
+        return {"序号": 序号, "回显": 回显.getvalue(), "异常": "%r" % (错误,)}
 
 
 def _验定位同步锁(临时根):
