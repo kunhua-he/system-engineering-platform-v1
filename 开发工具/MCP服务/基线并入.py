@@ -48,6 +48,17 @@ import 表定义  # noqa: E402  —— 库相对路径 / 源表 的唯一权威
 并入超时秒 = 5
 # 二进制阶段 blob 导出的超时（同上）。
 导出超时秒 = 5
+# 腿支线形状（`腿/v1-XXXXXX` 或 `origin/腿/v1-XXXXXX`）⇒ 取开工号（基线消费边唯一一份解析）。
+基线腿形状 = re.compile(r"^(?:origin/)?腿/(v1-[0-9]{6})$")
+
+
+def 基线腿号(基线: str) -> str:
+    """`基线` 是腿支线（`腿/v1-XXXXXX` 或 `origin/腿/v1-XXXXXX`）⇒ 开工号；否则空串。
+
+    `登记编排.登记主体` 用它把「基线消费者」关系落进 `开工.父开工号`（唯一一份解析）。
+    """
+    命中 = 基线腿形状.fullmatch(str(基线 or "").strip())
+    return 命中.group(1) if 命中 else ""
 
 
 def 可重生二进制(路径: str) -> bool:
