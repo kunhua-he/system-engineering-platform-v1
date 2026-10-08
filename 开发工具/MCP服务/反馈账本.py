@@ -239,6 +239,22 @@ def 列来源(连接, 开工号: str) -> list:
         "select * from 反馈来源 where 开工号 = ? order by 来源号", (开工号,))]
 
 
+def 列证据(连接, 条目号: int, 起始: int = 1, 上限条数=None) -> list:
+    """本条目的补证（`反馈证据`，只增不改）⇒ 行表；`起始` 1 起、`上限条数` 给上限（**有界**）。"""
+    语句 = "select * from 反馈证据 where 条目号 = ? order by 编号"
+    值表 = [条目号]
+    if 上限条数 is not None:
+        语句 += " limit ? offset ?"
+        值表 += [上限条数, max(0, 起始 - 1)]
+    return [dict(数据行) for 数据行 in 连接.execute(语句, 值表)]
+
+
+def 计证据(连接, 条目号: int) -> int:
+    """本条目的补证条数（`反馈证据` 行数）—— 有界读数要总数才判得出截没截断。"""
+    return 连接.execute("select count(*) from 反馈证据 where 条目号 = ?",
+                      (条目号,)).fetchone()[0]
+
+
 def 计次(连接, 条目号: int) -> int:
     """本条目自身 + **显式并入**它的条目数（语义合并保留计次）。"""
     return 1 + 连接.execute("select count(*) from 反馈条目 where 并入主条目 = ?",
