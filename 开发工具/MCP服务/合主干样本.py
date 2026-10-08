@@ -90,7 +90,10 @@ def _建夹具(临时根, 名称):
         钩子.write_text("#!/bin/sh\nprintf 'ORIGINAL-IMPORT-FIRST\\nModuleNotFoundError: 原始环境错误\\n' >&2\nexit 23\n")
     if 名称 == "超时":
         钩子.unlink()
-        门禁件.write_text("import os,time\nprint('真实超时首因',flush=True)\nif 'v1集成-' in os.getcwd():time.sleep(10)\n")
+        # ★ 夹具的睡眠值必须**明显高于当前预算**（2026-10-08 硬顶临时放宽到 10 s）：
+        #   原值 10 与新预算同龄 ⇒ 超时不再触发、样本静默变绿（本腿实撞）。改 30 ⇒ 5 s / 10 s
+        #   两种预算下都确定性超时（超时在预算处杀，不会多花时间）。
+        门禁件.write_text("import os,time\nprint('真实超时首因',flush=True)\nif 'v1集成-' in os.getcwd():time.sleep(30)\n")
         跑样本仓命令(仓根, "add", ".")
         跑样本仓命令(仓根, "commit", "-m", "超时验证")
     if 名称 == "同步保护":
@@ -192,7 +195,7 @@ def _验定位同步锁(临时根):
     模块根=Path(__file__).resolve().parents[2]
     # 按包 glob 取模块件（不再手列）：新增 `合主干*.py` 自动带进来，不再因漏列而夹具缺件
     模块件表=sorted(str(件路径.relative_to(模块根)) for 件路径 in (模块根/"开发工具/MCP服务").glob("合主干*.py"))
-    模块件表+=["开发工具/MCP服务/合并主干.py","开发工具/信息核心/表定义.py"]
+    模块件表+=["开发工具/MCP服务/合并主干.py","开发工具/MCP服务/门禁预算.py","开发工具/信息核心/表定义.py"]
     for 树根 in (仓根,腿树):
         for 相对路径 in 模块件表:
             件路径=树根/相对路径
@@ -200,6 +203,8 @@ def _验定位同步锁(临时根):
             shutil.copyfile(模块根/相对路径,件路径)
         (树根/"构建装配/门禁").mkdir(parents=True,exist_ok=True)
         (树根/"构建装配/门禁/__init__.py").write_text("def 报告环境步(起始时刻,退出码,说明):return 退出码\n")
+        # ★ `门禁预算.硬顶秒()` 要从夹具里那份常量读 ⇒ 夹具也得有它（**拷真件**，不写第二个数）。
+        (树根/"构建装配/门禁/常量.py").write_text((模块根/"构建装配/门禁/常量.py").read_text())
         回执=subprocess.run([sys.executable,str(树根/"开发工具/MCP服务/合并主干.py"),"v1-999001","--查看现场"],cwd=临时根,capture_output=True,text=True,env={键名:值 for 键名,值 in os.environ.items() if 键名!="PYTHONPATH"},timeout=5)
         assert 回执.returncode==1 and "主仓 "+str(仓根) in 回执.stdout,(回执.stdout,回执.stderr)
     with open(仓根/".git/合主干.lock","a+") as 文件句柄:

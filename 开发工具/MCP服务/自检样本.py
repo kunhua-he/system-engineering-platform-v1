@@ -63,9 +63,10 @@ def 跑隔离样本(样本组名, 仓根):
     """真实子进程有界收敛；失败、超时、缺组或畸形输出都保留为失败样本。"""
     import json, subprocess, sys
     from .合主干有界跑 import 干净环境
+    from .门禁预算 import 硬顶秒
     try:
         回执 = subprocess.run([sys.executable, "-B", "-c", 隔离入口文本, 样本组名],
-                            cwd=仓根, env=干净环境(), capture_output=True, text=True, timeout=5)
+                            cwd=仓根, env=干净环境(), capture_output=True, text=True, timeout=硬顶秒())
         if 回执.returncode != 0:
             raise ValueError("退出码 %d：%s" % (回执.returncode, 回执.stderr[-500:]))
         子组读数 = json.loads(回执.stdout)

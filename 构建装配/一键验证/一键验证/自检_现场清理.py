@@ -10,6 +10,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+from .常量 import 硬顶毫秒
+
 
 def 自检_现场清理闭环() -> list:
     """⇒ `[(名称, 是否好, 说明)]`；起不来 / 非 0 退出即不过。"""
@@ -23,7 +25,7 @@ def 自检_现场清理闭环() -> list:
           "sys.exit(0 if 样本表 and all(通过 for _, 通过 in 样本表) else 1)\n")
     try:
         回执 = subprocess.run([sys.executable, "-c", 脚本], cwd=str(工具目录),
-                          capture_output=True, text=True, timeout=5)
+                          capture_output=True, text=True, timeout=硬顶毫秒 / 1000)
     except Exception as 错误:
         return [("现场清理 端到端闭环", False, "起不来 / 超时：%r" % (错误,))]
     通过 = 回执.returncode == 0
