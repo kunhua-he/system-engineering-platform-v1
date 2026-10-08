@@ -159,7 +159,7 @@ def _已过条目行(项表: list, 失败序号集: set) -> str:
             % " · ".join(过表))
 
 
-def 派发(参数表: dict, 仓根) -> tuple:
+def 修改一次(参数表: dict, 仓根) -> tuple:
     """`v1_edit` 的入口。"""
     if not isinstance(参数表.get("只检查", False), bool):
         return 2, "`只检查` 要是逻辑型值（默认假）"
@@ -384,3 +384,17 @@ def 派发(参数表: dict, 仓根) -> tuple:
         return 0, "\n".join(输出行表)
     finally:
         连接.close()
+
+
+def 派发(参数表: dict, 仓根) -> tuple:
+    """正常修改和精确恢复共用非阻塞开工锁。"""
+    if 参数表.get("只检查", False):
+        return 修改一次(参数表, 仓根)
+    if not str(参数表.get("开工ID") or "").strip():
+        return 2, "缺 开工ID"
+    from .写盘执行 import 开工写盘锁, 写盘占用
+    try:
+        with 开工写盘锁(str(参数表.get("开工ID") or "")):
+            return 修改一次(参数表, 仓根)
+    except 写盘占用 as 错误:
+        return 3, str(错误)

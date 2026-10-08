@@ -97,3 +97,17 @@ def 记一件写盘(连接, 开工号: str, 路径: str, 功能名: str, 写前�
     except BaseException:
         连接.rollback()
         raise
+
+
+def 记已记账恢复(连接, 开工号, 路径, 记录, 候选指纹):
+    """恢复动作独立审计并销意图，不改原成功行和认领。"""
+    连接.execute("create table if not exists 已记账恢复 (原改动编号 integer primary key, 开工号 text not null, 路径 text not null, 写前指纹 text not null, 写后指纹 text not null, 候选SHA256 text not null, 时间 text not null)")
+    连接.commit()
+    连接.execute("begin immediate")
+    try:
+        连接.execute("insert or ignore into 已记账恢复 values (?, ?, ?, ?, ?, ?, ?)", (记录["编号"], 开工号, 路径, 记录["写前指纹"], 记录["写后指纹"], 候选指纹, 账本.时刻串()))
+        连接.execute("delete from 写盘意图 where 开工号 = ? and 路径 = ?", (开工号, 路径))
+        连接.commit()
+    except BaseException:
+        连接.rollback()
+        raise

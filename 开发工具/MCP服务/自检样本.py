@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 """MCP 工具面自检：正式隔离样本、协议及拒绝断言。"""
 from pathlib import Path
-
 隔离样本组 = {"改名样本": 34, "上下文样本": 80, "跨树样本": 18, "重叠样本": 4, "库快照样本": 16, "账本差集样本": 5, "基线并入样本": 8, "易用样本一": 17, "易用样本二": 38}
 隔离入口文本 = (
     "import json,sys; from pathlib import Path; "
@@ -120,6 +119,8 @@ def 自检主体(仓根, 工具表, 样本作业表) -> int:
         样本表.append(("%s inputSchema 三字段同形 + additionalProperties=false + 无 required" % 名称,
                 模式.get("additionalProperties") is False and set(属性表) == 期望字段
                 and "required" not in 模式))
+
+    from .已记账恢复样本 import 样本列表; 样本表.extend(样本列表(仓根))
 
     # ── ③ 畸形帧（必须判失败：不抛异常、不回假成功）──
     for 源文本 in ("123", "null", "[1,2]", '"x"',
