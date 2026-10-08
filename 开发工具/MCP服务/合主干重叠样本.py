@@ -146,6 +146,21 @@ def 样本列表(仓根=None, 工具表=None) -> list:
                 记录表[0][1] == 0 and 记录表[1][1] == 1 and 记录表[2][1] == 1
                 and all("一侧独有改动被丢" in 结果记录[2] for 结果记录 in 记录表[1:])))
         _撤合腿(仓库根)
+        from .合主干集成树 import 提交合并
+        记录表 = []
+        for 说明, 文本值 in (("记录钩子", "exit 0"), ("拒绝钩子", "exit 1")):
+            (仓库根 / ".git/hooks/pre-commit").write_text(
+                "#!/bin/sh\nprintf '执行\n' >> hook-record\n" + 文本值 + "\n", encoding="utf-8")
+            (仓库根 / ".git/hooks/pre-commit").chmod(0o755)
+            (仓库根 / "样例.py").write_text(说明 + "\n", encoding="utf-8")
+            _跑Git(仓库根, "add", "样例.py")
+            合并文本 = _跑Git(仓库根, "rev-parse", "HEAD").strip()
+            退出码, 报告文本 = 提交合并(仓库根, "腿/v1-900101", "v1-900001")
+            记录表.append(退出码 == 0 if 文本值 == "exit 0" else
+                         退出码 != 0 and _跑Git(仓库根, "rev-parse", "HEAD").strip() == 合并文本)
+        输出表[-1] = (输出表[-1][0] + "·真实提交钩子执行且拒绝不推进HEAD",
+                     输出表[-1][1] and all(记录表)
+                     and (仓库根 / "hook-record").read_text().splitlines() == ["执行", "执行"])
         有登记.close()
         空登记.close()
         无表.close()
