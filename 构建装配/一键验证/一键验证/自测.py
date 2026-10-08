@@ -22,6 +22,7 @@ from .自检_集成接管 import 自检_集成接管闭环
 from .自检_长样本 import 自检_长样本
 from .自检_判据选择 import 自检_判据选择
 from .自检_保全主目录 import 自检_保全主目录
+from .自检_HTTP自愈 import 自检_HTTP自愈
 from .自检_现场清理 import 自检_现场清理闭环
 from .自检_续缺口 import 自检_续缺口闭环
 from .自检_十干 import 自检_十干扫描
@@ -140,6 +141,7 @@ def 跑自测(源仓根: Path) -> int:
         + 自检_长样本()
         + 自检_判据选择()
         + 自检_保全主目录()
+        + 自检_HTTP自愈()
         + 自检_现场清理闭环()
         + 自检_续缺口闭环()
         + 自检_MCP事务机制()

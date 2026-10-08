@@ -57,11 +57,26 @@ class 传输服务(ThreadingHTTPServer):
     daemon_threads = True
     allow_reuse_address = True
 
-    def __init__(self, 监听地址, 处理器类, 仓根, 工具表):
+    def __init__(self, 监听地址, 处理器类, 仓根, 工具表, 监听套接字=None, 允许重载=False):
         self.仓根 = 仓根
         self.工具表 = 工具表
         self._名额 = threading.BoundedSemaphore(并发连接上限)
-        super().__init__(监听地址, 处理器类)
+        self._连接锁 = threading.Lock()
+        self._在途连接 = 0
+        self._允许重载 = 允许重载
+        self._拒绝指纹 = None
+        self._重载提示 = ""
+        self._提示指纹 = None
+        super().__init__(监听地址, 处理器类, bind_and_activate=监听套接字 is None)
+        if 监听套接字 is not None:
+            self.socket.close()
+            self.socket = 监听套接字
+            self.server_address = self.socket.getsockname()
+            self.server_name, self.server_port = self.server_address
+
+    def service_actions(self):
+        from .http自愈 import 尝试重载
+        尝试重载(self)
 
     def process_request(self, 请求, 客户端地址):
         if not self._名额.acquire(blocking=False):
@@ -72,13 +87,17 @@ class 传输服务(ThreadingHTTPServer):
                 pass
             请求.close()
             return
+        with self._连接锁:
+            self._在途连接 += 1
         super().process_request(请求, 客户端地址)
 
     def shutdown_request(self, 请求):
         try:
             super().shutdown_request(请求)
         finally:
-            self._名额.release()
+            with self._连接锁:
+                self._名额.release()
+                self._在途连接 -= 1
 
 
 class 请求处理器(BaseHTTPRequestHandler):
@@ -253,6 +272,17 @@ class 请求处理器(BaseHTTPRequestHandler):
         except Exception:
             self._写错误(200, 报文号, -32603, "内部错误：%s" % (sys.exc_info()[1],))
             return
+        if isinstance(读数, dict) and 读数.get("content"):
+            from .服务指纹 import 算服务指纹, 启动指纹, 过期提示行
+            提示指纹 = 算服务指纹()
+            重载提示 = (self.server._重载提示
+                      if 提示指纹 == self.server._拒绝指纹 and 提示指纹 != 启动指纹 else "")
+            with self.server._连接锁:
+                if 提示指纹 != 启动指纹 and 提示指纹 != self.server._提示指纹:
+                    self.server._提示指纹 = 提示指纹
+                    重载提示 = 重载提示 or 过期提示行("http")
+            if 重载提示:
+                读数["服务提示"] = [重载提示]
         if 方法名 == "initialize" and 错误 is None and isinstance(读数, dict):
             # 无状态：initialize **不**回 `Mcp-Session-Id`（不分配会话 ⇒ 后续请求也不带、不校验）。
             读数["protocolVersion"] = 协商协议版本(实参.get("protocolVersion"))
@@ -313,9 +343,19 @@ class 请求处理器(BaseHTTPRequestHandler):
 
 def 起传输(仓根, 工具表, 监听端口=默认监听端口, 绑定=绑定地址):
     """起 HTTP 传输（**永不返回**）：监听 `绑定:监听端口`，一个 `服务路径` 端点。"""
-    服务对象 = 传输服务((绑定, 监听端口), 请求处理器, 仓根, 工具表)
+    from .http自愈 import 接续监听
+    监听套接字, 待接请求 = 接续监听((绑定, 监听端口))
+    服务对象 = 传输服务((绑定, 监听端口), 请求处理器, 仓根, 工具表,
+                    监听套接字, 允许重载=True)
+    if 待接请求 is not None:
+        服务对象.process_request(*待接请求)
+    from .服务指纹 import 启动指纹
+    import os
+    print(json.dumps({"event": "mcp.http.loaded", "指纹": 启动指纹,
+                      "进程号": os.getpid(), "地址": list(服务对象.server_address)},
+                     ensure_ascii=False), file=sys.stderr, flush=True)
     try:
-        服务对象.serve_forever()
+        服务对象.serve_forever(poll_interval=0.2)
     except KeyboardInterrupt:
         pass
     finally:
