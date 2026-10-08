@@ -26,6 +26,7 @@
 from __future__ import annotations
 
 import hashlib
+import os
 from pathlib import Path
 
 # 只读白名单：这些子命令的答案只由对象库 / refs / index 决定（工作区正文无关）。
@@ -37,6 +38,39 @@ from pathlib import Path
 
 # 看索引的子命令：只有它们的指纹要连 index 正文一起算（其余读整份 index 反而比命令慢）。
 看索引子命令 = frozenset({"ls-files", "diff"})
+
+# ── 616 独立审计 F1–F4 收紧：**确切白名单**，只留「只依赖 refs / 对象库 / 纯索引」且对
+#    配置与环境不敏感的问句；拿不准的一律现跑（正确性优先，宁慢不错）。──
+
+# 影响 git 读取结果的环境键（含全局/系统配置、refs 命名空间、浅仓、外部 diff、替换基线）。
+# 有任意一个在场 ⇒ 一律不缓存（fail-closed）：拿不准它怎么改答案，就不拿旧值冒充。
+环境可疑键 = frozenset({
+    "GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE", "GIT_OBJECT_DIRECTORY",
+    "GIT_ALTERNATE_OBJECT_DIRECTORIES", "GIT_COMMON_DIR", "GIT_PREFIX",
+    "GIT_NAMESPACE", "GIT_CONFIG", "GIT_CONFIG_GLOBAL", "GIT_CONFIG_SYSTEM",
+    "GIT_CONFIG_NOSYSTEM", "GIT_CONFIG_COUNT", "GIT_SHALLOW_FILE",
+    "GIT_EXTERNAL_DIFF", "GIT_REPLACE_REF_BASE", "GIT_CEILING_DIRECTORIES",
+    "GIT_DISCOVERY_ACROSS_FILESYSTEM", "GIT_ATTR_NOSYSTEM",
+})
+
+# 依赖**对象集合**的开关：`--short` 的长度取决于同前缀对象是否存在（新增一个同前缀 blob
+# 会让真值变长，而缓存回旧值 —— 616 审计 F2）⇒ 带这些的一律不缓存。
+对象集敏感开关 = frozenset({"--short", "--abbrev"})
+
+# 依赖对象集合 / 配置的子命令：答案随**对象库**或**全局配置**（含 include.path）变，
+# 而指纹只到 refs / 本地 config ⇒ 不缓存（616 审计 F2）。
+对象集敏感子命令 = frozenset({"log", "describe", "name-rev"})
+
+# 工作区敏感开关：带这些的 `ls-files` / `diff` 依赖盘上正文（未跟踪 / 改动 / 忽略），
+# 而指纹只到 index 一层 ⇒ 不缓存（616 审计 F1/F4：`件头读数.py` 的
+# `ls-files --cached --others --exclude-standard` 就是这一形）。
+工作区敏感开关 = frozenset({
+    "--others", "-o", "--modified", "-m", "--deleted", "-d", "--unmerged", "-u",
+    "--ignored", "-i", "--exclude-standard", "--no-index", "--directory",
+})
+
+# 配置敏感开关：答案随**全局 / 系统配置**（或 core.bare）变，而指纹只含本地 config ⇒ 不缓存。
+配置敏感开关 = frozenset({"--is-bare-repository"})
 
 # 缓存条数上限：超过即整批清（问句键的基数很小，正常远达不到）。
 缓存上限 = 4096
@@ -123,13 +157,22 @@ def 索引指纹(树根) -> str:
 
 
 def 可缓存(参数表) -> bool:
-    """该 git 子命令能不能进缓存：只在白名单里，且工作区正文无关。"""
+    """该 git 子命令能不能进缓存：**确切白名单** —— 只留「只依赖 refs / 对象库 / 纯索引」
+    且对配置与环境不敏感的问句；其余一律现跑（616 独立审计 F1–F4，正确性优先）。"""
     词表 = [str(词条) for 词条 in 参数表]
     if not 词表 or 词表[0] not in 只读子命令:
         return False
     首词 = 词表[0]
-    if 首词 in 看索引子命令:
-        return "--cached" in 词表      # 只看索引；工作区正文变它看不见
+    if 首词 in 对象集敏感子命令:
+        return False
+    if any(词条 in 对象集敏感开关 or 词条.split("=", 1)[0] in 对象集敏感开关 for 词条 in 词表):
+        return False
+    if 首词 == "ls-files":
+        return 词表 == ["ls-files", "--cached"]      # 纯索引；任何工作区开关都现跑（F1/F4）
+    if 首词 == "diff":
+        return "--cached" in 词表 and not (工作区敏感开关 & set(词表))
+    if (工作区敏感开关 | 配置敏感开关) & set(词表):
+        return False
     return True
 
 
@@ -142,6 +185,9 @@ def 跑只读命令(底层, 仓根, 参数表, 树根=None, 超时=5) -> tuple:
     """
     目标树 = str(树根 or 仓根)
     if not 可缓存(参数表):
+        return 底层(仓根, 参数表, 树根=树根, 超时=超时)
+    if 环境可疑键 & set(os.environ):
+        # 环境里带着会改 git 答案的键（全局/系统配置 · 命名空间 · 浅仓 …）⇒ 不缓存（F3）。
         return 底层(仓根, 参数表, 树根=树根, 超时=超时)
     看索引 = str(参数表[0]) in 看索引子命令
     状态指纹 = 仓状态指纹(目标树)
