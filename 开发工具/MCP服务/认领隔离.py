@@ -4,6 +4,7 @@ from pathlib import Path
 
 from . import 开工账本 as 账本
 from .仓操作 import 跑命令, 读盘指纹
+from .仓状态 import 跑git
 
 
 def 读认领快照(连接, 开工号):
@@ -22,27 +23,26 @@ def 核验树身份(仓根, 工作树, 分支名):
     工作树 = Path(工作树).resolve()
     if not 工作树.is_dir():
         return None
-    退出码, 输出文本 = 跑命令(["git", "rev-parse", "--path-format=absolute",
-                              "--git-common-dir", "--show-toplevel"], cwd=工作树)
+    退出码, 输出文本 = 跑git(工作树, ["rev-parse", "--path-format=absolute",
+                              "--git-common-dir", "--show-toplevel"])
     输出行 = 输出文本.strip().splitlines()
     if 退出码 or len(输出行) != 2:
         return None
     公共Git目录, 树根 = (Path(路径).resolve() for 路径 in 输出行)
     if 树根 != 工作树:
         return None
-    退出码, 输出文本 = 跑命令(["git", "rev-parse", "--path-format=absolute", "--git-common-dir"],
-                             cwd=Path(仓根).resolve())
+    退出码, 输出文本 = 跑git(Path(仓根).resolve(), ["rev-parse", "--path-format=absolute", "--git-common-dir"])
     输出行 = 输出文本.strip().splitlines()
     if 退出码 or not 输出行 or Path(输出行[0]).resolve() != 公共Git目录:
         return None
-    退出码, 输出文本 = 跑命令(["git", "worktree", "list", "--porcelain", "-z"], cwd=仓根)
+    退出码, 输出文本 = 跑git(仓根, ["worktree", "list", "--porcelain", "-z"])
     if 退出码:
         return None
     for 工作树记录 in 输出文本.split("\0\0"):
         字段表 = dict(字段.partition(" ")[::2] for 字段 in 工作树记录.split("\0") if 字段)
         if (字段表.get("worktree") and Path(字段表["worktree"]).resolve() == 工作树
                 and 字段表.get("branch") == "refs/heads/" + 分支名):
-            退出码, 基线提交 = 跑命令(["git", "rev-parse", "HEAD"], cwd=工作树)
+            退出码, 基线提交 = 跑git(工作树, ["rev-parse", "HEAD"])
             if not 退出码:
                 return 工作树, 基线提交.strip()
     return None
