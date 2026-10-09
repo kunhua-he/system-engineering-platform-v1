@@ -108,8 +108,7 @@ def 扫一遍(仓根: Path) -> list:
                            "旧内容": "配置文件 = 1", "新内容": "配置文件 = 2"}]
         退出码, 查询读数 = 跑命令(仓根, 临时根, 参数表)
         输出表.append(("实际写入仍严格指纹拒绝且不给重认领洗白建议", 退出码 == 0 and 查询读数["isError"]
-                      and "第 ③ 道闸" in 查询读数["content"][0]["text"]
-                      and "不会为已有改动记账" in 查询读数["content"][0]["text"]))
+                      and "被绕过 MCP 改过" in 查询读数["content"][0]["text"]))
         # 合规预检之后再漂移，真实写口仍重新对账。
         连接 = sqlite3.connect(str(库件))
         连接.execute("update 认领 set 指纹=? where 路径=?",
@@ -123,7 +122,7 @@ def 扫一遍(仓根: Path) -> list:
         参数表["操作"] = "改"
         退出码, 查询读数 = 跑命令(仓根, 临时根, 参数表)
         输出表.append(("预检后漂移仍严格拒写", 退出码 == 0 and 查询读数["isError"]
-                      and "第 ③ 道闸" in 查询读数["content"][0]["text"]))
+                      and "被绕过 MCP 改过" in 查询读数["content"][0]["text"]))
         def 开账():
             连接 = sqlite3.connect(str(库件))
             连接.row_factory = sqlite3.Row

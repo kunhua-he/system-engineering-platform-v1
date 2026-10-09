@@ -15,7 +15,8 @@
 **内置回退**仅在正式操作表缺失时提供目录；glob 到的操作表覆盖回退，W3 合同由正式操作表承载。
 
 返回**统一一行 JSON 信封**：`成功 / 退出码 / 工具 / 操作 / 树 / 服务 / 说明 / 结果 / 错误 / 截断 / 日志`。
-`isError` 仍由 `退出码 != 0` 折；业务码与 JSON-RPC `-326xx` 分层；业务未知**绝不写成成功**。
+`isError` 由 `退出码 not in (0, 待取作业码)` 折（待取作业码 = 长活转后台、等调用方去 `v1_job` 取，
+不是失败）；业务码与 JSON-RPC `-326xx` 分层；业务未知**绝不写成成功**。
 """
 
 import contextvars
@@ -24,6 +25,8 @@ import json
 import os
 import tempfile
 from pathlib import Path
+
+from .服务常量 import 待取作业码
 
 服务根 = Path(__file__).resolve().parent
 
@@ -268,11 +271,12 @@ def 结构化(输出文本: str):
 
 def 信封(工具名: str, 操作: str, 退出码: int, 说明: str, 结果值=None, 错误=None,
         开工号: str = "", 仓根路径=None) -> str:
-    """统一一行 JSON 信封（`isError` 由协议层按 `退出码 != 0` 折，不进本信封）。"""
+    """统一一行 JSON 信封（`isError` 由协议层按「非 0 且非待取作业码」折，不进本信封）。"""
     from .协议 import 服务版本
     from .服务指纹 import 算服务指纹
     留存文本, 截断, 日志 = 有界(说明)
     return json.dumps({
+        # `成功` 仍只认 0（-3 是「还没成功」，不是成功）；「不是失败」这层语义由协议的 `isError` 表达。
         "成功": 退出码 == 0,
         "退出码": 退出码,
         "工具": 工具名,
