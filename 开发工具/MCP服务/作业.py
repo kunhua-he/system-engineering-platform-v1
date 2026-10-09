@@ -77,9 +77,13 @@ def 接管作业(任务ID, 命令文本, 目标树文本, 仓根文本, 日志�
     预算三件 = 读后台预算(仓根)
     超时上限 = None if 预算三件 is None else 预算三件[0]
     try:
+        # ★ 2026-10-10（债务 326）：**这一层才是真正跑命令的子进程** —— 任务ID 必须注在这里，
+        #   否则长活（释放作业）核清树时认不出本作业，把本作业那一行算成「未收敛的后台作业」而永拒释放。
+        作业环境 = _执行环境(目标树)
+        作业环境["V1_任务ID"] = 任务ID
         子进程 = subprocess.Popen(命令文本, shell=True, cwd=str(目标树), stdout=subprocess.PIPE,
-                             stderr=subprocess.PIPE, encoding="utf-8", errors="replace",
-                             env=_执行环境(目标树), start_new_session=True)
+                              stderr=subprocess.PIPE, encoding="utf-8", errors="replace",
+                              env=作业环境, start_new_session=True)
     except OSError as 起不来:
         _关日志夹(标准输出夹)
         _关日志夹(标准错误夹)
