@@ -36,20 +36,20 @@ THIRD_PKG="$(grep -c '^source = ' Cargo.lock || true)"
 if [ "$THIRD_PKG" -eq 0 ]; then echo "② Rust 依赖    lock 里 $LOCKED 个包（本仓 $MEMBERS 个成员）· 无一来自 registry/git ⇒ 无第三方  ✓"
 else echo "② Rust 依赖    lock 里 $THIRD_PKG 个包来自 registry/git ⇒ 有第三方  ✗"; exit 1; fi
 
-START=$(python3 -c 'import time;print(int(time.time()*1000))')
+START=$("$PY" -c 'import time;print(int(time.time()*1000))')
 cargo check --workspace --all-targets --locked >/dev/null 2>&1 \
   || { echo "③ Rust 静态检查（根工作区 · --all-targets）失败  ✗"; exit 1; }
-END=$(python3 -c 'import time;print(int(time.time()*1000))')
+END=$("$PY" -c 'import time;print(int(time.time()*1000))')
 MS=$((END - START))
 echo "③ Rust 静态检查  根工作区 --all-targets  通过  ✓  （墙钟 ${MS} ms）"
 [ "$MS" -gt 3000 ] && echo "   ⚠ 超过 3 秒：慢就是 bug，先查并发与串行点（README 第二节）"
 
 # 扩展工作区（独立）：被根 `Cargo.toml` exclude ⇒ 上面那条 `--workspace` 看不见它一个字。
 # 它的测试面此前无门禁，靠的就是这一条补上。用 `--manifest-path` 指到它自身的 Cargo.toml。
-START=$(python3 -c 'import time;print(int(time.time()*1000))')
+START=$("$PY" -c 'import time;print(int(time.time()*1000))')
 cargo check --manifest-path 扩展根目录/原子支持库/编译器支持库/Cargo.toml --all-targets --locked >/dev/null 2>&1 \
   || { echo "③ Rust 静态检查（扩展工作区 · --all-targets）失败  ✗"; exit 1; }
-END=$(python3 -c 'import time;print(int(time.time()*1000))')
+END=$("$PY" -c 'import time;print(int(time.time()*1000))')
 MS=$((END - START))
 echo "③ Rust 静态检查  扩展工作区 --all-targets  通过  ✓  （墙钟 ${MS} ms）"
 [ "$MS" -gt 3000 ] && echo "   ⚠ 超过 3 秒：慢就是 bug，先查并发与串行点（README 第二节）"
