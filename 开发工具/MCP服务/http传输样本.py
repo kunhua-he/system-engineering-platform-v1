@@ -2,9 +2,9 @@
 """HTTP 传输自检样本 —— 起环回服务，用标准库 http.client 跑真实 MCP 握手并断言形状。
 
 `MCP服务_http.py --自检` 调 `跑自检`；`MCP服务.py --自检`（判据 ㊽）也调它一次
-（HTTP 面与 stdio 面共用同一份自检）。**只用标准库**（仓内 Python 零第三方依赖）。
+（唯一 HTTP 传输的自检）。**只用标准库**（仓内 Python 零第三方依赖）。
 
-覆盖：initialize 协商版本 + **无会话头** · tools/list 与 stdio 合同一致 · 通知 202 · 只读 tools/call ·
+覆盖：initialize 协商版本 + **无会话头** · tools/list 与工具表合同一致 · 通知 202 · 只读 tools/call ·
 坏帧 / 批量 / 未知方法 / 陈旧会话头被忽略 / 坏 Origin / 坏 Host / GET 405 / DELETE 405 /
 版本头（豁免 vs 400 JSON）/ 错路径 · **真 socket 跨重启恢复**（同 SDK client 形态）·
 客户端断连（三例 + 其他异常仍可见 + 断连后仍通 + 名额回收，住 `http断连样本.py`）。
@@ -104,7 +104,7 @@ def 样本列表(仓根, 工具表):
             {"jsonrpc": "2.0", "id": 2, "method": "tools/list", "params": {}}), 标准头)
         名单 = sorted(工具项.get("name")
                  for 工具项 in (json.loads(应答数据).get("result") or {}).get("tools", []))
-        样本表.append(("tools/list：HTTP %s · 与 stdio 工具表同一份名单 %s"
+        样本表.append(("tools/list：HTTP %s · 与工具表同一份名单 %s"
                  % (状态码, 名单 == sorted(工具表)), 状态码 == 200 and 名单 == sorted(工具表)))
         状态码, _, _, 应答数据 = _调用(监听端口, "POST", _报文(
             {"jsonrpc": "2.0", "method": "notifications/initialized"}), 标准头)
