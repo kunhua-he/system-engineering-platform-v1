@@ -121,15 +121,26 @@ def 派发(协议方法, 命令行参数, 仓根, 工具表, 传输="stdio"):
             from .诊断记录 import 记诊断, 取定位
             记诊断(名称, 操作名, 开工号, type(异常).__name__, 定位=取定位(异常))
             raise
-        结果值 = {"content": [{"type": "text", "text": 输出文本}], "isError": 退出码 != 0}
+        # ★ 对外只留**有用字段**（成功/说明/结果/错误）—— `树`（含 40 位提交号）、`服务`（版本+指纹）、
+        #   `截断`、`日志`、`结果:空`、`错误.缺参:空` 这类**每次调用都原样重带**的壳一律不上外线：
+        #   实测 4 条回执 4726 字节里约 2100 字节是重复壳与空字段，有效信息只有 `说明` 一句。
+        # ★ content 与 structuredContent 用**同一份**对外形状 ⇒ 上游（Hermes `mcp_tool_handlers.
+        #   _render_call_tool_result`）按「文本块与 structuredContent 逐字相同即去重」只给模型一份
+        #   （据 kimi-code#3234）；不去重的客户端收两份也只是同一份小对象，不再是两整段大 JSON。
+        内层读数 = 结构化(输出文本)
+        对外读数 = None
+        if 内层读数 is not None:
+            对外读数 = {}
+            for 字段名 in ("成功", "说明", "结果", "错误"):
+                if 字段名 in 内层读数:
+                    对外读数[字段名] = 内层读数[字段名]
+        内容文本 = json.dumps(对外读数, ensure_ascii=False) if 对外读数 is not None else 输出文本
+        结果值 = {"content": [{"type": "text", "text": 内容文本}], "isError": 退出码 != 0}
         过期行 = _过期行(传输)
         if 过期行 and 名称 != "v1_context":
             结果值["服务提示"] = [过期行]
-        # ★ 底层回执是 JSON 信封 ⇒ 另给 `structuredContent`（官方字段，对象形）——
-        #   调用方直接拿对象，不必「先剥文本再解字符串」两层解码。
-        内层读数 = 结构化(输出文本)
-        if 内层读数 is not None:
-            结果值["structuredContent"] = 内层读数
+        if 对外读数 is not None:
+            结果值["structuredContent"] = 对外读数
         return 结果值, None
     return None, {"code": -32601, "message": "方法不存在：%r" % (协议方法,)}
 
