@@ -12,6 +12,7 @@
 
 `回滚登记` 同样先证「无成果 · 无消费者」再清本次创建的资源；有其一 ⇒ 保留并定位（fail-closed）。
 """
+import os
 import sqlite3
 from pathlib import Path
 
@@ -42,6 +43,10 @@ def 非终态作业(开工号, 工作树):
     for 数据行 in 行表:
         记录行 = dict(数据行)
         if 记录行.get("状态") not in 作业账本.非终态集:
+            continue
+        # ★ 2026-10-10（债务 326）：**正在跑这次核清树的那条作业**不算「未收敛」——
+        #   它就是本进程（`作业.py` 起作业时注入了 `V1_任务ID`）。排除后，释放作业才可能自证清树。
+        if 记录行.get("任务ID") and 记录行.get("任务ID") == os.environ.get("V1_任务ID"):
             continue
         if "开工ID" in 列名集:
             属本开工 = bool(记录行.get("开工ID")) and 记录行.get("开工ID") == 开工号
