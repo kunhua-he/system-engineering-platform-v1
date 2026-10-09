@@ -241,10 +241,10 @@ python3 开发工具/代码地图.py 查 <关键词>  # 查询符号
 
 ### 9.3 MCP工具
 
-服务启动（仓根）：
+服务启动（仓根，唯一 HTTP 传输，常驻 43140）：
 ```bash
-python3 -m 开发工具.MCP服务
-# 或：python3 开发工具/MCP服务.py
+python3 开发工具/MCP服务_http.py --启动
+python3 开发工具/MCP服务_http.py --状态
 ```
 
 工具清单以新进程 `tools/list` 为准：

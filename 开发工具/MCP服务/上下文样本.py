@@ -4,7 +4,6 @@ import json
 import os
 import sqlite3
 import subprocess
-import sys
 import tempfile
 from pathlib import Path
 from unittest.mock import patch
@@ -271,9 +270,21 @@ def 上下文样本(仓根, 工具表=None):
               "params": {"name": "v1_context", "arguments": {"操作": "取条款"}}},
              {"jsonrpc": "2.0", "id": 3, "method": "tools/call",
               "params": {"name": "v1_context", "arguments": {"开工ID": 开工号, "操作": "取条款"}}}]
-    回执 = subprocess.run([sys.executable, "-B", "开发工具/MCP服务.py"], cwd=仓根, input="".join(json.dumps(命令行参数, ensure_ascii=False) + "\n" for 命令行参数 in 命令表), capture_output=True, text=True, timeout=5)
-    响应表 = [json.loads(源码行) for 源码行 in 回执.stdout.splitlines() if 源码行.startswith("{")]
-    记样本("真实MCP发现工具", 回执.returncode == 0 and any(工具项["name"] == "v1_context" for 工具项 in 响应表[0]["result"]["tools"]))
+    from 开发工具.MCP服务 import http传输样本 as 发现传输
+    from 开发工具.MCP服务.工具 import 工具表 as 发现工具表
+    发现服务, 发现端口 = 发现传输._起环回(仓根, 发现工具表)
+    try:
+        发现头 = dict(发现传输.标准头)
+        发现传输._调用(发现端口, "POST", 发现传输._报文(
+            {"jsonrpc": "2.0", "id": 0, "method": "initialize",
+             "params": {"protocolVersion": "2025-06-18", "capabilities": {},
+                        "clientInfo": {"name": "上下文样本", "version": "0"}}}), 发现头)
+        响应表 = [json.loads(发现传输._调用(发现端口, "POST", 发现传输._报文(命令行参数), 发现头)[3])
+                for 命令行参数 in 命令表]
+    finally:
+        发现服务.shutdown()
+        发现服务.server_close()
+    记样本("真实MCP发现工具", any(工具项["name"] == "v1_context" for 工具项 in 响应表[0]["result"]["tools"]))
     信封 = json.loads(响应表[1]["result"]["content"][0]["text"])
     记样本("真实MCP数据与预算", not 响应表[1]["result"]["isError"] and 信封["结果"]["条目"]
           and len(信封["说明"].encode()) <= 8192 and "条目" not in 信封["说明"])

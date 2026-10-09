@@ -268,7 +268,7 @@ class 请求处理器(BaseHTTPRequestHandler):
             self._写错误(200, 报文号, -32602, "params 须是对象")
             return
         try:
-            读数, 错误 = 协议.派发(方法名, 实参, self.server.仓根, self.server.工具表, "http")
+            读数, 错误 = 协议.派发(方法名, 实参, self.server.仓根, self.server.工具表)
         except Exception:
             self._写错误(200, 报文号, -32603, "内部错误：%s" % (sys.exc_info()[1],))
             return

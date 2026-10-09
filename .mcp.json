@@ -1,12 +1,8 @@
 {
   "mcpServers": {
     "v1-devkit": {
-      "command": "python3",
-      "args": [
-        "-m",
-        "开发工具.MCP服务"
-      ],
-      "cwd": "/Users/hekunhua/Documents/Agent/PHP/系统工程平台V1"
+      "type": "http",
+      "url": "http://127.0.0.1:43140/mcp"
     }
   }
 }
