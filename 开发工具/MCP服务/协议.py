@@ -20,6 +20,7 @@ import json
 import sys
 
 from .参数规范 import 结构化
+from .服务常量 import 待取作业码
 
 协议版本 = "2024-11-05"
 服务名 = "v1-devkit"
@@ -110,7 +111,10 @@ def 派发(协议方法, 命令行参数, 仓根, 工具表):
             对外读数.pop("树", None)
             对外读数.pop("服务", None)
         内容文本 = json.dumps(对外读数, ensure_ascii=False) if 对外读数 is not None else 输出文本
-        结果值 = {"content": [{"type": "text", "text": 内容文本}], "isError": 退出码 != 0}
+        # ★ 2026-10-10（债务 320）：`待取作业码`（-3，长活已转后台、同步窗口内未到终态）**不是失败**
+        #   —— 它要调用方去 `v1_job` 取。原先 `!= 0` 把它折成 isError，运行中被读成失败。
+        结果值 = {"content": [{"type": "text", "text": 内容文本}],
+                "isError": 退出码 not in (0, 待取作业码)}
         if 对外读数 is not None:
             结果值["structuredContent"] = 对外读数
         return 结果值, None
