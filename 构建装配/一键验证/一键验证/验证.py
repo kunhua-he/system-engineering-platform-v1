@@ -14,9 +14,10 @@ from .判据元数据 import 判据元数据
 from .判据表 import 检查表
 from .合成仓 import 造干净仓
 from .验证小工具 import 取未判, 清未判, 违规
-from .常量 import 判据进程池上限, 并发度, 提速开关, 检查名, 进程池最小件数, 起始时刻
+from .常量 import 判据池宽, 并发度, 提速开关, 检查名, 进程池最小件数, 起始时刻
 from .自测用例 import 样本清单
 from .读文件 import 建上下文
+from .测试件 import 预扫生产区文本
 
 
 def 正向样本结果(元数据覆盖=None) -> dict:
@@ -114,8 +115,12 @@ def 分片跑任务表(上层读数: dict, 任务表: list, 工人) -> list:
     if 用判据进程池(上层读数):
         import multiprocessing
 
+        # ★ 起池前先把共享的生产区面一次算好（见 `预扫生产区文本` 的文件头：池墙钟 8.1 → 4.0 s）。
+        #   只在**真仓**这条路做（件数已过门槛）；夹具仓走线程池、件少，不付这成本。
+        预扫生产区文本([(相对路径, 文件项.get("文本")) for 相对路径, 文件项 in (上层读数.get("文件") or {}).items()])
         上下文 = multiprocessing.get_context("fork")
-        进程数 = max(1, min(len(任务表), 判据进程池上限))
+        # 池**自适应**（见 `常量.判据池宽`）：并发几条闸时各自收窄份额，worker 总数 ≈ 核数。
+        进程数 = max(1, min(len(任务表), 判据池宽()))
         try:
             with 上下文.Pool(processes=进程数) as 线程池:
                 return list(线程池.map(工人, 任务表))

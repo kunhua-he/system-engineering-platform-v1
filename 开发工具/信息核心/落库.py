@@ -44,231 +44,27 @@ sys.path[:0] = [str(Path(__file__).resolve().parent), str(仓根 / "开发工具
                 str(仓根 / "构建装配" / "一键验证")]
 
 import 表定义  # noqa: E402
-import 一键验证.命名扫描 as _命名扫描  # noqa: E402  —— 剥器只此一份
-from 代码地图.落点 import 排除目录  # noqa: E402  —— 段形态主人，不自持第二份
-# 后缀表**唯一权威**（本件不自持第二份；直接引名字，不另定义 —— 另定义就会被判据 54 报）。
-from 一键验证.常量 import 命名可解析后缀  # noqa: E402
 from 代码地图 import 查名  # noqa: E402  —— 规则谓词的主人（判状态 / 判模式 / 判禁止形状）
+# ── 扫描面（全树命名扫描 · 剪枝 · fork 分片并行 · 按树根缓存）已拆到 `命名扫描面.py` ──
+# 本件只**再导出**它的公开面（`落库` / `写库名集` / 判据 55 都从这里取，调用位置逐字不变）。
+# ★ 再导出面必须**逐字齐全**：`命名闸.py::定义面条目` 取 `落库.过滤名` 与 `落库.判面`、
+#   判据 55 取 `写库名集`、改名面取 `候选文件`、CLI 取 `入口函数` —— 拆件时漏一个就会在
+#   跑到那一条时才爆（实测：`--自检` 一次）。故此处的导入就是**旧公开面**的逐字清单。
+from 命名扫描面 import (  # noqa: E402
+    判面, 候选文件, 内建噪声, 扫出现, 扫出现并行, 是仓内, 相对路径, 写库名集,
+    过滤名, 语言关键字,
+)
 
-# 只扫代码件（`.md` 不在内）
-# 任一层命中即整枝跳过。
-# ★ 段形态主人 = `开发工具/代码地图/落点.py::排除目录`（只读参考 · 构建环境 · .git · .codegraph）
-# —— 本件原先自持一份 `(".git", "__pycache__", ".codegraph")`，**漏了 `构建环境`** ⇒
-#    把**不入版本库**的编译缓存（`构建环境/构建缓存/审计探针/` 的 .rs/.py）扫进了
-#    受版本控制的 `命名出现`/`命名登记`（实测 290 行）⇒ 主干盘上有那目录时闸绿、
-#    新工作树没那目录时判据 55 当场红（名册集与现场重扫集对不上）。不再自持一份。
-跳过目录 = 排除目录 + ("__pycache__", "target", "node_modules")
-# `扫出现` 的扫描缓存（键 = `树根.resolve()`）—— 只给同进程内多次调它的调用方省一遍全扫
-# （闸的「名册新鲜度」判据两处调它）；CLI 只调一次，不受影响。
-_扫出现缓存: dict = {}
-
-
-# ── 语言关键字（跳过 —— 关键字不是「标识符名」，不该进未登记名结果）──────────
-# 三份都是**字面量清单**（显式枚举；不用 `keyword` 模块、不用前缀 / 词形启发式）。
-Python关键字 = frozenset("""
-False None True and as assert async await break class continue def del elif else except finally
-for from global if import in is lambda nonlocal not or pass raise return try while with yield
-""".split())
-# Python 软关键字（`match` / `case` / `type` 可当软关键字；`_` 是通配占位）—— 一并滤掉。
-Python软关键字 = frozenset("""_ case match type""".split())
-Rust关键字 = frozenset("""
-as break const continue crate else enum extern false fn for if impl in let loop match mod move mut
-pub ref return self Self static struct super trait true type unsafe use where while async await dyn
-abstract become box do final macro macro_rules override priv typeof unsized virtual yield try union
-""".split())
-JS关键字 = frozenset("""
-break case catch class const continue debugger default delete do else export extends finally for
-function if import in instanceof let new return super switch this throw try typeof var void while
-with yield async await of static null true false
-""".split())
-语言关键字 = Python关键字 | Python软关键字 | Rust关键字 | JS关键字
-
-# ── 标准库 / 内建噪声名（显式名单 · 按语言分组的字面量清单）────────────────────
-# 只收**常见**的标准库 / 内建名（模块 · 类型 · 函数 · 方法 · 属性 · 宏 · 全局对象）。
-# **不是穷尽清单**：未收录的标准库 / 第三方 API 名仍会进结果。
-内建噪声 = frozenset((
-    "abs aiter all anext any ascii bin bool breakpoint bytearray bytes callable chr classmethod compile complex delattr dict dir "
-    "divmod enumerate eval exec filter float format frozenset getattr globals hasattr hash help hex id input int isinstance issubclass "
-    "iter len list locals map max memoryview min next object oct open ord pow print property range repr reversed round set setattr "
-    "slice sorted staticmethod str sum super tuple type vars zip __import__ self cls None True False "
-    "BaseException Exception ArithmeticError AssertionError AttributeError BufferError EOFError ImportError ModuleNotFoundError "
-    "LookupError IndexError KeyError MemoryError NameError NotImplementedError OSError IOError FileNotFoundError PermissionError "
-    "ProcessLookupError TimeoutError ReferenceError RuntimeError RecursionError StopIteration StopAsyncIteration SyntaxError "
-    "IndentationError TabError SystemError SystemExit TypeError ValueError UnicodeError UnicodeDecodeError UnicodeEncodeError "
-    "ZeroDivisionError KeyboardInterrupt GeneratorExit Warning "
-    "__name__ __file__ __init__ __main__ __all__ __doc__ __future__ __slots__ __dict__ __class__ __repr__ __str__ __eq__ __hash__ "
-    "__enter__ __exit__ __iter__ __next__ __len__ __getitem__ __setitem__ __delitem__ __contains__ __call__ __bool__ __annotations__ "
-    "__path__ __version__ __author__ __package__ __spec__ __loader__ __builtins__ __debug__ __qualname__ __module__ __getattr__ "
-    "__setattr__ __delattr__ __post_init__ __init_subclass__ "
-    "abc argparse array asyncio base64 binascii bisect builtins calendar collections configparser contextlib copy csv ctypes "
-    "dataclasses datetime decimal difflib enum errno faulthandler fractions functools gc getpass glob gzip hashlib heapq hmac html "
-    "http importlib inspect io ipaddress itertools json keyword locale logging lzma math mimetypes multiprocessing operator os pathlib "
-    "pickle pkgutil platform plistlib pprint profile pstats queue random re readline secrets select shlex shutil signal site smtplib "
-    "socket socketserver sqlite3 ssl stat statistics string stringprep struct subprocess sys sysconfig tarfile tempfile textwrap "
-    "threading time timeit token tokenize traceback tracemalloc types typing unicodedata unittest urllib uuid venv warnings wave "
-    "weakref webbrowser xml zipfile zipimport zlib "
-    "Path PurePath PosixPath PurePosixPath WindowsPath Counter defaultdict OrderedDict deque namedtuple ChainMap UserDict UserList "
-    "UserString dataclass field Enum IntEnum Flag IntFlag auto "
-    "append clear copy extend insert pop popitem remove reverse setdefault sort update values add discard intersection isdisjoint "
-    "issubset issuperset symmetric_difference union difference capitalize casefold center count encode endswith expandtabs find "
-    "format_map index isalnum isalpha isascii isdecimal isdigit isidentifier islower isnumeric isprintable isspace istitle isupper "
-    "join ljust lower lstrip maketrans partition removeprefix removesuffix replace rfind rindex rjust rpartition rsplit rstrip split "
-    "splitlines startswith strip swapcase title translate upper zfill close fileno flush isatty read readable readline readlines seek "
-    "seekable tell truncate writable write writelines read_text write_text read_bytes write_bytes as_posix exists expanduser glob "
-    "group home is_absolute is_dir is_file is_symlink iterdir joinpath lchmod lstat mkdir name open owner parent parents parts "
-    "relative_to rename resolve rglob rmdir samefile stat stem suffix suffixes symlink_to touch unlink with_name with_stem with_suffix "
-    "cwd chmod absolute argv environ exit getcwd getenv getpid kill listdir makedirs path putenv removedirs scandir sep walk stderr "
-    "stdin stdout version version_info executable platform modules maxsize getsizeof setrecursionlimit monotonic perf_counter "
-    "process_time sleep strftime strptime time_ns monotonic_ns localtime gmtime mktime ctime asctime args kwargs items keys get error "
-    "code "
-    "Vec String Box Rc Arc RefCell Cell HashMap HashSet BTreeMap BTreeSet VecDeque Option Result Some Ok Err Cow PathBuf OsStr "
-    "OsString CString CStr Duration Instant SystemTime Ordering PhantomData Pin Weak u8 u16 u32 u64 u128 usize i8 i16 i32 i64 i128 "
-    "isize f32 f64 bool char std core alloc proc_macro prelude "
-    "println print eprintln eprint vec panic assert assert_eq assert_ne debug_assert debug_assert_eq writeln todo unimplemented "
-    "unreachable matches dbg include_str include_bytes concat env stringify unwrap unwrap_or unwrap_or_else unwrap_or_default expect "
-    "clone to_owned to_string as_bytes as_str as_ptr as_mut as_ref is_empty is_some is_none is_ok is_err push_str into_iter iter_mut "
-    "collect fold for_each get_mut contains contains_key entry or_insert or_default values_mut extend drain resize capacity "
-    "with_capacity into try_into try_from parse write_all read_to_string lines trim starts_with ends_with to_lowercase to_uppercase "
-    "extend_from_slice sort_by sort_by_key dedup retain take last first rev enumerate chain product position rposition last_mut "
-    "console window document globalThis require module exports process Buffer null undefined NaN Infinity String Number Boolean Array "
-    "Object Promise JSON Math Date Error RegExp Map Set WeakMap WeakSet Symbol BigInt Proxy Reflect Function parseInt parseFloat isNaN "
-    "isFinite setTimeout setInterval clearTimeout clearInterval encodeURIComponent decodeURIComponent structuredClone fetch alert then "
-    "catch finally push pop shift unshift slice splice concat trim toUpperCase toLowerCase indexOf includes forEach reduce some every "
-    "getElementById querySelector querySelectorAll addEventListener "
-).split())
-# 命中的名字**一律跳过**（判定顺序：已登记 → 语言关键字 → 内建噪声）。
-过滤名 = 语言关键字 | 内建噪声
-
-# 判「面」用的定义关键字（启发式，见 `判面`）。
-定义关键字 = re.compile(r"\b(?:fn|def|struct|enum|trait|impl|class|type|mod|const|static"
-                    r"|interface|namespace|function|var|let|pub)\b")
-# 名紧跟定义关键字 ⇒ 定义面。
-定义位 = re.compile(r"(?:\bfn|\bdef|\bstruct|\benum|\btrait|\bimpl|\bclass|\btype|\bmod|\bconst"
-                r"|\bstatic|\binterface|\bnamespace|\bfunction|\bvar|\blet|\bpub)\s+")
-
-
-def 是仓内(路径: Path, 树根) -> bool:
-    """`路径` 是否落在**树根之内**（树根自身也算）—— 树外路径一律不扫。
-
-    ★ 2026-10-07：原先（旧套）写死比 `仓根`（本件所在那棵树）—— 那会让本口只能扫本件
-    所在那棵树，对**别的**工作树 / 夹具仓整枝判成树外（`改名面.py` 那处注释早就记过
-    同一个缺陷）。改吃 `树根` 入参：本口既能在本仓跑，也能在夹具仓 / 别的树上跑。
-    ★ **两侧都要 `.resolve()`**：macOS 的 `/tmp` 与 `/var` 都是 symlink（`/var` → `/private/var`），
-    而 `Path.rglob` 产出的路径是**未解析**的写法 ⇒ 不解析就 `relative_to` 失败、整棵树被判成树外
-    （实测：夹具仓 0 个候选文件 ⇒ 名册新鲜度在正向样本上假红）。
-    """
-    try:
-        路径.resolve().relative_to(Path(树根).resolve())
-        return True
-    except ValueError:
-        return False
-
-
-def 相对路径(路径: Path, 树根) -> str:
-    """⇒ 仓根相对路径（正斜杠）；不在仓根下则退回树根相对，再退回绝对。"""
-    for 基准值 in (仓根, Path(树根)):
-        try:
-            return 路径.resolve().relative_to(基准值.resolve()).as_posix()
-        except ValueError:
-            continue
-    return 路径.resolve().as_posix()
-
-
-def 候选文件(树根) -> list:
-    """⇒ 待扫文件的绝对路径列表（按权威后缀表走树；跳过目录与树外路径一律不要）。"""
-    查询读数 = []
-    for 路径 in Path(树根).rglob("*"):
-        if not 路径.is_file() or 路径.suffix not in 命名可解析后缀:
-            continue
-        if any(路径段 in 跳过目录 for 路径段 in 路径.parts):
-            continue
-        if not 是仓内(路径, 树根):
-            continue
-        查询读数.append(路径)
-    return 查询读数
-
-
-def 判面(骨架: str, 标识符: str) -> str:
-    """尽力判「名在这一行属于哪个面」⇒ 定义面 / 形参面 / 局部面（**启发式，不是真解析器**）。
-
-    名紧跟定义关键字 ⇒ 定义面；该行有定义关键字且名落在第一个 `(` 之后 ⇒ 形参面；其余 ⇒ 局部面。
-    """
-    if 定义位.search(骨架) and re.search(re.escape(标识符) + r"\b", 骨架[定义位.search(骨架).end():]):
-        return "定义面"
-    左括号位 = 骨架.find("(")
-    if 左括号位 >= 0 and 定义关键字.search(骨架[:左括号位]) and 标识符 in 骨架[左括号位:]:
-        return "形参面"
-    return "局部面"
-
-
-def 扫出现(树根) -> list:
-    """扫全树 ⇒ 每条出现一条记录（五键：`名字` / `文件` / `行号` / `面` / `成员`）。
-
-    **不滤已登记的名**（`命名出现` 是「名字出现在哪」的明细表，已登记的名也要记）；
-    同一行同名的重复引用只出一条。关键字与内建噪声照旧跳过。
-
-    ★ **按树根缓存**（2026-10-07）：闸那条「名册新鲜度」判据要在一次运行里既取**对象数**
-    又取**名集**（两处都调本函数）⇒ 真仓实测一次全扫 ~950 ms，不缓存就白付两遍。
-    缓存键 = `树根.resolve()`（同一进程内同一棵树不变）；CLI 只调一次，不受影响。
-    """
-    缓存键 = str(Path(树根).resolve())
-    if 缓存键 in _扫出现缓存:
-        return _扫出现缓存[缓存键]
-    输出表 = []
-    for 路径 in 候选文件(树根):
-        源码后缀 = 路径.suffix
-        try:
-            源文本 = _命名扫描.剥后缀(源码后缀, 路径.read_text(encoding="utf-8", errors="ignore"))
-        except OSError:
-            continue
-        相对 = 相对路径(路径, 树根)
-        for 序号, 文本行 in enumerate(源文本.splitlines(), 1):
-            本行 = {}
-            for 标识符, 起始位 in _命名扫描.抽标识符带位置(文本行):
-                if 标识符 not in 过滤名:
-                    本行[标识符] = 本行.get(标识符, True) and 文本行[:起始位].rstrip().endswith(".")
-            for 标识符, 全成员 in 本行.items():
-                输出表.append({"名字": 标识符, "文件": 相对, "行号": 序号, "面": 判面(文本行, 标识符), "成员": 全成员})
-    _扫出现缓存[缓存键] = 输出表
-    return 输出表
+# 扫描面与「写库名集」的推导全住 `命名扫描面.py`（上方那一行导入）—— 本件不再自持第二份
+# （同一事实两处实现 = 假绿来源）。此处原先自持的 跳过目录 / 候选文件 / 判面 / 扫出现 /
+# 分片并行 / 语言关键字 / 内建噪声 / 过滤名 / 定义关键字 / 定义位 / 是仓内 / 相对路径 /
+# 写库名集 已全部拆到那一件。
 
 
 def 读名单(连接, 表名: str, 分组: str = "") -> set:
     """⇒ 库某张名单表的全部名字；给了 `分组` 再按分组筛（名单住库里，不写死在代码里）。"""
     return {文本行[0] for 文本行 in 连接.execute(
         f"select 名字 from {表名}" + (" where 分组=?" if 分组 else ""), (分组,) if 分组 else ())}
-
-
-def 写库名集(树根, 库件) -> set:
-    """⇒ **本口会写进 `命名出现` 的那个名字集**（现场重扫 + 排除例外与外来名）。
-
-    ★ **为何单列这一个函数**（2026-10-07）：闸那条「名册新鲜度」判据要与本口**同一份推导**
-    —— 两边若各推一遍，判据的读数就与本口写进去的东西不是同一件事（判据报绿而库里是旧的）。
-    故：**推导只此一份**，`落库` 与判据都调它。
-
-    读不动库（不在 / 读不出）⇒ 抛 `表定义.库读不动`（fail-closed）。
-    """
-    import 表定义 as _表定义
-    库件 = Path(库件)
-    if not 库件.is_file():
-        raise _表定义.库读不动("规则库不在：%s" % 库件)
-    扫描记录 = 扫出现(树根)
-    连接 = sqlite3.connect("file:%s?mode=ro" % 库件, uri=True)
-    try:
-        已登记 = {文本行[0] for 文本行 in 连接.execute("select 名字 from 命名登记")}
-        例外 = {文本行[0] for 文本行 in 连接.execute("select 名字 from 命名例外")}
-    except sqlite3.Error as 错误:
-        raise _表定义.库读不动("规则库读不动：%s" % 错误) from 错误
-    finally:
-        连接.close()
-    面数, 全成员 = collections.Counter(), collections.defaultdict(lambda: True)
-    for 记录条 in 扫描记录:
-        面数[记录条["名字"]] += 记录条["面"] == "定义面"
-        全成员[记录条["名字"]] &= 记录条["成员"]
-    全部名 = {记录条["名字"] for 记录条 in 扫描记录} - 例外
-    外来 = {标识符 for 标识符 in 全部名
-          if 标识符 not in 已登记 and 标识符.isascii() and 面数[标识符] == 0 and 全成员[标识符]}
-    return 全部名 - 外来
 
 
 def 落库(树根, 干跑: bool = False) -> dict:
