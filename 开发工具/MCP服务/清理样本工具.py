@@ -19,7 +19,7 @@ from .清理执行 import 快照列名
 def 跑样本命令(仓根, *参数表):
     """在夹具仓里跑一条命令（断言成功）⇒ 去空白 stdout。"""
     回执 = subprocess.run(["git", *参数表], cwd=str(仓根), capture_output=True, text=True,
-                       env=干净环境(), timeout=10)
+                       env=干净环境(), timeout=5)
     assert 回执.returncode == 0, (参数表, 回执.stdout, 回执.stderr)
     return 回执.stdout.strip()
 
