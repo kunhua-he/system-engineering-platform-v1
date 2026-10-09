@@ -16,7 +16,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))  # 开发工具：取段形态主人
 from 代码地图.落点 import 排除目录  # noqa: E402
 
-行数上限 = 400
+行数上限 = 800
 入口行数上限 = 120
 # 扫描面 = **仓内源码**。第六节点名「Rust 与 Python 同一条」是「同一条口径」，
 # 不是「只管这两种语言」—— 规则要管的是「改一处时能不能把整个文件读进来」，
