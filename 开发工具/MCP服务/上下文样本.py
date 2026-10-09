@@ -291,7 +291,7 @@ def 上下文样本(仓根, 工具表=None):
     信封 = json.loads(响应表[2]["result"]["content"][0]["text"])
     读数 = 信封["结果"]
     记样本("正式开工树解析", (not 响应表[2]["result"]["isError"] and 读数["树绝对路径"].endswith(开工号)) if 开工号 != "v1-000000" else (响应表[2]["result"]["isError"] and 读数["错误"]["种类"] == "missing"))
-    # —— 同态镜像复核：同一调用经 HTTP 长驻路径（真实传输处理器）与 stdio 独立进程 ⇒ 信封同态 ——
+    # —— 同态镜像复核：同一调用经 HTTP 长驻路径（真实传输处理器）与直调进程 ⇒ 信封同态 ——
     from 开发工具.MCP服务 import http传输样本
     from 开发工具.MCP服务.工具 import 工具表 as 登记工具表
     服务对象, 监听端口 = http传输样本._起环回(仓根, 登记工具表)
@@ -305,7 +305,7 @@ def 上下文样本(仓根, 工具表=None):
         镜像信封 = json.loads(json.loads(http传输样本._调用(监听端口, "POST", http传输样本._报文(
             命令表[1]), 标准头)[3])["result"]["content"][0]["text"])
         对照信封 = json.loads(响应表[1]["result"]["content"][0]["text"])
-        记样本("HTTP与stdio长驻同态镜像（对象结果·说明短元信息·不重复正文·两路一致）",
+        记样本("HTTP与直调同态镜像（对象结果·说明短元信息·不重复正文·两路一致）",
              镜像信封["成功"] and isinstance(镜像信封["结果"], dict)
              and bool(镜像信封["结果"].get("条目")) and "条目" not in 镜像信封["说明"]
              and 镜像信封["说明"] == 对照信封["说明"]
