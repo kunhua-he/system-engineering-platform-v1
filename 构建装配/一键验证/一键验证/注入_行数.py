@@ -19,10 +19,10 @@ def _改基线(临根: Path, 路径: str, 处数) -> None:
 
 
 def 注入_单文件超行数(临根: Path) -> str:
-    """造一个**基线里没有**的 401 行新文件 ⇒ 判据 ⑲ 当场红（「新增即红」）。"""
+    """造一个**基线里没有**的 801 行新文件 ⇒ 判据 ⑲ 当场红（「新增即红」）。"""
     路径 = 临根 / "运行内核" / "实例状态" / "src" / "超限件.rs"
     路径.parent.mkdir(parents=True, exist_ok=True)
-    路径.write_text("\n".join(f"// 第 {行序} 行" for 行序 in range(401)) + "\n", encoding="utf-8")
+    路径.write_text("\n".join(f"// 第 {行序} 行" for 行序 in range(801)) + "\n", encoding="utf-8")
     return "运行内核/实例状态/src/超限件.rs"
 
 
