@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
-"""反馈帧样本 —— 反馈闭环的**真网关帧**回归（真 stdio JSON-RPC 子进程 + 独立运行数据根）。
+"""反馈帧样本 —— 反馈闭环的**真网关帧**回归（真 HTTP 环回 + 独立运行数据根）。
 
 **为什么单开一件**（实测 2026-10-08）：函数级直调**绕过** `参数规范.网关派发` 的参数面校验 ——
 `提交反馈` 的 `必需` 曾把可省的 `报告指纹` / `条目` 一并列进去，函数级样本全绿，却漏过
 「显式传空数组被 `有值` 判成缺参」这一类 ⇒ 空报告 / 缺件两条路径**真网关不可达**。本件专补这一层：
-每帧走 `tools/call`，**帧子进程 env 显式带 `V1_RUN_DATA_ROOT`**（独立根，绝不碰真开工账本），
+每帧走 `tools/call`，**运行数据根由调用方在本进程 env 里显式指到临时根**（独立根，绝不碰真开工账本），
 断言业务真的被处理（不是网关提前拒）。
 
-stdio 与 HTTP 两条通道共用 `工具表` 的同一份实现（`协议.派发` → `实现(实参, 仓根)`），
-故本件的 stdio 帧覆盖就是网关参数面的覆盖。
+帧走 HTTP 环回（与常驻服务共用 `工具表` 的同一份实现：`协议.派发` → `实现(实参, 仓根)`），
+故本件的帧覆盖就是网关参数面的覆盖。
 
 独立跑法（不带 `__main__`，判据 ⑲ 不把它当入口件）：
   python3 -c 'import sys;from pathlib import Path;sys.path.insert(0, "开发工具");'
@@ -19,7 +19,6 @@ import hashlib
 import json
 import os
 import shutil
-import subprocess
 import sys
 import tempfile
 from pathlib import Path
@@ -27,11 +26,9 @@ from pathlib import Path
 from 运行数据根.口径 import 覆盖变量名
 
 from .反馈样本工具 import 空字节指纹, 造开工, 读回执
-from .合主干有界跑 import 干净环境
 
 帧开工号 = "v1-900004"
 帧工具名 = "v1_task"
-帧超时秒 = 5
 缺参种类 = "缺参"
 
 
@@ -47,28 +44,34 @@ def 帧调用(帧号, 操作名, 参数表=None, 开工号=None) -> dict:
 
 
 def 送帧(仓根, 运行根, 命令表: list) -> tuple:
-    """真 stdio 子进程送一批帧 ⇒ `(进程退出码, 响应读数表)`；起不来 / 超时 ⇒ `(-1, [])`。
+    """真 HTTP 环回送一批帧 ⇒ `(进程退出码, 响应读数表)`；起不来 / 非 200 ⇒ `(-1, [])`。
 
-    `env` **显式**给 `V1_RUN_DATA_ROOT`（独立根）—— 不靠外层 shell 赋值，故断的是本进程真环境。
+    环回服务跑在**本进程**内 ⇒ 运行数据根就是本进程 env（`跑帧样本` 已显式指到临时根）。
     """
-    输入文本 = "".join(json.dumps(帧项, ensure_ascii=False) + "\n" for 帧项 in 命令表)
+    from . import http传输样本
+    from .工具 import 工具表 as 登记工具表
     try:
-        回执 = subprocess.run([sys.executable, "-B", "开发工具/MCP服务.py"], cwd=str(仓根),
-                          input=输入文本, capture_output=True, text=True,
-                          env=干净环境({覆盖变量名: str(运行根)}), timeout=帧超时秒)
-    except (OSError, subprocess.SubprocessError):
+        服务对象, 监听端口 = http传输样本._起环回(仓根, 登记工具表)
+    except OSError:
         return -1, []
-    响应表 = []
-    for 源码行 in 回执.stdout.splitlines():
-        if not 源码行.startswith("{"):
-            continue
-        try:
-            响应项 = json.loads(源码行)
-        except ValueError:
-            continue
-        if isinstance(响应项, dict) and 响应项.get("id") is not None:
-            响应表.append(响应项)
-    return 回执.returncode, 响应表
+    try:
+        标准头 = dict(http传输样本.标准头)
+        http传输样本._调用(监听端口, "POST", http传输样本._报文(
+            {"jsonrpc": "2.0", "id": 0, "method": "initialize",
+             "params": {"protocolVersion": "2025-06-18", "capabilities": {},
+                        "clientInfo": {"name": "反馈帧样本", "version": "0"}}}), 标准头)
+        响应表 = []
+        for 帧项 in 命令表:
+            应答 = http传输样本._调用(监听端口, "POST", http传输样本._报文(帧项), 标准头)
+            if 应答[0] != 200:
+                return -1, []
+            响应表.append(json.loads(应答[3]))
+    except (OSError, ValueError):
+        return -1, []
+    finally:
+        服务对象.shutdown()
+        服务对象.server_close()
+    return 0, 响应表
 
 
 def 取信封(响应表: list, 帧号) -> dict:

@@ -5,9 +5,7 @@ import functools
 import hashlib
 import json
 import os
-import select
 import sqlite3
-import subprocess
 import sys
 import tempfile
 from pathlib import Path
@@ -61,13 +59,14 @@ def 扫一遍(仓根: Path) -> list:
         连接.commit()
         连接.close()
         from 运行数据根.口径 import 覆盖变量名
-        环境表 = dict(os.environ)
-        环境表.update({覆盖变量名: str(临时根 / "运行根"), "PYTHONDONTWRITEBYTECODE": "1"})
-        文件句柄 = 真连.enter_context(subprocess.Popen(
-            [sys.executable, "-B", str(仓根 / "开发工具/MCP服务.py")], stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, env=环境表, cwd=仓根))
-        真连.callback(文件句柄.kill)
-        跑命令 = functools.partial(sys.modules[__name__].跑命令, 文件句柄=文件句柄)
+        from unittest.mock import patch
+        from . import http传输样本
+        from .工具 import 工具表 as 登记工具表
+        真连.enter_context(patch.dict(os.environ, {覆盖变量名: str(临时根 / "运行根"),
+                                                 "PYTHONDONTWRITEBYTECODE": "1"}))
+        服务对象, 监听端口 = http传输样本._起环回(仓根, 登记工具表)
+        真连.callback(lambda: (服务对象.shutdown(), 服务对象.server_close()))
+        跑命令 = functools.partial(sys.modules[__name__].跑命令, 监听端口=监听端口)
         参数表 = {"开工ID": "v1-样本", "操作": "只检查", "参数": {"改动表": [
             {"路径": "漂移.py", "操作": "修改", "旧内容": "不存在", "新内容": "未登记配置 = 2\n未登记日志 = 3\n"},
             {"路径": "未认领.py", "操作": "修改", "旧内容": "不存在", "新内容": "未登记路径 = 4\n"},
@@ -321,8 +320,6 @@ def 扫一遍(仓根: Path) -> list:
         退出码, 查询读数 = 跑命令(仓根, 临时根, 参数表)
         输出表.append(("缺账本未判且不建库", 退出码 == 0 and 查询读数["isError"]
                       and "账本未判" in 查询读数["content"][0]["text"] and not 库件.parent.exists()))
-        文件句柄.stdin.close()
-        assert 文件句柄.wait(timeout=5) == 0
     return 输出表
 
 
@@ -335,17 +332,18 @@ def 观测路径表(临时根: Path) -> list:
     return [路径 for 路径 in 临时根.rglob("*") if "日志" not in 路径.parts]
 
 
-def 跑命令(仓根: Path, 临时根: Path, 参数表: dict, 文件句柄) -> tuple:
-    """每帧走同一新MCP进程；全树哈希含账本/库/索引，缓存不许刷新写入凭据。"""
+def 跑命令(仓根: Path, 临时根: Path, 参数表: dict, 监听端口: int) -> tuple:
+    """每帧走同一 HTTP 长驻服务；全树哈希含账本/库/索引，缓存不许刷新写入凭据。"""
+    from . import http传输样本
     指纹表 = {路径: hashlib.sha256(路径.read_bytes()).hexdigest()
              for 路径 in 观测路径表(临时根) if 路径.is_file()}
     路径表 = {路径 for 路径 in 观测路径表(临时根)}
     请求 = {"jsonrpc": "2.0", "id": 1, "method": "tools/call",
-          "params": {"name": "v1_edit", "arguments": 参数表}}
-    文件句柄.stdin.write(json.dumps(请求, ensure_ascii=False) + "\n")
-    文件句柄.stdin.flush()
-    assert select.select([文件句柄.stdout], [], [], 5)[0], "MCP帧超时"
-    查询读数 = json.loads(文件句柄.stdout.readline())
+           "params": {"name": "v1_edit", "arguments": 参数表}}
+    状态码, _, _, 应答数据 = http传输样本._调用(监听端口, "POST", http传输样本._报文(请求),
+                                       dict(http传输样本.标准头))
+    assert 状态码 == 200, "MCP帧非 200：%s" % (状态码,)
+    查询读数 = json.loads(应答数据)
     assert 路径表 == {路径 for 路径 in 观测路径表(临时根)}, "目录或件集合改变"
     assert 指纹表 == {路径: hashlib.sha256(路径.read_bytes()).hexdigest()
                     for 路径 in 观测路径表(临时根) if 路径.is_file()}, "预检/拒绝发生写入"

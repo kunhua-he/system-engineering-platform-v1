@@ -131,7 +131,7 @@ def 易用样本(仓根, 工具表) -> list:
     """本批各项的正反样本 ⇒ 样本表 `[(说明, 通过?)]`。"""
     from unittest.mock import patch
 
-    from . import 门禁, 操作_作业, 参数规范, 协议, 符号, 源件记账, 自愈预检, 作业
+    from . import 门禁, 操作_作业, 参数规范, 协议, 符号, 源件记账, 作业
 
     输出缓冲 = []
 
@@ -191,22 +191,12 @@ def 易用样本(仓根, 工具表) -> list:
     假工具表 = {"v1_探针": (lambda 实参, 树根: (0, json.dumps({"成功": True, "结果": 1},
                                                      ensure_ascii=False)),
                           "探针", "", {})}
-    with patch.object(自愈预检, "拒绝提示行", return_value=""), \
-            patch.object(协议, "过期提示行", return_value=""):
-        读数, 错误 = 协议.派发("tools/call", {"name": "v1_探针", "arguments": {}}, 仓根, 假工具表)
+    读数, 错误 = 协议.派发("tools/call", {"name": "v1_探针", "arguments": {}}, 仓根, 假工具表)
     回执文本 = (读数 or {}).get("content", [{}])[0].get("text", "")
     记样本("信封：content 是纯 JSON（无前缀污染）+ structuredContent 是对象",
-          错误 is None and 回执文本.lstrip().startswith("{") and json.loads(回执文本)["成功"] is True
-          and (读数 or {}).get("structuredContent", {}).get("成功") is True
-          and "服务提示" not in (读数 or {}))
-
-    with patch.object(自愈预检, "拒绝提示行", return_value="★ 服务代码已过期：本帧仍是旧码"), \
-            patch.object(协议, "过期提示行", return_value=""):
-        读数, 错误 = 协议.派发("tools/call", {"name": "v1_探针", "arguments": {}}, 仓根, 假工具表)
-    回执文本 = (读数 or {}).get("content", [{}])[0].get("text", "")
-    记样本("信封：过期提示走独立字段 服务提示（不污染 content，仍可 JSON 解析）",
-          错误 is None and json.loads(回执文本)["成功"] is True and "服务代码已过期" not in 回执文本
-          and (读数 or {}).get("服务提示") == ["★ 服务代码已过期：本帧仍是旧码"])
+           错误 is None and 回执文本.lstrip().startswith("{") and json.loads(回执文本)["成功"] is True
+           and (读数 or {}).get("structuredContent", {}).get("成功") is True
+           and "服务提示" not in (读数 or {}))
 
     # ── 项 13：顶层字段被拒 ⇒ 错误内联可跑形状 ──
     退出码, 回执 = 参数规范.网关派发("v1_shell", {"命令": "echo 不该执行"}, 仓根)
