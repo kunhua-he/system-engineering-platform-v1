@@ -63,8 +63,10 @@ from .合主干现场清理 import 未解决代码冲突, 清现场, 库相对�
 
 
 def _跑git(仓根, *参数表):
+    # 夹具的 git 全是本地命令（init/add/commit/worktree/rev-parse），属**环境步**（同
+    # `仓操作.超时秒` 注释：建树与建索引不设超时）——不设硬超时，避免闸0/自测并发下被拖过抛假红。
     回执 = subprocess.run(["git", *参数表], cwd=str(仓根), capture_output=True, text=True,
-                       env=干净环境(), timeout=5)
+                       env=干净环境())
     assert 回执.returncode == 0, (参数表, 回执.stdout, 回执.stderr)
     return 回执.stdout.strip()
 
@@ -116,7 +118,7 @@ def _造现场(主目录, 开工号):
     集成树 = 主目录.parent / ("集成目录-" + 开工号)
     _跑git(主目录, "worktree", "add", "-b", "集成/" + 开工号, str(集成树), "主干")
     回执 = subprocess.run(["git", "merge", "--no-commit", "--no-ff", "腿/" + 开工号],
-                       cwd=str(集成树), capture_output=True, text=True, env=干净环境(), timeout=5)
+                       cwd=str(集成树), capture_output=True, text=True, env=干净环境())
     assert "CONFLICT" in (回执.stdout + 回执.stderr), (回执.stdout, 回执.stderr)
     return 集成树
 
