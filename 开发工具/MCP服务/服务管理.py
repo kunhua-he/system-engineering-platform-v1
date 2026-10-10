@@ -98,7 +98,8 @@ def 启动服务(仓根, 监听端口=默认监听端口):
         子进程 = subprocess.Popen(
             [sys.executable, "-B", "-u", 入口件, "--服务", "--端口", str(监听端口)],
             cwd=str(仓根), stdout=日志句柄, stderr=subprocess.STDOUT,
-            stdin=subprocess.DEVNULL, start_new_session=True)
+            stdin=subprocess.DEVNULL, start_new_session=True,
+            env={**os.environ, "V1_PY": sys.executable})
     finally:
         日志句柄.close()
     for 等待轮次 in range(40):

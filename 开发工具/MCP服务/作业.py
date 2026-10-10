@@ -44,16 +44,48 @@ from .作业进程 import (  # noqa: E402
 任务号形状 = re.compile(r"^[0-9a-f]{32}$")
 日志片段上限 = 输出上限      # 与 shell 同一份有界口径（16000 字符）
 # 长活具名表：名字 → 命令。`放行` = 提交放行三件套（与 pre-commit 钩子同一组命令，fail-fast）。
+# ★ 解释器一律写 `"$V1_PY"`（`接管作业` 注入仓内 venv 的绝对路径）—— **禁止裸 `python3`**：
+#   命令走 `shell=True`，裸 `python3` 按 PATH 解析，实测落到系统 3.9，而判据面用了 3.13+ 写法
+#   ⇒ 闸 0 假红（判据 ㊽ 的 `--自检` 子进程继承同一个解释器）。
 具名作业表 = {
     "合主线": None,
-    "闸0": "python3 构建装配/一键验证/闸0.py",
-    "自测": "python3 构建装配/一键验证/一键验证.py --自测",
+    "闸0": "\"$V1_PY\" 构建装配/一键验证/闸0.py",
+    "自测": "\"$V1_PY\" 构建装配/一键验证/一键验证.py --自测",
     "案例": "cargo run --quiet --locked -p v1-case-runner",
-    "建库": "python3 开发工具/信息核心/信息核心.py 建库",
-    "放行": ("python3 构建装配/一键验证/闸0.py"
-           " && python3 构建装配/一键验证/一键验证.py --自测"
+    "建库": "\"$V1_PY\" 开发工具/信息核心/信息核心.py 建库",
+    "放行": ("\"$V1_PY\" 构建装配/一键验证/闸0.py"
+           " && \"$V1_PY\" 构建装配/一键验证/一键验证.py --自测"
            " && cargo run --quiet --locked -p v1-case-runner"),
 }
+
+
+def 确保注入() -> str:
+    """把本进程的解释器注入环境变量 `V1_PY`（已有则不覆盖）⇒ 返回它。
+
+    ★ 为何用 `sys.executable`：解释器唯一化的语义是「**全链用同一个解释器**」——
+    **入口层**（钩子 `装门禁.sh` · 服务 `服务管理.py` · 人工 `进入.sh`）负责保证本身是仓内
+    3.14；本函数负责把它**传下去**；**使用层**（`解释器路径`）一律读 `V1_PY`，缺失即拒
+    （不回落 PATH、不猜路径）。这样腿树 / 集成树里没有 venv 也不再是问题。
+    """
+    解释器 = os.environ.get("V1_PY") or sys.executable
+    os.environ["V1_PY"] = 解释器
+    return 解释器
+
+
+def 解释器路径() -> str:
+    """长活命令用的**唯一解释器** —— 环境变量 `V1_PY`（入口注入的仓内 3.14 venv）。
+
+    ★ 为何改成读环境变量：`sys.prefix/bin/python` 只在**venv 起的进程**里存在 —— 实测
+    `/usr/bin/python3`（3.9）与 homebrew 非 venv 的 `sys.prefix/bin/python` **都不存在**，
+    一旦链路上有一层不是 venv 起的，这里就抛 ⇒ 作业整条起不来（释放作业四态实测红）。
+    口径：**入口注入一次、全链继承、缺失即拒** —— 不猜、不拼调用方目录、不回落 PATH。
+    """
+    解释器 = os.environ.get("V1_PY", "")
+    if not 解释器 or not Path(解释器).is_file():
+        raise FileNotFoundError(
+            "环境变量 V1_PY 没指向可用的解释器：%r（由入口注入：服务 · 装门禁.sh · 进入.sh · "
+            "并行工作树.sh · v1_shell 的执行环境；仓内唯一那份是 构建环境/python/bin/python）" % 解释器)
+    return 解释器
 # 工作进程的启动码：**独立于 MCP 服务**（服务 exec 重载不碰它）。串里的名字不进命名面。
 工作段 = ("import sys; from 开发工具.MCP服务.作业 import 接管作业;"
         " sys.exit(接管作业(*sys.argv[1:]))")
@@ -81,6 +113,7 @@ def 接管作业(任务ID, 命令文本, 目标树文本, 仓根文本, 日志�
         #   否则长活（释放作业）核清树时认不出本作业，把本作业那一行算成「未收敛的后台作业」而永拒释放。
         作业环境 = _执行环境(目标树)
         作业环境["V1_任务ID"] = 任务ID
+        作业环境["V1_PY"] = 解释器路径()
         子进程 = subprocess.Popen(命令文本, shell=True, cwd=str(目标树), stdout=subprocess.PIPE,
                               stderr=subprocess.PIPE, encoding="utf-8", errors="replace",
                               env=作业环境, start_new_session=True)

@@ -52,6 +52,9 @@ if [ -z "$ROOT" ] || [ ! -f "$ROOT/rust-toolchain.toml" ]; then
   exit 1
 fi
 cd "$ROOT"
+# ★ 解释器唯一化（3.14 · 唯一一份 · 无回落）：venv 只住主仓（腿里不建）；主仓由 git 解析。
+ROOT="$(dirname "$(git -C "$ROOT" rev-parse --path-format=absolute --git-common-dir 2>/dev/null || echo "$ROOT/.git")")"
+cd "$ROOT"
 
 # ── 壳自门禁（五秒硬顶）────────────────────────────────────────────────────
 # 依据：`项目文档/决策记录/2026-09-27_所有运行五秒硬顶.md` §一/§六 —— 一条命令完整跑完
@@ -59,14 +62,23 @@ cd "$ROOT"
 # 阈值**不在这里写第二份**：从唯一落点 `构建装配/门禁/` 取（与判据 ⑱ 同源）。
 # 反向样本（跑绿即删）：`V1_CMD_SLOW_MS=5200 sh 开发工具/并行工作树.sh 自检` ⇒ 必红。
 # ★ 变量名 / 函数名一律 ASCII —— bash 3.2 不认非 ASCII 标识符（见本文件顶部三条实测）。
-START=$(python3 -c 'import time;print(time.monotonic())')
+# ★ 解释器唯一化（3.14 · 唯一一份 · 无回落）：裸 `python3` 会落到系统 3.9.6（口径：所有 py
+#   命令都用 3.14，禁第二个版本）。venv 只住仓根 ⇒ 直接取，不在即拒。
+PY="$ROOT/构建环境/python/bin/python"
+if [ ! -x "$PY" ]; then
+  echo "并行工作树：仓内解释器不在：$PY（唯一允许的 3.14 venv）⇒ 拒" >&2
+  exit 1
+fi
+# ★ 解释器唯一化：`V1_PY` 是**唯一来源**，随本脚本起的子进程一路继承。
+export V1_PY="$PY"
+START=$("$PY" -c 'import time;print(time.monotonic())')
 gate_report() {
   ORIG_CODE=$?
   GATE_CODE=0
   # ★ 必须写成 `... || GATE_CODE=$?`：本脚本有 `set -e`（`装门禁.sh` 没有），
-  #   直接 `python3 ...; GATE_CODE=$?` 在超顶时会被 `set -e` 当场带走 ——
+  #   直接 `"$PY" ...; GATE_CODE=$?` 在超顶时会被 `set -e` 当场带走 ——
   #   下面那行映射变成死代码，退出码停在 3（实测）。这样写才是「接住码再映射」。
-  python3 - "$START" "$ORIG_CODE" "$ROOT" <<'PY' || GATE_CODE=$?
+  "$PY" - "$START" "$ORIG_CODE" "$ROOT" <<'PY' || GATE_CODE=$?
 import sys, time
 sys.path.insert(0, sys.argv[3])
 from 构建装配.门禁 import 硬顶毫秒, 注入人为慢
@@ -114,11 +126,8 @@ mk_cache() {
   tree="$TREES/$leg"
   if [ ! -d "$tree" ]; then echo "工作树不存在：$tree" >&2; exit 1; fi
   mkdir -p "$tree/构建环境/构建缓存"
-  # Python venv：gitignore 的产物，工作树里不会带过来。缺了就建一个（不带 pip ⇒ site-packages 空）。
-  if [ ! -x "$tree/构建环境/python/bin/python" ]; then
-    python3 -m venv --without-pip "$tree/构建环境/python" 2>/dev/null \
-      || echo "（提示：venv 没建成，Python 侧的腿请用主树的 构建环境/python）" >&2
-  fi
+  # Python venv：**腿里不建** —— 全仓只有主仓那一份 3.14 venv（`$ROOT/构建环境/python`）：
+  # 解释器唯一、无回落、无第二个版本（口径：所有 py 命令都用 3.14）。腿里那份历史误建已清。
 }
 
 case "${1:-}" in

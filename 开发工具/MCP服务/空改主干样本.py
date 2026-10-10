@@ -42,7 +42,7 @@ from .合主干有界跑 import 干净环境
          "ROOT=$(git rev-parse --show-toplevel) || exit 1\n"
          "cd \"$ROOT\" || exit 1\n"
          "printf '%s\\n' \"$ROOT\" >> \"$(git rev-parse --git-common-dir)/门禁读数\"\n"
-         "python3 - \"$ROOT\" <<'PY'\n"
+         "\"$V1_PY\" - \"$ROOT\" <<'PY'\n"
          "import subprocess\n"
          "import sys\n"
          "sys.path.insert(0, sys.argv[1])\n"

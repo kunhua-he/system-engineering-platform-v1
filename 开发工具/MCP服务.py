@@ -20,6 +20,7 @@
 
 依据：`项目文档/决策记录/2026-09-27_构建段归环境步.md` §六 · `2026-09-27_MCP适配层.md`。
 """
+import os
 import sys
 import time
 from pathlib import Path
@@ -55,5 +56,10 @@ def 入口函数(argv=None):
 if __name__ == "__main__":
     # 壳自量自门禁（裁决 §六.1）：`--自检` / `--长样本` 也在量程内。
     from 构建装配.门禁 import 自门禁
+
+    # ★ 解释器唯一化（入口层）：本件当脚本直跑时 sys.path[0] 是脚本目录、不是仓根，
+    #   而样本夹具仓里更没有 `开发工具/MCP服务/作业.py` ⇒ **不许 import**，一行赋值即可。
+    #   语义同 `作业.确保注入()`：把本进程的解释器传给全部后代，缺失即拒（不回落 PATH）。
+    os.environ.setdefault("V1_PY", sys.executable)
     sys.exit(自门禁(起始时刻, 入口函数(sys.argv[1:]), 尾巴余量毫秒=200,
                     修法="本件是样本 / 自检入口；重活移出命令路或调小样本面（裁决 §三.3）"))

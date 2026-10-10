@@ -14,6 +14,12 @@
 # 注：变量名用 ASCII —— sh/bash 不认中文变量名（工具链强制）。
 set -e
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+# ★ 解释器唯一化（3.14 · 唯一一份 · 无回落）：venv 只住主仓（腿里不建）；主仓由 git 解析
+#   （linked 工作树的 common dir 就是主仓 `.git`），不手工拼 gitdir。
+#   本件下面 ③ 段就要用 $PY，故解释器**先解析再往下**（原先 $PY 到第 65 行才定义 ⇒ 前面两处
+#   `"$PY" -c` 在 `set -e` 下跑空、当场退出）。
+MAIN_ROOT="$(dirname "$(git -C "$ROOT" rev-parse --path-format=absolute --git-common-dir 2>/dev/null || echo "$ROOT/.git")")"
+PY="$MAIN_ROOT/构建环境/python/bin/python"
 cd "$ROOT"
 
 PINNED="$(sed -n 's/^channel *= *"\(.*\)"/\1/p' rust-toolchain.toml)"
@@ -62,7 +68,6 @@ echo "③ Rust 静态检查  扩展工作区 --all-targets  通过  ✓  （墙�
 #   最小口径：要跑测试就先 `cargo build -p v1-case-runner`、再跑一次案例生成回执，然后 `cargo test`。
 #   本件不替它兜底（那样会把测试面变成假绿）。
 
-PY="$ROOT/构建环境/python/bin/python"
 if [ ! -x "$PY" ]; then echo "④ Python 环境  venv 不存在  ✗"; exit 1; fi
 THIRD="$("$PY" -c '
 import sys, pathlib

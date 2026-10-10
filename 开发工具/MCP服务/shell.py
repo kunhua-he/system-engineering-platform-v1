@@ -30,6 +30,7 @@
 import os
 import re
 import subprocess
+import sys
 import tempfile
 import threading
 from pathlib import Path
@@ -75,6 +76,38 @@ def _判裸仓根(目标树: Path) -> bool:
     return bool(re.search(r"^\s*bare\s*=\s*true\s*$", 配置文本, re.M))
 
 
+def _主仓根(目标树: Path) -> Path:
+    """目标树所属的**主仓根** —— 仓内 venv（唯一解释器）只住这里，腿里不另建。
+
+    linked 工作树的 `.git` 是**文件**（内容 `gitdir: <主仓>/.git/worktrees/<腿名>`）⇒ 上溯三级。
+    读不出 ⇒ 返回目标树自身（调用方按「解释器不在」处理，不猜、不回落）。
+    """
+    仓库元目录 = 目标树 / ".git"
+    if 仓库元目录.is_dir():
+        return 目标树
+    try:
+        首行 = 仓库元目录.read_text(encoding="utf-8", errors="replace").strip()
+    except OSError:
+        return 目标树
+    if not 首行.startswith("gitdir:"):
+        return 目标树
+    指向 = Path(首行.split(":", 1)[1].strip())
+    for _ in range(3):          # <主仓>/.git/worktrees/<腿名> ⇒ 上溯三级到 <主仓>
+        指向 = 指向.parent
+    return 指向 if (指向 / "构建环境").is_dir() else 目标树
+
+
+def _仓内解释器夹(目标树: Path) -> str:
+    """仓内 venv 的 `bin` 目录（解释器唯一那份 3.14）；取不到 ⇒ 空串。
+
+    ★ 取不到**不抛错**：`v1_shell` 是**通用 shell 面**（跑 git / ls 也是它），目标树可能根本不是
+    仓（夹具 / 临时目录）⇒ 那里没有 venv 是正常的，此时**不注入 PATH**；也**不另找** PATH 上的
+    `python3` 顶替（没有第二条腿）。Python 面的唯一真源是**服务进程的解释器**（见 `作业.py`）。
+    """
+    解释器夹 = _主仓根(目标树) / "构建环境/python/bin"
+    return str(解释器夹) if (解释器夹 / "python3").exists() else ""
+
+
 def _执行环境(目标树: Path) -> dict:
     """子进程环境：剔除继承的 Git 定位变量 + 禁 git 终端提示。目标树若是 **bare 仓根**
     （判据见 `_判裸仓根`），显式给 `GIT_DIR`/`GIT_WORK_TREE` —— 否则子进程 git 会报
@@ -91,6 +124,16 @@ def _执行环境(目标树: Path) -> dict:
         for 键名 in [键名 for 键名 in 环境表 if 键名.startswith(键前缀)]:
             环境表.pop(键名, None)
     环境表.update(禁终端提示环境)
+    # ★ 解释器唯一化（3.14 · 唯一一份 · 无回落）：仓内 venv 取到了就把它的 bin 前置进子进程
+    #   PATH，并把**唯一来源** `V1_PY` 一起注入 —— 子进程里任何裸 `python3` 与 `$V1_PY` 都落在
+    #   3.14 上。★ 为何必须注入 `V1_PY`：实测「git 给钩子的干净环境」里 PATH 可能没有
+    #   `python3` ⇒ 命令串写裸 `python3` 会 `command not found`、作业 300 ms 内即失败。
+    解释器夹 = _仓内解释器夹(目标树)
+    if 解释器夹:
+        环境表["PATH"] = 解释器夹 + os.pathsep + 环境表.get("PATH", "")
+    # ★ `V1_PY` **无条件**注入（不受「目标树里有没有仓内 venv」影响）：样本夹具仓里没有
+    #   `构建环境/python`，但那不等于「没有解释器」—— 唯一来源就是**本进程**的解释器。
+    环境表["V1_PY"] = sys.executable
     if _判裸仓根(目标树):
         环境表["GIT_DIR"] = str(目标树 / ".git")
         环境表["GIT_WORK_TREE"] = str(目标树)
@@ -228,7 +271,10 @@ def 派发(参数表: dict, 仓根) -> tuple:
 
     # 执行：命令原样交给 /bin/sh；stdout/stderr 由两条线程**边读边截断**（前 `输出上限` 字符留内存，
     # 超出落日志件）—— 不整块进内存、不堵管道；编码 utf-8 + errors=replace（坏字节不炸工具）。
-    环境表 = _执行环境(目标树)
+    try:
+        环境表 = _执行环境(目标树)
+    except OSError as 环境不成立:
+        return 1, "%s\n命令：%s" % (环境不成立, 命令)
     try:
         子进程 = subprocess.Popen(命令, shell=True, cwd=str(目标树),
                              stdout=subprocess.PIPE, stderr=subprocess.PIPE,

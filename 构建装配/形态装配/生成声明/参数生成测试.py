@@ -1,6 +1,7 @@
 """309声明经真实生成、契约编译与运行读取的正反样本。"""
 import copy
 import json
+import os
 from pathlib import Path
 import shutil
 import struct
@@ -36,7 +37,7 @@ def 验证参数生成():
                 参数行["默认值"] = 默认值
             声明内容["参数表"].append(参数行)
         源文件.write_text(json.dumps(声明内容, ensure_ascii=False))
-        生成命令 = ["python3", str(仓库 / "构建装配/形态装配/生成声明.py"), "--声明根", str(声明目录.relative_to(仓库))]
+        生成命令 = [os.environ["V1_PY"], str(仓库 / "构建装配/形态装配/生成声明.py"), "--声明根", str(声明目录.relative_to(仓库))]
         subprocess.run(生成命令, cwd=仓库, check=True, capture_output=True)
         subprocess.run(生成命令 + ["--检查"], cwd=仓库, check=True, capture_output=True)
         契约产物 = 声明目录 / "libv1_contract.rlib"

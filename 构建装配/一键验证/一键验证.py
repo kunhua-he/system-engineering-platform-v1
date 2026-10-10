@@ -23,6 +23,7 @@
 
 from __future__ import annotations
 
+import os
 import sys
 from pathlib import Path
 
@@ -39,4 +40,8 @@ from 一键验证 import (  # noqa: E402
 )
 
 if __name__ == "__main__":
+    # ★ 解释器唯一化（入口层）：本件是 `--自测` / 全量判据的总入口，它起的子进程（长样本全套 ·
+    #   各样本夹具仓里的作业）都靠 `V1_PY` 找解释器；夹具仓里没有 `构建环境/python`，所以
+    #   唯一来源只能是**本进程的解释器**。缺失即拒，不回落 PATH。
+    os.environ.setdefault("V1_PY", sys.executable)
     sys.exit(入口函数(sys.argv[1:]))

@@ -20,6 +20,56 @@ from .索引库 import (出现位, 有库, 库读数, 连库, 非标识符种类
                     节点记录, 名字所在列, _节点字段)
 
 
+def 库身份(库件) -> tuple:
+    """库文件身份 `(dev, ino, size, mtime_ns)` —— 读不出 ⇒ `()`（一律不记忆）。"""
+    try:
+        读数 = 库件.stat()
+    except OSError:
+        return ()
+    return (读数.st_dev, 读数.st_ino, 读数.st_size, 读数.st_mtime_ns)
+
+
+def 读库健康(库件, 读不动模板) -> dict:
+    """库**自身**的健康读数：必要表 / `pragma integrity_check` / `files` 表。
+
+    ⇒ `{"损坏说明", "索引路径表"}` —— `损坏说明` 非空即损坏（**已套好 `读不动模板`**，
+    文案与旧版逐字一致）；空串即健康，此时 `索引路径表` 才可用。
+
+    ★ **只答「这个库件有没有坏」，不答新鲜度** —— 新鲜度取决于源件，归 `查索引状态`。
+    """
+    索引路径表: dict = {}
+    try:
+        动态库 = 连库(库件)
+    except sqlite3.Error as 失败原因:
+        return {"损坏说明": 读不动模板 % 失败原因, "索引路径表": 索引路径表}
+    try:
+        try:
+            必要表 = {表行[0] for 表行 in 动态库.execute(
+                "select name from sqlite_master where type='table' and name in ('nodes','edges','files')")}
+            if 必要表 != {"nodes", "edges", "files"}:
+                缺表 = "、".join(sorted({"nodes", "edges", "files"} - 必要表))
+                return {"损坏说明": "%s；缺少索引表：%s" % (读不动模板 % "schema 不完整", 缺表),
+                        "索引路径表": 索引路径表}
+            完整性 = 动态库.execute("pragma integrity_check").fetchone()
+            if not 完整性 or 完整性[0] != "ok":
+                return {"损坏说明": "%s；完整性检查：%s" % (
+                    读不动模板 % "sqlite 完整性失败", 完整性[0] if 完整性 else "无回执"),
+                    "索引路径表": 索引路径表}
+            索引路径表 = {表行[0]: 表行[1] for 表行 in 动态库.execute("select path, modified_at from files")}
+        except sqlite3.Error as 失败原因:
+            return {"损坏说明": 读不动模板 % 失败原因, "索引路径表": {}}
+    finally:
+        动态库.close()
+    return {"损坏说明": "", "索引路径表": 索引路径表}
+
+
+# ★ **库健康读数按库文件身份记忆**（提速）：`pragma integrity_check` 在 40 MB 库上要 152–166 ms，
+#   而 `查索引状态` 是**每次**都跑的热路（工具 · CLI · `v1_context` 三处共用它这一份口径）。
+#   身份（dev/ino/size/mtime_ns）未变 ⇒ 库内容未变 ⇒ 健康结论与 `files` 表读数可复用。
+#   **源件新鲜度仍每次现算** —— 它取决于源件、不由库身份保护；连它一起记就是假绿。
+_健康记忆: dict = {}
+
+
 def 查索引状态(根目录=None, 库路径=None) -> dict:
     """索引库的存在 / 完整性 / 覆盖 / 新鲜度 ⇒ `{"状态","说明","错误","警告","覆盖"}`。
 
@@ -54,30 +104,16 @@ def 查索引状态(根目录=None, 库路径=None) -> dict:
         缺失文本 = "索引库不在：%s" % 库件
         return {"状态": "缺失", "说明": 缺失文本, "错误": 缺失文本, "警告": "", "覆盖": 覆盖读数}
     读不动模板 = "索引库读不动（%s）：%%s ⇒ 先跑 `python3 开发工具/代码地图.py 建`" % 库件
-    try:
-        动态库 = 连库(库件)
-    except sqlite3.Error as 失败原因:
-        损坏文本 = 读不动模板 % 失败原因
+    库身份值 = 库身份(库件)
+    记忆读数 = _健康记忆.get(str(库件)) if 库身份值 else None
+    if 记忆读数 is None or 记忆读数["身份"] != 库身份值:
+        记忆读数 = {"身份": 库身份值, **读库健康(库件, 读不动模板)}
+        if 库身份值:
+            _健康记忆[str(库件)] = 记忆读数
+    if 记忆读数["损坏说明"]:
+        损坏文本 = 记忆读数["损坏说明"]
         return {"状态": "损坏", "说明": 损坏文本, "错误": 损坏文本, "警告": "", "覆盖": 覆盖读数}
-    try:
-        try:
-            必要表 = {表行[0] for 表行 in 动态库.execute(
-                "select name from sqlite_master where type='table' and name in ('nodes','edges','files')")}
-            if 必要表 != {"nodes", "edges", "files"}:
-                缺表 = "、".join(sorted({"nodes", "edges", "files"} - 必要表))
-                损坏文本 = "%s；缺少索引表：%s" % (读不动模板 % "schema 不完整", 缺表)
-                return {"状态": "损坏", "说明": 损坏文本, "错误": 损坏文本, "警告": "", "覆盖": 覆盖读数}
-            完整性 = 动态库.execute("pragma integrity_check").fetchone()
-            if not 完整性 or 完整性[0] != "ok":
-                损坏文本 = "%s；完整性检查：%s" % (
-                    读不动模板 % "sqlite 完整性失败", 完整性[0] if 完整性 else "无回执")
-                return {"状态": "损坏", "说明": 损坏文本, "错误": 损坏文本, "警告": "", "覆盖": 覆盖读数}
-            索引路径表 = {表行[0]: 表行[1] for 表行 in 动态库.execute("select path, modified_at from files")}
-        except sqlite3.Error as 失败原因:
-            损坏文本 = 读不动模板 % 失败原因
-            return {"状态": "损坏", "说明": 损坏文本, "错误": 损坏文本, "警告": "", "覆盖": 覆盖读数}
-    finally:
-        动态库.close()
+    索引路径表 = 记忆读数["索引路径表"]
 
     覆盖读数["索引件"] = len(索引路径表)
     覆盖读数["缺失"] = sorted(源路径表 - set(索引路径表))

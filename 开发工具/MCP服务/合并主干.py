@@ -16,6 +16,7 @@
 权限：默认不推；远端动作须显式 `--推送`；不打印令牌、不外传源码密钥、不默认建 PR。
 """
 
+import os
 import sys
 import time
 from pathlib import Path
@@ -54,5 +55,8 @@ def 入口函数(命令行参数):
 
 
 if __name__ == "__main__":
+    # ★ 解释器唯一化（入口层）：本件常被当脚本直跑（也常被样本夹具仓复制后跑）⇒ sys.path[0]
+    #   是脚本目录、不是仓根，**不许 import 仓内模块**，一行赋值即可；语义同 `作业.确保注入()`。
+    os.environ.setdefault("V1_PY", sys.executable)
     sys.exit(报告环境步(起始时刻, 入口函数(sys.argv[1:]),
                      说明="合并 + 全量验证 + 全案例：一趟就是它自身的长度（§四 环境步，不判 5 秒顶）"))
