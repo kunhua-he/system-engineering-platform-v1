@@ -62,7 +62,7 @@ unsafe fn 写结果(返回槽: *mut 数据槽, 结果值: f64, 小数位: i64) {
 }
 
 /// 1324 四舍五入：待处理数值（双精度）· 小数位（整数）。
-pub unsafe extern "C" fn 四舍五入执行(返回槽: *mut 数据槽, 参数个数: u32, 参数表: *const 数据槽) {
+pub unsafe extern "C-unwind" fn 四舍五入执行(返回槽: *mut 数据槽, 参数个数: u32, 参数表: *const 数据槽) {
     if 参数个数 != 2 || 参数表.is_null() {
         unsafe { 写参数不合法(返回槽) };
         return;
@@ -74,7 +74,7 @@ pub unsafe extern "C" fn 四舍五入执行(返回槽: *mut 数据槽, 参数个
 }
 
 /// 1325 取整：待处理数值（双精度）· 方式（文本：向下 / 向上 / 四舍五入）。
-pub unsafe extern "C" fn 取整执行(返回槽: *mut 数据槽, 参数个数: u32, 参数表: *const 数据槽) {
+pub unsafe extern "C-unwind" fn 取整执行(返回槽: *mut 数据槽, 参数个数: u32, 参数表: *const 数据槽) {
     if 参数个数 != 2 || 参数表.is_null() {
         unsafe { 写参数不合法(返回槽) };
         return;
@@ -91,7 +91,7 @@ pub unsafe extern "C" fn 取整执行(返回槽: *mut 数据槽, 参数个数: u
 }
 
 /// 1326 绝对值：待处理数值（双精度）。
-pub unsafe extern "C" fn 绝对值执行(返回槽: *mut 数据槽, 参数个数: u32, 参数表: *const 数据槽) {
+pub unsafe extern "C-unwind" fn 绝对值执行(返回槽: *mut 数据槽, 参数个数: u32, 参数表: *const 数据槽) {
     if 参数个数 != 1 || 参数表.is_null() {
         unsafe { 写参数不合法(返回槽) };
         return;
@@ -100,7 +100,7 @@ pub unsafe extern "C" fn 绝对值执行(返回槽: *mut 数据槽, 参数个数
 }
 
 /// 1327 最大值：数值列表（列表型）。
-pub unsafe extern "C" fn 最大值执行(返回槽: *mut 数据槽, 参数个数: u32, 参数表: *const 数据槽) {
+pub unsafe extern "C-unwind" fn 最大值执行(返回槽: *mut 数据槽, 参数个数: u32, 参数表: *const 数据槽) {
     if 参数个数 != 1 || 参数表.is_null() {
         unsafe { 写参数不合法(返回槽) };
         return;
@@ -120,7 +120,7 @@ pub unsafe extern "C" fn 最大值执行(返回槽: *mut 数据槽, 参数个数
 }
 
 /// 1328 最小值：数值列表（列表型）。
-pub unsafe extern "C" fn 最小值执行(返回槽: *mut 数据槽, 参数个数: u32, 参数表: *const 数据槽) {
+pub unsafe extern "C-unwind" fn 最小值执行(返回槽: *mut 数据槽, 参数个数: u32, 参数表: *const 数据槽) {
     if 参数个数 != 1 || 参数表.is_null() {
         unsafe { 写参数不合法(返回槽) };
         return;
@@ -140,7 +140,7 @@ pub unsafe extern "C" fn 最小值执行(返回槽: *mut 数据槽, 参数个数
 }
 
 /// 1329 随机数：下限（整数）· 上限（整数）—— 闭区间内取一个。
-pub unsafe extern "C" fn 随机数执行(返回槽: *mut 数据槽, 参数个数: u32, 参数表: *const 数据槽) {
+pub unsafe extern "C-unwind" fn 随机数执行(返回槽: *mut 数据槽, 参数个数: u32, 参数表: *const 数据槽) {
     if 参数个数 != 2 || 参数表.is_null() {
         unsafe { 写参数不合法(返回槽) };
         return;
@@ -164,7 +164,7 @@ pub unsafe extern "C" fn 随机数执行(返回槽: *mut 数据槽, 参数个数
 }
 
 /// 1330 求和：数值列表（列表型）。
-pub unsafe extern "C" fn 求和执行(返回槽: *mut 数据槽, 参数个数: u32, 参数表: *const 数据槽) {
+pub unsafe extern "C-unwind" fn 求和执行(返回槽: *mut 数据槽, 参数个数: u32, 参数表: *const 数据槽) {
     if 参数个数 != 1 || 参数表.is_null() {
         unsafe { 写参数不合法(返回槽) };
         return;
@@ -178,7 +178,7 @@ pub unsafe extern "C" fn 求和执行(返回槽: *mut 数据槽, 参数个数: u
 }
 
 /// 1331 平均值：数值列表（列表型）。
-pub unsafe extern "C" fn 平均值执行(返回槽: *mut 数据槽, 参数个数: u32, 参数表: *const 数据槽) {
+pub unsafe extern "C-unwind" fn 平均值执行(返回槽: *mut 数据槽, 参数个数: u32, 参数表: *const 数据槽) {
     if 参数个数 != 1 || 参数表.is_null() {
         unsafe { 写参数不合法(返回槽) };
         return;
@@ -193,7 +193,7 @@ pub unsafe extern "C" fn 平均值执行(返回槽: *mut 数据槽, 参数个数
 }
 
 /// 1332 分位数：数值列表（列表型）· 百分位（双精度）· 小数位（整数）。
-pub unsafe extern "C" fn 分位数执行(返回槽: *mut 数据槽, 参数个数: u32, 参数表: *const 数据槽) {
+pub unsafe extern "C-unwind" fn 分位数执行(返回槽: *mut 数据槽, 参数个数: u32, 参数表: *const 数据槽) {
     if 参数个数 != 3 || 参数表.is_null() {
         unsafe { 写参数不合法(返回槽) };
         return;
@@ -217,7 +217,7 @@ pub unsafe extern "C" fn 分位数执行(返回槽: *mut 数据槽, 参数个数
 
 /// 保留项执行函数：`造函数表` 的初值，也是「命令表加了位而函数表漏覆写」时的诚实状态 ——
 /// 它写的是结构化错误码，**不是假成功**。当前九位全部覆写，正常路径不会走到它。
-pub(crate) unsafe extern "C" fn 保留项执行(返回槽: *mut 数据槽, 参数个数: u32, 参数表: *const 数据槽) {
+pub(crate) unsafe extern "C-unwind" fn 保留项执行(返回槽: *mut 数据槽, 参数个数: u32, 参数表: *const 数据槽) {
     let _ = (参数个数, 参数表);
     unsafe { 写计算失败(返回槽) };
 }

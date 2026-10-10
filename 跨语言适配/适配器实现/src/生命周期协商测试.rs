@@ -51,7 +51,7 @@ unsafe extern "C" fn 扩展通知放行(_通知号: v1_contract::通知号, _参
 }
 
 /// 演示扩展的执行函数（零参，回空）。
-unsafe extern "C" fn 演示执行(_返回槽: *mut 数据槽, _参数个数: u32, _参数表: *const 数据槽) {}
+unsafe extern "C-unwind" fn 演示执行(_返回槽: *mut 数据槽, _参数个数: u32, _参数表: *const 数据槽) {}
 
 /// 造一份演示扩展声明：能力 1xxx + **申报生命周期通知段 2000–2999** + 带给定的通知函数。
 fn 造生命周期扩展(通知: unsafe extern "C" fn(v1_contract::通知号, usize, usize) -> isize) -> &'static 平台信息 {

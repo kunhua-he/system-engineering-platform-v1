@@ -22,7 +22,7 @@ pub(crate) const 测试错误段位表: [u32; 1] = [1];
 // ── 夹具零件 ────────────────────────────────────────────────────────────
 
 /// 执行函数首：把「参数个数」原样写进返回槽的 值。
-pub(crate) unsafe extern "C" fn 执行_写参数个数(返回槽: *mut 数据槽, 参数个数: u32, _参数表: *const 数据槽) {
+pub(crate) unsafe extern "C-unwind" fn 执行_写参数个数(返回槽: *mut 数据槽, 参数个数: u32, _参数表: *const 数据槽) {
     if !返回槽.is_null() {
         // SAFETY: 空指针已挡；非空由调用契约保证可写。
         unsafe { *返回槽 = 数据槽::内联槽(v1_contract::类型标签::构造(1), u64::from(参数个数), 0) };
@@ -30,7 +30,7 @@ pub(crate) unsafe extern "C" fn 执行_写参数个数(返回槽: *mut 数据槽
 }
 
 /// 执行函数次：写「参数个数 + 100」——与首个不同，用来验证取到的函数是对的。
-pub(crate) unsafe extern "C" fn 执行_写参数个数加百(返回槽: *mut 数据槽, 参数个数: u32, _参数表: *const 数据槽) {
+pub(crate) unsafe extern "C-unwind" fn 执行_写参数个数加百(返回槽: *mut 数据槽, 参数个数: u32, _参数表: *const 数据槽) {
     if !返回槽.is_null() {
         unsafe { *返回槽 = 数据槽::内联槽(v1_contract::类型标签::构造(2), u64::from(参数个数) + 100, 0) };
     }
