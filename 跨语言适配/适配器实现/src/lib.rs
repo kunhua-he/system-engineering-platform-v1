@@ -86,6 +86,7 @@ pub mod 小写出;
 #[cfg(unix)] #[path = "工作进程.rs"] pub mod 工作进程;
 // 候选发布与版本切换：执行引用快照 · 在途引用 · 同身份新版切换（W05）。
 #[path = "候选发布.rs"] mod 候选发布;
+#[path = "发布阶段.rs"] pub mod 发布阶段;  // 四类目录分层（W12）：创作/待验/发布/旧版本（盘上归属，与上件互补）
 // 核心实现：适配器本体（装载 · 转发调用）与它对外交出的形状（结果与四份摘要）。
 #[path = "核心实现.rs"]
 mod 核心实现;
@@ -94,24 +95,12 @@ pub use 核心实现::{参数摘要, 能力身份, 能力摘要, 能力契约, �
 //
 // 为什么放文件末：一键验证按「`#[cfg(test)]` 之后第一个 `{`」求测试区边界；
 // `mod X;` 声明没有花括号，放中间会被当成「下一个 `{` 之前的代码都是测试」。
-#[cfg(test)]
-#[path = "测试夹具.rs"]
-pub(crate) mod 测试夹具;
-#[cfg(test)]
-#[path = "适配器测试.rs"]
-mod 适配器测试;
-#[cfg(test)]
-#[path = "边界测试.rs"]
-mod 边界测试;
-#[cfg(test)]
-#[path = "调用测试.rs"]
-mod 调用测试;
-#[cfg(test)]
-#[path = "写出测试.rs"]
-mod 写出测试;
-#[cfg(test)]
-#[path = "生命周期协商测试.rs"]
-mod 生命周期协商测试;
+#[cfg(test)] #[path = "测试夹具.rs"] pub(crate) mod 测试夹具;
+#[cfg(test)] #[path = "适配器测试.rs"] mod 适配器测试;
+#[cfg(test)] #[path = "边界测试.rs"] mod 边界测试;
+#[cfg(test)] #[path = "调用测试.rs"] mod 调用测试;
+#[cfg(test)] #[path = "写出测试.rs"] mod 写出测试;
+#[cfg(test)] #[path = "生命周期协商测试.rs"] mod 生命周期协商测试;
 #[cfg(all(test, unix))] #[path = "进程监督测试.rs"] mod 进程监督测试;
 #[cfg(all(test, unix))] #[path = "进程帧测试.rs"] mod 进程帧测试;
 #[cfg(all(test, unix))] #[path = "进程池测试.rs"] mod 进程池测试;
