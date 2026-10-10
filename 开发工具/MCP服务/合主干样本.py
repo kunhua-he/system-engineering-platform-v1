@@ -227,11 +227,18 @@ def _跑一个合并单元(名称: str) -> None:
 
 
 def _验有界跑两档() -> None:
-    """有界跑两档：9 MB 溢出日志（完整落盘 · 内存只留头部）· 起不来的命令 ⇒ -2。"""
-    退出码, 输出文本, 日志路径 = 跑有界命令([sys.executable,"-c","import sys;print('OUT-FIRST');sys.stderr.write('ERR-FIRST\\n'+'z'*9000000+'ERR-LAST');print('OUT-LAST')"],tempfile.gettempdir(),超时秒数=5)
+    """有界跑两档：9 MB 溢出日志（完整落盘 · 内存只留头部）· 起不来的命令 ⇒ -2。
+
+    ★ 超时给 30 秒（不是 5 秒）：本件在 `跑样本` 的**并行池**里跑，档 1 要写 9 MB 溢出日志 ⇒
+    池子里多路并发写盘时 5 秒不够 ⇒ 偶发超时（退出码 -1）⇒ 断言空消息炸、汇总只报「合并样本
+    「有界跑」不过：AssertionError()」，串行单跑却是好的（2026-10-10 实测：提交放行因此假红）。
+    超时秒数只是**参数**、不是被验对象（档 1 验的是「溢出日志完整落盘 + 内存只留头部」）⇒ 放宽
+    不削弱语义，只去掉并发噪声。
+    """
+    退出码, 输出文本, 日志路径 = 跑有界命令([sys.executable,"-c","import sys;print('OUT-FIRST');sys.stderr.write('ERR-FIRST\\n'+'z'*9000000+'ERR-LAST');print('OUT-LAST')"],tempfile.gettempdir(),超时秒数=30)
     全文 = Path(日志路径).read_text()
     assert 退出码 == 0 and "ERR-FIRST" in 输出文本 and "ERR-LAST" in 全文 and "OUT-LAST" in 全文 and len(全文)>9000000
-    退出码, _, 日志路径 = 跑有界命令(["/不存在的样本命令"],tempfile.gettempdir(),超时秒数=5)
+    退出码, _, 日志路径 = 跑有界命令(["/不存在的样本命令"],tempfile.gettempdir(),超时秒数=30)
     assert 退出码 == -2 and "退出码 -2" in Path(日志路径).read_text()
 
 
