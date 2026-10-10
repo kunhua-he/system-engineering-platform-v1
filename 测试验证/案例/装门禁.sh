@@ -160,15 +160,29 @@ cat > "$TMP" <<'HOOK_BODY'
 ROOT=$(git rev-parse --show-toplevel) || exit 1
 cd "$ROOT" || exit 1
 
+# ── 解释器唯一化：仓内 venv（3.14）──
+# 裸 `python3` 会解析到系统 3.9.6，与判据面的 3.12+/3.13+ 写法冲突 ⇒ 钩子当场 SyntaxError、
+# 提交被拒；而手工用 3.14 跑全绿 = 假绿。腿（worktree）里没有 构建环境/，venv 只在主仓
+# ⇒ 先问 git 主目录，再退本树，最后才退解释器名。
+MAIN_ROOT=$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null)
+[ -x "$PY" ] || PY=$(command -v python3.14 || command -v python3)
+
+# ── 分段耗时：全闸原先只有总数、没有分段读数（每次问「为什么这么慢」都要手工量一遍）──
+# 壳自量。`tick` 用 $PY（同解释器口径）；段边界 = 闸0 / 判据自测 / 全案例。
+tick() { "$PY" -c 'import time;print(int(time.monotonic()*1000))'; }
+T0=$(tick)
+[ -x "$PY" ] || PY=$(command -v python3.14 || command -v python3)
+
 # ① 闸 0（声明侧 + 实现侧）—— 实测 2.4 s 级，进得去 5 秒硬顶 ⇒ 与案例同进每提交路径。
 #    先跑它：它比案例快得多，坏了当场拒，不必等编译。
-#    注：本步只跑 python3，不依赖下面的 构建环境/进入.sh。
+#    注：本步跑**仓内 venv 的解释器**（构建环境/python，3.14），不依赖 构建环境/进入.sh。
 #    ★ 子进程加 5 秒 timeout（2026-10-05 修 · 审计 B-7）：原先只事后量、无 timeout ⇒ 卡死即挂死。
 #    ★ 瞬时超顶自动复跑一次（2026-10-05 修 · 审计 B-10）：并发腿抢 CPU 会把闸 0 顶过 5 秒
 #      （实测 5578/5793/6688 ms），那是读数被污染、不是代码坏了 ⇒ 复跑一次，仍超才红。
 run_gate0() {
-  python3 - "$ROOT" <<'PY'
+  "$PY" - "$ROOT" <<'PY'
 import subprocess
+import sys
 import sys
 
 sys.path.insert(0, sys.argv[1])
@@ -202,8 +216,9 @@ if [ "$CODE" -ne 0 ]; then
   echo "门禁：闸 0 不过（退出码 ${CODE}）⇒ 拒提交" >&2
   exit 1
 fi
+T1=$(tick)
 
-# ①b 判据自测 —— 每条判据的**身份证**：反向样本证明它真会红（判据的可信性.md）。
+# ①b 判据自测
 #     ★ 2026-10-09 起**按档跑**（口径：自测只跑一次，不在释放与合并各跑一遍）：
 #       跑 = 合并提交（MERGE_HEAD 在）· 本次提交进了判据面 · 显式 V1_FULL_GATE=1；其余跳过并明写回执。
 #       理由：实测自测 35.5 s（占全闸 43 s 的八成），而它证的是「判据自身仍会红」、与业务代码无关
@@ -214,7 +229,7 @@ fi
 #    ★ 瞬时超顶自动复跑一次（2026-10-08 与 ①闸0 同一份口径 `构建装配/门禁/复跑.py`）：
 #      机器一忙，⑱「命令墙钟」在 `--自测` 的嵌套里会假红（读数带「已越过 N ms」）⇒ 复跑一次，仍红才拒。
 run_selftest() {
-  python3 - "$ROOT" <<'PY'
+  "$PY" - "$ROOT" <<'PY'
 import subprocess
 import sys
 
@@ -260,6 +275,7 @@ else
   fi
   echo "门禁：判据自测已跑（因：${SELFTEST_WHY}）" >&2
 fi
+T2=$(tick)
 
 HEAD_SHA=$(git rev-parse HEAD) || exit 1
 RECEIPT='测试验证/案例/运行回执.jsonl'
@@ -302,6 +318,8 @@ fi
 #    ★ 实测后果（2026-09-27，这条就是改的理由）：回执是**只增日志**，而一开工一工作树时
 #      每条支线提交都会往同一个件追加一行 ⇒ N 条支线合并就是 N 次冲突，冲突内容毫无信息量。
 
+T3=$(tick)
+echo "门禁分段：闸0 $((T1 - T0)) ms · 自测 $((T2 - T1)) ms · 案例 $((T3 - T2)) ms · 合计 $((T3 - T0)) ms"
 echo "门禁：案例全过，回执绑在 $HEAD_SHA 上（父提交）· 回执只落本机，不进版本库"
 exit 0
 HOOK_BODY
