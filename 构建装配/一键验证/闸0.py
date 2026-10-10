@@ -48,12 +48,12 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))  # 仓根：取共�
 sys.path.insert(0, str(Path(__file__).resolve().parent))      # 同目录：取并发调度实现
 from 构建装配.门禁 import 自门禁, 硬顶毫秒  # noqa: E402
 # 并发调度与读数装配住 `闸零.py`（本入口 ≤120 行且零实现，见 开发规范 第六节）。
-from 闸零 import 跑两条闸  # noqa: E402
+from 闸零 import 跑闸0带复用  # noqa: E402
 
 
 def 入口函数(命令行参数: list) -> int:
     仓根 = Path(__file__).resolve().parents[2]
-    全过, _ = 跑两条闸(仓根, 硬顶毫秒, 起始时刻)
+    全过, _ = 跑闸0带复用(仓根, 硬顶毫秒, 起始时刻)
     return 0 if 全过 else 1
 
 

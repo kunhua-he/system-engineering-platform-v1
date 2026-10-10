@@ -96,3 +96,14 @@ def 跑两条闸(仓根: Path, 硬顶毫秒: int, 外层起表秒: float) -> tup
         return False, 明细
     print("闸 0：两条闸都过（退出码 0）")
     return True, 明细
+
+
+def 跑闸0带复用(仓根: Path, 硬顶毫秒: int, 外层起表秒: float) -> tuple:
+    """闸 0 的对外跑法：先问复用（同一棵树同一份内容只跑一遍），不命中才真跑两条闸。
+
+    复用口径住 `构建装配/门禁/闸0复用.py`（与 `复跑.py` 同一层）—— 本件只把**跑两条闸**
+    这份实现传给它（避免调度器与门禁包互相 import）。
+    """
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+    from 构建装配.门禁 import 跑闸0或复用
+    return 跑闸0或复用(仓根, 硬顶毫秒, 外层起表秒, 跑两条闸)
