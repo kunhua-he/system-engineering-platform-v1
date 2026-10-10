@@ -58,12 +58,15 @@ def _过窗(时刻, 起始时刻, 结束时刻) -> bool:
 
 def 查日志(仓根, 参数表) -> tuple:
     """有界取数：按 `事件` / `模块名` / `级别` / `会话` / `起始时刻` / `结束时刻` 过滤，最多 `条数` 条。"""
-    拒未知(参数表, ("事件", "模块名", "级别", "会话", "起始时刻", "结束时刻", "日志件", "条数", "上限字节"))
+    拒未知(参数表, ("事件", "模块名", "级别", "会话", "工具名", "耗时下限毫秒",
+                  "起始时刻", "结束时刻", "日志件", "条数", "上限字节"))
     记录条数 = 取记录条数(参数表)
     事件 = str(参数表.get("事件") or "").strip()
     模块名 = str(参数表.get("模块名") or "").strip()
     级别 = str(参数表.get("级别") or "").strip()
     会话 = str(参数表.get("会话") or "").strip()
+    工具过滤 = str(参数表.get("工具名") or "").strip()
+    耗时值 = 参数表.get("耗时下限毫秒")
     起始时刻 = str(参数表.get("起始时刻") or "").strip()
     结束时刻 = str(参数表.get("结束时刻") or "").strip()
     日志件 = str(参数表.get("日志件") or "").strip()
@@ -97,12 +100,20 @@ def 查日志(仓根, 参数表) -> tuple:
                 continue
             if 会话 and 会话 not in str(数据行.get("sessionId") or ""):
                 continue
+            上下文 = 数据行.get("context") if isinstance(数据行.get("context"), dict) else {}
+            if 工具过滤 and 工具过滤 not in str(上下文.get("toolName") or 上下文.get("mcpToolName") or ""):
+                continue
+            if type(耗时值) is int and (not isinstance(数据行.get("durationMs"), (int, float))
+                                  or 数据行.get("durationMs") < 耗时值):
+                continue
             时刻 = str(数据行.get("timestamp") or "")
             if not _过窗(时刻, 起始时刻, 结束时刻):
                 continue
             消息 = str(数据行.get("message") or "").replace("\n", " ")[:160]
-            命中表.append("%s [%s] %s · %s | 会话 %s"
+            耗段 = "" if 数据行.get("durationMs") is None else " · 耗时 %sms" % 数据行.get("durationMs")
+            命中表.append("%s [%s] %s · %s · 工具 %s%s | 会话 %s"
                      % (时刻, 数据行.get("level") or "—", 数据行.get("event") or "—", 消息,
+                        上下文.get("toolName") or 上下文.get("mcpToolName") or "—", 耗段,
                         str(数据行.get("sessionId") or "—")[:24]))
             if len(命中表) >= 记录条数:
                 break
@@ -116,10 +127,12 @@ def 查日志(仓根, 参数表) -> tuple:
 
 工具名 = "v1_log"
 工具说明 = ("宿主日志查询：`~/.zcode/cli/log/zcode-*.jsonl`（100MB+）从件尾倒着读，按 "
-        "`事件`/`模块名`/`级别`/`会话`/`起始时刻`/`结束时刻` 过滤，最多 `条数` 条；`日志件` 指定某天"
-        "（默认最新一件），`上限字节` 限扫描量。只读零写、有界。")
+        "`事件`/`模块名`/`级别`/`会话`/`工具名`/`耗时下限毫秒`/`起始时刻`/`结束时刻` 过滤，"
+        "最多 `条数` 条；`日志件` 指定某天（默认最新一件），`上限字节` 限扫描量。"
+        "每条命中**带工具名与耗时**（`context.toolName` / `context.mcpToolName` 与 `durationMs`）"
+        "—— 答得出「哪个工具在何时动了哪个件」。只读零写、有界。")
 操作表 = {
     '查日志': {"说明": '查日志' , "需开工ID": False, "必需": [],
-        "可选": ['事件', '模块名', '级别', '会话', '起始时刻', '结束时刻', '日志件', '条数', '上限字节'], "最短例": {'操作': '查日志', '参数': {'条数': 5}},
+        "可选": ['事件', '模块名', '级别', '会话', '工具名', '耗时下限毫秒', '起始时刻', '结束时刻', '日志件', '条数', '上限字节'], "最短例": {'操作': '查日志', '参数': {'条数': 5}},
         "处理": 建操作处理(查日志, 并入开工=False)},
 }
