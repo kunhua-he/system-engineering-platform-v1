@@ -25,7 +25,7 @@ from pathlib import Path
 
 from 运行数据根.口径 import 覆盖变量名
 
-from .反馈样本工具 import 空字节指纹, 造开工, 读回执
+from .反馈样本工具 import 空字节指纹, 造开工
 
 帧开工号 = "v1-900004"
 帧工具名 = "v1_task"
@@ -75,14 +75,17 @@ def 送帧(仓根, 运行根, 命令表: list) -> tuple:
 
 
 def 取信封(响应表: list, 帧号) -> dict:
-    """某帧响应 ⇒ 内层信封（缺帧 / 形状不对 ⇒ 空字典，断言自然不通过）。"""
+    """某帧响应 ⇒ 内层信封（缺帧 / 形状不对 ⇒ 空字典，断言自然不通过）。
+
+    ★ 2026-10-10（见 `项目文档/决策记录/2026-10-09_回执与绑定裁决口径.md` §一）：`content` 已改成
+    「易语言式返回值」（只给值本身），
+    完整信封（含 `退出码`）改由 `structuredContent` 承载 —— 探针读这一份。
+    """
     for 响应项 in 响应表:
         if 响应项.get("id") != 帧号:
             continue
-        内容表 = ((响应项.get("result") or {}).get("content") or [])
-        if not 内容表:
-            return {}
-        return 读回执(内容表[0].get("text"))
+        读数 = (响应项.get("result") or {}).get("structuredContent")
+        return 读数 if isinstance(读数, dict) else {}
     return {}
 
 
@@ -128,7 +131,7 @@ def 送HTTP帧(仓根, 命令表: list) -> tuple:
             应答 = http传输样本._调用(监听端口, "POST", http传输样本._报文(帧项),
                               http传输样本.标准头)
             状态码表.append(应答[0])
-            信封表.append(读回执(json.loads(应答[3])["result"]["content"][0]["text"]))
+            信封表.append(json.loads(应答[3])["result"]["structuredContent"])
     finally:
         服务对象.shutdown()
         服务对象.server_close()

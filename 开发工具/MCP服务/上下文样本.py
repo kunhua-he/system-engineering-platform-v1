@@ -285,10 +285,10 @@ def 上下文样本(仓根, 工具表=None):
         发现服务.shutdown()
         发现服务.server_close()
     记样本("真实MCP发现工具", any(工具项["name"] == "v1_context" for 工具项 in 响应表[0]["result"]["tools"]))
-    信封 = json.loads(响应表[1]["result"]["content"][0]["text"])
+    信封 = 响应表[1]["result"]["structuredContent"]
     记样本("真实MCP数据与预算", not 响应表[1]["result"]["isError"] and 信封["结果"]["条目"]
           and len(信封["说明"].encode()) <= 8192 and "条目" not in 信封["说明"])
-    信封 = json.loads(响应表[2]["result"]["content"][0]["text"])
+    信封 = 响应表[2]["result"]["structuredContent"]
     读数 = 信封["结果"]
     记样本("正式开工树解析", (not 响应表[2]["result"]["isError"] and 读数["树绝对路径"].endswith(开工号)) if 开工号 != "v1-000000" else (响应表[2]["result"]["isError"] and 读数["错误"]["种类"] == "missing"))
     # —— 同态镜像复核：同一调用经 HTTP 长驻路径（真实传输处理器）与直调进程 ⇒ 信封同态 ——
@@ -302,26 +302,26 @@ def 上下文样本(仓根, 工具表=None):
             {"jsonrpc": "2.0", "id": 1, "method": "initialize",
              "params": {"protocolVersion": "2025-06-18", "capabilities": {},
                         "clientInfo": {"name": "同态镜像", "version": "0"}}}), 标准头)
-        镜像信封 = json.loads(json.loads(http传输样本._调用(监听端口, "POST", http传输样本._报文(
-            命令表[1]), 标准头)[3])["result"]["content"][0]["text"])
-        对照信封 = json.loads(响应表[1]["result"]["content"][0]["text"])
+        镜像信封 = json.loads(http传输样本._调用(监听端口, "POST", http传输样本._报文(
+            命令表[1]), 标准头)[3])["result"]["structuredContent"]
+        对照信封 = 响应表[1]["result"]["structuredContent"]
         记样本("HTTP与直调同态镜像（对象结果·说明短元信息·不重复正文·两路一致）",
              镜像信封["成功"] and isinstance(镜像信封["结果"], dict)
              and bool(镜像信封["结果"].get("条目")) and "条目" not in 镜像信封["说明"]
              and 镜像信封["说明"] == 对照信封["说明"]
              and type(镜像信封["结果"]) is type(对照信封["结果"]))
-        文本信封 = json.loads(json.loads(http传输样本._调用(监听端口, "POST", http传输样本._报文(
+        文本信封 = json.loads(http传输样本._调用(监听端口, "POST", http传输样本._报文(
             {"jsonrpc": "2.0", "id": 3, "method": "tools/call",
              "params": {"name": "v1_shell", "arguments": {"操作": "执行",
                                                           "参数": {"命令": "echo 同态镜像固定词"}}}}),
-            标准头)[3])["result"]["content"][0]["text"])
+            标准头)[3])["result"]["structuredContent"]
         记样本("HTTP长驻纯文本（结果 None·说明保全文）",
              文本信封["结果"] is None and "同态镜像固定词" in 文本信封["说明"])
-        错误信封 = json.loads(json.loads(http传输样本._调用(监听端口, "POST", http传输样本._报文(
+        错误信封 = json.loads(http传输样本._调用(监听端口, "POST", http传输样本._报文(
             {"jsonrpc": "2.0", "id": 4, "method": "tools/call",
              "params": {"name": "v1_context", "arguments": {"操作": "取条款",
                                                              "参数": {"游标": "坏游标原文xyz"}}}}),
-            标准头)[3])["result"]["content"][0]["text"])
+            标准头)[3])["result"]["structuredContent"]
         记样本("HTTP长驻错误（退出码非零·说明保原文·游标原文不丢）",
              not 错误信封["成功"] and "游标无法解码" in 错误信封["说明"])
     finally:

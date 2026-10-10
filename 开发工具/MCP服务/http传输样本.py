@@ -114,7 +114,7 @@ def 样本列表(仓根, 工具表):
             {"jsonrpc": "2.0", "id": 3, "method": "tools/call",
              "params": {"name": "v1_context", "arguments": {}}}), 标准头)
         结果值 = json.loads(应答数据).get("result") or {}
-        应答文本 = (结果值.get("content") or [{}])[0].get("text") or ""
+        应答文本 = ((结果值.get("structuredContent") or {}).get("说明") or "")
         样本表.append(("tools/call v1_context 只读：HTTP %s · isError=%s · 信封含「操作目录」%s"
                  % (状态码, 结果值.get("isError"), "操作目录" in 应答文本),
                 状态码 == 200 and not 结果值.get("isError") and "操作目录" in 应答文本))

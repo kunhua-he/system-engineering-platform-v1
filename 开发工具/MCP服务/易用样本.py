@@ -188,15 +188,15 @@ def 易用样本(仓根, 工具表) -> list:
           and 门禁.读数计数行(["还在启动"]) == [])
 
     # ── 项 2 / 12：信封纯 JSON（structuredContent）+ 过期提示走独立字段 ──
-    假工具表 = {"v1_探针": (lambda 实参, 树根: (0, json.dumps({"成功": True, "结果": 1},
+    假工具表 = {"v1_探针": (lambda 实参, 树根: (0, json.dumps({"成功": True, "退出码": 0, "结果": 1},
                                                      ensure_ascii=False)),
                           "探针", "", {})}
     读数, 错误 = 协议.派发("tools/call", {"name": "v1_探针", "arguments": {}}, 仓根, 假工具表)
     回执文本 = (读数 or {}).get("content", [{}])[0].get("text", "")
-    记样本("信封：content 是纯 JSON（无前缀污染）+ structuredContent 是对象",
-           错误 is None and 回执文本.lstrip().startswith("{") and json.loads(回执文本)["成功"] is True
-           and (读数 or {}).get("structuredContent", {}).get("成功") is True
-           and "服务提示" not in (读数 or {}))
+    信封读数 = (读数 or {}).get("structuredContent") or {}
+    记样本("回执：content 是值本身（易语言式）+ structuredContent 是完整信封",
+           错误 is None and 回执文本 == "1" and 信封读数.get("成功") is True
+           and 信封读数.get("退出码") == 0 and "服务提示" not in (读数 or {}))
 
     # ── 项 13：顶层字段被拒 ⇒ 错误内联可跑形状 ──
     退出码, 回执 = 参数规范.网关派发("v1_shell", {"命令": "echo 不该执行"}, 仓根)
