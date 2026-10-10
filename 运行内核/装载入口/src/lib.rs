@@ -65,6 +65,8 @@ mod 错误;
 mod 读数;
 #[path = "声明校验.rs"]
 mod 声明校验;
+#[path = "依赖校验.rs"]
+mod 依赖校验;
 #[path = "标签登记.rs"]
 mod 标签登记;
 #[path = "判定.rs"]
