@@ -23,7 +23,7 @@ use super::槽读写::{取字节集, 取文本, 写字节集, 写错误槽};
 /// 1101 词法分析：程序文本（**文本槽**，类型标签 4）→ 记号流边界编码（字节集）。
 ///
 /// 入参出参的类型标签逐字取自 `能力声明/1101.json`（参数表行序即契约 · 返回类型 5）。
-pub(crate) unsafe extern "C" fn 词法分析执行(返回槽: *mut 数据槽, 参数个数: u32, 参数表: *const 数据槽) {
+pub(crate) unsafe extern "C-unwind" fn 词法分析执行(返回槽: *mut 数据槽, 参数个数: u32, 参数表: *const 数据槽) {
     if 返回槽.is_null() {
         return;
     }
@@ -51,7 +51,7 @@ pub(crate) unsafe extern "C" fn 词法分析执行(返回槽: *mut 数据槽, �
 /// 入参出参的类型标签逐字取自 `能力声明/1102.json`：参数表是**程序文本**（不是记号流，
 /// 与 `说明/设计说明.md` §二 写的「记号流 → 语法树」不同 —— 那是设计稿，声明是契约）。
 /// 故本函数把两步串起来：`切记号` → `建树`。两个入口都是既有实现，这里只做接线。
-pub(crate) unsafe extern "C" fn 语法分析执行(返回槽: *mut 数据槽, 参数个数: u32, 参数表: *const 数据槽) {
+pub(crate) unsafe extern "C-unwind" fn 语法分析执行(返回槽: *mut 数据槽, 参数个数: u32, 参数表: *const 数据槽) {
     if 返回槽.is_null() {
         return;
     }
@@ -87,7 +87,7 @@ pub(crate) unsafe extern "C" fn 语法分析执行(返回槽: *mut 数据槽, �
 ///
 /// 失败三档：入参槽不合契约 → `1135`；三张表的载荷解不出来 / 号装不下 → `1134`；
 /// 解不出的名字 → `1136`（第一条）。都是结构化码，不 panic、不返回字符串。
-pub(crate) unsafe extern "C" fn 语义分析执行(返回槽: *mut 数据槽, 参数个数: u32, 参数表: *const 数据槽) {
+pub(crate) unsafe extern "C-unwind" fn 语义分析执行(返回槽: *mut 数据槽, 参数个数: u32, 参数表: *const 数据槽) {
     if 返回槽.is_null() {
         return;
     }
@@ -160,7 +160,7 @@ pub(crate) unsafe extern "C" fn 语义分析执行(返回槽: *mut 数据槽, �
 /// **如实登记一处缺口**（与 1102 / 1103 同一处，不在本腿所有权内）：上游链能报出的 `1137`
 /// （引号不配对）与 `1108–1133`（记号流 / 语法树形状）不在 `1106.json` 的 `可抛错误码` 里 ——
 /// 1103 也是这个形状（`能力声明/1103.json` 只列 `1134`/`1135`/`1136`），补法见 `命令表.rs` 的同一段注。
-pub(crate) unsafe extern "C" fn 编译执行(返回槽: *mut 数据槽, 参数个数: u32, 参数表: *const 数据槽) {
+pub(crate) unsafe extern "C-unwind" fn 编译执行(返回槽: *mut 数据槽, 参数个数: u32, 参数表: *const 数据槽) {
     if 返回槽.is_null() {
         return;
     }
@@ -232,7 +232,7 @@ pub(crate) unsafe extern "C" fn 编译执行(返回槽: *mut 数据槽, 参数�
 /// 本函数**不写错误码**：文本槽正常（含空文本）必写非空字节集（全过 = 1 字节标签 0，
 /// 有失败 = 标签 1 + 诊断）；入参槽不合契约（不是文本槽 / 位次越界）⇒ 写**空字节集** =
 /// 「没跑」，与「全过」的 1 字节标记可区分（两条测试钉住这条口径）。
-pub(crate) unsafe extern "C" fn 诊断执行(返回槽: *mut 数据槽, 参数个数: u32, 参数表: *const 数据槽) {
+pub(crate) unsafe extern "C-unwind" fn 诊断执行(返回槽: *mut 数据槽, 参数个数: u32, 参数表: *const 数据槽) {
     if 返回槽.is_null() {
         return;
     }
@@ -251,7 +251,7 @@ pub(crate) unsafe extern "C" fn 诊断执行(返回槽: *mut 数据槽, 参数�
 }
 
 /// 1105 反解容器：`.e` 容器字节 → 容器结构边界编码。
-pub(crate) unsafe extern "C" fn 反解容器执行(返回槽: *mut 数据槽, 参数个数: u32, 参数表: *const 数据槽) {
+pub(crate) unsafe extern "C-unwind" fn 反解容器执行(返回槽: *mut 数据槽, 参数个数: u32, 参数表: *const 数据槽) {
     if 返回槽.is_null() {
         return;
     }
@@ -278,7 +278,7 @@ pub(crate) unsafe extern "C" fn 反解容器执行(返回槽: *mut 数据槽, �
 }
 
 /// 1104 生成容器：容器结构边界编码 → `.e` 容器字节。
-pub(crate) unsafe extern "C" fn 生成容器执行(返回槽: *mut 数据槽, 参数个数: u32, 参数表: *const 数据槽) {
+pub(crate) unsafe extern "C-unwind" fn 生成容器执行(返回槽: *mut 数据槽, 参数个数: u32, 参数表: *const 数据槽) {
     if 返回槽.is_null() {
         return;
     }

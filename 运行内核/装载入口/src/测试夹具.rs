@@ -30,7 +30,7 @@ pub(crate) fn 静态字节串(字节: &'static [u8]) -> *const u8 {
 }
 
 /// 占位执行函数（样本用；真实现不许留空指针）。
-pub(crate) unsafe extern "C" fn 占位执行(
+pub(crate) unsafe extern "C-unwind" fn 占位执行(
     _返回槽: *mut 数据槽,
     _参数个数: u32,
     _参数表: *const 数据槽,

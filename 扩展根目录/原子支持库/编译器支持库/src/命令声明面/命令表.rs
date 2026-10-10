@@ -334,7 +334,7 @@ pub(crate) static 生成命令缓存: LazyLock<静态命令表> = LazyLock::new(
 ///
 /// 正常路径下调度侧会先看到 `命令状态::错误` 并直接返回 `提供者未载入`，
 /// 本函数不会被调到；它是"直接按函数表调"时的兜底，语义与调度侧一致。
-pub(crate) unsafe extern "C" fn 保留项执行(返回槽: *mut 数据槽, 参数个数: u32, 参数表: *const 数据槽) {
+pub(crate) unsafe extern "C-unwind" fn 保留项执行(返回槽: *mut 数据槽, 参数个数: u32, 参数表: *const 数据槽) {
     let _ = (参数个数, 参数表);
     if 返回槽.is_null() {
         return;

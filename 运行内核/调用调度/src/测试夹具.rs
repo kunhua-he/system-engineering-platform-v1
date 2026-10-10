@@ -38,7 +38,7 @@ unsafe impl Sync for 静态项<命令信息> {}
 unsafe impl Sync for 静态项<平台信息> {}
 
 /// 零参命令：把 42 写进返回槽。
-pub(crate) unsafe extern "C" fn 零参命令(
+pub(crate) unsafe extern "C-unwind" fn 零参命令(
     返回槽: *mut 数据槽,
     参数个数: u32,
     参数表: *const 数据槽,
@@ -49,7 +49,7 @@ pub(crate) unsafe extern "C" fn 零参命令(
 }
 
 /// 两参命令：参数个数不符时**不该被调到**。
-pub(crate) unsafe extern "C" fn 两参命令(
+pub(crate) unsafe extern "C-unwind" fn 两参命令(
     返回槽: *mut 数据槽,
     参数个数: u32,
     参数表: *const 数据槽,
@@ -61,7 +61,7 @@ pub(crate) unsafe extern "C" fn 两参命令(
 }
 
 /// 配额命令：0 参，配额用尽时**不该被调到**。
-pub(crate) unsafe extern "C" fn 配额命令(
+pub(crate) unsafe extern "C-unwind" fn 配额命令(
     返回槽: *mut 数据槽,
     参数个数: u32,
     参数表: *const 数据槽,
@@ -73,7 +73,7 @@ pub(crate) unsafe extern "C" fn 配额命令(
 }
 
 /// 拒绝命令：账本说"不许进"时**不该被调到**（本函数只负责数次数）。
-pub(crate) unsafe extern "C" fn 拒绝命令(
+pub(crate) unsafe extern "C-unwind" fn 拒绝命令(
     返回槽: *mut 数据槽,
     参数个数: u32,
     参数表: *const 数据槽,
@@ -85,7 +85,7 @@ pub(crate) unsafe extern "C" fn 拒绝命令(
 }
 
 /// 慢命令：睡过 1 毫秒，用来验超时段位。
-pub(crate) unsafe extern "C" fn 慢命令(
+pub(crate) unsafe extern "C-unwind" fn 慢命令(
     返回槽: *mut 数据槽,
     参数个数: u32,
     参数表: *const 数据槽,
@@ -94,6 +94,19 @@ pub(crate) unsafe extern "C" fn 慢命令(
     let _ = (参数个数, 参数表);
     // SAFETY: 调度核心保证 `返回槽` 可写。
     unsafe { 返回槽.write(数据槽::内联槽(v1_contract::类型标签::构造(测试标签), 9, 0)) };
+}
+
+/// 演示崩溃命令：故意 panic，验「扩展崩了不带走调用方」。
+///
+/// 只用于反向样本：`调度核心` 把这次调用包在 `catch_unwind` 里，
+/// 它 panic 之后必须变成段位 `扩展执行崩溃` 回槽，**不是 abort 进程**。
+/// 执行函数类型是 `C-unwind`（见 `契约声明/命令形状.rs`）—— panic 能穿过它回到调度层。
+pub(crate) unsafe extern "C-unwind" fn 演示崩溃命令(
+    _返回槽: *mut 数据槽,
+    _参数个数: u32,
+    _参数表: *const 数据槽,
+) {
+    panic!("演示：扩展执行函数崩溃");
 }
 
 /// 两参命令的参数表（**行序即契约**，测试里只为占位）。

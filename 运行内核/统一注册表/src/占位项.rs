@@ -31,7 +31,7 @@ pub const 错误码_提供者未载入: 错误码 = v1_contract::声明数据::�
 ///
 /// # Safety
 /// `返回槽` 若不为空，必须是调用方给出的可写槽（调用契约保证）。
-pub unsafe extern "C" fn 占位执行(返回槽: *mut 数据槽, 参数个数: u32, 参数表: *const 数据槽) {
+pub unsafe extern "C-unwind" fn 占位执行(返回槽: *mut 数据槽, 参数个数: u32, 参数表: *const 数据槽) {
     let _ = (参数个数, 参数表);
     if 返回槽.is_null() {
         // 没有可写的槽就静默返回：占位项的底线是「不许崩」。

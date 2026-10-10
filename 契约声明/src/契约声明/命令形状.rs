@@ -82,8 +82,20 @@ pub struct 命令信息 {
 /// 执行函数：**调用形状 1:1 复刻**——三参数，返回槽与参数槽分离，返回 void。
 ///
 /// 失败靠错误段位，不靠返回值。
+///
+/// # ABI 为什么是 `C-unwind`
+///
+/// 扩展的执行函数可能 panic。Rust 1.71 起 panic 穿过 `extern "C"` 边界**直接 abort 进程**：
+/// 底座与扩展同进程，一次扩展 panic 就带走整个网关，外层 `catch_unwind` 物理上接不住
+/// （实测：`extern "C"` 下 panic ⇒ 退出码 134）。`C-unwind` 是 Rust 为此专开的 ABI：
+/// panic 能穿过它回到调用方，由调度核心的 `catch_unwind` 接住并转成结构化失败码。
+///
+/// **它管不到的那一段**：扩展制品经 `dlopen` 进来时，两边的 Rust 运行时各自独立 ——
+/// 那种边界上 panic 仍然是 abort（实测：`Rust cannot catch foreign exceptions`）。
+/// 跨制品隔离由**跨进程执行域**承担（`进程池` / `进程调用`，崩溃报 `0034`），
+/// 本 ABI 只管同运行时那条路。
 pub type 执行函数 =
-    unsafe extern "C" fn(返回槽: *mut 数据槽, 参数个数: u32, 参数表: *const 数据槽);
+    unsafe extern "C-unwind" fn(返回槽: *mut 数据槽, 参数个数: u32, 参数表: *const 数据槽);
 
 /// 命令类别信息 —— 一个命令类别的登记项（`命令信息.类别` 那个号的名字与说明）。
 ///

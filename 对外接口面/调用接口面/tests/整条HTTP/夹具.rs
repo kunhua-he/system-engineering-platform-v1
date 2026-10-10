@@ -58,7 +58,7 @@ pub(super) const 特征值: u64 = 20817;
 pub(super) const 字节集字节数: usize = 8;
 
 /// 合成能力的执行函数：把特征值放进返回槽（类型标签 1 = 整数）。
-pub(super) unsafe extern "C" fn 合成执行(
+pub(super) unsafe extern "C-unwind" fn 合成执行(
     返回槽: *mut 数据槽,
     参数个数: u32,
     参数表: *const 数据槽,
@@ -72,7 +72,7 @@ pub(super) unsafe extern "C" fn 合成执行(
 
 /// 交出字节集的执行函数：用 `Box::into_raw` 分配并置「所有权交出」
 /// （与外部支持库的 `写字节集` 逐字同一动作），同时把地址记进静态供分配器盯住。
-pub(super) unsafe extern "C" fn 合成执行_交出字节集(
+pub(super) unsafe extern "C-unwind" fn 合成执行_交出字节集(
     返回槽: *mut 数据槽,
     参数个数: u32,
     参数表: *const 数据槽,
