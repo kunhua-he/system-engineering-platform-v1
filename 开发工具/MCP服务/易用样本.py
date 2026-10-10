@@ -120,10 +120,12 @@ def 样本列表(仓根, 工具表) -> list:
              and "未登记开工ID" in (读数.get("说明") or "")
              and "条目" not in (读数.get("说明") or "")))
 
-    # ⑩ 开工登记回执不再带「重启 ZCode 才生效」旧长提示（自愈重启已取代它）—— 防回归
-    开工源码 = (Path(仓根) / "开发工具/MCP服务/开工.py").read_text(encoding="utf-8")
-    样本表.append(("开工登记回执无旧「重启 ZCode 才生效」长提示（防回归）",
-             "让收口方**重启 ZCode**" not in 开工源码 and "改了不重启不生效" not in 开工源码))
+    # ⑩ 开工登记回执不带「重启 ZCode」旧提示（宿主已是 Hermes Agent；自愈重载已取代手动重启）—— 防回归
+    #   对件是**真出处** `登记编排.py`（曾误查 `开工.py` ⇒ 旧句漏网）
+    登记源码 = (Path(仓根) / "开发工具/MCP服务/登记编排.py").read_text(encoding="utf-8")
+    样本表.append(("开工登记回执：无旧「重启 ZCode」提示、且点明重启 Hermes Agent（防回归）",
+             "重启 ZCode" not in 登记源码 and "不重启不生效" not in 登记源码
+             and "重启 **Hermes Agent**" in 登记源码))
     return 样本表
 
 
