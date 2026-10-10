@@ -31,11 +31,23 @@ set -u
 #   成功的安装变成失败（那是假红，比没有门禁更坏）。
 # ★ 函数名与变量名一律 **ASCII**：bash 3.2 连函数名都不认非 ASCII
 #   （实测：`门禁报告() { … }` ⇒ `` `门禁报告': not a valid identifier ``，整个脚本退出码 2）。
-START=$(python3 -c 'import time;print(time.monotonic())')
+# ── 仓根与唯一解释器（仓内 venv · 3.14 · 无回落）──
+# 裸 `python3` 会解析到系统 3.9.6，而判据面用了 3.12+/3.13+ 写法 ⇒ 钩子当场 SyntaxError、
+# 提交被拒；而手工用 3.14 跑全绿 = 假绿。venv 只住主仓（腿里不另建）⇒ 由本脚本路径上溯两级拿它。
+GATE_ROOT=$(cd "$(dirname "$0")/../.." 2>/dev/null && pwd)
+# ★ 解释器唯一化（3.14 · 唯一一份 · 无回落）：venv 只住主仓（腿里不建）；主仓由 git 解析 ——
+#   钩子被复制进 `.git/hooks` 时 $0 仍在仓内，腿树里解析到主仓 ⇒ pre-commit 在腿上跑也拿得到 3.14。
+GATE_ROOT="$(dirname "$(git -C "$GATE_ROOT" rev-parse --path-format=absolute --git-common-dir 2>/dev/null || echo "$GATE_ROOT/.git")")"
+PY="$GATE_ROOT/构建环境/python/bin/python"
+if [ ! -x "$PY" ]; then
+  echo "门禁：仓内解释器不在：$PY（唯一允许的 3.14 venv）⇒ 拒" >&2
+  exit 1
+fi
+START=$("$PY" -c 'import time;print(time.monotonic())')
 
 gate_report() {
   ORIG_CODE=$?
-  python3 - "$START" "$ORIG_CODE" "$(cd "$(dirname "$0")/../.." 2>/dev/null && pwd)" <<'PY'
+  "$PY" - "$START" "$ORIG_CODE" "$(cd "$(dirname "$0")/../.." 2>/dev/null && pwd)" <<'PY'
 import sys, time
 sys.path.insert(0, sys.argv[3])
 from 构建装配.门禁 import 硬顶毫秒, 注入人为慢
@@ -160,18 +172,10 @@ cat > "$TMP" <<'HOOK_BODY'
 ROOT=$(git rev-parse --show-toplevel) || exit 1
 cd "$ROOT" || exit 1
 
-# ── 解释器唯一化：仓内 venv（3.14）──
-# 裸 `python3` 会解析到系统 3.9.6，与判据面的 3.12+/3.13+ 写法冲突 ⇒ 钩子当场 SyntaxError、
-# 提交被拒；而手工用 3.14 跑全绿 = 假绿。腿（worktree）里没有 构建环境/，venv 只在主仓
-# ⇒ 先问 git 主目录，再退本树，最后才退解释器名。
-MAIN_ROOT=$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null)
-[ -x "$PY" ] || PY=$(command -v python3.14 || command -v python3)
-
 # ── 分段耗时：全闸原先只有总数、没有分段读数（每次问「为什么这么慢」都要手工量一遍）──
-# 壳自量。`tick` 用 $PY（同解释器口径）；段边界 = 闸0 / 判据自测 / 全案例。
+# 壳自量。`tick` 用 $PY（同解释器口径，已在脚本头部解析）；段边界 = 闸0 / 判据自测 / 全案例。
 tick() { "$PY" -c 'import time;print(int(time.monotonic()*1000))'; }
 T0=$(tick)
-[ -x "$PY" ] || PY=$(command -v python3.14 || command -v python3)
 
 # ① 闸 0（声明侧 + 实现侧）—— 实测 2.4 s 级，进得去 5 秒硬顶 ⇒ 与案例同进每提交路径。
 #    先跑它：它比案例快得多，坏了当场拒，不必等编译。

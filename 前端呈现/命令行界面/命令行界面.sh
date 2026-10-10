@@ -21,18 +21,16 @@ set -eu
 
 SELF_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 REPO_ROOT=$(CDPATH= cd -- "${SELF_DIR}/../.." && pwd)
+# ★ 解释器唯一化（3.14 · 唯一一份 · 无回落）：venv 只住主仓（腿里不建）；主仓由 git 解析。
+REPO_ROOT="$(dirname "$(git -C "${REPO_ROOT}" rev-parse --path-format=absolute --git-common-dir 2>/dev/null || echo "${REPO_ROOT}/.git")")"
 
-# 解释器：优先仓库内 venv（构建环境/python），退到 PATH 上的 python3。
-# 本界面只用标准库，任何 python3 都能跑；找不到就如实报缺什么。
+# 解释器：**唯一一份** —— 仓内 venv（3.14）；不在就明确失败，不回落 PATH 上的 python3。
+# 裸 `python3` 会落到系统 3.9.6（口径：所有 py 命令都用 3.14，禁第二个版本）。
 VENV_PY="${REPO_ROOT}/构建环境/python/bin/python3"
-if [ -x "${VENV_PY}" ]; then
-    PY="${VENV_PY}"
-else
-    PY=$(command -v python3 || command -v python || true)
-fi
-if [ -z "${PY}" ]; then
-    echo "起不来：找不到 python3。本界面只用标准库，装任意 python3 即可（仓库内 venv 在 构建环境/python/）。" >&2
+if [ ! -x "${VENV_PY}" ]; then
+    echo "起不来：仓内解释器不在：${VENV_PY}（唯一允许的 3.14 venv）" >&2
     exit 127
 fi
+PY="${VENV_PY}"
 
 exec "${PY}" "${SELF_DIR}/命令行界面.py" "$@"

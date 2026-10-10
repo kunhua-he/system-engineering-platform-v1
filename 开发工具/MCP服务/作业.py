@@ -44,16 +44,32 @@ from .作业进程 import (  # noqa: E402
 任务号形状 = re.compile(r"^[0-9a-f]{32}$")
 日志片段上限 = 输出上限      # 与 shell 同一份有界口径（16000 字符）
 # 长活具名表：名字 → 命令。`放行` = 提交放行三件套（与 pre-commit 钩子同一组命令，fail-fast）。
+# ★ 解释器一律写 `"$V1_PY"`（`接管作业` 注入仓内 venv 的绝对路径）—— **禁止裸 `python3`**：
+#   命令走 `shell=True`，裸 `python3` 按 PATH 解析，实测落到系统 3.9，而判据面用了 3.13+ 写法
+#   ⇒ 闸 0 假红（判据 ㊽ 的 `--自检` 子进程继承同一个解释器）。
 具名作业表 = {
     "合主线": None,
-    "闸0": "python3 构建装配/一键验证/闸0.py",
-    "自测": "python3 构建装配/一键验证/一键验证.py --自测",
+    "闸0": "\"$V1_PY\" 构建装配/一键验证/闸0.py",
+    "自测": "\"$V1_PY\" 构建装配/一键验证/一键验证.py --自测",
     "案例": "cargo run --quiet --locked -p v1-case-runner",
-    "建库": "python3 开发工具/信息核心/信息核心.py 建库",
-    "放行": ("python3 构建装配/一键验证/闸0.py"
-           " && python3 构建装配/一键验证/一键验证.py --自测"
+    "建库": "\"$V1_PY\" 开发工具/信息核心/信息核心.py 建库",
+    "放行": ("\"$V1_PY\" 构建装配/一键验证/闸0.py"
+           " && \"$V1_PY\" 构建装配/一键验证/一键验证.py --自测"
            " && cargo run --quiet --locked -p v1-case-runner"),
 }
+
+
+def 解释器路径() -> str:
+    """长活命令用的**唯一解释器** —— **跑本服务的那个 venv**（`sys.prefix/bin/python`）。
+
+    ★ 为何它就是唯一真源：服务只由仓内 3.14 venv 拉起 ⇒ `sys.prefix` 就是那份 venv，
+    `sys.prefix/bin/python` 恒为 3.14。**不接调用方目录**（夹具仓 / 腿树里没有 venv，拿它们拼
+    路径是拿调用方的目录当解释器的家 —— 实测把作业自检的临时夹具打死）；**不找候选、不回落**。
+    """
+    解释器 = Path(sys.prefix) / "bin" / "python"
+    if not 解释器.is_file():
+        raise FileNotFoundError("跑本服务的 venv 里没有解释器：%s" % 解释器)
+    return str(解释器)
 # 工作进程的启动码：**独立于 MCP 服务**（服务 exec 重载不碰它）。串里的名字不进命名面。
 工作段 = ("import sys; from 开发工具.MCP服务.作业 import 接管作业;"
         " sys.exit(接管作业(*sys.argv[1:]))")
@@ -81,6 +97,7 @@ def 接管作业(任务ID, 命令文本, 目标树文本, 仓根文本, 日志�
         #   否则长活（释放作业）核清树时认不出本作业，把本作业那一行算成「未收敛的后台作业」而永拒释放。
         作业环境 = _执行环境(目标树)
         作业环境["V1_任务ID"] = 任务ID
+        作业环境["V1_PY"] = 解释器路径()
         子进程 = subprocess.Popen(命令文本, shell=True, cwd=str(目标树), stdout=subprocess.PIPE,
                               stderr=subprocess.PIPE, encoding="utf-8", errors="replace",
                               env=作业环境, start_new_session=True)

@@ -34,7 +34,11 @@ export CARGO_HOME="$ROOT/构建环境/cargo"
 export CARGO_TARGET_DIR="$ROOT/构建环境/构建缓存"
 export RUSTUP_TOOLCHAIN="$(sed -n 's/^channel *= *"\(.*\)"/\1/p' "$ROOT/rust-toolchain.toml")"
 export CARGO_NET_OFFLINE=true
-export VIRTUAL_ENV="$ROOT/构建环境/python"
+# ★ 解释器唯一化（3.14 · 唯一一份 · 无回落）：venv **只住主仓** —— 腿（linked 工作树）里
+#   没有 `构建环境/python`（`并行工作树.sh` 不再为腿建），一律用主仓那份；找不到就是环境不成立。
+#   主仓由 **git** 解析（linked 工作树的 common dir 就是主仓 `.git`），不手工拼 gitdir。
+MAIN_ROOT="$(dirname "$(git -C "$ROOT" rev-parse --path-format=absolute --git-common-dir 2>/dev/null || echo "$ROOT/.git")")"
+export VIRTUAL_ENV="$MAIN_ROOT/构建环境/python"
 export PATH="$VIRTUAL_ENV/bin:$PATH"
 unset PYTHONHOME
 
@@ -45,7 +49,7 @@ echo "构建缓存    : $CARGO_TARGET_DIR"
 if [ -x "$VIRTUAL_ENV/bin/python" ]; then
   echo "Python      : $("$VIRTUAL_ENV/bin/python" -c 'import sys;print(sys.version.split()[0])')（$VIRTUAL_ENV）"
 else
-  echo "Python      : venv 不存在（先跑 python3.14 -m venv --without-pip 构建环境/python）"
+  echo "Python      : venv 不存在（唯一那份住主仓：$VIRTUAL_ENV）"
 fi
 echo "离线构建    : $CARGO_NET_OFFLINE"
 echo
