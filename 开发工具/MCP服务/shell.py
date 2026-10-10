@@ -56,6 +56,10 @@ from .主干写盘兜底 import 兜底, 取主干快照
 # 读外层配置（实测 v1-100675）。`GIT_CONFIG_PARAMETERS` 与 `GIT_CONFIG_COUNT` 是**整名**；
 # `GIT_CONFIG_KEY_` 与 `GIT_CONFIG_VALUE_` 的键名**带序号** ⇒ 只能按**前缀**剔。
 继承配置键 = ("GIT_CONFIG_PARAMETERS", "GIT_CONFIG_COUNT", "GIT_CONFIG_KEY_", "GIT_CONFIG_VALUE_")
+# ★ 统一强制 `core.quotePath=false`（台账 D-281）：中文路径下 git 默认把非 ASCII 转成八进制转义串
+#   （`ls-tree`/`status` 输出里中文路径全成 `"\346\226\207"` 形）⇒ 调用方按中文名匹配恒不中
+#   （**初次假阴性**）。本仓 `git config` 已设 false，但工具/示例**未显式声明** ⇒ 换环境/夹具即复现。
+#   `_执行环境` 对所有子进程注入（与 `仓状态.跑git` 的显式 `-c` 同口径；显式 `-c` 可再覆盖它）。
 # 每次从管道读多少字符
 读块大小 = 65536
 
@@ -124,6 +128,9 @@ def _执行环境(目标树: Path) -> dict:
         for 键名 in [键名 for 键名 in 环境表 if 键名.startswith(键前缀)]:
             环境表.pop(键名, None)
     环境表.update(禁终端提示环境)
+    环境表["GIT_CONFIG_COUNT"] = "1"
+    环境表["GIT_CONFIG_KEY_0"] = "core.quotePath"
+    环境表["GIT_CONFIG_VALUE_0"] = "false"
     # ★ 解释器唯一化（3.14 · 唯一一份 · 无回落）：仓内 venv 取到了就把它的 bin 前置进子进程
     #   PATH，并把**唯一来源** `V1_PY` 一起注入 —— 子进程里任何裸 `python3` 与 `$V1_PY` 都落在
     #   3.14 上。★ 为何必须注入 `V1_PY`：实测「git 给钩子的干净环境」里 PATH 可能没有
