@@ -59,17 +59,33 @@ from .作业进程 import (  # noqa: E402
 }
 
 
-def 解释器路径() -> str:
-    """长活命令用的**唯一解释器** —— **跑本服务的那个 venv**（`sys.prefix/bin/python`）。
+def 确保注入() -> str:
+    """把本进程的解释器注入环境变量 `V1_PY`（已有则不覆盖）⇒ 返回它。
 
-    ★ 为何它就是唯一真源：服务只由仓内 3.14 venv 拉起 ⇒ `sys.prefix` 就是那份 venv，
-    `sys.prefix/bin/python` 恒为 3.14。**不接调用方目录**（夹具仓 / 腿树里没有 venv，拿它们拼
-    路径是拿调用方的目录当解释器的家 —— 实测把作业自检的临时夹具打死）；**不找候选、不回落**。
+    ★ 为何用 `sys.executable`：解释器唯一化的语义是「**全链用同一个解释器**」——
+    **入口层**（钩子 `装门禁.sh` · 服务 `服务管理.py` · 人工 `进入.sh`）负责保证本身是仓内
+    3.14；本函数负责把它**传下去**；**使用层**（`解释器路径`）一律读 `V1_PY`，缺失即拒
+    （不回落 PATH、不猜路径）。这样腿树 / 集成树里没有 venv 也不再是问题。
     """
-    解释器 = Path(sys.prefix) / "bin" / "python"
-    if not 解释器.is_file():
-        raise FileNotFoundError("跑本服务的 venv 里没有解释器：%s" % 解释器)
-    return str(解释器)
+    解释器 = os.environ.get("V1_PY") or sys.executable
+    os.environ["V1_PY"] = 解释器
+    return 解释器
+
+
+def 解释器路径() -> str:
+    """长活命令用的**唯一解释器** —— 环境变量 `V1_PY`（入口注入的仓内 3.14 venv）。
+
+    ★ 为何改成读环境变量：`sys.prefix/bin/python` 只在**venv 起的进程**里存在 —— 实测
+    `/usr/bin/python3`（3.9）与 homebrew 非 venv 的 `sys.prefix/bin/python` **都不存在**，
+    一旦链路上有一层不是 venv 起的，这里就抛 ⇒ 作业整条起不来（释放作业四态实测红）。
+    口径：**入口注入一次、全链继承、缺失即拒** —— 不猜、不拼调用方目录、不回落 PATH。
+    """
+    解释器 = os.environ.get("V1_PY", "")
+    if not 解释器 or not Path(解释器).is_file():
+        raise FileNotFoundError(
+            "环境变量 V1_PY 没指向可用的解释器：%r（由入口注入：服务 · 装门禁.sh · 进入.sh · "
+            "并行工作树.sh · v1_shell 的执行环境；仓内唯一那份是 构建环境/python/bin/python）" % 解释器)
+    return 解释器
 # 工作进程的启动码：**独立于 MCP 服务**（服务 exec 重载不碰它）。串里的名字不进命名面。
 工作段 = ("import sys; from 开发工具.MCP服务.作业 import 接管作业;"
         " sys.exit(接管作业(*sys.argv[1:]))")

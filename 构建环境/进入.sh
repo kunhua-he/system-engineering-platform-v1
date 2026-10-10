@@ -40,6 +40,8 @@ export CARGO_NET_OFFLINE=true
 MAIN_ROOT="$(dirname "$(git -C "$ROOT" rev-parse --path-format=absolute --git-common-dir 2>/dev/null || echo "$ROOT/.git")")"
 export VIRTUAL_ENV="$MAIN_ROOT/构建环境/python"
 export PATH="$VIRTUAL_ENV/bin:$PATH"
+# ★ 解释器唯一化：`V1_PY` 是**唯一来源**（仓内 3.14 的绝对路径），下游一律取它，不靠 PATH 解析。
+export V1_PY="$VIRTUAL_ENV/bin/python"
 unset PYTHONHOME
 
 echo "仓根        : $ROOT"

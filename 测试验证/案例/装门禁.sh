@@ -43,6 +43,9 @@ if [ ! -x "$PY" ]; then
   echo "门禁：仓内解释器不在：$PY（唯一允许的 3.14 venv）⇒ 拒" >&2
   exit 1
 fi
+# ★ 解释器唯一化：把**唯一来源** `V1_PY` 注入本进程与全部后代 —— 钩子起的每个子进程（含长样本里
+#   作业执行的命令串）都拿到仓内 3.14 绝对路径，不靠 PATH 解析（干净环境里 PATH 可能没有 python3）。
+export V1_PY="$PY"
 START=$("$PY" -c 'import time;print(time.monotonic())')
 
 gate_report() {

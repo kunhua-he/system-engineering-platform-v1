@@ -30,6 +30,7 @@
 import os
 import re
 import subprocess
+import sys
 import tempfile
 import threading
 from pathlib import Path
@@ -123,12 +124,16 @@ def _执行环境(目标树: Path) -> dict:
         for 键名 in [键名 for 键名 in 环境表 if 键名.startswith(键前缀)]:
             环境表.pop(键名, None)
     环境表.update(禁终端提示环境)
-    # ★ 解释器唯一化（3.14 · 唯一一份 · 无回落）：仓内 venv 的 bin 取到了就前置进子进程 PATH
-    #   （腿树里跑时取的是**主仓**那份）—— 子进程里任何裸 `python3` 都落在 3.14 上，
-    #   不随 MCP 服务的 PATH 漂到系统 3.9。取不到（目标树不是仓）就不注入，不另找替代。
+    # ★ 解释器唯一化（3.14 · 唯一一份 · 无回落）：仓内 venv 取到了就把它的 bin 前置进子进程
+    #   PATH，并把**唯一来源** `V1_PY` 一起注入 —— 子进程里任何裸 `python3` 与 `$V1_PY` 都落在
+    #   3.14 上。★ 为何必须注入 `V1_PY`：实测「git 给钩子的干净环境」里 PATH 可能没有
+    #   `python3` ⇒ 命令串写裸 `python3` 会 `command not found`、作业 300 ms 内即失败。
     解释器夹 = _仓内解释器夹(目标树)
     if 解释器夹:
         环境表["PATH"] = 解释器夹 + os.pathsep + 环境表.get("PATH", "")
+    # ★ `V1_PY` **无条件**注入（不受「目标树里有没有仓内 venv」影响）：样本夹具仓里没有
+    #   `构建环境/python`，但那不等于「没有解释器」—— 唯一来源就是**本进程**的解释器。
+    环境表["V1_PY"] = sys.executable
     if _判裸仓根(目标树):
         环境表["GIT_DIR"] = str(目标树 / ".git")
         环境表["GIT_WORK_TREE"] = str(目标树)

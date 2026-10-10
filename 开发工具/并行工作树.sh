@@ -69,6 +69,8 @@ if [ ! -x "$PY" ]; then
   echo "并行工作树：仓内解释器不在：$PY（唯一允许的 3.14 venv）⇒ 拒" >&2
   exit 1
 fi
+# ★ 解释器唯一化：`V1_PY` 是**唯一来源**，随本脚本起的子进程一路继承。
+export V1_PY="$PY"
 START=$("$PY" -c 'import time;print(time.monotonic())')
 gate_report() {
   ORIG_CODE=$?

@@ -70,13 +70,16 @@ def 跑一档(临时根, 名称, 仓根):
     连接.close()
 
     def 假命令(仓根值, 工作树值, 开工号值, 跳过验证, 推送):
+        # ★ 解释器一律写 `"$V1_PY"`（作业环境注入的仓内 3.14 绝对路径）—— **禁止裸 `python3`**：
+        #   实测「git 给钩子的干净环境」里 PATH 可能没有 `python3` ⇒ 命令串当场
+        #   `command not found`、作业 300 ms 内即失败（本四态样本实测红）。
         if 名称 == "终态失败拒提交":
-            return "python3 -c \"import sys; sys.exit(7)\"", "样本：终态失败"
+            return "\"$V1_PY\" -c \"import sys; sys.exit(7)\"", "样本：终态失败"
         if 名称 == "终态成功":
             # 落一条与本次请求（推送=False）**不同**的推送态标记 ⇒ 能分辨「真读了作业日志」
             # 还是「回落成参数」（日志在落终态前已关件刷新 ⇒ 读得到是确定的，不是竞态）。
-            return "python3 -c \"print('推送态：本次已推远端（推送=真）')\"", "样本：终态成功"
-        return "python3 -c \"import time; time.sleep(%s)\"" % 睡秒, "样本：长活"
+            return "\"$V1_PY\" -c \"print('推送态：本次已推远端（推送=真）')\"", "样本：终态成功"
+        return "\"$V1_PY\" -c \"import time; time.sleep(%s)\"" % 睡秒, "样本：长活"
 
     退出码二 = None
     输出文本二 = ""

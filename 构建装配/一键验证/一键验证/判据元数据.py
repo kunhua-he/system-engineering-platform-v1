@@ -366,6 +366,7 @@ from .判据元数据_MCP自检 import MCP自检判据元数据
 from .判据元数据_后缀与名册 import 后缀与名册判据元数据
 from .判据元数据_唯一物边界命名件 import 唯一物边界命名件判据元数据
 from .判据元数据_样本git隔离 import 样本git隔离判据元数据
+from .判据元数据_解释器唯一化 import 解释器唯一化判据元数据
 判据元数据.update(准入判据元数据)
 判据元数据.update(引用判据元数据)
 判据元数据.update(十干判据元数据)
@@ -378,3 +379,4 @@ from .判据元数据_样本git隔离 import 样本git隔离判据元数据
 判据元数据.update(后缀与名册判据元数据)
 判据元数据.update(唯一物边界命名件判据元数据)
 判据元数据.update(样本git隔离判据元数据)
+判据元数据.update(解释器唯一化判据元数据)

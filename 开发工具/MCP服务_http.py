@@ -16,6 +16,7 @@ HTTP 面用**同一份** `协议.派发` / 工具表 / 统一信封 ⇒ 写工�
 
 依据：`项目文档/决策记录/2026-09-27_MCP适配层.md`。
 """
+import os
 import sys
 import time
 from pathlib import Path
@@ -55,5 +56,7 @@ def 入口函数(命令行参数):
 if __name__ == "__main__":
     from 构建装配.门禁 import 自门禁
 
+    # ★ 解释器唯一化（入口层）：一行赋值即可 —— 直跑时 sys.path[0] 是脚本目录，import 仓内模块不可靠。
+    os.environ.setdefault("V1_PY", sys.executable)
     sys.exit(自门禁(起始时刻, 入口函数(sys.argv[1:]), 尾巴余量毫秒=200,
                     修法="HTTP 传输是秒级；前台服务永不返回（那条不产生读数）。"))

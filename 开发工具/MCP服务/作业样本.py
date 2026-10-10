@@ -65,7 +65,7 @@ def 异步短样本(仓根, 工具表):
     样本表 = []
     with tempfile.TemporaryDirectory(prefix="v1-job-sample-") as 临时根:
         with patch.dict(os.environ, {覆盖变量名: 临时根, "PYTHONPATH": str(仓根)}), patch.dict(
-                作业.具名作业表, {"闸0": "python3 -B -c 'print(12345)'"}):
+                作业.具名作业表, {"闸0": "\"$V1_PY\" -B -c 'print(12345)'"}):
             退出码, 输出文本 = 工具表["v1_job"][0]({"操作": "start", "参数": {"具名": "闸0", "超时秒": 1}}, 仓根)
             匹配 = re.search(r"任务ID：([0-9a-f]{32})", json.loads(输出文本)["说明"])
             样本表.append(("真实start返回任务ID", 退出码 == 0 and 匹配 is not None))
