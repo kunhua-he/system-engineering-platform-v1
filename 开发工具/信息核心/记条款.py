@@ -152,6 +152,17 @@ def 记条款(字段表: dict) -> int:
         return 1
     连接 = sqlite3.connect(表定义.库路径(仓根))
     try:
+        # ★ 2026-10-10：防**孤儿行** —— 只过「仓内相对路径闸」还不够：一个拼错的新路径
+        #   （盘上没 md、库里也别处没有）写进去，就成了 `条款` 表里一行无主正文。
+        #   合法用法是「改**已入库**的某节」，所以库里必须已有这份文档的行。
+        别处 = 连接.execute("select 1 from 条款 where 文档路径 = ? limit 1",
+                          (文档路径,)).fetchone()
+        if not 别处:
+            print(f"拒：库里 `{文档路径}` 一行都没有（盘上也没这份 md）—— "
+                  f"新文档路径得先有 md（放进仓里跑 `建库`）才能记条款，"
+                  f"否则这一笔只会在 `条款` 表里落一条**孤儿行**。先核路径是否拼错。",
+                  file=sys.stderr)
+            return 2
         已有 = 连接.execute("select 权威档 from 条款 where 文档路径 = ? and 序号 = ?",
                           (文档路径, int(序号))).fetchone()
         连接.execute("insert or replace into 条款 values(?,?,?,?,?)",
