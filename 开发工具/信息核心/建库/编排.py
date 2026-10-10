@@ -11,6 +11,7 @@ from .契约 import 装能力, 装能力参数, 装类型, 装错误码
 from .文档 import 装文档
 from .文档索引 import 装文档索引
 from .条款 import 装条款
+from .保留时间 import 记旧值, 回填旧值
 from .源件 import 装未完成, 装分片源件
 from .规则 import 装规则
 
@@ -34,10 +35,12 @@ def 装表(连接, 表名: str, 现抽, 根目录: Path, *命令行参数) -> in
     if 表名 in 表定义.源表 and 已有行数 and not 有源件:
         return 已有行数
     数据行 = 现抽(根目录, *命令行参数)
+    旧值表 = 记旧值(连接, 表名)
     连接.execute(f"delete from {表名}")
     if 数据行:
         连接.executemany(
             f"insert or replace into {表名} values({','.join('?' * len(数据行[0]))})", 数据行)
+        回填旧值(连接, 表名, 旧值表)
         # ★ 2026-09-28 实测撞过：`命名定义` 的主键是**第 1 栏**（语义），源件里第 1 栏重了
         # 两行 ⇒ `insert or replace` 静默合并，报 2577 行而库里只有 2573 行。
         # 静默丢数据是头号大敌 ⇒ 落库行数对不上就**炸**，先修源件。

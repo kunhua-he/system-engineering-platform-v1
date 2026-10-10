@@ -4,6 +4,7 @@ from pathlib import Path
 
 import 表定义
 
+from .保留时间 import 记旧值, 回填旧值
 from .通用 import 读JSON件
 from .文档 import 装文档
 
@@ -48,10 +49,12 @@ def 装分片源件(连接, 表名: str, 分片列: str, 现抽, 根目录: Path
     数据行 = 现抽(根目录, 文档行)
     if 在场路径表:
         占位符 = ",".join("?" * len(在场路径表))
+        旧值表 = 记旧值(连接, 表名)
         连接.execute(f"delete from {表名} where {分片列} in ({占位符})", 在场路径表)
         if 数据行:
             连接.executemany(
                 f"insert or replace into {表名} values({','.join('?' * len(数据行[0]))})", 数据行)
+            回填旧值(连接, 表名, 旧值表)
             落库行数 = 连接.execute(
                 f"select count(*) from {表名} where {分片列} in ({占位符})", 在场路径表).fetchone()[0]
             if 落库行数 != len(数据行):
