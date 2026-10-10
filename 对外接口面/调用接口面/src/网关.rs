@@ -38,7 +38,7 @@ use crate::端点路由;
 use crate::常量::{监听地址, 接口端口, 工具根默认, 静态根};
 use std::io::Read;
 use std::net::{TcpListener, TcpStream};
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::sync::{Arc, Mutex, RwLock};
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::time::Duration;
@@ -183,9 +183,9 @@ impl 服务 {
         })
     }
 
-    /// **部署事实注入与读数**——`托管静态根` / `工具根` / `声明根` / `后缀表` /
-    /// `缓存根目录` / `启用留痕` / `监听端口` / `静态根` / `适配器` 这些口在
-    /// `网关/注入与读数.rs`（本件行数硬顶靠那一搬腾出；形状与理由一字未改）。
+    // **部署事实注入与读数**——`托管静态根` / `工具根` / `声明根` / `后缀表` /
+    // `缓存根目录` / `启用留痕` / `监听端口` / `静态根` / `适配器` 这些口在
+    // `网关/注入与读数.rs`（本件行数硬顶靠那一搬腾出；形状与理由一字未改）。
 
     /// 接受一个连接、处理一次、关闭。**一个连接一个请求**（不做连接管理）。
     ///

@@ -22,3 +22,6 @@ v1-dispatch = { path = "../../运行内核/调用调度" }
 # 借它 = 不造第二套协议；本关口只做「槽表 ↔ 线协议」的搬运，字节一个不亲手拼。
 # 反向依赖不存在（`v1-adapter` 的 Cargo.toml 不依赖本 crate），故无环。
 v1-adapter = { path = "../适配器实现" }
+
+[lints]
+workspace = true

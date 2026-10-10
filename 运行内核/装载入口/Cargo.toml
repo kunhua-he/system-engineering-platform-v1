@@ -12,3 +12,6 @@ path = "src/lib.rs"
 [dependencies]
 v1-contract = { path = "../../契约声明" }
 v1-registry = { path = "../统一注册表" }
+
+[lints]
+workspace = true
