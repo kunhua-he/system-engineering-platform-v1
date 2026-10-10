@@ -57,12 +57,22 @@ def 自检_长样本() -> list:
     脚本 = (r"""import sys
 sys.path.insert(0, r'{工具目录}')
 from unittest.mock import patch
-from MCP服务 import 长样本 as 模块, 合主干样本, 释放样本, 反馈长样本
+from MCP服务 import (长样本 as 模块, 合主干样本, 释放样本, 反馈长样本,
+                     耗时反馈样本, 验证超阈样本, 释放作业样本, 空改主干样本)
 def 跑(反馈码):
-    with patch.object(合主干样本, '跑样本', lambda: 0):
-        with patch.object(释放样本, '释放样本', lambda: [('注入', True)]):
-            with patch.object(反馈长样本, '反馈长样本', lambda 仓根: (反馈码, [])):
-                return 模块.入口([], r'{仓根}')
+    # ★ 本反样本只证一件事：入口把**反馈专项**的退出码聚合进总退出码（不是「只认领绿」）。
+    #   其余六个套件与这条声明无关 ⇒ 一并 mock 掉：它们原先真跑、且跑两遍（跑(1) + 跑(0)），
+    #   实测占本单元 ~26 s（本单元总 38 s、全套本体只 12 s）。mock 后声明面一条不减。
+    注入表 = [('注入', True)]
+    with patch.object(合主干样本, '跑样本', lambda: 0), \
+         patch.object(释放样本, '释放样本', lambda: 注入表), \
+         patch.object(反馈长样本, '反馈长样本', lambda 仓根: (反馈码, [])), \
+         patch.object(耗时反馈样本, '样本列表', lambda 仓根: 注入表), \
+         patch.object(验证超阈样本, '样本列表', lambda 仓根: 注入表), \
+         patch.object(释放作业样本, '样本列表', lambda 仓根: 注入表), \
+         patch.object(空改主干样本, '旧路复现样本', lambda: 注入表), \
+         patch.object(空改主干样本, '空改主干样本', lambda: 注入表):
+        return 模块.入口([], r'{仓根}')
 失败码 = 跑(1)
 通过码 = 跑(0)
 print('注入反馈失败码=%d 注入反馈通过码=%d' % (失败码, 通过码))
