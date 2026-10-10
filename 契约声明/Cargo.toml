@@ -11,3 +11,6 @@ path = "src/lib.rs"
 
 [dependencies]
 # 零依赖：契约层不许引入任何仓库外的东西。
+
+[lints]
+workspace = true

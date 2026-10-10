@@ -32,6 +32,31 @@ exclude = [
     "扩展根目录/原子支持库/编译器支持库",
 ]
 
+# ── Clippy 严格基线（`cargo clippy --workspace --locked --all-targets -- -D warnings` 全绿）──
+#
+# 为什么住这里：`[workspace.lints]` 是**唯一一处**，成员只写 `lints.workspace = true` 继承 ——
+# 四条腿各写一份必然漂移。
+#
+# 这两条是**工具链强制例外**（不是「修不了就算了」）：`non_snake_case` · `uncommon_codepoints`
+# —— 标识符一律中文（`开发规范.md` §六），中文没有大小写，snake_case 判据对它恒不成立。
+# 与各 crate 已有的 `#![allow(uncommon_codepoints)]` 同源。
+#
+# ★ `dead_code` / `unused_imports` **不放这里**：放这里 = 整仓所有代码都豁免，会把真正没人用的
+#   手写件一起放过去。实查：这两类告警**全部**落在扩展 crate（生成数据表 / `#[cfg(test)]`
+#   子树 / 扫描器登记面）⇒ 按 crate 精确放行，见
+#   `扩展根目录/原子支持库/编译器支持库/Cargo.toml` 的 `[lints.rust]`。
+#
+# 除上述外**一律不许 allow**：`clippy --fix` 能修的一律真修（本基线上线时已修
+# `useless_conversion` / `needless_borrow` / `unnecessary_map_or` / `unused_mut` /
+# `redundant_field_names` / `collapsible_if` / `manual_is_multiple_of` /
+# `items_after_test_module` / `bool_assert_comparison` / `useless_format` 等）。
+[workspace.lints.rust]
+non_snake_case = "allow"
+uncommon_codepoints = "allow"
+
+[workspace.lints.clippy]
+# 本工作区没有需要整组放行的 clippy 规则 —— 有告警就真修。
+
 [workspace.package]
 version = "0.1.0"
 edition = "2024"

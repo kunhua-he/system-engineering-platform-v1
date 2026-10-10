@@ -204,6 +204,12 @@ fn 收有界(接收端: &std::sync::mpsc::Receiver<Vec<u8>>, 期限: Instant) ->
     }
 }
 
+/// 子进程的输出按 UTF-8 解。**坏字节不丢**（`from_utf8_lossy`）：
+/// 丢字节会让回执里的读数与实际不符，而回执的用途正是「事后能查」。
+fn 转文本(字节: &[u8]) -> String {
+    String::from_utf8_lossy(字节).trim().to_owned()
+}
+
 #[cfg(test)]
 mod 测试 {
     use super::*;
@@ -247,10 +253,4 @@ mod 测试 {
         }
         assert!(耗时 < Duration::from_secs(6), "超时判定要快，实测 {耗时:?}");
     }
-}
-
-/// 子进程的输出按 UTF-8 解。**坏字节不丢**（`from_utf8_lossy`）：
-/// 丢字节会让回执里的读数与实际不符，而回执的用途正是「事后能查」。
-fn 转文本(字节: &[u8]) -> String {
-    String::from_utf8_lossy(字节).trim().to_owned()
 }

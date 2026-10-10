@@ -11,3 +11,6 @@ path = "src/lib.rs"
 
 # 零依赖：本 crate 只回答「运行数据放哪」，不碰契约、不碰任何别的内核节点。
 [dependencies]
+
+[lints]
+workspace = true
