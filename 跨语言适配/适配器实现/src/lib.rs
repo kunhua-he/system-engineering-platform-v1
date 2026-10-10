@@ -115,5 +115,6 @@ mod 生命周期协商测试;
 #[cfg(all(test, unix))] #[path = "进程监督测试.rs"] mod 进程监督测试;
 #[cfg(all(test, unix))] #[path = "进程帧测试.rs"] mod 进程帧测试;
 #[cfg(all(test, unix))] #[path = "进程池测试.rs"] mod 进程池测试;
+#[cfg(all(test, unix))] #[path = "子进程环境测试.rs"] mod 子进程环境测试;
 #[cfg(all(test, unix))] #[path = "线协议测试.rs"] mod 线协议测试;
 #[cfg(all(test, unix))] #[path = "进程调用测试.rs"] mod 进程调用测试;
