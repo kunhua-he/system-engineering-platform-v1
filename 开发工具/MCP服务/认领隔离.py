@@ -105,7 +105,12 @@ def 事务认领(连接, 仓根, 开工号, 指纹表, 确认重叠=False):
             if 漂移表:
                 return 2, "本树已认领件指纹漂移 ⇒ 停止这些件，不用功能2洗账：%s" % " · ".join(漂移表)
             连接.executemany("insert into 认领 (开工号, 路径, 指纹) values (?, ?, ?) "
-                             "on conflict(开工号, 路径) do nothing",
+                             # ★ 2026-10-10 修（腿 v1-100758 真实发作）：`do nothing` ⇒ 行已存在就
+                             #   永不补指纹 ⇒ 认领那一刻没算上指纹的行（空串）会让 `v1_edit` 的
+                             #   指纹闸恒拒（判「被绕过改过」）⇒ 该件永远改不动。改成**只补空指纹**：
+                             #   已有指纹的行仍不刷（保隔离语义 —— 刷了等于放行漂移）。
+                             "on conflict(开工号, 路径) do update set 指纹 = excluded.指纹 "
+                             "where 认领.指纹 = '' or 认领.指纹 is null",
                              [(开工号, 路径, 指纹) for 路径, 指纹 in 指纹表.items()])
             if 诊断表:
                 连接.execute("create table if not exists 认领重叠 (开工号 text, 路径 text, 工作树 text, "
