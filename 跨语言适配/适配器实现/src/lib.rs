@@ -76,6 +76,8 @@ pub mod 小写出;
 #[path = "留痕口.rs"] mod 留痕口;
 #[path = "值归还.rs"] mod 值归还;  // 跨边界「释放口」的唯一实现（C 面与 Rust 面同语义）
 #[path = "装载件缓存.rs"] pub mod 装载件缓存;  // 能力码段解包物落仓外（本层是接口面唯一的腿）
+#[path = "动态库口.rs"] mod 动态库口;  // dlopen/dlsym/dlerror 的唯一声明处（两条装载腿共用）
+#[path = "模块执行体装载.rs"] pub mod 模块执行体装载;  // 段 20 执行体：判平台身份 → dlopen → 取入口 → 调用
 #[cfg(unix)] #[path = "进程监督.rs"] pub mod 进程监督;
 #[cfg(unix)] #[path = "进程帧.rs"] pub mod 进程帧;
 #[cfg(unix)] #[path = "进程池.rs"] pub mod 进程池;  // 跨进程执行域：拉起 · 监督 · 崩溃重拉（每域一进程 · 不落 static）
