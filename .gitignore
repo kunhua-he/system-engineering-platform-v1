@@ -64,3 +64,7 @@ __pycache__/
 # 漂移后互相覆盖。裁决：不进版本库，各机自行维护。
 .zcode/
 
+
+# macOS Spotlight 标记件：本机工具产物（只在本机有意义），不进版本库。
+# 混进版本库的实测后果：别人 clone 到的是本机索引策略；且 `git add -A` 会顺手扫进来。
+.metadata_never_index
