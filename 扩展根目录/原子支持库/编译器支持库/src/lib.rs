@@ -72,7 +72,7 @@ mod 声明派生;
 #[path = "声明数据/兼容路由.rs"]
 mod 声明数据;
 #[path = "执行函数面.rs"]
-mod 执行函数面;
+pub mod 执行函数面;
 #[path = "命令声明面.rs"]
 mod 命令声明面;
 #[path = "静态声明.rs"]
