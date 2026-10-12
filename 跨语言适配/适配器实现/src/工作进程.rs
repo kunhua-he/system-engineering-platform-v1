@@ -40,7 +40,7 @@
 //! 「崩溃检出」是**宿主侧**的事（`进程池::查实崩溃` 看子进程退出码）。工作进程自行重拉
 //! 自身会让宿主看不到崩溃现场，退避与熔断也无从谈起 —— 故本件只做「收 / 查 / 调 / 回」。
 
-use std::ffi::{CStr, CString, c_char, c_int, c_void};
+use std::ffi::CString;
 use std::io::Read;
 use std::os::unix::net::UnixStream;
 use std::path::Path;
@@ -55,20 +55,12 @@ use crate::{适配器, 转发结果, 协议结果};
 /// 单帧收发预算（毫秒）。**≤ 五秒硬顶**。
 const 循环预算毫秒: u64 = 1000;
 
-// ── dlopen / dlsym：零第三方依赖，直接声明 libc 那两个符号 ──
+// ── dlopen / dlsym：符号声明住 `动态库口.rs`（**只此一份**）──
 //
-// 本件在 `v1-adapter` crate；`扫扩展根.rs::取扩展声明` 在 `v1_gateway` crate。
-// 复用它会加一条跨 crate 依赖边 ⇒ 破层序判据（冻结件 §三 ★）。故此处只声明
-// **最小**的两个 libc 符号（照 `扫扩展根.rs` 第 92–96 行的既有写法），
-// **不复制** `扫扩展根` 的整份扫描 / 后缀表 / 声明根逻辑（那是第二套）。
-unsafe extern "C" {
-    fn dlopen(路径: *const c_char, 模式: c_int) -> *mut c_void;
-    fn dlsym(句柄: *mut c_void, 符号名: *const c_char) -> *mut c_void;
-    fn dlerror() -> *mut c_char;
-}
-
-/// `RTLD_NOW`：装载时把符号全部解析掉 —— 缺符号当场失败，不留到调用时才炸。
-const RTLD_NOW: c_int = 2;
+// 本件是**支持库那条腿**（取 `GetPlatformInfo`）；模块那条腿在 `模块执行体装载.rs`
+// （取 `v1_module_exec`）。两条腿共用同一份 libc 声明 —— 各写一份就是第二套
+// （`AGENTS.md` §十二「重复错误就抽节点」）。
+use crate::动态库口::{RTLD_NOW, dlopen, dlsym, 最近装载错误};
 
 /// 接缝符号名（冻结，`边界协议.md` §二）。
 const 接缝符号名: &str = "GetPlatformInfo";
@@ -129,16 +121,6 @@ pub fn 装载支持库(
     Ok(unsafe { &*指针 })
 }
 
-/// 最近一次 `dlopen` / `dlsym` 的错误说明（没有就给一句兜底）。
-fn 最近装载错误() -> String {
-    // SAFETY: dlerror 返回静态或线程局部的 NUL 结尾串（或空）。
-    let 指针 = unsafe { dlerror() };
-    if 指针.is_null() {
-        return String::from("无 dlerror 说明");
-    }
-    // SAFETY: 非空 ⇒ 按 POSIX 是 NUL 结尾可读串。
-    unsafe { CStr::from_ptr(指针) }.to_string_lossy().into_owned()
-}
 
 /// 工作进程 —— 一个执行域一个实例：持有通道 + 一个适配器（装载 + 调度都走它）。
 ///
