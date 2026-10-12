@@ -47,8 +47,16 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))  # 仓根：取共享门禁
 sys.path.insert(0, str(Path(__file__).resolve().parent))      # 同目录：取并发调度实现
 from 构建装配.门禁 import 自门禁, 硬顶毫秒  # noqa: E402
+from 构建装配.门禁.装载 import 报装载失败  # noqa: E402
 # 并发调度与读数装配住 `闸零.py`（本入口 ≤160 行且零实现，见 开发规范 第六节）。
-from 闸零 import 跑闸0带复用  # noqa: E402
+# ★ 装载守卫（债务 526）：本件也会被装载链上的中间态件拖崩 ⇒ 同 `一键验证.py` 的包法。
+try:
+    from 闸零 import 跑闸0带复用  # noqa: E402
+except Exception as 装载异常:
+    报装载失败(装载异常, "闸0.py（两条闸的总入口）",
+              "先看上面那行「坏件」——把那一件恢复到可导入（语法 / 改名 / 中间态），再重跑；"
+              "若坏件是**别的腿正在改**的件，等它提交或换到干净主干上跑。")
+    raise SystemExit(1)
 
 
 def 入口函数(命令行参数: list) -> int:

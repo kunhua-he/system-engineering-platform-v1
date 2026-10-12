@@ -29,7 +29,7 @@ from .自检_续缺口 import 自检_续缺口闭环
 from .自检_十干 import 自检_十干扫描
 from .自检_MCP事务 import 自检_MCP事务机制
 from .判据_元判据 import 自检_检查名与检查表对齐
-from 构建装配.门禁 import 自检_复跑, 自检_闸0复用
+from 构建装配.门禁 import 自检_复跑, 自检_闸0复用, 自检_守卫装载
 from .自检_禁译名 import 自检_禁译名扫描
 from .判据_运行数据 import 自检_运行数据扫描
 from .判据_超时 import 自检_超时扫描
@@ -103,6 +103,7 @@ from 并行执行 import 并行执行
     自检_检查名与检查表对齐,
     自检_复跑,
     自检_闸0复用,
+    自检_守卫装载,
 )
 
 
