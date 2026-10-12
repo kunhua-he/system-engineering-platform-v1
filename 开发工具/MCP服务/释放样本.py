@@ -435,7 +435,7 @@ def 登记回滚样本() -> list:
     """`清树门禁.回滚登记` 真夹具：无成果无消费者 ⇒ 清；有其一 ⇒ 保留；幂等。"""
     from . import 清树门禁
     样本表 = []
-    for 档名 in ("无成果无消费者清", "有未提交成果保留", "有消费者保留", "幂等"):
+    for 档名 in ("无成果无消费者清", "有未提交成果保留", "有消费者保留", "幂等", "行不在有残留补收尾"):
         with tempfile.TemporaryDirectory(prefix="v1回滚登记-") as 临时目录:
             临时根 = Path(临时目录)
             仓根, 工作树, 账本件 = 搭腿夹具(临时根)
@@ -450,8 +450,22 @@ def 登记回滚样本() -> list:
             清树记录 = []
 
             def 假清树(仓根, 开工号):
-                清树记录.append(开工号)
-                return 0, "夹具清树"
+                from .合主干有界跑 import 干净环境
+                做了 = False
+                if 工作树.is_dir():
+                    subprocess.run(["git", "worktree", "remove", str(工作树)], cwd=str(仓根),
+                                   capture_output=True, text=True, timeout=5, env=干净环境())
+                    做了 = True
+                支线 = subprocess.run(["git", "branch", "--list", "腿/" + 开工号], cwd=str(仓根),
+                                   capture_output=True, text=True, timeout=5,
+                                   env=干净环境()).stdout.strip()
+                if 支线:
+                    subprocess.run(["git", "branch", "-D", "腿/" + 开工号], cwd=str(仓根),
+                                   capture_output=True, text=True, timeout=5, env=干净环境())
+                    做了 = True
+                if 做了:
+                    清树记录.append(开工号)
+                return 0, ("夹具清树" if 做了 else "无物可清")
 
             开工账本.连账本 = 开账
             清树门禁.清工作树 = 假清树
@@ -463,6 +477,9 @@ def 登记回滚样本() -> list:
                 if 档名 == "有消费者保留":
                     开工账本.登记开工(连接, "v1-900009", "消费腿", "腿/v1-900009", str(工作树))
                     连接.execute("update 开工 set 父开工号 = ? where 开工号 = ?", (开工号, "v1-900009"))
+                    连接.commit()
+                if 档名 == "行不在有残留补收尾":
+                    连接.execute("delete from 开工 where 开工号 = ?", (开工号,))
                     连接.commit()
                 连接.close()
                 说明 = 清树门禁.回滚登记(仓根, 开账(), 开工号)
@@ -481,6 +498,15 @@ def 登记回滚样本() -> list:
                             % ("是" if 说明 else "否", "是" if 再说明 == "" else "否",
                                "是" if 清树记录 == [开工号] else "否"),
                             bool(说明) and 再说明 == "" and 清树记录 == [开工号]))
+                elif 档名 == "行不在有残留补收尾":
+                    残留树 = 仓操作.找工作树(仓根, 开工号)
+                    残留支线 = 仓操作.支线在吗(仓根, 开工号)
+                    样本表.append(("回滚·行不在有残留 ⇒ 补收尾（说补收尾 %s · 残留清 %s · 只清树一次 %s）"
+                            % ("是" if "补收尾" in 说明 else "否",
+                               "是" if (残留树 is None and not 残留支线) else "否",
+                               "是" if 清树记录 == [开工号] else "否"),
+                            "补收尾" in 说明 and 残留树 is None and not 残留支线
+                            and 清树记录 == [开工号]))
                 else:
                     样本表.append(("回滚·%s ⇒ 保留（行在 %s · 未清树 %s · 说保留 %s）"
                             % (档名, "是" if 行在 else "否", "是" if not 清树记录 else "否",
