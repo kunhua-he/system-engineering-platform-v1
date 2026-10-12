@@ -15,4 +15,4 @@ pub(crate) mod 槽读写;
 #[path = "执行函数面/执行入口.rs"]
 pub(crate) mod 执行入口;
 #[path = "执行函数面/本机生成.rs"]
-pub(crate) mod 本机生成;
+pub mod 本机生成;
