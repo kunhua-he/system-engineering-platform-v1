@@ -211,16 +211,19 @@ fn 找契约产物() -> Result<(PathBuf, PathBuf), String> {
     } else {
         同级.to_owned()
     };
-    let 契约产物表: Vec<PathBuf> = fs::read_dir(&依赖目录)
+    let mut 契约产物表: Vec<PathBuf> = Vec::new();
+    for 目录项 in fs::read_dir(&依赖目录)
         .map_err(|错误| format!("读不到依赖目录 {}：{错误}", 依赖目录.display()))?
-        .filter_map(|目录项| 目录项.ok().map(|项| 项.path()))
-        .filter(|路径| {
-            路径
-                .file_name()
-                .is_some_and(|名称| 名称.to_string_lossy().starts_with("libv1_contract-"))
-                && 路径.extension().is_some_and(|后缀| 后缀 == "rlib")
-        })
-        .collect();
+    {
+        let 路径 = 目录项.map_err(|错误| format!("读目录项失败：{错误}"))?.path();
+        if 路径
+            .file_name()
+            .is_some_and(|名称| 名称.to_string_lossy().starts_with("libv1_contract-"))
+            && 路径.extension().is_some_and(|名称| 名称 == "rlib")
+        {
+            契约产物表.push(路径);
+        }
+    }
     match 契约产物表.as_slice() {
         [唯一] => Ok((唯一.clone(), 依赖目录)),
         [] => Err(format!("依赖目录 {} 里没有 libv1_contract-*.rlib", 依赖目录.display())),
