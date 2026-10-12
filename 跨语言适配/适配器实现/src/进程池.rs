@@ -52,7 +52,7 @@ pub const 默认熔断时长毫秒: u64 = 1000;
 // ── 子模块：回收（进程组的强杀与池的析构收尾）──
 #[path = "进程池/回收.rs"]
 mod 回收;
-pub(crate) use 回收::击杀进程组;
+pub(crate) use 回收::{击杀并确认退出, 回收结局, 默认确认预算毫秒};
 
 /// 执行域标识 —— `适配器实例 × 扩展标识 × 制品版本`。
 #[derive(Clone, PartialEq, Eq, Hash, Debug)]
