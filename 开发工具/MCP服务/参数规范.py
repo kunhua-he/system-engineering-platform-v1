@@ -24,6 +24,7 @@ import importlib
 import json
 import os
 import tempfile
+import time
 from pathlib import Path
 
 from .服务常量 import 待取作业码
@@ -355,6 +356,7 @@ def 网关派发(工具名: str, 实参, 仓根路径) -> tuple:
     if 缺参:
         return 拒调用(工具名, 操作, "缺参", "缺必需参数：%s" % "、".join(缺参), 仓根路径,
                  缺参=缺参, 最短例=操作条.get("最短例"))
+    开始时刻 = time.perf_counter()
     if 操作条.get("处理"):
         退出码, 输出文本 = 操作条["处理"](开工号, 参数表, 仓根路径)
     elif 操作条.get("脚本"):
@@ -368,7 +370,8 @@ def 网关派发(工具名: str, 实参, 仓根路径) -> tuple:
         return 拒调用(工具名, 操作, "未实现",
                  "操作 `%s` 是预留槽（未实现）%s" % (操作, 指向文案(指向)), 仓根路径)
     from .工具流水 import 记流水                 # 网关统一采集工具流水（白名单元数据，记不上不阻断）
-    记流水(工具名, 操作, 开工号, 退出码, 输出文本)
+    记流水(工具名, 操作, 开工号, 退出码, 输出文本,
+        耗时毫秒=int((time.perf_counter() - 开始时刻) * 1000))
     错误 = None
     if 退出码 != 0:
         错误 = {"种类": 错误种类(退出码), "缺参": [], "最短例": None}
