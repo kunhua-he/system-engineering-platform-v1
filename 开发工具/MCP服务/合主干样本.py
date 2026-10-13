@@ -13,6 +13,7 @@ from unittest import mock
 from . import 合主干编排 as 编排, 合主干集成树 as 集成
 from .合主干有界跑 import 跑有界命令
 from .合主干源件重抽样本 import 验源件重抽
+from .现场清理样本 import 隔离运行数据根
 
 # `并行执行` 住 `开发工具/并行执行.py`（全仓唯一一份 fork 进程池口径，不另抄一份）——
 # 本件可能被多种方式装载 ⇒ 显式把仓根插上 sys.path 再取，不依赖调用方。
@@ -167,7 +168,8 @@ def _跑一个合并单元(名称: str) -> None:
     if 名称 == "源件重抽":
         验源件重抽()
         return
-    with tempfile.TemporaryDirectory(prefix="v1合并样本-") as 临时目录:
+    with tempfile.TemporaryDirectory(prefix="v1合并样本-") as 临时目录, \
+            隔离运行数据根(临时目录):
         仓根, 腿树, 钩子 = _建夹具(Path(临时目录), 名称)
         开工记录 = {"状态":"已释放", "工作树":str(腿树), "分支名":"腿/v1-999001"}
         旧主干 = 跑样本仓命令(仓根, "rev-parse", "主干")
