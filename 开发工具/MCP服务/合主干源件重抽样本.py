@@ -29,7 +29,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))   # 开发工具/ �
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))   # 仓根 ⇒ `开发工具.并行执行` 可定位（同 合主干样本 法）
 
 from . import 合主干编排 as 编排, 合主干集成树 as 集成, 集成接管
-from .现场清理样本 import 假信息核心源码, _跑git, _搭基座, _建腿树, _改库, _读库值, _开工记录
+from .现场清理样本 import 假信息核心源码, _跑git, _搭基座, _建腿树, _改库, _读库值, _开工记录, 隔离运行数据根
 from 开发工具.并行执行 import 并行执行
 
 源件重抽态表 = ("台账only", "源与台账同变", "派生表only", "恢复现场", "恢复现场幂等", "建源库失败", "对齐失败", "缺索引器")
@@ -102,7 +102,8 @@ def _建源件夹具(临时根, 名称):
 
 def _验源件重抽态(名称):
     """跑并校验**一个**源件重抽态（真仓夹具 + 真编排）；断言与打印与旧版逐字相同。"""
-    with tempfile.TemporaryDirectory(prefix="v1源件重抽-") as 临时目录:
+    with tempfile.TemporaryDirectory(prefix="v1源件重抽-") as 临时目录, \
+            隔离运行数据根(临时目录):
         主目录, 腿树, 台账行表 = _建源件夹具(Path(临时目录), 名称)
         开工记录 = _开工记录(腿树, "v1-999007")
         with mock.patch.object(编排, "_读开工记录", return_value=开工记录), \
