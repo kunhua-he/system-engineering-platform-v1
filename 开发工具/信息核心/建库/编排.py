@@ -12,7 +12,7 @@ from .文档 import 装文档
 from .文档索引 import 装文档索引
 from .条款 import 装条款
 from .保留时间 import 记旧值, 回填旧值
-from .源件 import 装未完成, 装分片源件
+from .源件 import 装分片源件
 from .规则 import 装规则
 
 
@@ -92,7 +92,6 @@ def 建源库(指定根: Path = None, 打读数: bool = False) -> dict:
     计数表 = {
         "条款": 装表(规则连接, "条款", 装条款, 根目录),
         "规则": 装表(规则连接, "规则", 装规则, 根目录),
-        "未完成": 装表(规则连接, "未完成", 装未完成, 根目录),
     }
     规则连接.commit()
     if 规则孤儿:
