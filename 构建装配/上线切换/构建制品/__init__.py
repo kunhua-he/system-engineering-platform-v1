@@ -11,7 +11,7 @@ from .命令 import 跑子进程, 工具链版本, 提交哈希
 from .扩展 import 扫扩展, 扩展产物, 建扩展产物, 找扩展产物, 读库名
 from .指纹 import 源件表, 源指纹, 预构建指纹
 from .源文件 import 走源文件, 取相对路径, 文件指纹
-from .制品 import 制品内文件清单, 检查制品
+from .制品核验 import 制品内文件清单, 检查制品
 from .输出 import 打印文本
 from .主流程 import 入口函数, 检查预构建, 预构建
 

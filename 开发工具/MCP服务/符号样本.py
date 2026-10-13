@@ -123,7 +123,7 @@ def 符号样本(仓根, 工具表=None) -> list:
 
     from 代码地图 import 查索引状态
 
-    from . import 符号 as 符号模块
+    from . import 符号查询 as 符号模块
 
     with tempfile.TemporaryDirectory(prefix="v1符号样本-") as 临时目录:
         夹具树根表, 库路径表, 读数表 = {}, {}, {}

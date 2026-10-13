@@ -3,7 +3,7 @@
 
 import struct
 
-from .公共 import 段类型_程序, 段数据头长度, 段体魔数, 头偏移_体魔数
+from .反解公共 import 段类型_程序, 段数据头长度, 段体魔数, 头偏移_体魔数
 from .容器层 import 反解容器
 from .段数据层 import 解段数据
 from .记录层 import 走记录

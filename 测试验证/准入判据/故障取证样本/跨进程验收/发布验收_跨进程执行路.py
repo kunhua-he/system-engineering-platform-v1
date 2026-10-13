@@ -19,7 +19,7 @@ import sys
 import time
 from pathlib import Path
 
-起始时刻 = time.monotonic()  # 壳起表点：必须在 import 业务包**之前**（见 构建装配/门禁/壳.py）
+起始时刻 = time.monotonic()  # 壳起表点：必须在 import 业务包**之前**（见 构建装配/门禁/命令壳.py）
 
 本目录 = Path(__file__).resolve().parent
 sys.path.insert(0, str(本目录))

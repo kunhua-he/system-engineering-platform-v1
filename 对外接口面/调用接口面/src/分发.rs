@@ -38,7 +38,7 @@ use v1_adapter::适配器;
 /// 一次应答：HTTP 状态码 + 内容类型 + 体（已序列化）。
 ///
 /// **体是字节**（不是 `String`）：§五 的静态托管要原样交出前端自身的件
-/// （`index.html` · `样式.css` · `*.js`），它们**不是 JSON**，而 §三 的四个端点一律 JSON。
+/// （`index.html` · `页面样式.css` · `*.js`），它们**不是 JSON**，而 §三 的四个端点一律 JSON。
 /// 内容类型随体一起走，写响应那一处不再假定 JSON。
 #[derive(Debug, Clone)]
 pub struct 造应答 {

@@ -17,7 +17,7 @@ import json
 import os
 import time
 
-from .公共 import 解析错误
+from .反解公共 import 解析错误
 from .段数据层 import 取声明记录区
 from .记录层 import 走记录
 

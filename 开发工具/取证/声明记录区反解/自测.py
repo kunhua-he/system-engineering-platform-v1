@@ -14,7 +14,7 @@ import struct
 import tempfile
 from pathlib import Path
 
-from .公共 import (
+from .反解公共 import (
     段类型_程序, 段体魔数, 头偏移_保留, 头偏移_补零, 头偏移_体长,
     头偏移_体魔数, 段数据头长度, 解析错误,
 )
