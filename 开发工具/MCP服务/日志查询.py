@@ -111,9 +111,10 @@ def 查日志(仓根, 参数表) -> tuple:
                 continue
             消息 = str(数据行.get("message") or "").replace("\n", " ")[:160]
             耗段 = "" if 数据行.get("durationMs") is None else " · 耗时 %sms" % 数据行.get("durationMs")
-            命中表.append("%s [%s] %s · %s · 工具 %s%s | 会话 %s"
+            错段 = " · ✗ 工具报错" if 上下文.get("isError") else ""
+            命中表.append("%s [%s] %s · %s · 工具 %s%s%s | 会话 %s"
                      % (时刻, 数据行.get("level") or "—", 数据行.get("event") or "—", 消息,
-                        上下文.get("toolName") or 上下文.get("mcpToolName") or "—", 耗段,
+                        上下文.get("toolName") or 上下文.get("mcpToolName") or "—", 耗段, 错段,
                         str(数据行.get("sessionId") or "—")[:24]))
             if len(命中表) >= 记录条数:
                 break
