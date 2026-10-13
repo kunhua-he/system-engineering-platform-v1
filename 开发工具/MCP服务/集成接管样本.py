@@ -43,7 +43,7 @@ def _建规则库(路径):
 
 
 def _建假信息核心(路径):
-    """迷你 `信息核心.py`：认 `记规则`（源库重放用）与 `建源库` / `核源库`（重抽用），真改库 ⇒ 读得到。"""
+    """迷你 `信息核心.py`：认 `记规则`（源库重放用）与 `建源库` / `核源库` / `冻结基线`（重抽用），真改库 ⇒ 读得到。"""
     路径.parent.mkdir(parents=True, exist_ok=True)
     路径.write_text(
         "import sqlite3, sys\n"
@@ -59,6 +59,9 @@ def _建假信息核心(路径):
         "    raise SystemExit(0)\n"
         "if 子命令 == '核源库':\n"
         "    print('核源库 ok')\n"
+        "    raise SystemExit(0)\n"
+        "if 子命令 == '冻结基线':\n"
+        "    print('冻结基线 ok')\n"
         "    raise SystemExit(0)\n"
         "键值 = {}\n"
         "键 = None\n"
