@@ -126,6 +126,35 @@ def 读数计数行(行表: list) -> list:
     return 计数行表[:8]
 
 
+def 取提交哈希(查询根) -> str:
+    """该树 HEAD 的短提交哈希（读数引用用）；取不到 ⇒ 空串。"""
+    try:
+        回执 = subprocess.run(["git", "rev-parse", "--short", "HEAD"], cwd=str(查询根),
+                           capture_output=True, text=True, timeout=3)
+        return (回执.stdout or "").strip()
+    except Exception:
+        return ""
+
+
+def 判据落点行(词表: list) -> list:
+    """选中的判据 ⇒ 「判据名 —— 件:行」行表（失败时直接定位判据实现）。取不到 ⇒ 空表。"""
+    try:
+        import sys as _sys
+        from pathlib import Path as _路径
+        工具根 = _路径(__file__).resolve().parents[2]
+        for 子目录 in (str(工具根 / "构建装配" / "一键验证"), str(工具根 / "开发工具"),
+                    str(工具根 / "开发工具" / "信息核心")):
+            if 子目录 not in _sys.path:
+                _sys.path.insert(0, 子目录)
+        from 一键验证 import 判据选择
+        选中集, 问题 = 判据选择.解析选择(词表)
+        if 问题:
+            return []
+        return ["    %s —— %s" % (判据名, 判据选择.判据落点(判据名)) for 判据名 in sorted(选中集)]
+    except Exception:
+        return []
+
+
 def 全量转作业(仓根, 开工号, 查询根, 树名, 认领表, 源件表) -> tuple:
     """**全量 = 闸 0** ⇒ 转后台作业（闸 0 合计可超 5 秒硬顶，同步路塞不下）。
 
@@ -147,6 +176,7 @@ def 全量转作业(仓根, 开工号, 查询根, 树名, 认领表, 源件表) 
         return 1, "起作业后读不到作业行（账本未落）⇒ 用 `v1_job` status 核：%s" % 任务ID
     终结 = 作业行["状态"] in 终态集
     行表 = ["在「%s」跑的（后台作业，转 `v1_job` 具名 `闸0`）：%s" % (树名, 查询根),
+           "提交：%s" % (取提交哈希(查询根) or "（取不到）"),
            "范围：**全量 = 闸 0**（声明侧 + 实现侧两条闸；提交放行 = 闸 0 + 判据自测 + 案例）",
            "任务ID：%s · 状态：%s · 退出码：%s"
            % (任务ID, 作业行["状态"], 作业行["退出码"] if 终结 else "（未定）")]
@@ -239,6 +269,7 @@ def 派发(参数表: dict, 仓根) -> tuple:
 
     有效行表 = [源码行 for 源码行 in 命令输出.splitlines() if 源码行.strip() and "─" not in 源码行]
     输出行表 = ["在「%s」跑的：%s" % (树名, 查询根),
+              "提交：%s" % (取提交哈希(查询根) or "（取不到）"),
               "范围：%s" % ("只跑判据 %s" % " · ".join(词表) if 词表 else "全量 = 闸 0（正式直跑）"),
               "退出码 %d" % 退出码,
               "\n".join(有效行表[:6] + (["…（中略 %d 行；完整日志见报告）" % (len(有效行表) - 28)] if len(有效行表) > 28 else []) + 有效行表[-22:]),
@@ -247,5 +278,9 @@ def 派发(参数表: dict, 仓根) -> tuple:
     if 计数表:
         输出行表.append("—— 读数计数 ——")
         输出行表 += 计数表
+    落点行表 = 判据落点行(词表)
+    if 落点行表:
+        输出行表.append("—— 判据落点（件:行）——")
+        输出行表 += 落点行表
     输出行表 += 绕行回执行(查询根, 开工号, 认领表, 源件表)
     return 退出码, "\n".join(输出行表)

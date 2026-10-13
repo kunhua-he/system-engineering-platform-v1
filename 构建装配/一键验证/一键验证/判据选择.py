@@ -52,6 +52,25 @@ def 取可运行判据() -> tuple:
     return tuple((提取编号(判据名), 判据名) for 判据名, _ in 检查表)
 
 
+def 判据落点(判据名: str) -> str:
+    """判据名 ⇒ 其判据函数的**源件:行号**（仓内相对路径）；取不到 ⇒ 空串。
+
+    供 `v1_gate` 回执直接定位判据实现（失败时不必再搜）。落点取自函数对象的 `co_filename`/`co_firstlineno`
+    —— 与 `判据表` 的挂载**同源**，不另抄一份清单。
+    """
+    from pathlib import Path as _路径
+    判据函数 = dict(检查表).get(判据名)
+    代码 = getattr(判据函数, "__code__", None) if 判据函数 is not None else None
+    if 代码 is None:
+        return ""
+    件路径 = _路径(代码.co_filename)
+    段表 = 件路径.parts
+    if "构建装配" in 段表:
+        序号 = 段表.index("构建装配")
+        return "%s:%d" % ("/".join(段表[序号:]), 代码.co_firstlineno)
+    return "%s:%d" % (件路径.name, 代码.co_firstlineno)
+
+
 def 规范编号(选择词: str) -> str:
     """把编号词规整成十进制字符串（`19` · `⑲` → `19`）；不是编号词 ⇒ 空串。"""
     if 选择词.isascii() and 选择词.isdigit():
