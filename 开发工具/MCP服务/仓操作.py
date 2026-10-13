@@ -62,6 +62,23 @@ def 跑命令(命令表: list, cwd, 超时秒数=超时秒, 输入文本=None, �
     return 回执.returncode, (回执.stdout or "") + (回执.stderr or "")
 
 
+def 跑只读git(仓根, 参数表: list, 树根=None) -> tuple:
+    """仓内**只读** git 问句 ⇒ `(退出码, 输出文本)` —— 走 `只读缓存.跑只读命令`。
+
+    ★ 实测 2026-10-13（债务 313/517 的组内加速）：`清理样本` 组 40 条一次跑出 **185 次子进程**，
+    其中 `git rev-parse HEAD` 与 `git show-ref --verify` **各 26 次** —— 而这两条都在
+    `只读缓存` 的白名单里（同一棵树 + 同一组 ref 的同一问句被问几十次，每次 fork 一个 git
+    ≈ 12–20 ms 是纯浪费）。缓存按**仓内容指纹**失效（HEAD / refs / config / index 一变即未命中）、
+    **失败不缓存**（负例永不复用）、**不跨树串** ⇒ 行为逐字不变，只是不再重复 fork。
+    依赖**工作区正文**的问句（`status` / `worktree list`）**不在此列** —— 指纹只到 index
+    一层，它们照旧现跑（fail-closed，宁可慢）。
+    """
+    def 现跑(仓根, 参数表, 树根=None, 超时=超时秒):
+        return 跑命令(["git"] + list(参数表), cwd=str(树根 or 仓根), 超时秒数=超时)
+    from .只读缓存 import 跑只读命令
+    return 跑只读命令(现跑, 仓根, 参数表, 树根=树根)
+
+
 def 跑验证(工作树) -> tuple:
     """跑 `闸0.py` 到**真实终态** ⇒ `(退出码, 输出, 复跑过)`。
 
@@ -196,11 +213,11 @@ def 检查清树安全(仓根, 开工号: str, 工作树) -> tuple:
     主树路径 = Path(输出文本.splitlines()[0][len("worktree "):])
     if 主树路径.resolve() == Path(工作树).resolve():
         return 1, "目标是主工作树 ⇒ 拒绝清理"
-    退出码, 主树提交 = 跑命令(["git", "rev-parse", "HEAD"], cwd=主树路径)
+    退出码, 主树提交 = 跑只读git(仓根, ["rev-parse", "HEAD"], 树根=主树路径)
     if 退出码 != 0:
         return 1, "无法读取主工作树提交 ⇒ 拒绝清理"
-    退出码, 输出文本 = 跑命令(["git", "show-ref", "--verify", "--quiet",
-                              "refs/heads/" + 分支名(开工号)], cwd=仓根)
+    退出码, 输出文本 = 跑只读git(仓根, ["show-ref", "--verify", "--quiet",
+                                  "refs/heads/" + 分支名(开工号)])
     if 退出码 == 1:
         return 0, "支线已不存在"
     if 退出码 != 0:
