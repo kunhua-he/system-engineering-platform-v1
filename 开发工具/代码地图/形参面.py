@@ -88,7 +88,7 @@ _函数头 = re.compile(
 
 # 签名里的一个形参名：段首 / 逗号之后，可选 `mut` 与借用符，名后跟 `:` / `,` / `=` / 段尾。
 _形参名 = re.compile(
-    r'(?:^|,)\s*(?:mut\s+)?(?:&\s*(?:mut\s+)?)?'
+    r'(?:^|(?<=,))\s*(?:mut\s+)?(?:&\s*(?:mut\s+)?)?'
     r'([A-Za-z_\u4e00-\u9fff][\w\u4e00-\u9fff]*)\s*(?=:|,|$|=)'
 )
 
@@ -101,7 +101,7 @@ _箭头函数 = re.compile(
 _函数表达式 = re.compile(r'function\s*[\w\u4e00-\u9fff$]*\s*\(([^()]*)\)')
 
 # JS 形参段里取一个名：段首 / 逗号之后，允许 `...` 剩余参数与默认值。
-_JS形参名 = re.compile(r'(?:^|,)\s*\.{0,3}([A-Za-z_\u4e00-\u9fff][\w\u4e00-\u9fff]*)')
+_JS形参名 = re.compile(r'(?:^|(?<=,))\s*\.{0,3}([A-Za-z_\u4e00-\u9fff][\w\u4e00-\u9fff]*)')
 
 
 def 是形参名(名称: str, 只单字: bool = True) -> bool:
