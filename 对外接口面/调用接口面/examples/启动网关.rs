@@ -60,6 +60,19 @@ mod 接缝;
 #[path = "启动网关/装配.rs"]
 mod 装配;
 
+/// 生产口的**计数分配器** —— 包一层 `System` 只加两个计数；读法在
+/// `v1_gateway::分配读数`（`GET /接口/资源读数` 的 `分配` 面就是它）。
+///
+/// # 为什么挂在**这个二进制**、不挂在库上
+///
+/// `#[global_allocator]` 是 crate 级语言项：一个二进制只能有一处。挂到 `v1-adapter` 库里
+/// 会与**已经自带计数分配器**的测试二进制撞（`tests/整条HTTP/夹具.rs` 就是它那一处），
+/// 实测报 `the #[global_allocator] in this crate conflicts with global allocator in: v1_adapter`。
+/// 而「没有泄漏」这条读数**要的是生产进程的数**（发布验收 `必证三_清理` 跑的就是本二进制）
+/// ⇒ 就挂在本二进制：库里只有「怎么读」，这里才是「谁在计数」。
+#[global_allocator]
+static 进程分配器: v1_gateway::分配读数::进程计数分配器 = v1_gateway::分配读数::进程计数分配器;
+
 fn main() -> Result<(), String> {
     装配::跑网关()
 }
