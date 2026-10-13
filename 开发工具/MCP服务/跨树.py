@@ -11,6 +11,7 @@
 **只读零写**：只跑查询类 git 子命令；不改任何件、不写索引/台账。
 """
 import hashlib
+import json
 import re
 import sys
 from pathlib import Path
@@ -109,6 +110,43 @@ def _按区(行表, 名表) -> None:
     for 区名 in sorted(区表):
         行表.append("    %s  %d 件" % (区名, 区表[区名]))
 
+def 结构摘要(路径: str, 全文: str) -> list:
+    """JSON 件的**顶层结构摘要**（键名 → 类型说明）—— 大 JSON 不必整件读进上下文。非 JSON / 解析不了 ⇒ 空表。"""
+    if not 路径.lower().endswith(".json"):
+        return []
+    try:
+        节点值 = json.loads(全文)
+    except Exception:
+        return []
+
+    def 类型名(子值):
+        if isinstance(子值, dict):
+            return "对象(%d 键)" % len(子值)
+        if isinstance(子值, list):
+            return "数组(%d 项)" % len(子值)
+        if isinstance(子值, bool):
+            return "逻辑"
+        if isinstance(子值, (int, float)):
+            return "数"
+        if isinstance(子值, str):
+            return "串"
+        if 子值 is None:
+            return "空"
+        return type(子值).__name__
+
+    结构行 = []
+    if isinstance(节点值, dict):
+        for 键名, 子值 in list(节点值.items())[:30]:
+            结构行.append("    %s: %s" % (键名, 类型名(子值)))
+        if len(节点值) > 30:
+            结构行.append("    …（还有 %d 键）" % (len(节点值) - 30))
+    elif isinstance(节点值, list):
+        结构行.append("    数组 %d 项 · 首项 %s" % (len(节点值), 类型名(节点值[0]) if 节点值 else "（空）"))
+    else:
+        结构行.append("    %s" % 类型名(节点值))
+    return ["结构摘要（顶层）——"] + 结构行
+
+
 def 读文件(仓根, 参数表) -> tuple:
     拒未知(参数表, ("路径", "开工ID", "引用", "起始行", "行数"))
     路径 = str(参数表.get("路径") or "").strip()
@@ -135,6 +173,8 @@ def 读文件(仓根, 参数表) -> tuple:
     内容指纹 = hashlib.sha256(全文.encode("utf-8")).hexdigest()[:16]
     行表.append("件：%s · 总行数 %d · 内容指纹 %s" % (路径, 总行数, 内容指纹))
     行表.append("本页 第 %d–%d 行（%d 行 · 每页上限 %d）" % (起始行, 末行, len(本页行表), 上限行))
+    if 起始行 == 1:
+        行表 += 结构摘要(路径, 全文)
     if len(全文) >= 上限字节:
         行表.append("★ 件超 %d 字节上限 ⇒ 总行数为下界（未读全）" % 上限字节)
     行表.append("")
@@ -145,9 +185,9 @@ def 读文件(仓根, 参数表) -> tuple:
     return 0, 收尾(行表)
 
 def 列文件(仓根, 参数表) -> tuple:
-    拒未知(参数表, ("路径前缀", "开工ID", "引用", "条数"))
+    拒未知(参数表, ("路径前缀", "路径", "开工ID", "引用", "条数"))
     记录条数 = 取记录条数(参数表)
-    路径前缀 = str(参数表.get("路径前缀") or "").strip()
+    路径前缀 = str(参数表.get("路径前缀") or 参数表.get("路径") or "").strip()
     定位, 错误 = _定位(仓根, 取开工号(参数表), 参数表.get("引用"))
     if 错误:
         return 1, 错误
@@ -253,8 +293,9 @@ def 件头(仓根, 参数表) -> tuple:
         "需开工ID": False, "必需": ['路径'],
         "可选": ['起始行', '行数', '引用'], "最短例": {'操作': '读文件', '参数': {'路径': 'AGENTS.md'}},
         "处理": 建操作处理(读文件, 并入开工=True)},
-    '列文件': {"说明": '列文件' , "需开工ID": False, "必需": [],
-        "可选": ['路径前缀', '引用', '条数'], "最短例": {'操作': '列文件'},
+    '列文件': {"说明": '列文件（可按 `路径前缀`（别名 `路径`）收窄 + `条数` 限条；强制 core.quotePath=false 防中文路径假阴性）',
+        "需开工ID": False, "必需": [],
+        "可选": ['路径前缀', '路径', '引用', '条数'], "最短例": {'操作': '列文件', '参数': {'路径前缀': '开发工具/MCP服务'}},
         "处理": 建操作处理(列文件, 并入开工=True)},
     '存在性': {"说明": '存在性' , "需开工ID": False, "必需": ['路径'],
         "可选": ['符号', '引用'], "最短例": {'操作': '存在性', '参数': {'路径': 'AGENTS.md'}},
