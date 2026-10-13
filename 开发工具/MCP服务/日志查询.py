@@ -39,8 +39,8 @@ def 选日志件(日志根, 日志件) -> list:
 
 def _尾块(件路径, 上限) -> tuple:
     """取件尾至多 `上限` 字节的原文 ⇒ `(原文, 起点)`；起点 > 0 时首行可能被切掉（调用方丢弃）。"""
-    长度 = 件路径.stat().st_size
-    起点 = max(0, 长度 - 上限)
+    文件长度 = 件路径.stat().st_size
+    起点 = max(0, 文件长度 - 上限)
     句柄 = open(件路径, "rb")
     try:
         句柄.seek(起点)
@@ -61,7 +61,7 @@ def 查日志(仓根, 参数表) -> tuple:
     拒未知(参数表, ("事件", "模块名", "级别", "会话", "工具名", "耗时下限毫秒",
                   "起始时刻", "结束时刻", "日志件", "条数", "上限字节"))
     记录条数 = 取记录条数(参数表)
-    事件 = str(参数表.get("事件") or "").strip()
+    日志事件 = str(参数表.get("事件") or "").strip()
     模块名 = str(参数表.get("模块名") or "").strip()
     级别 = str(参数表.get("级别") or "").strip()
     会话 = str(参数表.get("会话") or "").strip()
@@ -92,7 +92,7 @@ def 查日志(仓根, 参数表) -> tuple:
                 数据行 = json.loads(源码行)
             except ValueError:
                 continue
-            if 事件 and 事件 not in str(数据行.get("event") or ""):
+            if 日志事件 and 日志事件 not in str(数据行.get("event") or ""):
                 continue
             if 模块名 and 模块名 not in str(数据行.get("module") or ""):
                 continue

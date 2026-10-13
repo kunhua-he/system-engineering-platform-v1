@@ -25,7 +25,7 @@ pub struct 线协议会话 {
 
 impl 线协议会话 {
     /// 从一条已连通道建会话（业务队列按帧层容量）。
-    pub fn 新建(通信通道: UnixStream) -> Self {
+    pub fn 创建(通信通道: UnixStream) -> Self {
         Self { 通信通道, 待办队列: 有界帧队列::业务队列() }
     }
 

@@ -126,7 +126,7 @@ pub fn 装载支持库(
 ///
 /// **不落 `static`**：同进程开两份就是两个互不干扰的工作进程（与 `进程池` 同一条纪律）。
 pub struct 工作进程 {
-    通道: UnixStream,
+    流通道: UnixStream,
     /// 本进程的适配器：**唯一**的装载腿与调度腿（本件不另走一条）。
     适配器: 适配器,
 }
@@ -136,8 +136,8 @@ impl 工作进程 {
     ///
     /// 「声明不可用」与「制品不可用」分开报：前者是声明自身站不住（判定六步不过），
     /// 后者是制品本身不是可装载件 —— 两类故障的处置完全不同。
-    pub fn 新建(
-        通道: UnixStream,
+    pub fn 创建(
+        流通道: UnixStream,
         制品路径: &Path,
         缓存根目录: &Path,
     ) -> Result<Self, 工作进程错误> {
@@ -145,7 +145,7 @@ impl 工作进程 {
         // 装载走**全仓唯一那条腿**（[`适配器::装载声明根`]）：本件不直接调内核入口。
         let 适配器 = 适配器::装载声明根(&[声明])
             .map_err(|错误| 工作进程错误::声明不可用(format!("{错误:?}")))?;
-        Ok(Self { 通道, 适配器 })
+        Ok(Self { 流通道, 适配器 })
     }
 
     /// 本进程的适配器（验证面用）。
@@ -160,15 +160,15 @@ impl 工作进程 {
     pub fn 起工作循环(&mut self) -> Result<(), 工作进程错误> {
         loop {
             // 空闲等待不消耗单帧预算；首字节到达后才开始有界读帧。
-            self.通道.set_nonblocking(false).map_err(|_| 工作进程错误::收帧失败)?;
+            self.流通道.set_nonblocking(false).map_err(|_| 工作进程错误::收帧失败)?;
             let mut 首字节 = [0u8; 1];
-            match self.通道.read_exact(&mut 首字节) {
+            match self.流通道.read_exact(&mut 首字节) {
                 Ok(()) => {},
                 Err(错误) if 错误.kind() == std::io::ErrorKind::UnexpectedEof => return Ok(()),
                 Err(_) => return Err(工作进程错误::收帧失败),
             }
             let mut 预算 = 本轮预算()?;
-            let 帧体 = 接收续帧(&mut self.通道, &mut 预算, Some(首字节[0]))
+            let 帧体 = 接收续帧(&mut self.流通道, &mut 预算, Some(首字节[0]))
                 .map_err(|_| 工作进程错误::收帧失败)?;
             match 帧体.消息类型 {
                 消息类别::调用 => {
@@ -247,12 +247,12 @@ impl 工作进程 {
     fn 回一帧(
         &mut self,
         请求标识: std::num::NonZeroU64,
-        类别: 消息类别,
+        帧类别: 消息类别,
         载荷: Vec<u8>,
     ) -> Result<(), 工作进程错误> {
         let mut 预算 = 本轮预算()?;
-        let 帧体 = 消息帧 { 消息类型: 类别, 请求标识, 载荷 };
-        发送帧(&mut self.通道, &帧体, &mut 预算).map_err(|_| 工作进程错误::送帧失败)
+        let 帧体 = 消息帧 { 消息类型: 帧类别, 请求标识, 载荷 };
+        发送帧(&mut self.流通道, &帧体, &mut 预算).map_err(|_| 工作进程错误::送帧失败)
     }
 }
 

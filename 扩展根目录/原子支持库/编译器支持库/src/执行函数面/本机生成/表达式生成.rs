@@ -89,12 +89,12 @@ pub(super) fn 生成表达式(
                 return Err(本机生成错误::依赖不匹配);
             }
             let 名称 = 源树.原文切片(节点).ok_or_else(拒绝记号)?;
-            let 位置 = 参数名表.iter().position(|参数名| 参数名.as_slice() == 名称)
+            let 所在位置 = 参数名表.iter().position(|参数名| 参数名.as_slice() == 名称)
                 .ok_or_else(拒绝记号)?;
-            if 参数类型号表.get(位置).copied() != Some(期望类型号) {
+            if 参数类型号表.get(所在位置).copied() != Some(期望类型号) {
                 return Err(本机生成错误::类型不符 { 节点 });
             }
-            Ok(format!("入参槽[{位置}].clone()"))
+            Ok(format!("入参槽[{所在位置}].clone()"))
         }
         节点种类::命令调用 => {
             let Some((&名称节点, 实参节点表)) = 子节点表.split_first() else { return Err(拒绝记号()); };

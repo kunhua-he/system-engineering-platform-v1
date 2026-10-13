@@ -32,13 +32,13 @@ if __name__ == "__main__":
         print("网页回归：node 不在 PATH ⇒ 未判（如实报，不当作通过）")
         退出码值 = 1
     else:
-        结果 = subprocess.run(
+        执行结果 = subprocess.run(
             [node路径, str(本目录 / "使用面回归_网页.mjs")],
             capture_output=True, text=True, timeout=5,
         )
-        print(结果.stdout, end="")
-        if 结果.returncode != 0:
-            print(结果.stderr, end="")
+        print(执行结果.stdout, end="")
+        if 执行结果.returncode != 0:
+            print(执行结果.stderr, end="")
             退出码值 = 1
     sys.exit(自门禁(起始时刻, 退出码值, 尾巴余量毫秒=200,
                    修法="两件夹具都是本地纯计算 + 一个 node 子进程；慢了先看是不是 node 起不来"))

@@ -63,8 +63,8 @@ impl 跨进程体 {
     /// 从一条**已连**通道建体（连接由部署方拉起，本件不建连、不重连）。
     ///
     /// **不注入输出契约**：调用方拿不到声明时走这一口，语义 = 单槽原样搬运。
-    pub fn 持通道(资源号: u32, 通道: UnixStream) -> Self {
-        Self::新建(资源号, None, 通道)
+    pub fn 持通道(资源号: u32, 流通道: UnixStream) -> Self {
+        Self::创建(资源号, None, 流通道)
     }
 
     /// 从一条**已连**通道建体，并注入声明的 `输出类型` 表（生产启用走这一口）。
@@ -77,12 +77,12 @@ impl 跨进程体 {
     pub fn 持通道按契约(
         资源号: u32,
         输出类型表: Vec<u32>,
-        通道: UnixStream,
+        流通道: UnixStream,
     ) -> Result<Self, 资源错误> {
         if !crate::声明形状::资源号段.包含(v1_contract::号值::构造(资源号)) {
             return Err(资源错误::资源未声明 { 资源号 });
         }
-        Ok(Self::新建(资源号, Some(输出类型表), 通道))
+        Ok(Self::创建(资源号, Some(输出类型表), 流通道))
     }
 
     /// 本实例绑定的资源号（**已过号段判据**，见 [`跨进程体::持通道按契约`]）。
@@ -96,11 +96,11 @@ impl 跨进程体 {
         self.输出类型表.as_ref().map(Vec::len)
     }
 
-    fn 新建(资源号: u32, 输出类型表: Option<Vec<u32>>, 通道: UnixStream) -> Self {
+    fn 创建(资源号: u32, 输出类型表: Option<Vec<u32>>, 流通道: UnixStream) -> Self {
         Self {
             资源号,
             输出类型表,
-            会话锁: Mutex::new(线协议会话::新建(通道)),
+            会话锁: Mutex::new(线协议会话::创建(流通道)),
             次序号: AtomicU64::new(0),
         }
     }

@@ -17,7 +17,7 @@ impl crate::适配器 {
     pub fn 开跨进程(&mut self, 配置: 进程池配置) {
         if self.跨进程.is_none() {
             self.跨进程 =
-                Some(std::sync::Arc::new(std::sync::Mutex::new(跨进程域表::新建(配置))));
+                Some(std::sync::Arc::new(std::sync::Mutex::new(跨进程域表::创建(配置))));
         }
     }
 

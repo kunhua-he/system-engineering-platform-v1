@@ -76,11 +76,11 @@ def 异步短样本(仓根, 工具表):
         with patch.dict(os.environ, {覆盖变量名: 临时根, "PYTHONPATH": str(仓根)}), patch.dict(
                 作业.具名作业表, {"闸0": "\"$V1_PY\" -B -c 'print(12345)'"}):
             退出码, 输出文本 = 工具表["v1_job"][0]({"操作": "start", "参数": {"具名": "闸0", "超时秒": 1}}, 仓根)
-            匹配 = re.search(r"任务ID：([0-9a-f]{32})", json.loads(输出文本)["说明"])
-            样本表.append(("真实start返回任务ID", 退出码 == 0 and 匹配 is not None))
-            if 匹配 is None:
+            匹配结果 = re.search(r"任务ID：([0-9a-f]{32})", json.loads(输出文本)["说明"])
+            样本表.append(("真实start返回任务ID", 退出码 == 0 and 匹配结果 is not None))
+            if 匹配结果 is None:
                 return 样本表
-            任务ID = 匹配.group(1)
+            任务ID = 匹配结果.group(1)
             截止时刻 = time.monotonic() + 2
             while time.monotonic() < 截止时刻:
                 if 作业.读行(任务ID)["状态"] in 作业.终态集:

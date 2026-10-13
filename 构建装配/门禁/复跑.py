@@ -31,15 +31,15 @@ def 取每核负载() -> float:
 
 def 等负载落(等待上限秒=等待上限秒, 负载红线=负载红线, 报进度=None) -> float:
     """阻塞等到每核负载 < 负载红线；返回实际等待秒数（到上限也返回，不无限等）。"""
-    起 = time.monotonic()
-    while time.monotonic() - 起 < 等待上限秒:
-        当前 = 取每核负载()
-        if 当前 < 负载红线:
+    起始 = time.monotonic()
+    while time.monotonic() - 起始 < 等待上限秒:
+        当前负载 = 取每核负载()
+        if 当前负载 < 负载红线:
             break
         if 报进度:
-            报进度("每核负载 %.2f ≥ %.2f ⇒ 等 %.0f s 再复跑" % (当前, 负载红线, 等待步长秒))
+            报进度("每核负载 %.2f ≥ %.2f ⇒ 等 %.0f s 再复跑" % (当前负载, 负载红线, 等待步长秒))
         time.sleep(等待步长秒)
-    return time.monotonic() - 起
+    return time.monotonic() - 起始
 
 
 def 是瞬时超顶(输出文本: str) -> bool:

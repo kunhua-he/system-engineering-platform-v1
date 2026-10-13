@@ -205,8 +205,8 @@ def 建集成树(仓根, 开工号) -> tuple:
 def 合腿(集成树, 腿分支) -> tuple:
     """在集成树里合腿 ⇒ (退出码, 说明, 冲突文件表)。--no-ff 保证造合并提交（不走 ff）。"""
     退出码, 输出文本, 日志路径 = _跑(["git", "merge", "--no-commit", "--no-ff", 腿分支], 工作目录=集成树, 超时秒数=None)
-    _, 输出2, _ = _跑(["git", "diff", "--name-only", "--diff-filter=U"], 工作目录=集成树)
-    冲突表 = [数据行.strip() for 数据行 in 输出2.splitlines() if 数据行.strip()]
+    _, 命令输出, _ = _跑(["git", "diff", "--name-only", "--diff-filter=U"], 工作目录=集成树)
+    冲突表 = [数据行.strip() for 数据行 in 命令输出.splitlines() if 数据行.strip()]
     if 冲突表:
         return 0, "合腿有冲突 · 原始退出码 %d · 是否超时 %s · 日志 %s\n%s" % (退出码, 退出码 == -1, 日志路径, 输出文本[:1500]), 冲突表
     if 退出码 != 0:
@@ -268,17 +268,17 @@ def 推进主干(仓根, 集成提交, 集成树) -> tuple:
     shutil.rmtree(临时树, ignore_errors=True)
     退出码, 输出文本, _ = _跑(["git", "worktree", "add", 临时树, "主干"], 工作目录=仓根, 超时秒数=None)
     if 退出码 == 0:
-        退出码2, 输出2, _ = _跑(["git", "merge", "--ff-only", 集成提交], 工作目录=临时树, 超时秒数=None)
+        退出码2, 命令输出, _ = _跑(["git", "merge", "--ff-only", 集成提交], 工作目录=临时树, 超时秒数=None)
         _跑(["git", "worktree", "remove", "--force", 临时树], 工作目录=仓根, 超时秒数=None)
         shutil.rmtree(临时树, ignore_errors=True)
         if 退出码2 != 0:
-            return 退出码2, "ff-only 推进失败：%s" % 输出2.strip()[-400:]
+            return 退出码2, "ff-only 推进失败：%s" % 命令输出.strip()[-400:]
         说明 = "ff-only（临时工作树 + merge --ff-only）"
     else:
         shutil.rmtree(临时树, ignore_errors=True)
-        退出码3, 输出3, _ = _跑(["git", "update-ref", "refs/heads/主干", 集成提交, 旧提交], 工作目录=仓根)
+        退出码3, 引用输出, _ = _跑(["git", "update-ref", "refs/heads/主干", 集成提交, 旧提交], 工作目录=仓根)
         if 退出码3 != 0:
-            return 退出码3, "update-ref 推进失败：%s" % 输出3.strip()[-400:]
+            return 退出码3, "update-ref 推进失败：%s" % 引用输出.strip()[-400:]
         说明 = "update-ref（已附 tree 相等核验 + 三方一致复核 + 祖先核验）"
     _, 新提交, _ = _跑(["git", "rev-parse", "主干"], 工作目录=仓根)
     if 新提交.strip() != 集成提交:

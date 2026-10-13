@@ -87,7 +87,7 @@ def 入口函数(命令行参数):
             进程.kill()
             print("起不来：网关没报监听端口（看上面它的输出）", file=sys.stderr)
             return 1
-        网址 = f"http://127.0.0.1:{端口}/"
+        网址 = f"http://127.0.0.1:{监听端口}/"
         try:
             with sync_playwright() as 驱动器:
                 浏览器 = 驱动器.chromium.launch()

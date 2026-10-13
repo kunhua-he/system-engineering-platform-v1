@@ -38,8 +38,8 @@ pub fn 编码容器(容器: &容器) -> Vec<u8> {
     输出缓冲.extend_from_slice(&(容器.未知段号表.len() as u32).to_le_bytes());
     输出缓冲.extend_from_slice(&容器.未知段号表);
     输出缓冲.extend_from_slice(&(容器.嵌套段表.len() as u32).to_le_bytes());
-    for 偏移 in &容器.嵌套段表 {
-        输出缓冲.extend_from_slice(&偏移.to_le_bytes());
+    for 偏移量 in &容器.嵌套段表 {
+        输出缓冲.extend_from_slice(&偏移量.to_le_bytes());
     }
     输出缓冲.extend_from_slice(&(容器.自检异常表.len() as u32).to_le_bytes());
     for 异常项 in &容器.自检异常表 {

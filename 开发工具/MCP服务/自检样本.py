@@ -101,10 +101,10 @@ def _读信封(输出文本: str):
     except (TypeError, ValueError):
         return None
 
-def _有种类(输出文本: str, 种类: str) -> bool:
+def _有种类(输出文本: str, 错误分类: str) -> bool:
     """信封 `错误.种类` 是否等于 `种类`（参数面拒绝的分类断言）。"""
     读数 = _读信封(输出文本)
-    return bool(读数) and (读数.get("错误") or {}).get("种类") == 种类
+    return bool(读数) and (读数.get("错误") or {}).get("种类") == 错误分类
 
 def 跑自检(仓根, 工具表) -> int:
     """MCP 工具面自检 ⇒ 退出码（0 全过 · 1 有样本没过）。
@@ -223,12 +223,12 @@ def 自检主体(仓根, 工具表, 样本作业表) -> int:
             样本表.append(("%s `{}` 发现调用抛异常（兜错）：%r" % (名称, 兜错因由), False))
             continue
         读数 = _读信封(输出文本)
-        目录 = ((读数 or {}).get("结果") or {}).get("操作目录") or {}
-        最短例齐 = all("最短例" in 操作条 for 操作条 in 目录.values()) if 目录 else True
+        操作目录 = ((读数 or {}).get("结果") or {}).get("操作目录") or {}
+        最短例齐 = all("最短例" in 操作条 for 操作条 in 操作目录.values()) if 操作目录 else True
         样本表.append(("%s `{}` 发现调用 ⇒ 操作目录 %d 个（最短例齐 %s）"
-                 % (名称, len(目录), "是" if 最短例齐 else "否"),
+                 % (名称, len(操作目录), "是" if 最短例齐 else "否"),
                  退出码 == 0 and 读数 is not None and 最短例齐
-                 and (bool(目录) if 名称 in 规范表 else True)))
+                 and (bool(操作目录) if 名称 in 规范表 else True)))
 
     # ── ⑤b 长样本入口的**发现/接口**（只验入口与场景表在；重场景由提交长路 `--长样本` 跑）──
     from .认领样本 import 场景表

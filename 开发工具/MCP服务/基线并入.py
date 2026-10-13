@@ -96,9 +96,9 @@ def _跑长事务git(工作树, 参数表: list) -> tuple:
     return 退出码, 输出文本, 日志路径
 
 
-def _临时库(前缀: str) -> str:
+def _临时库(名称前缀: str) -> str:
     """建一个空临时件占位（导出阶段 blob 用）⇒ 路径。"""
-    句柄, 路径 = tempfile.mkstemp(prefix=前缀, suffix=".db")
+    句柄, 路径 = tempfile.mkstemp(prefix=名称前缀, suffix=".db")
     os.close(句柄)
     return 路径
 
@@ -140,8 +140,8 @@ def _三方重放规则库(工作树, 相对路径: str) -> tuple:
     腿库 = _临时库("v1基线腿库_")
     主干库 = _临时库("v1基线主干库_")
     try:
-        for 阶段, 目标 in ((1, 基库), (2, 主干库), (3, 腿库)):
-            _导出阶段(工作树, 阶段, 相对路径, 目标)
+        for 阶段, 目标路径 in ((1, 基库), (2, 主干库), (3, 腿库)):
+            _导出阶段(工作树, 阶段, 相对路径, 目标路径)
         动作表, 冲突表, 跳过表 = 合并三方库(基库, 腿库, 主干库, 工作树)
         行表 = ["规则库按主键三方重放：动作 %d 条 · 冲突 %d 条 · 跳过 %d 条"
               % (len(动作表), len(冲突表), len(跳过表))]
@@ -156,9 +156,9 @@ def _三方重放规则库(工作树, 相对路径: str) -> tuple:
             行表.append("  （跳过 %d 条：源件权威，建库 重抽）" % len(跳过表))
         return 0, 行表
     finally:
-        for 临时 in (基库, 腿库, 主干库):
+        for 临时库 in (基库, 腿库, 主干库):
             try:
-                Path(临时).unlink()
+                Path(临时库).unlink()
             except OSError:
                 pass
 

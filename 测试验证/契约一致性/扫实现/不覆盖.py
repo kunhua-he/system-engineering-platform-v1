@@ -72,18 +72,18 @@ def 读种类表(件表: dict) -> list:
     if not 源文本:
         return []
     try:
-        清单 = json.loads(源文本)
+        清单表 = json.loads(源文本)
     except json.JSONDecodeError:
         return []
-    if not isinstance(清单, dict):
+    if not isinstance(清单表, dict):
         return []
     实现标志条 = {}
-    for 必备件条 in 清单.get("必备件") or []:
+    for 必备件条 in 清单表.get("必备件") or []:
         if isinstance(必备件条, dict) and 必备件条.get("文件") == 实现件文件名:
             实现标志条 = 必备件条
             break
     种类表 = []
-    for 种类条 in 清单.get("三类扩展") or []:
+    for 种类条 in 清单表.get("三类扩展") or []:
         if not isinstance(种类条, dict):
             continue
         种类名 = 种类条.get("种类")

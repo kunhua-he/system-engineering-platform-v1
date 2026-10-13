@@ -15,10 +15,10 @@ import WebKit
 final class 桌面壳: NSObject, NSApplicationDelegate {
     var 窗口: NSWindow!
     var 视图: WKWebView!
-    let 地址: String
+    let 服务地址: String
 
-    init(地址: String) {
-        self.地址 = 地址
+    init(服务地址: String) {
+        self.服务地址 = 服务地址
         super.init()
     }
 
@@ -36,7 +36,7 @@ final class 桌面壳: NSObject, NSApplicationDelegate {
         窗口.center()
         窗口.makeKeyAndOrderFront(nil)
 
-        guard let 网址 = URL(string: 地址) else {
+        guard let 网址 = URL(string: 服务地址) else {
             FileHandle.standardError.write(Data("壳：URL 拼不出来：\(地址)\n".utf8))
             NSApp.terminate(nil)
             return
@@ -50,8 +50,8 @@ final class 桌面壳: NSObject, NSApplicationDelegate {
     }
 }
 
-let 参数 = Array(CommandLine.arguments.dropFirst())
-guard let 地址 = 参数.first else {
+let 进程参数 = Array(CommandLine.arguments.dropFirst())
+guard let 服务地址 = 进程参数.first else {
     FileHandle.standardError.write(Data(
         "壳：要一个 URL。请用 启动.sh 起（它从 契约声明/常量表.json 现读接口端口）。\n".utf8
     ))
@@ -59,7 +59,7 @@ guard let 地址 = 参数.first else {
 }
 
 let 应用实例 = NSApplication.shared
-let 应用代理 = 桌面壳(地址: 地址)
+let 应用代理 = 桌面壳(服务地址: 服务地址)
 应用实例.delegate = 应用代理
 应用实例.setActivationPolicy(.regular)
 应用实例.run()

@@ -53,14 +53,14 @@ def 取空闲端口() -> int:
     """要一个空闲端口（不绑定、马上放掉 —— 起监听归网关）。"""
     套接字 = socket.socket()
     套接字.bind(("127.0.0.1", 0))
-    端口 = 套接字.getsockname()[1]
+    监听端口 = 套接字.getsockname()[1]
     套接字.close()
-    return 端口
+    return 监听端口
 
 
-def 取工作目录(新建: bool = False) -> Path:
+def 取工作目录(新建标志: bool = False) -> Path:
     """每次运行新建独立目录，保留前次取证材料。"""
-    if 新建:
+    if 新建标志:
         取工作目录.工作目录 = Path(tempfile.mkdtemp(
             prefix="跨进程验收-", dir=子目录路径(解析当前环境(), "临时件")
         ))
@@ -74,7 +74,7 @@ def 造跨进程条目(扩展名: str, 启动程序: str, 启动参数=None):
     """
     扩展目录 = 仓根 / "扩展根目录" / "原子支持库" / 扩展名
     包声明 = json.loads((扩展目录 / "包声明.json").read_text(encoding="utf-8"))
-    制品 = 扩展目录 / (扩展名 + ".支持库制品")
+    构建制品 = 扩展目录 / (扩展名 + ".支持库制品")
     # 包声明用短键（主 / 次 / 构建），部署配置用长键（主版本 / 次版本号 / 构建）：
     # 两个形状都是各自的本体，不改任何一侧，在这里翻译。
     声明版本 = 包声明["实现版本"]
@@ -85,12 +85,12 @@ def 造跨进程条目(扩展名: str, 启动程序: str, 启动参数=None):
             "次版本号": 声明版本["次"],
             "构建": 声明版本["构建"],
         },
-        "制品路径": str(制品),
+        "制品路径": str(构建制品),
         "启动程序": str(启动程序),
         "启动参数": (
             [str(参数项) for 参数项 in 启动参数]
             if 启动参数 is not None
-            else [str(制品), str(仓根 / "构建环境" / "构建缓存")]
+            else [str(构建制品), str(仓根 / "构建环境" / "构建缓存")]
         ),
     }
 
@@ -118,7 +118,7 @@ def 造部署配置(工作目录: Path, 启动程序: str, 启动参数=None, �
     return 配置文件
 
 
-def 起网关(工作目录: Path, 端口: int, 跨进程配置=None, 额外参数=()):
+def 起网关(工作目录: Path, 监听端口: int, 跨进程配置=None, 额外参数=()):
     """起一个**真网关子进程**（生产装配入口 `examples/启动网关`）。
 
     返回 `(子进程, 端口)`；调用方负责 `停网关`。
@@ -126,14 +126,14 @@ def 起网关(工作目录: Path, 端口: int, 跨进程配置=None, 额外参�
     命令 = [
         str(仓根 / "构建环境" / "构建缓存" / "debug" / "examples" / "启动网关"),
         "--端口",
-        str(端口),
+        str(监听端口),
         "--工具根",
         str(仓根),
     ]
     if 跨进程配置 is not None:
         命令 += ["--跨进程配置", str(跨进程配置)]
     命令 += [str(参数项) for 参数项 in 额外参数]
-    日志文件 = 工作目录 / f"网关-{端口}.log"
+    日志文件 = 工作目录 / f"网关-{监听端口}.log"
     日志句柄 = 日志文件.open("w", encoding="utf-8")
     进程 = subprocess.Popen(
         命令, cwd=str(仓根), stdout=日志句柄, stderr=subprocess.STDOUT, text=True
@@ -148,15 +148,15 @@ def 起网关(工作目录: Path, 端口: int, 跨进程配置=None, 额外参�
             raise RuntimeError(f"网关启动即退出（码 {进程.returncode}）：\n{输出}")
         try:
             # 路径里的中文必须先百分号编码（`http.client` 只发 ASCII 请求行）。
-            探活地址 = "http://127.0.0.1:%d/%s" % (端口, urllib.parse.quote("接口"))
+            探活地址 = "http://127.0.0.1:%d/%s" % (监听端口, urllib.parse.quote("接口"))
             回应 = urllib.request.urlopen(探活地址, timeout=1.0)
             if 回应.status == 200:
-                return 进程, 端口
+                return 进程, 监听端口
         except (urllib.error.URLError, OSError):
             pass
         time.sleep(0.15)
     停网关(进程)
-    raise RuntimeError(f"网关在 {启动超时秒} 秒内未起监听（端口 {端口}）")
+    raise RuntimeError(f"网关在 {启动超时秒} 秒内未起监听（端口 {监听端口}）")
 
 
 def 停网关(进程):
@@ -194,15 +194,15 @@ def 造整数位(值: int):
     return {"类型标签": 1, "值": 值}
 
 
-def 发调用(端口: int, 编号: int, 参位表, 超时秒: float = 单次调用超时秒):
+def 发调用(监听端口: int, 编号: int, 参位表, 超时秒: float = 单次调用超时秒):
     """发一次生产调用，返回 `(HTTP 码, 响应体字典或 None, 原始文本)`。
 
     ★ 走的就是生产入口：`POST /接口/调用`。不调任何内部函数。
     """
-    体 = json.dumps({"编号": 编号, "值": list(参位表)}, ensure_ascii=False).encode("utf-8")
+    进程体 = json.dumps({"编号": 编号, "值": list(参位表)}, ensure_ascii=False).encode("utf-8")
     请求 = urllib.request.Request(
-        "http://127.0.0.1:%d/%s" % (端口, urllib.parse.quote("接口/调用")),
-        data=体,
+        "http://127.0.0.1:%d/%s" % (监听端口, urllib.parse.quote("接口/调用")),
+        data=进程体,
         headers={"Content-Type": "application/json"},
         method="POST",
     )

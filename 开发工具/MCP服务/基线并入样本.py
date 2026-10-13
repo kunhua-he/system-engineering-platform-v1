@@ -144,20 +144,20 @@ def _库场景样本(临时根) -> list:
 
     样本表 = []
     _, 工作树 = _建库样本仓(临时根, "加行")
-    退出码, 文本 = 并入基线(工作树, "腿/v1-900003")
+    退出码, 文本载荷 = 并入基线(工作树, "腿/v1-900003")
     with sqlite3.connect(工作树 / 规则库相对路径) as 连接:
-        规则集 = {行[0] for 行 in 连接.execute("select 编号 from 规则")}
-        名集 = {行[0] for 行 in 连接.execute("select 名字 from 命名登记")}
+        规则集 = {数据行[0] for 数据行 in 连接.execute("select 编号 from 规则")}
+        名集 = {数据行[0] for 数据行 in 连接.execute("select 名字 from 命名登记")}
     样本表.append(("规则库冲突按主键三方重放 ⇒ 保两侧正式增量（腿 规则#2 在 %s · 主干 命名登记在 %s）"
               % (2 in 规则集, "主干名" in 名集),
               退出码 == 0 and 2 in 规则集 and {"基名", "腿名", "主干名"} <= 名集))
-    _, 工作树2 = _建库样本仓(临时根, "同键异值")
-    退出码, 文本 = 并入基线(工作树2, "腿/v1-900003")
-    半合并 = subprocess.run(["git", "-C", str(工作树2), "rev-parse", "--verify", "--quiet", "MERGE_HEAD"],
+    _, 副本工作树 = _建库样本仓(临时根, "同键异值")
+    退出码, 文本载荷 = 并入基线(副本工作树, "腿/v1-900003")
+    半合并 = subprocess.run(["git", "-C", str(副本工作树), "rev-parse", "--verify", "--quiet", "MERGE_HEAD"],
                         capture_output=True, text=True, env=干净环境()).returncode == 0
     样本表.append(("规则库同键异值 ⇒ 判冲突拒并入且无半合并现场：%s"
-              % ("是" if (退出码 != 0 and "不可自动并入" in 文本 and not 半合并) else "否"),
-              退出码 != 0 and "不可自动并入" in 文本 and not 半合并))
+              % ("是" if (退出码 != 0 and "不可自动并入" in 文本载荷 and not 半合并) else "否"),
+              退出码 != 0 and "不可自动并入" in 文本载荷 and not 半合并))
     return 样本表
 
 
