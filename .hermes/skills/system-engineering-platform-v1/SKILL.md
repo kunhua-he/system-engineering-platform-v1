@@ -653,6 +653,20 @@ cargo build --locked --offline -p v1-adapter --example 工作进程
 
 **判旧**：把 `stat -f '%Sm' 构建环境/构建缓存/debug/examples/启动网关` 与你改动的时刻比。
 
+**★ 收口链不含构建产物刷新 ⇒ 合主干后主干上跑 T09 会一片假红**（2026-10-13 实测）：
+主干那两个 debug 件停在**上一次重建**（本轮 12:56），release 制品也旧 ⇒ 主干 `T09` 全红
+（一·文本往返 / 二·两条路一致 等全报 ✗，看着像源码坏了）。
+在主干补齐三件事后回到正常读数（本轮实测：全红 → **27 · 0 · 2**）：
+
+```bash
+cd <主干> && . 构建环境/进入.sh
+python3 构建装配/上线切换/构建制品.py --预构建
+cargo build --locked --offline -p v1-gateway --example 启动网关
+cargo build --locked --offline -p v1-adapter --example 工作进程
+```
+
+⇒ **判「主干这条读数是不是真红」前先看构建产物 mtime**；别拿主干上的 T09 全红当交付缺陷。
+
 ## 边界纪律：带进程级 static 的新件别放进 `跨语言适配/`
 
 判据 ⑫ 要求 `跨语言适配/` 里 **0 模块级状态**（`边界协议.md` 第四节）。计数分配器那类
