@@ -51,7 +51,7 @@ from .主干写盘兜底 import 兜底, 取主干快照
 开工号形状 = re.compile(r"v1-[0-9]{6}")
 # 子进程不许继承的 Git 定位变量：会把子进程的 git 带到别的树 / 别的 index 上
 继承定位变量 = ("GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE", "GIT_OBJECT_DIRECTORY",
-             "GIT_COMMON_DIR", "GIT_ALTERNATE_OBJECT_DIRECTORIES")
+             "GIT_COMMON_DIR", "GIT_ALTERNATE_OBJECT_DIRECTORIES", "GIT_PREFIX")
 # Git 的**配置注入**键（`git -c …` ⇒ `GIT_CONFIG_PARAMETERS`；新版 ⇒ `GIT_CONFIG_COUNT` +
 # `GIT_CONFIG_KEY_<n>` / `GIT_CONFIG_VALUE_<n>`）：与定位键同属**进程级注入** ⇒ 子进程会跑外层钩子、
 # 读外层配置（实测 v1-100675）。`GIT_CONFIG_PARAMETERS` 与 `GIT_CONFIG_COUNT` 是**整名**；
