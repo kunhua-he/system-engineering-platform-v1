@@ -26,7 +26,7 @@ from pathlib import Path
 
 from . import 反馈账本 as 账本
 
-台账相对路径 = ("开发工具", "信息核心", "未完成.json")
+台账相对路径 = ("开发工具", "信息核心", "信息核心.db")
 
 # 未蒸馏**类别**（封闭档表 · 四类）：`未蒸馏明细` 逐行标它、`未蒸馏分类计数` 按它计数 ——
 # 类别名**就是**行首（`正文` 以类别名起头），别处不许另拼字面量。
@@ -51,18 +51,19 @@ def 反馈表集(连接) -> set:
 
 
 def 读台账号集(仓根) -> set:
-    """`未完成.json` 的**现行条目号**集；件不在 / 读不动 ⇒ 空集（调用方 fail-closed 当无效）。"""
-    台账件 = Path(仓根).joinpath(*台账相对路径)
-    if not 台账件.is_file():
+    """库 `未完成` 表的**现行条目号**集；库不在 / 读不动 ⇒ 空集（调用方 fail-closed 当无效）。"""
+    import sqlite3
+    台账库路径 = Path(仓根).joinpath(*台账相对路径)
+    if not 台账库路径.is_file():
         return set()
     try:
-        正文 = json.loads(台账件.read_text(encoding="utf-8"))
-    except (OSError, ValueError):
+        连接 = sqlite3.connect("file:%s?mode=ro" % 台账库路径, uri=True)
+        try:
+            号集 = {数据行[0] for 数据行 in 连接.execute("select 号 from 未完成")}
+        finally:
+            连接.close()
+    except sqlite3.Error:
         return set()
-    号集 = set()
-    for 台账行 in 正文.get("行") or []:
-        if isinstance(台账行, list) and 台账行 and isinstance(台账行[0], int):
-            号集.add(台账行[0])
     return 号集
 
 

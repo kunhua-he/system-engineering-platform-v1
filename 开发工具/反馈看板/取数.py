@@ -22,7 +22,7 @@ from pathlib import Path
 默认端口 = 43131
 库子目录 = "数据库"
 库文件名 = "开工账本.db"
-台账相对路径 = ("开发工具", "信息核心", "未完成.json")
+台账相对路径 = ("开发工具", "信息核心", "信息核心.db")
 判词档表 = ("债务", "非问题", "待核")
 筛选_全部 = "全部"
 默认每页 = 50
@@ -85,19 +85,23 @@ def 连只读库(路径: Path) -> sqlite3.Connection:
 
 
 def 读台账(仓根目录: Path, 台账件=None) -> tuple:
-    """`未完成.json` 现量 ⇒ `(号集, 缺什么表, 错误或 None)`。件不在 / 读不动 ⇒ 错误（调用方判陈旧）。"""
-    台账路径 = Path(台账件) if 台账件 else Path(仓根目录).joinpath(*台账相对路径)
-    if not 台账路径.is_file():
-        return set(), {}, "台账件不在：%s" % 台账路径
+    """台账现量（库 `未完成` 表）⇒ `(号集, 缺什么表, 错误或 None)`。库不在 / 读不动 ⇒ 错误（调用方判陈旧）。"""
+    台账库路径 = Path(台账件) if 台账件 else Path(仓根目录).joinpath(*台账相对路径)
+    if not 台账库路径.is_file():
+        return set(), {}, "台账件不在：%s" % 台账库路径
     try:
-        正文 = json.loads(台账路径.read_text(encoding="utf-8"))
-    except (OSError, ValueError) as 错误:
+        连接 = 连只读库(台账库路径)
+        try:
+            行表 = 连接.execute("select 号, 缺什么 from 未完成").fetchall()
+        finally:
+            连接.close()
+    except sqlite3.Error as 错误:
         return set(), {}, "台账读不动：%s" % 错误
     号集, 缺什么表 = set(), {}
-    for 台账行 in 正文.get("行") or []:
-        if isinstance(台账行, list) and 台账行 and isinstance(台账行[0], int):
-            号集.add(台账行[0])
-            缺什么表[台账行[0]] = str(台账行[1]) if len(台账行) > 1 else ""
+    for 台账行 in 行表:
+        if isinstance(台账行["号"], int):
+            号集.add(台账行["号"])
+            缺什么表[台账行["号"]] = str(台账行["缺什么"] or "")
     return 号集, 缺什么表, None
 
 
