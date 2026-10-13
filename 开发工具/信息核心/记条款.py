@@ -139,7 +139,7 @@ def 记条款(字段表: dict) -> int:
                   file=sys.stderr)
             return 2
         try:
-            正文 = (仓根 / 正文文件).read_text(encoding="utf-8").strip()
+            正文 = (仓根 / 正文文件).read_text(encoding="utf-8").rstrip("\n")
         except OSError as 错误:
             print(f"拒：读 `--正文文件 {正文文件}` 失败 —— {错误}", file=sys.stderr)
             return 2
