@@ -113,13 +113,13 @@ pub fn 编码(说明: &接口说明) -> Vec<u8> {
 ///
 /// **不许尽力而为**：非空字节集必须**正好**解完，剩余一字节即 `None`。
 pub fn 解码(字节: &[u8]) -> Option<接口说明> {
-    let mut 读游标 = 读游标 { 字节, 位: 0 };
+    let mut 读游标 = 读游标 { 字节, 位偏移: 0 };
     let 编号 = 读游标.读四字节()?;
     let 名称 = 读游标.读文本()?;
     let 说明文本 = 读游标.读文本()?;
     let 参数个数 = 读游标.读四字节()? as usize;
     // 每项至少 4 字节名长 + 4 类型标签 + 2 状态位 + 24 槽 = 34 字节。
-    if 参数个数 > 读游标.剩余() / 34 {
+    if 参数个数 > 读游标.剩余字节() / 34 {
         return None;
     }
     let mut 参数表 = Vec::with_capacity(参数个数);
@@ -129,14 +129,14 @@ pub fn 解码(字节: &[u8]) -> Option<接口说明> {
     let 返回类型 = 读游标.读四字节()?;
     let 错误个数 = 读游标.读四字节()? as usize;
     // 每项至少 4 码 + 4 段位 + 4 名长 + 4 逻辑型 = 16 字节。
-    if 错误个数 > 读游标.剩余() / 16 {
+    if 错误个数 > 读游标.剩余字节() / 16 {
         return None;
     }
     let mut 可抛错误码 = Vec::with_capacity(错误个数);
     for _ in 0..错误个数 {
         可抛错误码.push(读错误项(&mut 读游标)?);
     }
-    if 读游标.位 != 字节.len() {
+    if 读游标.位偏移 != 字节.len() {
         return None;
     }
     Some(接口说明 { 编号, 名称, 说明: 说明文本, 参数表, 返回类型, 可抛错误码 })
@@ -199,22 +199,22 @@ fn 读错误项(读游标: &mut 读游标<'_>) -> Option<接口错误项> {
 /// 本件私有的读游标：每个取字节都查边界，越界给 `None`（不 panic）。**不导出**。
 struct 读游标<'a> {
     字节: &'a [u8],
-    位: usize,
+    位偏移: usize,
 }
 
 impl<'a> 读游标<'a> {
     /// 还没读的字节数（供调用方先卡「项数不可能超过 剩余长度 / 每项最小字节数」）。
-    fn 剩余(&self) -> usize {
-        self.字节.len().saturating_sub(self.位)
+    fn 剩余字节(&self) -> usize {
+        self.字节.len().saturating_sub(self.位偏移)
     }
 
-    fn 取字节(&mut self, 个数: usize) -> Option<&'a [u8]> {
-        let 尾部 = self.位.checked_add(个数)?;
+    fn 取字节(&mut self, 字节个数: usize) -> Option<&'a [u8]> {
+        let 尾部 = self.位偏移.checked_add(字节个数)?;
         if 尾部 > self.字节.len() {
             return None;
         }
-        let 片段 = &self.字节[self.位..尾部];
-        self.位 = 尾部;
+        let 片段 = &self.字节[self.位偏移..尾部];
+        self.位偏移 = 尾部;
         Some(片段)
     }
 

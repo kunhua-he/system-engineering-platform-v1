@@ -49,7 +49,7 @@ def 入口函数(命令行参数):
         else:
             print("只认一个开工ID；多给了 %r" % 一个参数, file=sys.stderr)
             return 2
-    退出码, 输出文本 = 派发(开工号, 推送, Path(__file__).resolve().parents[2], 操作=现场操作)
+    退出码, 输出文本 = 派发(开工号, 推送, Path(__file__).resolve().parents[2], 操作标识=现场操作)
     print(输出文本)
     return 退出码
 

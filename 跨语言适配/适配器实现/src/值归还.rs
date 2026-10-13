@@ -75,8 +75,8 @@ impl 适配器 {
 pub fn 收下字节槽(标签: v1_contract::类型标签, 字节: &[u8]) -> 数据槽 {
     // `into_boxed_slice` 走标准库默认分配器（`System`）—— 与 `写字节集` 侧**同一机制**，
     // 故宿主侧 `Box::from_raw` 回收它成立（见文件头「真回收」）。
-    let 块 = 字节.to_vec().into_boxed_slice();
-    let 字节长度 = 块.len() as u64;
-    let 槽值 = Box::into_raw(块) as *mut u8 as u64;
+    let 字节块 = 字节.to_vec().into_boxed_slice();
+    let 字节长度 = 字节块.len() as u64;
+    let 槽值 = Box::into_raw(字节块) as *mut u8 as u64;
     数据槽::指针(标签, 槽值, 字节长度, true)
 }

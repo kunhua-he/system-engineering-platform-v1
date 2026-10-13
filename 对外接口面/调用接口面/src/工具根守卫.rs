@@ -117,7 +117,7 @@ fn 词法规范化(路径: &Path) -> Option<PathBuf> {
     let mut 段表: Vec<OsString> = Vec::new();
     for 路径段 in 路径.components() {
         match 路径段 {
-            Component::Prefix(前缀) => 段表.push(前缀.as_os_str().to_owned()),
+            Component::Prefix(名称前缀) => 段表.push(名称前缀.as_os_str().to_owned()),
             Component::RootDir => 是绝对 = true,
             Component::CurDir => {}
             Component::ParentDir => {
@@ -125,7 +125,7 @@ fn 词法规范化(路径: &Path) -> Option<PathBuf> {
                     return None;
                 }
             }
-            Component::Normal(名) => 段表.push(名.to_owned()),
+            Component::Normal(路径名) => 段表.push(路径名.to_owned()),
         }
     }
     let mut 折叠结果 = PathBuf::new();

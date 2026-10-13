@@ -109,8 +109,8 @@ def 取规则整数(仓根, 规则名):
     文本值 = str(规则行[0]).strip()
     if not re.fullmatch(r"[0-9]+", 文本值):
         return None
-    整数 = int(文本值)
-    return 整数 if 整数 > 0 else None
+    整数值 = int(文本值)
+    return 整数值 if 整数值 > 0 else None
 
 
 def 读后台预算(仓根):

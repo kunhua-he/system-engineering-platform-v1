@@ -47,7 +47,7 @@ fn 构建并执行(产物: &本机源码产物, 工具链命令: &PathBuf, 运�
     let 依赖目录 = std::env::current_exe().unwrap().parent().unwrap().to_owned();
     let 契约产物表: Vec<_> = fs::read_dir(&依赖目录).unwrap().map(|目录项| 目录项.unwrap().path()).filter(|路径|
         路径.file_name().unwrap().to_string_lossy().starts_with("libv1_contract-")
-            && 路径.extension().is_some_and(|后缀| 后缀 == "rlib")
+            && 路径.extension().is_some_and(|扩展名| 扩展名 == "rlib")
     ).collect();
     assert_eq!(契约产物表.len(), 1, "请用本腿独立target目录验证，避免混用工具链契约产物");
     let 验证入口 = r#"

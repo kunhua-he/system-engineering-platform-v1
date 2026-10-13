@@ -40,14 +40,14 @@ impl 域句柄 {
         if 待发载荷.len() > crate::进程帧::单帧载荷上限 {
             return Err(进程池错误::载荷过大);
         }
-        let mut 工作 = self.锁();
+        let mut 工作 = self.互斥锁();
         let 调用帧 = crate::进程帧::消息帧 {
             消息类型: crate::进程帧::消息类别::调用,
             请求标识,
             载荷: 待发载荷.to_vec(),
         };
-        let 结果 = crate::进程帧::发送帧(&mut 工作.通道, &调用帧, budget);
-        if 结果.is_err() {
+        let 执行结果 = crate::进程帧::发送帧(&mut 工作.流通道, &调用帧, budget);
+        if 执行结果.is_err() {
             查实崩溃(self.配置, &mut 工作);
             return Err(按存活判错(&工作));
         }
@@ -60,8 +60,8 @@ impl 域句柄 {
         请求标识: NonZeroU64,
         budget: &mut 调用帧预算,
     ) -> Result<Vec<u8>, 进程池错误> {
-        let mut 工作 = self.锁();
-        match crate::进程帧::接收帧(&mut 工作.通道, 请求标识, budget) {
+        let mut 工作 = self.互斥锁();
+        match crate::进程帧::接收帧(&mut 工作.流通道, 请求标识, budget) {
             Ok(帧体) if 帧体.消息类型 == crate::进程帧::消息类别::调用结果 => Ok(帧体.载荷),
             _ => {
                 查实崩溃(self.配置, &mut 工作);
@@ -85,8 +85,8 @@ impl 域句柄 {
         请求标识: NonZeroU64,
         budget: &mut 调用帧预算,
     ) -> Result<(), 进程池错误> {
-        let mut 工作 = self.锁();
-        match crate::进程帧::接收帧(&mut 工作.通道, 请求标识, budget) {
+        let mut 工作 = self.互斥锁();
+        match crate::进程帧::接收帧(&mut 工作.流通道, 请求标识, budget) {
             Ok(帧体) if 帧体.消息类型 == crate::进程帧::消息类别::通知回执 => {
                 工作.装载已重放 = true;
                 Ok(())
@@ -104,13 +104,13 @@ impl 域句柄 {
         请求标识: NonZeroU64,
         budget: &mut 调用帧预算,
     ) -> Result<(), 进程池错误> {
-        let mut 工作 = self.锁();
+        let mut 工作 = self.互斥锁();
         let 通知帧 = crate::进程帧::消息帧 {
             消息类型: crate::进程帧::消息类别::通知,
             请求标识,
             载荷: v1_contract::声明数据::通知号_2000.to_le_bytes().to_vec(),
         };
-        crate::进程帧::发送帧(&mut 工作.通道, &通知帧, budget)
+        crate::进程帧::发送帧(&mut 工作.流通道, &通知帧, budget)
             .map_err(|_| 进程池错误::通道断开)?;
         Ok(())
     }

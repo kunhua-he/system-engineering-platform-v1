@@ -37,10 +37,10 @@ def 隔离样本入口(样本组名, 仓根):
     from MCP服务.参数规范 import 开树快照, 关树快照
 
     模块名, 函数名 = 隔离样本组[样本组名]
-    模块 = importlib.import_module("MCP服务." + 模块名)
+    样本模块 = importlib.import_module("MCP服务." + 模块名)
     旧快照 = 开树快照()
     try:
-        样本表 = getattr(模块, 函数名)(仓根, 工具表)
+        样本表 = getattr(样本模块, 函数名)(仓根, 工具表)
         return {"组": 样本组名, "样本": [(说明, bool(通过)) for 说明, 通过 in 样本表]}
     finally:
         关树快照(旧快照)
@@ -57,10 +57,10 @@ def 跑隔离样本(样本组名, 仓根) -> list:
         子组读数 = json.loads(回执.stdout)
         样本表 = 子组读数["样本"]
         if (子组读数["组"] != 样本组名 or not isinstance(样本表, list) or not 样本表
-                or not all(isinstance(条, list) and len(条) == 2 and isinstance(条[0], str)
-                           and type(条[1]) is bool for 条 in 样本表)):
+                or not all(isinstance(读数条, list) and len(读数条) == 2 and isinstance(读数条[0], str)
+                           and type(读数条[1]) is bool for 读数条 in 样本表)):
             raise ValueError("样本组或样本表形状不齐")
-        return [tuple(条) for 条 in 样本表]
+        return [tuple(读数条) for 读数条 in 样本表]
     except Exception as 错误:
         return [("隔离样本 %s 未完整完成：%r" % (样本组名, 错误), False)]
 
@@ -68,6 +68,6 @@ def 跑隔离样本(样本组名, 仓根) -> list:
 def 并行样本结果(仓根) -> dict:
     """并发跑全部隔离样本组 ⇒ `{组名: 样本表}`（墙钟 ≈ 最慢一组的长度）。"""
     import concurrent.futures
-    with concurrent.futures.ThreadPoolExecutor(max_workers=len(隔离样本组)) as 池:
-        作业表 = {组名: 池.submit(跑隔离样本, 组名, 仓根) for 组名 in 隔离样本组}
+    with concurrent.futures.ThreadPoolExecutor(max_workers=len(隔离样本组)) as 执行池:
+        作业表 = {组名: 执行池.submit(跑隔离样本, 组名, 仓根) for 组名 in 隔离样本组}
     return {组名: 作业.result() for 组名, 作业 in 作业表.items()}

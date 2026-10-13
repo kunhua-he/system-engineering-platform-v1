@@ -76,7 +76,7 @@ pub fn 编译本机源码(
 ) -> Result<(), String> {
     let 源码路径 = 输出路径.with_extension("rs");
     let 全源 = format!("{}\n{}", 产物.执行源码, 生成入口包装(编号));
-    std::fs::write(&源码路径, 全源).map_err(|错| format!("写源码失败：{错}"))?;
+    std::fs::write(&源码路径, 全源).map_err(|失败因由| format!("写源码失败：{失败因由}"))?;
     let 编译输出 = Command::new(工具链命令)
         .arg("--edition=2024")
         .arg("--crate-type").arg("cdylib")
@@ -87,7 +87,7 @@ pub fn 编译本机源码(
         .arg(&源码路径)
         .arg("-o").arg(输出路径)
         .output()
-        .map_err(|错| format!("拉不起工具链：{错}"))?;
+        .map_err(|失败因由| format!("拉不起工具链：{失败因由}"))?;
     if !编译输出.status.success() {
         return Err(format!("编译失败：{}", String::from_utf8_lossy(&编译输出.stderr)));
     }

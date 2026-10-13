@@ -75,17 +75,17 @@ pub fn 扫缓存残留(缓存根目录: &Path) -> Vec<残留项> {
         return Vec::new();
     };
     let mut 残留表: Vec<残留项> = Vec::new();
-    for 条目 in 读目录.flatten() {
-        if !条目.file_name().to_string_lossy().ends_with(".临时") {
+    for 明细条目 in 读目录.flatten() {
+        if !明细条目.file_name().to_string_lossy().ends_with(".临时") {
             continue;
         }
-        let Ok(属性) = 条目.metadata() else {
+        let Ok(文件属性) = 明细条目.metadata() else {
             continue;
         };
-        if 属性.is_file() {
+        if 文件属性.is_file() {
             残留表.push(残留项 {
-                路径: 条目.path(),
-                字节数: 属性.len(),
+                路径: 明细条目.path(),
+                字节数: 文件属性.len(),
             });
         }
     }

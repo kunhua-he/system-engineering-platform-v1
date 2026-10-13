@@ -318,14 +318,14 @@ impl 服务 {
         // 其余端点：**锁内取执行引用（`Arc` 克隆）→ 锁外执行** —— 长执行不再持读锁、不再阻塞装载。
         // 分发体在 `分发::处理生命周期动作`（本件行数已近硬数，搬出二十行）。
         if let crate::端点路由::端点::生命周期动作 = 落点 {
-            let mut 锁 = self.适配器.write().unwrap_or_else(|中毒| 中毒.into_inner());
+            let mut 互斥锁 = self.适配器.write().unwrap_or_else(|中毒| 中毒.into_inner());
             // 跨进程生产启用状态：装载 / 切换按**同一份判据**登记执行域，卸载注销域。
             // 没注入配置 ⇒ `None` ⇒ 全部走进程内原路（一字不改）。
             #[cfg(unix)]
             {
                 let mut 状态锁 = self.取跨进程状态();
                 return crate::分发::处理生命周期动作(
-                    Arc::make_mut(&mut 锁),
+                    Arc::make_mut(&mut 互斥锁),
                     请求体.as_ref(),
                     self.声明根.as_deref(),
                     self.后缀表文本.as_deref(),
@@ -336,7 +336,7 @@ impl 服务 {
             #[cfg(not(unix))]
             {
                 return crate::分发::处理生命周期动作(
-                    Arc::make_mut(&mut 锁),
+                    Arc::make_mut(&mut 互斥锁),
                     请求体.as_ref(),
                     self.声明根.as_deref(),
                     self.后缀表文本.as_deref(),
