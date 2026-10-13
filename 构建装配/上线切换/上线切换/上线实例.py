@@ -1,4 +1,4 @@
-"""实例 —— 起 · 停 · 健康检查（起没起来看健康，不看进程在不在）。"""
+"""上线实例 —— 起 · 停 · 健康检查（起没起来看健康，不看进程在不在）。"""
 
 import json
 import os
@@ -14,7 +14,7 @@ from pathlib import Path
 
 from .常量 import 仓根, 停等秒, 运行根, 健康超时秒
 from .指针 import 读指针, 写指针
-from .制品 import 制品目录
+from .上线制品 import 制品目录
 from .输出 import 打印文本
 
 

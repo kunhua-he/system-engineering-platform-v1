@@ -42,7 +42,7 @@ import sys
 import time
 from pathlib import Path
 
-起始时刻 = time.monotonic()  # 壳起表点：必须在 import 业务包**之前**（见 构建装配/门禁/壳.py）
+起始时刻 = time.monotonic()  # 壳起表点：必须在 import 业务包**之前**（见 构建装配/门禁/命令壳.py）
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))  # 仓根：取共享门禁
 sys.path.insert(0, str(Path(__file__).resolve().parent))      # 同目录：取并发调度实现

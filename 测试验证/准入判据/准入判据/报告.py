@@ -7,7 +7,7 @@
 """
 
 from .世界 import 判读世界, 扩展根目录名
-from .清单 import 机器判据
+from .判据清单 import 机器判据
 from .登记 import 有意不判
 from .判据 import 判有意不判_依据锚点齐
 

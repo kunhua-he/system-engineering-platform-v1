@@ -2,7 +2,7 @@
 
 import base64
 
-from .参数 import 用法错误
+from .命令行参数 import 用法错误
 
 
 def 拼值(命令行参数: str) -> dict:

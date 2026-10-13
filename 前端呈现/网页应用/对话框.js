@@ -31,7 +31,7 @@ export function 装对话框(取元素) {
     对话框件.style.width = 对话框项.cx + "px";
     对话框件.style.height = 对话框项.cy + "px";
     // 字号照资源的「字号」字段给；**字体族不在这里给** —— 进前端的这 18 个全是「宋体」，
-    // 族链（宋体 → SimSun → Songti SC）只在 `样式.css` 里写一份，两处写就是两个来源。
+    // 族链（宋体 → SimSun → Songti SC）只在 `页面样式.css` 里写一份，两处写就是两个来源。
     // 实测过：这里写 `fontFamily = "宋体"` 会在 macOS 上落到默认族（量到 PingFang SC），
     // 因为本机没有叫「宋体」的字面；走 CSS 那条链才会落到 Songti SC。资源的字体名照旧显示在读数里。
     对话框件.style.fontSize = 对话框项.字号 + "pt";

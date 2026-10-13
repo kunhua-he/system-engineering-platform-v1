@@ -6,7 +6,7 @@ import sys
 import urllib.error
 
 from .常量 import 默认端口, 用法文本, 路径_声明, 路径_能力, 路径_根, 路径_调用
-from .参数 import 取端口, 用法错误
+from .命令行参数 import 取端口, 用法错误
 from .显示 import 印应答, 印失败, 印调用成功
 from .请求体 import 拼值
 from .连接 import 发请求, 报连不上

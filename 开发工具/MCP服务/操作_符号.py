@@ -16,7 +16,7 @@ from functools import partial
 
 def 符号处理(操作名: str, 开工号: str, 参数表: dict, 仓根):
     """把 W3 三字段原样交给 `符号.派发`（不复制其实现，也不替它校验）。"""
-    from .符号 import 派发
+    from .符号查询 import 派发
     return 派发({"开工ID": 开工号, "操作": 操作名, "参数": 参数表}, 仓根)
 
 
