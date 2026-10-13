@@ -20,11 +20,14 @@ from . import 反馈账本
 
 
 def 取台账号(仓根) -> tuple:
-    """真实台账里取 `(现存号, 必不存在号)` —— 不写死号（台账会漂）。"""
-    台账件 = Path(仓根) / "开发工具" / "信息核心" / "未完成.json"
-    正文 = json.loads(台账件.read_text(encoding="utf-8"))
-    号表 = [台账行[0] for 台账行 in 正文.get("行") or []
-          if isinstance(台账行, list) and 台账行 and isinstance(台账行[0], int)]
+    """真实台账（库 `未完成` 表）里取 `(现存号, 必不存在号)` —— 不写死号（台账会漂）。"""
+    import sqlite3
+    台账库路径 = Path(仓根) / "开发工具" / "信息核心" / "信息核心.db"
+    连接 = sqlite3.connect("file:%s?mode=ro" % 台账库路径, uri=True)
+    try:
+        号表 = [数据行[0] for 数据行 in 连接.execute("select 号 from 未完成")]
+    finally:
+        连接.close()
     现存号 = max(号表) if 号表 else 1
     return 现存号, 现存号 + 900000
 

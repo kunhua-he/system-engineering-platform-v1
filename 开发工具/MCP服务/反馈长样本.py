@@ -130,8 +130,17 @@ def 清树接缝样本(仓根, 接缝号) -> list:
     try:
         临时仓 = 临时根 / "仓"
         (临时仓 / "开发工具/信息核心").mkdir(parents=True)
-        (临时仓 / "开发工具/信息核心/未完成.json").write_text(
-            json.dumps({"行": [[311, "接缝验收现存"]]}, ensure_ascii=False), encoding="utf-8")
+        import sqlite3
+        台账库路径 = 临时仓 / "开发工具/信息核心/信息核心.db"
+        连接 = sqlite3.connect(str(台账库路径))
+        try:
+            连接.execute("create table if not exists 未完成"
+                     "(号 integer primary key, 缺什么 text not null, 落点 text, 验证命令 text)")
+            连接.execute("insert or replace into 未完成 values(?,?,?,?)",
+                    (311, "接缝验收现存", "", ""))
+            连接.commit()
+        finally:
+            连接.close()
         连接 = 开工账本.连账本()
         try:
             开工账本.登记开工(连接, 接缝开工号, "接缝验收腿", "腿/" + 接缝开工号, str(临时根 / "树"))
@@ -175,7 +184,7 @@ def 清树接缝样本(仓根, 接缝号) -> list:
             连接.close()
         记样本("接缝·债务承接陈旧失效 ⇒ 拒清（fail-closed）",
            any("无有效承接" in 台账行 for 台账行 in 未蒸馏))
-        (临时仓 / "开发工具/信息核心/未完成.json").unlink()
+        台账库路径.unlink()
         连接 = 反馈账本.连反馈库()
         try:
             未蒸馏 = 清树门禁.未蒸馏反馈行(连接, 临时仓, 接缝开工号)
