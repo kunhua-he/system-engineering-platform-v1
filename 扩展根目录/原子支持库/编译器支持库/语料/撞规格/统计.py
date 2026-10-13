@@ -4,7 +4,7 @@ import re
 from collections import Counter, defaultdict
 
 from .规格词表 import 是备注字段
-from .按规格切 import 切记号
+from .按规格切 import 按规格切
 
 def 统计读数(rows):
     """rows = [(样本名, 真文本原文(GBK bytes), 层级)]"""
@@ -36,7 +36,7 @@ def 统计读数(rows):
         读数["总字符"] += len(text)
         读数["换行_裸CR"] += len(re.findall(r"(?<!\r)\r(?!\n)", text))
         读数["含TAB"] += text.count("\t")
-        toks, unknown = 切记号(text)
+        toks, unknown = 按规格切(text)
         if not text.endswith(("\n", "\r")):
             读数["末行无换行"] += 1
         covered = 0
