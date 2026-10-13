@@ -94,8 +94,8 @@ def _件文(仓根, 定位, 路径) -> tuple:
         raise 参数错("`路径` 经符号链接逃出本树（%s ⇒ %s）⇒ 拒读" % (路径, 真路径))
     return 件路径.read_text(encoding="utf-8", errors="replace")[:上限字节], ""
 
-def _路径(源码行, 偏) -> str:
-    """从 `git status --porcelain`（偏=3）或 `git diff --name-status`（偏=1）的一行里取路径。"""
+def _路径(源码行, 偏移量) -> str:
+    """从 `git status --porcelain`（偏移量=3）或 `git diff --name-status`（偏移量=1）的一行里取路径。"""
     段表 = 源码行.split(None, 1)
     if len(段表) < 2:
         return ""

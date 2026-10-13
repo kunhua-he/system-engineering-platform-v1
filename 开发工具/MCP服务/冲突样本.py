@@ -65,9 +65,9 @@ def 冲突回执样本(仓根, 工具表) -> list:
             新连接.row_factory = sqlite3.Row
             return 新连接
 
-        def 树身份(忽略仓根, 树, 忽略分支):
+        def 树身份(忽略仓根, 树标识, 忽略分支):
             # 与真 `核验树身份` 同一口径：树根**先 resolve**（`/var` 与 `/private/var` 是同一条）。
-            return Path(树).resolve(), "样本提交"
+            return Path(树标识).resolve(), "样本提交"
 
         真连, 真支线, 真核验 = 开工账本.连账本, 开工.支线在吗, 认领隔离.核验树身份
         开工账本.连账本 = 开账
