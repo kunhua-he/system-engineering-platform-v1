@@ -1,5 +1,6 @@
-"""命令 —— 跑子进程（不吞输出）· 工具链版本 · 提交哈希与工作区脏。"""
+"""命令 —— 跑子进程（不吞输出）· 工具链版本 · 构建平台 · 依赖指纹 · 提交哈希与工作区脏。"""
 
+import hashlib
 import subprocess
 
 from .常量 import 仓根, 回执相对路径
@@ -19,6 +20,19 @@ def 跑子进程(命令, **附加):
 
 def 工具链版本() -> str:
     return 跑子进程(["rustc", "--version"], cwd=仓根).stdout.strip()
+
+
+def 构建平台() -> str:
+    """构建机平台三元组（`rustc -vV` 的 `host:` 行）—— 与工具链版本一起绑定进制品清单。"""
+    for 源码行 in 跑子进程(["rustc", "-vV"], cwd=仓根).stdout.splitlines():
+        if 源码行.startswith("host:"):
+            return 源码行.split(":", 1)[1].strip()
+    return ""
+
+
+def 依赖指纹() -> str:
+    """`Cargo.lock` 内容的 sha256（「依赖版本」这个绑定项的机器可判标识）。"""
+    return hashlib.sha256((仓根 / "Cargo.lock").read_bytes()).hexdigest()
 
 
 def 提交哈希() -> tuple:
