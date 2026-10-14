@@ -100,9 +100,15 @@ def 搭空改夹具(临时根, 夹具参数):
     if 夹具参数.get("主干门禁红"):
         (仓根 / "构建装配/一键验证/闸0.py").write_text("raise SystemExit(7)\n", encoding="utf-8")
     if 夹具参数.get("台账点名"):
-        台账件 = 仓根 / "开发工具/信息核心/未完成.json"
-        台账件.parent.mkdir(parents=True, exist_ok=True)
-        台账件.write_text('{"行": [[311, "点名 %s"]]}\n' % 开工号, encoding="utf-8")
+        台账库件 = 仓根 / "开发工具/信息核心/信息核心.db"
+        台账库件.parent.mkdir(parents=True, exist_ok=True)
+        台账连接 = sqlite3.connect(str(台账库件))
+        台账连接.execute("create table if not exists 未完成 "
+                    "(号 integer primary key, 缺什么 text, 落点 text, 验证命令 text)")
+        台账连接.execute("insert or replace into 未完成 values (311, ?, '', '')",
+                    ("点名 %s" % 开工号,))
+        台账连接.commit()
+        台账连接.close()
     账本件 = 临时根 / "账本.db"
     连接 = sqlite3.connect(str(账本件))
     连接.row_factory = sqlite3.Row

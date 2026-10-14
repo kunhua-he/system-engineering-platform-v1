@@ -9,6 +9,7 @@
 import hashlib
 import json
 import os
+import sqlite3
 import shutil
 import tempfile
 from pathlib import Path
@@ -94,8 +95,12 @@ def 样本列表(仓根) -> list:
     反馈源清点.客户端根 = lambda 家目录=None: 假源根
     假仓 = 临时根 / "仓"
     (假仓 / "开发工具" / "信息核心").mkdir(parents=True, exist_ok=True)
-    (假仓 / "开发工具" / "信息核心" / "未完成.json").write_text(
-        json.dumps({"行": []}, ensure_ascii=False), encoding="utf-8")
+    台账库件 = 假仓 / "开发工具" / "信息核心" / "信息核心.db"
+    台账连接 = sqlite3.connect(str(台账库件))
+    台账连接.execute("create table if not exists 未完成 "
+                "(号 integer primary key, 缺什么 text, 落点 text, 验证命令 text)")
+    台账连接.commit()
+    台账连接.close()
     try:
         from . import 开工账本
         连接 = 账本.连反馈库()

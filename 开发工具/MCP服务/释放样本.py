@@ -342,7 +342,7 @@ def 取代腿退场样本() -> list:
 def 单纯释放门禁样本() -> list:
     """`单纯释放`（功能 4）物理删除前门禁的**真夹具**样本（临时真仓 + 临时账本，跑完删净）。
 
-    真读账本（`消费者行`）与真读台账（`未完成.json`）· 真跑 `检查清树安全`；只把 `非终态作业`
+    真读账本（`消费者行`）与真读台账（库 `未完成` 表）· 真跑 `检查清树安全`；只把 `非终态作业`
     （会读真作业账本）与 `未蒸馏反馈行`（反馈包未合入）按档替身。
     两档：拒删（保留树与支线并定位）· 放行（清树 + 状态已释放）· 幂等。
     """
@@ -397,9 +397,15 @@ def 单纯释放门禁样本() -> list:
                 if 档名 == "工作树脏拒":
                     (工作树 / "脏件.txt").write_text("未跟踪成果\n", encoding="utf-8")
                 if 档名 == "台账点名拒":
-                    台账件 = 仓根 / "开发工具" / "信息核心" / "未完成.json"
-                    台账件.parent.mkdir(parents=True, exist_ok=True)
-                    台账件.write_text('{"行": [[311, "点名 %s"]]}\n' % 开工号, encoding="utf-8")
+                    台账库件 = 仓根 / "开发工具" / "信息核心" / "信息核心.db"
+                    台账库件.parent.mkdir(parents=True, exist_ok=True)
+                    台账连接 = sqlite3.connect(str(台账库件))
+                    台账连接.execute("create table if not exists 未完成 "
+                              "(号 integer primary key, 缺什么 text, 落点 text, 验证命令 text)")
+                    台账连接.execute("insert or replace into 未完成 values (311, ?, '', '')",
+                              ("点名 %s" % 开工号,))
+                    台账连接.commit()
+                    台账连接.close()
                 if 档名 == "未蒸馏反馈拒":
                     清树门禁.未蒸馏反馈行 = lambda 连接, 仓根, 开工号: ["反馈X：未判词"]
                 连接.close()
