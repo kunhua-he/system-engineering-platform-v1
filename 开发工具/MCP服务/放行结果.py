@@ -9,7 +9,9 @@
   · 键 = **树内容指纹**（`取树指纹`：树根 + HEAD + 索引 + `git status --porcelain -z -uall`）。
     不按「开工号」也不按「HEAD」—— 脏改动改了内容而 HEAD 不动，按 HEAD 复用就是假绿；
   · 只在放行链**真跑到尾且全绿**时才记（链上每一步都在 `&&` 之后 ⇒ 走到记账那一步即全绿）；
-  · 读的时候指纹对不上 / 记录不在 / 读不动 / 超期 ⇒ **一律当没记**（回落到真跑闸 0）；
+  · 读的时候指纹对不上 / 记录不在 / 读不动 / 记录格式不是本版 ⇒ **一律当没记**（回落到真跑闸 0）；
+  · **不设时长上限**（判据只有「内容一字未变」一条）：同一份内容上跑的同一批判据 ⇒ 读数就是同一份，
+    挂钟不参与判定（`时刻` 只作留痕）；原先给 3600 秒既撞判据 ㊲ 的秒级上限、对正确性又无贡献；
   · 落点走 `运行数据根` 包的 `缓存` 子目录（不自拼路径，判据 ㉕）。
 
 **读了它的人**：`仓操作.跑验证` —— 命中就跳过闸 0 并在回执里逐字报「复用」（读数可见，不静默）。
@@ -25,7 +27,7 @@ from 代码地图 import 文件指纹              # noqa: E402
 from 运行数据根 import 确保子目录, 解析当前环境   # noqa: E402
 
 放行目录名 = "放行结果"              # `<运行数据根>/缓存/` 下那一层子目录名
-有效期秒 = 3600                     # 一条记录能复用的时长上限
+放行记录格式 = 2                    # 记录件的形状版本：形状一变 ⇒ 旧记录一律当没记（不靠挂钟）
 
 
 def 取树指纹(树根) -> str:
@@ -71,7 +73,8 @@ def 记放行(树根, 开工号: str = "") -> str:
     try:
         路径.parent.mkdir(parents=True, exist_ok=True)
         路径.write_text(json.dumps({"树指纹": 路径.stem, "开工号": str(开工号 or ""),
-                                 "时刻": time.time()}, ensure_ascii=False), encoding="utf-8")
+                                 "格式": 放行记录格式, "时刻": time.time()}, ensure_ascii=False),
+                        encoding="utf-8")
     except OSError:
         return ""
     return 路径.stem
@@ -88,8 +91,4 @@ def 有放行(树根) -> bool:
         return False
     if not isinstance(放行记录, dict) or 放行记录.get("树指纹") != 路径.stem:
         return False
-    try:
-        时刻 = float(放行记录.get("时刻") or 0)
-    except (TypeError, ValueError):
-        return False
-    return 0 < (time.time() - 时刻) <= 有效期秒
+    return 放行记录.get("格式") == 放行记录格式
