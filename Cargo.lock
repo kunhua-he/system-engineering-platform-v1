@@ -60,6 +60,7 @@ name = "v1-gateway"
 version = "0.1.0"
 dependencies = [
  "v1-adapter",
+ "v1-resource-gateway",
 ]
 
 [[package]]
