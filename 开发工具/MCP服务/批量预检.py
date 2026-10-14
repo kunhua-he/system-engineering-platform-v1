@@ -115,8 +115,8 @@ def 扫一遍(工作树: Path, 认领表: dict, 改动表: list) -> tuple:
                     输出表.append("顺序新建拒绝：候选件已存在")
                     失败表.add(路径)
                 elif not 件路径.parent.is_dir():
-                    输出表.append("新建拒绝：父目录不存在")
-                    失败表.add(路径)
+                    # 债务 587：写口现在**自建**缺失的父目录（并记进改动表）⇒ 干跑不再当拒绝。
+                    输出表.append("新建提示：父目录不存在 ⇒ 写盘时由写口创建并记进改动表")
                 else:
                     结果表[路径] = 新内容 if 新内容.endswith("\n") else 新内容 + "\n"
             elif 全文 is None:
