@@ -15,6 +15,9 @@
 
 **配置口径**（`zcode-guide:diagnosing-hooks`）：配置文件的钩子**默认不跑** ⇒ 必须
 `hooks.enabled: true`；事件名只有七个，`PreToolUse` 是其一；`command` 钩子的 `timeout` 单位是**秒**。
+
+**拦截留痕**：钩子体每次拦下都往 `运行数据根/日志/钩子拦截.jsonl` 追加一行
+「时刻 + 载荷」—— 数得出被拦几次、拦的是什么，事后可查（原先只 exit 2，什么都不留）。
 """
 
 import json
@@ -23,11 +26,21 @@ import sys
 import tempfile
 from pathlib import Path
 
+from 运行数据根 import 解析当前环境, 子目录路径
+
 配置文件路径 = Path.home() / ".zcode" / "cli" / "config.json"
 自家标记 = "V1 开工闸"                    # 认它做幂等：命令串里带这个标记就是自家那条
 拦的工具 = "Edit|Write|MultiEdit|NotebookEdit"
-钩子命令 = (f"printf '%s\\n' '[{自家标记}] 用户级钩子：本机所有项目的 Edit/Write 都被拦。"
-        "本仓改代码走 MCP：请调 v1_edit（先用 v1_task 功能=1 登记拿开工ID，再功能=2 认领文件）' >&2; exit 2")
+# ★ 拦截留痕：钩子体每次拦下都往**运行数据根**的日志追加一行「时刻 + 载荷」——
+#   数得出被拦几次、拦的是什么，事后可查。载荷由 ZCode 经标准输入给（没给就写 none）；
+#   `read -t 1` 有界：标准输入没东西就立刻返回，钩子体最长多等 1 秒，绝不阻塞。
+#   ★ 日志件路径**不自身拼**（判据 ㉕）：走 `运行数据根` 的唯一解析口。
+#   ★ 载荷变量名只能是 ASCII：`/bin/sh`（bash 3.2）不认中文标识符（实测 `read: 载荷: not a valid identifier`）。
+拦截日志路径 = str(子目录路径(解析当前环境(), "日志") / "钩子拦截.jsonl")
+钩子命令 = ("printf '%s\\n' '[" + 自家标记 + "] 用户级钩子：本机所有项目的 Edit/Write 都被拦。"
+        "本仓改代码走 MCP：请调 v1_edit（先用 v1_task 功能=1 登记拿开工ID，再功能=2 认领文件）' >&2; "
+        "{ IFS= read -r -t 1 payload; printf '%s\\t%s\\n' \"$(date -u +%FT%TZ)\" \"${payload:-none}\" "
+        ">> '" + 拦截日志路径 + "'; } 2>/dev/null; exit 2")
 
 
 def _读配置() -> dict:
