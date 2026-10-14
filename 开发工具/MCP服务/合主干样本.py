@@ -31,7 +31,7 @@ from 开发工具.并行执行 import 并行执行  # noqa: E402
            "定位同步锁", "源库三态", "有界跑", "源件重抽")
 合主干档位 = 12
 
-三态样本 = ("动作0源库冲突", "动作非0重放", "无冲突无动作")
+源库重放样本 = ("动作0源库冲突", "动作非0重放", "无冲突无动作", "腿单改台账重放")
 假信息核心源码 = (
     "import json, sqlite3, sys\n"
     "from pathlib import Path\n"
@@ -73,6 +73,26 @@ from 开发工具.并行执行 import 并行执行  # noqa: E402
     "    连接.executemany('insert into 件名基线 values(?)', [(p,) for p in 测])\n"
     "    连接.commit(); 连接.close()\n"
     "    print('冻结基线 ok')\n"
+    "    raise SystemExit(0)\n"
+    "if 子命令 == '记未完成':\n"
+    "    连接 = sqlite3.connect(库路径)\n"
+    "    参值 = {}\n"
+    "    键 = None\n"
+    "    for 项 in 参表[1:]:\n"
+    "        if 项.startswith('--'):\n"
+    "            键 = 项[2:]\n"
+    "            参值[键] = ''\n"
+    "        elif 键:\n"
+    "            参值[键] = 项\n"
+    "    if '删' in 参值:\n"
+    "        连接.execute('delete from 未完成 where 号 = ?', (int(参值['号']),))\n"
+    "    else:\n"
+    "        连接.execute('insert or replace into 未完成 values(?,?,?,?)',\n"
+    "                   (int(参值['号']), 参值.get('缺什么', ''), 参值.get('落点') or None,\n"
+    "                    参值.get('验证命令') or None))\n"
+    "    连接.commit()\n"
+    "    连接.close()\n"
+    "    print('记未完成 ok')\n"
     "    raise SystemExit(0)\n"
     "键值 = {}\n"
     "键 = None\n"
@@ -388,6 +408,9 @@ def _建三态夹具(临时根, 名称):
     elif 名称 == "动作非0重放":
         with sqlite3.connect(腿树 / 编排.库相对路径) as 连接:
             连接.execute("update 命名登记 set 语义='腿语义' where 名字='样本名'")
+    elif 名称 == "腿单改台账重放":
+        with sqlite3.connect(腿树 / 编排.库相对路径) as 连接:
+            连接.execute("update 未完成 set 缺什么='腿缺' where 号=7")
     if 主干改库:
         跑样本仓命令(仓根, "add", ".")
         跑样本仓命令(仓根, "commit", "-m", "主改源库")
@@ -401,9 +424,10 @@ def _建三态夹具(临时根, 名称):
 
 
 def _验源库三态():
-    """源库重放**三态永久样本**：① 动作0 + 源库冲突 ⇒ 取主干版后可正常提交；② 动作非0 ⇒ 腿值完整重放；
-    ③ 无冲突无动作 ⇒ 不额外覆盖。逐态走完整五步，读库核**逻辑主键+值**（不只看 git 状态）。"""
-    for 名称 in 三态样本:
+    """源库重放**四态永久样本**：① 动作0 + 源库冲突 ⇒ 取主干版后可正常提交；② 动作非0 ⇒ 腿值完整重放；
+    ③ 无冲突无动作 ⇒ 不额外覆盖；④ 腿单改台账 ⇒ 逐键重放腿值（库即存本之后新补的那一刀）。
+    逐态走完整五步，读库核**逻辑主键+值**（不只看 git 状态）。"""
+    for 名称 in 源库重放样本:
         with tempfile.TemporaryDirectory(prefix="v1源库三态-") as 临时目录:
             仓根, 腿树 = _建三态夹具(Path(临时目录), 名称)
             开工记录 = {"状态":"已释放", "工作树":str(腿树), "分支名":"腿/v1-999001"}
@@ -418,6 +442,10 @@ def _验源库三态():
                 本条过 = (退出码 == 0 and 集成.找集成树(仓根, "v1-999001") is None
                       and (仓根 / "新增.txt").read_text() == "腿成果\n" and 未完成缺 == "基缺"
                       and 命名语义 == "腿语义" and 规则内容 == "基值" and "逐条落库" in 报告文本)
+            elif 名称 == "腿单改台账重放":
+                本条过 = (退出码 == 0 and 集成.找集成树(仓根, "v1-999001") is None
+                      and (仓根 / "新增.txt").read_text() == "腿成果\n" and 未完成缺 == "腿缺"
+                      and 命名语义 == "基语义" and 规则内容 == "基值" and "逐条落库" in 报告文本)
             else:
                 本条过 = (退出码 == 0 and 集成.找集成树(仓根, "v1-999001") is None
                       and (仓根 / "新增.txt").read_text() == "腿成果\n" and 未完成缺 == "基缺"
