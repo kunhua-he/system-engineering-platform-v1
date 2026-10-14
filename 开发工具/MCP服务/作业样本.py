@@ -64,6 +64,7 @@ def 作业样本(仓根, 工具表):
              and "git diff --cached --quiet" in 放行串
              and "构建装配/一键验证 测试验证/案例" in 放行串
              and 放行串.count("闸0.py") == 1
+             and 放行串.startswith("cargo check --workspace --all-targets --locked")
              and 放行串.endswith("-p v1-case-runner")))
     return 样本表 + 异步短样本(仓根, 工具表) + 账本列样本(仓根)
 
