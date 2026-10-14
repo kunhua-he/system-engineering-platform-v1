@@ -14,6 +14,7 @@
 仓一个字节都不改：夹具是系统临时目录里的真仓 + 临时运行数据根，跑完删净。
 """
 
+import sqlite3
 import tempfile
 from pathlib import Path
 from unittest import mock
@@ -101,16 +102,21 @@ def _场二(数据根, 主目录, 合并树, 未合树):
              未释放码 == 1 and "已释放" in 未释放文))
     台账开工号 = "v1-900122"
     建样本账(数据根, 台账开工号, 合并树)
-    台账目录 = 主目录 / "开发工具" / "信息核心"
-    台账目录.mkdir(parents=True, exist_ok=True)
-    (台账目录 / "未完成.json").write_text(
-        '{"说明": "样本", "行": [[1, "%s 还在台账里"]]}' % 台账开工号, encoding="utf-8")
+    台账库件 = 主目录 / "开发工具" / "信息核心" / "信息核心.db"
+    台账库件.parent.mkdir(parents=True, exist_ok=True)
+    台账连接 = sqlite3.connect(str(台账库件))
+    台账连接.execute("create table if not exists 未完成 "
+                "(号 integer primary key, 缺什么 text, 落点 text, 验证命令 text)")
+    台账连接.execute("insert or replace into 未完成 values (1, ?, '', '')",
+                ("%s 还在台账里" % 台账开工号,))
+    台账连接.commit()
+    台账连接.close()
     with 样本环境(数据根):
         台账码, 台账文 = 任务清理.跑清理(主目录, 台账开工号, {"确认": True})
     样本表.append(("② 台账点名 ⇒ 拒：退出码 %d（期望 1）· 判据提「台账」%s"
              % (台账码, "是" if "台账" in 台账文 else "否"),
              台账码 == 1 and "台账" in 台账文))
-    (台账目录 / "未完成.json").unlink()
+    台账库件.unlink()
     残缺开工号 = "v1-900132"
     建样本账(数据根, 残缺开工号, 合并树)
     连接 = 连样本账(数据根)

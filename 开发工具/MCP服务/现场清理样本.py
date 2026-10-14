@@ -20,21 +20,13 @@ from .合主干有界跑 import 干净环境
 from .合主干现场清理 import 未解决代码冲突, 清现场, 库相对路径
 
 假信息核心源码 = (
-    "import json, sqlite3, sys\n"
-    "from pathlib import Path\n"
+    "import sqlite3, sys\n"
     "参表 = sys.argv[1:]\n"
     "子命令 = 参表[0] if 参表 else ''\n"
     "库路径 = '开发工具/信息核心/信息核心.db'\n"
     "if 子命令 == '建源库':\n"
     "    连接 = sqlite3.connect(库路径)\n"
     "    连接.execute('create table if not exists 未完成 (号 integer primary key, 缺什么 text, 落点 text, 验证命令 text)')\n"
-    "    源件 = Path('开发工具/信息核心/未完成.json')\n"
-    "    if 源件.is_file():\n"
-    "        行表 = json.loads(源件.read_text(encoding='utf-8')).get('行', [])\n"
-    "        现表 = [tuple(行) for 行 in 连接.execute('select 号, 缺什么, 落点, 验证命令 from 未完成')]\n"
-    "        if sorted(现表, key=repr) != sorted((tuple(行) for 行 in 行表), key=repr):\n"
-    "            连接.execute('delete from 未完成')\n"
-    "            连接.executemany('insert or replace into 未完成 values(?,?,?,?)', [tuple(行) for 行 in 行表])\n"
     "    连接.commit()\n"
     "    连接.close()\n"
     "    print('建源库 ok')\n"
