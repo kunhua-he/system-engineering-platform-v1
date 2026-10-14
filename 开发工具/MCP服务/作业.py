@@ -64,7 +64,11 @@ from .作业进程 import (  # noqa: E402
            " && \"$V1_PY\" 构建装配/一键验证/闸0.py"
            " && { git diff --cached --quiet -- 构建装配/一键验证 测试验证/案例"
            " || \"$V1_PY\" 构建装配/一键验证/一键验证.py --自测; }"
-           " && cargo run --quiet --locked -p v1-case-runner"),
+           " && cargo run --quiet --locked -p v1-case-runner"
+           # ★ 债务 573：链尾按**树内容指纹**记一笔「放行全绿」——`释放` 的跑验证命中就复用，
+           #   不再把闸 0 重跑一遍（同一树内容 ⇒ 同一批读数）。`-B` 免落 __pycache__。
+           " && \"$V1_PY\" -B -c \"import sys;sys.path.insert(0,'开发工具');from MCP服务.放行结果 import 记放行;记放行('.') \""
+           ),
 }
 
 
