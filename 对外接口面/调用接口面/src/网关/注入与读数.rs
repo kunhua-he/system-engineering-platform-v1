@@ -8,9 +8,10 @@
 //! `服务` 的字段，不需要父件为它开任何口子。
 
 use std::path::{Path, PathBuf};
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 
 use v1_adapter::适配器;
+use v1_resource_gateway::资源网关口;
 
 use super::服务;
 
@@ -87,5 +88,20 @@ impl 服务 {
     /// 调用方按 `&服务.适配器()` 取 `&适配器`（`Arc` 自动解引用）。
     pub fn 适配器(&self) -> Arc<适配器> {
         self.适配器.read().unwrap_or_else(|中毒| 中毒.into_inner()).clone()
+    }
+
+    /// **注入资源网关口**（装配侧的口）。在**共享出去之前**调（`&mut self`）——
+    /// 与 `跨进程配置` / `声明根` / `后缀表` 同一条约定：资源声明根是**部署事实**，
+    /// 装配侧说了算，网关不替它猜。
+    ///
+    /// 没注入就是**默认拒绍**那一档（空清单 = 什么都拒）——那不是「没配好」，
+    /// 是本节点正确的默认值（`资源网关口.md` §二）。
+    pub fn 注入资源关口(&mut self, 关口: 资源网关口) {
+        self.资源关口 = RwLock::new(Arc::new(关口));
+    }
+
+    /// 取**资源关口引用**（验证面与装配用）。返回 `Arc` 克隆：锁内取、锁外可长活。
+    pub fn 取资源关口(&self) -> Arc<资源网关口> {
+        self.资源关口.read().unwrap_or_else(|中毒| 中毒.into_inner()).clone()
     }
 }
