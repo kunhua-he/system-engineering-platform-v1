@@ -82,7 +82,28 @@ def 跑隔离样本(样本组名, 仓根):
                             cwd=仓根, env=干净环境(), capture_output=True, text=True, timeout=硬顶秒())
         if 回执.returncode != 0:
             raise ValueError("退出码 %d：%s" % (回执.returncode, 回执.stderr[-500:]))
-        子组读数 = json.loads(回执.stdout)
+        # 2026-10-13（债务 569）：被测件往 stdout 打正文会污染回执 JSON ⇒ 原样 json.loads 直接
+        # JSONDecodeError，而异常里**没有原始输出**，看不出是谁污染的。改成：先试整段；不成就
+        # 从**末行往前**找第一段能解成 dict 的回执行（子进程的回执按约定是最后一行）⇒ 认它；
+        # 全找不到才报错，并把 stdout/stderr 的原样片段带进错误里（谁污染的一眼可见）。
+        子组读数 = None
+        try:
+            子组读数 = json.loads(回执.stdout)
+        except json.JSONDecodeError:
+            for 回执行 in reversed(回执.stdout.splitlines()):
+                if not 回执行.strip():
+                    continue
+                try:
+                    候选读数 = json.loads(回执行)
+                except json.JSONDecodeError:
+                    continue
+                if isinstance(候选读数, dict) and "样本" in 候选读数:
+                    子组读数 = 候选读数
+                    break
+        if 子组读数 is None:
+            raise ValueError("回执不是可解析的 JSON（多半是被测件往 stdout 打了正文）"
+                             "；stdout 尾 300 字：%r；stderr 尾 200 字：%r"
+                             % (回执.stdout[-300:], 回执.stderr[-200:]))
         样本表 = 子组读数["样本"]
         if (子组读数["组"] != 样本组名 or not isinstance(样本表, list)
                 or len(样本表) != 隔离样本组[样本组名]
