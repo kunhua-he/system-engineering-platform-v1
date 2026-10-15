@@ -134,6 +134,7 @@ done
 TMP="$HOOK.new"
 cat > "$TMP" <<'HOOK_BODY'
 #!/bin/sh
+#@@ 钩子体起 @@
 # 装门禁标记: v1-case-runner
 #
 # 端到端主门禁（形状见 测试验证/案例/形状.md）。
@@ -185,6 +186,45 @@ cat > "$TMP" <<'HOOK_BODY'
 
 ROOT=$(git rev-parse --show-toplevel) || exit 1
 cd "$ROOT" || exit 1
+
+# ── 解释器唯一化（3.14 · 唯一一份 · 无回落）──
+# ★ 钩子被 git 当**独立进程**拉起，不继承调用方的环境 ⇒ `$PY` 必须在本体里自行解析。
+#   实测（2026-10-16）：本体一直只**引用** `$PY` 而从不定义它 —— 钩子能不能跑，取决于
+#   「调 git commit 那个进程恰好设了 PY」这种偶然；干净环境下 tick() 与闸 0 双双
+#   `: command not found`（退出码 127）。安装侧有这段，本体也必须有一份。
+# ★ 主仓由 git 解析（linked 工作树的 common dir 就是主仓 `.git`）；找不到就是环境不成立 ⇒ 拒提交。
+GATE_ROOT="$(dirname "$(git -C "$ROOT" rev-parse --path-format=absolute --git-common-dir 2>/dev/null || echo "$ROOT/.git")")"
+PY="$GATE_ROOT/构建环境/python/bin/python"
+if [ ! -x "$PY" ]; then
+  echo "门禁：仓内解释器不在：$PY（唯一允许的 3.14 venv）⇒ 拒提交" >&2
+  exit 1
+fi
+export V1_PY="$PY"
+
+# ⓪ 钩子新鲜度自校 —— 本件是**装出来的**（`.git/hooks/` 不进版本库）。
+#    盘上这份必须与 `测试验证/案例/装门禁.sh` 里的钩子体逐字一致；装门禁.sh 改了而没重装
+#    ⇒ 盘上跑的是旧体。**实测后果**（2026-10-16）：盘上旧体缺 ①c 严格检查整段 ⇒
+#    `进程池配置` 加字段后两处构造点没同步、主干 Rust 编不过，照样提交进主干、没人报红。
+#    不一致 ⇒ 拒提交，并指路重装。变量名与函数名一律 ASCII（bash 3.2，同件头）。
+hook_fresh() {
+  HOOKS_DIR=$(git -C "$ROOT" rev-parse --git-path hooks 2>/dev/null) || return 0
+  case "$HOOKS_DIR" in /*) : ;; *) HOOKS_DIR="$ROOT/$HOOKS_DIR" ;; esac
+  INSTALLED="$HOOKS_DIR/pre-commit"
+  [ -f "$INSTALLED" ] || return 0
+  EXP=$(mktemp) ; ACT=$(mktemp)
+  sed -n '/^#@@ 钩子体起 @@$/,/^#@@ 钩子体止 @@$/p' "$ROOT/测试验证/案例/装门禁.sh" > "$EXP"
+  sed -n '/^#@@ 钩子体起 @@$/,/^#@@ 钩子体止 @@$/p' "$INSTALLED" > "$ACT"
+  cmp -s "$EXP" "$ACT"
+  CODE=$?
+  rm -f "$EXP" "$ACT"
+  return "$CODE"
+}
+if ! hook_fresh; then
+  echo "门禁：盘上钩子与 测试验证/案例/装门禁.sh 的钩子体不一致（装了旧体）⇒ 拒提交" >&2
+  echo "      修法：在仓根重跑 —— sh 测试验证/案例/装门禁.sh（共享钩子加 GATE_INSTALL_SHARED=yes）" >&2
+  echo "      为什么这条闸在：旧体曾缺 ①c 严格检查整段 ⇒ 主干 Rust 编不过照样进主干（2026-10-16 实测）。" >&2
+  exit 1
+fi
 
 # ── 分段耗时：全闸原先只有总数、没有分段读数（每次问「为什么这么慢」都要手工量一遍）──
 # 壳自量。`tick` 用 $PY（同解释器口径，已在脚本头部解析）；段边界 = 闸0 / 判据自测 / 全案例。
@@ -362,6 +402,7 @@ fi
 T4=$(tick)
 echo "门禁分段：闸0 $((T1 - T0)) ms · 自测 $((T2 - T1)) ms · 案例 $((T3 - T2)) ms · 严格检查 $((T4 - T3)) ms · 合计 $((T4 - T0)) ms"
 echo "门禁：案例全过，回执绑在 $HEAD_SHA 上（父提交）· 回执只落本机，不进版本库"
+#@@ 钩子体止 @@
 exit 0
 HOOK_BODY
 
