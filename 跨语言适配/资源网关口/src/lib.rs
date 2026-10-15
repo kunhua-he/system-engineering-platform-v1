@@ -120,3 +120,6 @@ mod 测试_声明与错误码;
 #[cfg(all(test, unix))]
 #[path = "测试_跨进程体.rs"]
 mod 测试_跨进程体;
+#[cfg(test)]
+#[path = "测试_两路同判.rs"]
+mod 测试_两路同判;
