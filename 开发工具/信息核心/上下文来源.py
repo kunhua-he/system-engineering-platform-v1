@@ -2,6 +2,7 @@
 """上下文来源：只读权威源，活文档复用拆节口径；冻结落点读口另件。"""
 import hashlib
 import json
+import re
 import sqlite3
 from contextlib import contextmanager
 from pathlib import Path
@@ -347,6 +348,27 @@ def 开工号命中(检索词: str) -> tuple:
         return "(开工号=? or 开工号 like ?)", ["v1-" + 检索词, "%" + 检索词]
     return "", []
 
+def 展开台账成员(台账行: dict) -> dict:
+    """台账一行的**成员展开**：`缺什么` 与 `落点` 里嵌的「· [号] …」逐条拆出并对照。
+
+    台账把若干成员挤在一格文本里（如「架构工作包」那几行）⇒ 数成员、核「缺落一致」原先只能
+    手写脚本。本函数是那条口径的唯一实现：两栏都以 `· [号]` 起一条，`缺什么` 有而 `落点` 无
+    ⇒ 记进 `缺落不符`。
+    """
+    成员明细, 落点号集 = [], set()
+    for 源码行 in (台账行.get("缺什么") or "").splitlines():
+        命中 = re.match(r"^· \[(\d+)\]\s*(.*)$", 源码行)
+        if 命中:
+            成员明细.append((int(命中.group(1)), 命中.group(2)))
+    for 源码行 in (台账行.get("落点") or "").splitlines():
+        命中 = re.match(r"^· \[(\d+)\]", 源码行)
+        if 命中:
+            落点号集.add(int(命中.group(1)))
+    缺落不符 = [号值 for 号值, _ in 成员明细 if 号值 not in 落点号集]
+    return {"成员明细": [{"号": 号值, "文本": 摘录值[:80]} for 号值, 摘录值 in 成员明细],
+            "成员数": len(成员明细), "缺落一致": not 缺落不符, "缺落不符": 缺落不符}
+
+
 def 读上下文条目(树根, 查询参数, 账本内容, 账本路径=None, 提交值=""):
     操作值, 包含表 = 查询参数["操作"], 查询参数["包含"]
     if 操作值 == "冻结落点":
@@ -380,6 +402,8 @@ def 读上下文条目(树根, 查询参数, 账本内容, 账本路径=None, �
         现有号表 = [台账行["号"] for 台账行 in 台账行表]
         for 台账行 in 台账行表:
             内容值 = dict(台账行)
+            if 查询参数.get("展开成员"):
+                内容值.update(展开台账成员(内容值))
             if 命中台账号 != str(台账行["号"]) and (
                 命中台账号
                 or (检索词 and 检索词 not in json.dumps(内容值, ensure_ascii=False))
