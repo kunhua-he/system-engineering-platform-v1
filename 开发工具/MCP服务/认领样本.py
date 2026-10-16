@@ -244,7 +244,7 @@ def _验拒绝(仓根, 临时根, 开账, 开工表, 输出表):
         连接.execute("delete from 认领 where 开工号='v1-外仓'")
         连接.execute("delete from 开工 where 开工号='v1-外仓'")
         连接.commit()
-    # 仓根为 bare（本仓现量 core.bare=true）时树身份核验仍须成立；外仓照旧拒。
+    # 仓根为 bare（core.bare=true）时树身份核验仍须成立；外仓照旧拒。
     _跑Git(仓根, "config", "core.bare", "true")
     assert 认领隔离.核验树身份(仓根, 工作树, 开工记录["分支名"]), "bare 仓根下树身份核验失败"
     assert 认领隔离.核验树身份(仓根, 外仓, "master") is None, "外仓未被拒"

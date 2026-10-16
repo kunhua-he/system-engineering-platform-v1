@@ -5,7 +5,7 @@
 list / rev-list / 账本查询 / hash-object），逐条一次往返。本件把它收成一个**有界只读回执**，只跑
 查询类 git 子命令 ＋账本 sqlite **只读**连接（零写）。
 
-**bare 仓根**：本仓主目录 `core.bare=true` ⇒ 需要工作树的命令（`status`/`hash-object`）要显式给
+**bare 仓根**：目标树 `core.bare=true`（没有工作树）⇒ 需要工作树的命令（`status`/`hash-object`）要显式给
 `GIT_DIR`/`GIT_WORK_TREE`（与 `shell.py` 同一份口径），否则 git 报「must be run in a work tree」。
 """
 

@@ -4,7 +4,7 @@
 **为什么要单开一件**：`自检样本.py` 已顶 400 行硬数（判据 ⑲），照先例（`http 传输样本`）把本面
 挪成同级件。
 
-**为什么必须有这一档**：目标树是 **bare 仓根**（本仓主目录 `core.bare=true`）时，`v1_shell` 会给子
+**为什么必须有这一档**：目标树是 **bare 仓根**（`core.bare=true`）时，`v1_shell` 会给子
 进程注入**进程级** `GIT_DIR`/`GIT_WORK_TREE`（不注入则那棵树里 git 报「must be run in a work tree」）
 —— 这两键会把该回执里**所有** git（含 `git -C <别的树>`）都带回本仓。故回执**必须**明说「Git 目标＝
 本仓 · `git -C` 不切目标」并给跨树指引（顶层 `开工ID` / `v1_tree` / 显式 `--git-dir`）；非 bare 目标

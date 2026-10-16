@@ -17,7 +17,7 @@ LICENSE（不是我们的散文）。
 纪律写在 `开发规范.md` §八.8 里，但**没有判据** —— 于是它只是一条能手跑的命令，会随仓长大而失效。
 本条把它变成常驻判据：读数不为空即红，并逐条指名那份散文。
 
-**git 定位**（2026-10-07）：本仓主目录是 **bare 布局**（`core.bare = true`）⇒
+**git 定位**（2026-10-07）：目标树若为 **bare 布局**（`core.bare = true`）⇒
 `git -C <仓根> ls-files` 退 128「must be run in a work tree」。故**显式**给 `--git-dir` /
 `--work-tree`（`.git` 是目录时），并剔除继承的 Git 定位变量；不改全局 Git 配置、不改
 `core.bare`。`.git` 是文件（工作树）⇒ 退 `-C`（同 `开发工具/MCP服务/shell.py` 口径）。
