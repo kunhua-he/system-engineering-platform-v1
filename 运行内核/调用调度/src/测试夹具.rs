@@ -18,7 +18,11 @@ use v1_registry::命令槽;
 /// 本轮不动）；`数据槽::内联` 要的是 `类型标签`，故各处用 `类型标签::新建(测试标签)` 包一层。
 pub(crate) const 测试标签: u32 = 1;
 
-pub(crate) static 两参命令被调次数: AtomicUsize = AtomicUsize::new(0);
+/// 「个数校验 ⇒ 不许进执行函数」的专用计数：**本用例独占**，不与别的用例共享可变全局
+/// （共用计数会让断言随线程调度随机红/绿 —— 口径同 `生命周期协商测试.rs` 的「各用自身的通知函数」）。
+pub(crate) static 个数校验进过次数: AtomicUsize = AtomicUsize::new(0);
+/// 「类型校验 ⇒ 不许进执行函数」的专用计数：**本用例独占**（同上）。
+pub(crate) static 类型校验进过次数: AtomicUsize = AtomicUsize::new(0);
 pub(crate) static 配额次数: AtomicUsize = AtomicUsize::new(0);
 pub(crate) static 拒绝命令被调次数: AtomicUsize = AtomicUsize::new(0);
 
@@ -48,13 +52,40 @@ pub(crate) unsafe extern "C-unwind" fn 零参命令(
     unsafe { 返回槽.write(数据槽::内联槽(v1_contract::类型标签::构造(测试标签), 42, 0)) };
 }
 
-/// 两参命令：参数个数不符时**不该被调到**。
+/// 两参命令：个数与类型都逐位对得上时**真进执行函数**（正样本）。
+///
+/// **不许在本函数里计数**：它被多个用例共用，计数会把「另一个用例真进了」记到本用例头上 ——
+/// 断言随之随线程调度随机红/绿（旧 `两参命令被调次数` 就是这个缺陷）。要计数的用例各用
+/// [`个数校验命令`] / [`类型校验命令`]（独占计数）。
 pub(crate) unsafe extern "C-unwind" fn 两参命令(
     返回槽: *mut 数据槽,
     参数个数: u32,
     参数表: *const 数据槽,
 ) {
-    两参命令被调次数.fetch_add(1, Ordering::SeqCst);
+    let _ = (参数个数, 参数表);
+    // SAFETY: 调度核心保证 `返回槽` 可写。
+    unsafe { 返回槽.write(数据槽::内联槽(v1_contract::类型标签::构造(测试标签), 7, 0)) };
+}
+
+/// 个数校验命令：**个数不符时不该被调到** —— 被调到就记一笔（本用例独占的计数）。
+pub(crate) unsafe extern "C-unwind" fn 个数校验命令(
+    返回槽: *mut 数据槽,
+    参数个数: u32,
+    参数表: *const 数据槽,
+) {
+    个数校验进过次数.fetch_add(1, Ordering::SeqCst);
+    let _ = (参数个数, 参数表);
+    // SAFETY: 调度核心保证 `返回槽` 可写。
+    unsafe { 返回槽.write(数据槽::内联槽(v1_contract::类型标签::构造(测试标签), 7, 0)) };
+}
+
+/// 类型校验命令：**类型不符时不该被调到** —— 被调到就记一笔（本用例独占的计数）。
+pub(crate) unsafe extern "C-unwind" fn 类型校验命令(
+    返回槽: *mut 数据槽,
+    参数个数: u32,
+    参数表: *const 数据槽,
+) {
+    类型校验进过次数.fetch_add(1, Ordering::SeqCst);
     let _ = (参数个数, 参数表);
     // SAFETY: 调度核心保证 `返回槽` 可写。
     unsafe { 返回槽.write(数据槽::内联槽(v1_contract::类型标签::构造(测试标签), 7, 0)) };
