@@ -17,7 +17,7 @@ def 读认领快照(连接, 开工号):
 def 核验树身份(仓根, 工作树, 分支名):
     """只接受本仓已注册的完整工作树根和对应支线。
 
-    仓根**可以是 bare**（本仓现量 `core.bare=true`，它没有 toplevel）—— 与仓根只比**公共 Git 目录**；
+    仓根**可以是 bare**（`core.bare=true` 时它没有 toplevel）—— 与仓根只比**公共 Git 目录**；
     树身份仍由工作树自身的 toplevel 与 `git worktree list` 登记项把关，隔离强度不变。
     """
     工作树 = Path(工作树).resolve()

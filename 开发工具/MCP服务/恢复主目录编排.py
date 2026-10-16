@@ -37,7 +37,7 @@ from .合主干有界跑 import 干净环境
 
 
 def _前缀(主目录):
-    """主目录是 bare（`core.bare=true`）⇒ git 必须显式给 `--git-dir` / `--work-tree`。"""
+    """主目录若为 bare（`core.bare=true`）⇒ git 必须显式给 `--git-dir` / `--work-tree`；两形态走同一前缀。"""
     return ["git", "--git-dir", str(Path(主目录) / ".git"), "--work-tree", str(主目录)]
 
 
