@@ -11,10 +11,13 @@
 
 use std::num::NonZeroU64;
 use std::os::unix::net::UnixStream;
+use std::sync::Arc;
 use std::thread;
 use std::time::{Duration, Instant};
 
 use v1_contract::{类型标签, 数据槽};
+
+use crate::线程安全::取锁;
 
 use crate::进程帧::{调用帧预算, 接收任意帧, 接收帧, 发送帧, 消息帧, 消息类别};
 use crate::进程调用::{造跨进程错误槽, 域部署, 跨进程域表};
@@ -258,6 +261,60 @@ fn 重复登记不同部署参数给确定结局() {
         "换部署参数必须结构化拒"
     );
     assert_eq!(域表.已建执行域(), 1, "被拒的登记不改域表");
+}
+
+/// 一条**慢握手**环：收到通知（装载初始化重放）后先等一会儿再回通知回执。
+///
+/// 用它造「一次慢握手」：宿主侧发完通知就卡在收回执上；同一条线程里取**域表锁**，
+/// 若握手被写成**持着域表锁**做的（旧行为），取表锁就会被拖到慢握手醒来 —— 那就是本测试要拒的。
+fn 起慢握手环(宿主端: UnixStream, 拖延: Duration) -> thread::JoinHandle<()> {
+    let mut 对端 = 宿主端;
+    thread::spawn(move || {
+        let Ok(mut 预算) = 调用帧预算::创建(Instant::now() + Duration::from_millis(3000)) else {
+            return;
+        };
+        if let Ok(收到帧) = 接收任意帧(&mut 对端, &mut 预算) {
+            thread::sleep(拖延);
+            let 回执 = 消息帧 {
+                消息类型: 消息类别::通知回执,
+                请求标识: 收到帧.请求标识,
+                载荷: Vec::new(),
+            };
+            let _ = 发送帧(&mut 对端, &回执, &mut 预算);
+        }
+    })
+}
+
+#[test]
+fn 装载握手不阻塞健康域调用() {
+    // ★ 本件 3071 反证：装载初始化握手（重放 + 收执，可达一条调用预算）**不许持域表锁**做。
+    //
+    // 现场：慢域的对端拖延 800 ms 才回通知回执；握手在另一条线程里跑（它只锁**该域**的事务锁）。
+    // 断言：握手进行中，域表锁必须**立刻可取**（旧行为会把表锁拖到 800 ms 之后）。
+    let (慢宿主端, 慢对端) = UnixStream::pair().unwrap();
+    let 慢握手 = 起慢握手环(慢对端, Duration::from_millis(800));
+    let mut 表锁本体 = 跨进程域表::创建(进程池配置::default());
+    let 慢标识 = 执行域标识 {
+        适配器实例号: 7, 扩展标识串: String::from("扩展慢握手"), 制品版本: (1, 0, 0),
+    };
+    表锁本体.登记已连域(慢标识.clone(), 慢宿主端).unwrap();
+    let 表锁 = Arc::new(std::sync::Mutex::new(表锁本体));
+    let (慢句柄, 慢号源) = {
+        let 锁体 = 取锁(&表锁);
+        (锁体.取句柄(&慢标识).unwrap(), 锁体.取号源())
+    };
+    let 握手线程 = thread::spawn(move || 跨进程域表::初始化一域按句柄(&慢句柄, 慢号源.as_ref()));
+    thread::sleep(Duration::from_millis(80));
+    let 表锁起点 = Instant::now();
+    let 健康读数 = { let 锁体 = 取锁(&表锁); 锁体.含域(&慢标识) };
+    let 表锁耗时 = 表锁起点.elapsed();
+    assert!(健康读数, "握手期这个域必须在表里");
+    assert!(
+        表锁耗时 < Duration::from_millis(300),
+        "握手期域表锁必须立刻可取（旧行为会拖到慢握手 800 ms 后），实际 {表锁耗时:?}"
+    );
+    assert!(握手线程.join().unwrap().is_ok(), "慢握手必须成");
+    let _ = 慢握手.join();
 }
 
 #[test]
