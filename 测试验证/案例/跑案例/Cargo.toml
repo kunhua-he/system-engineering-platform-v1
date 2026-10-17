@@ -19,6 +19,8 @@ v1-contract = { path = "../../../契约声明" }
 v1-loader = { path = "../../../运行内核/装载入口" }
 # 被验的扩展：只经它的 `GetPlatformInfo` 接缝取声明，不 import 它的任何实现。
 v1-compiler = { path = "../../../扩展根目录/原子支持库/编译器支持库" }
+# 运行数据根：第二份支持库走制品装载，解包要一个**仓外**缓存目录（`装载件缓存` 的唯一口径）。
+v1-dataroot = { path = "../../../运行内核/运行数据根" }
 
 [lints]
 workspace = true
