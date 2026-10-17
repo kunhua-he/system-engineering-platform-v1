@@ -20,8 +20,14 @@ from pathlib import Path
 from .合主干有界跑 import 跑有界命令
 from .门禁预算 import 硬顶秒
 
-闸门说明 = "闸0 + 判据自测 + 全案例"
-案例命令 = ". ./构建环境/进入.sh >/dev/null 2>&1 || exit 1; cargo run --quiet --locked -p v1-case-runner"
+闸门说明 = "闸0 + 判据自测 + 预构建前置 + 全案例"
+# ★ 案例装载的是 **gitignored 的构建产物**（`扩展根目录/原子支持库/*/*.支持库制品`）⇒ 案例之前
+#   必须先过预构建前置（戳与当前源相符 + 制品在位）。两个方向都错过：源改了不重编 ⇒ 假绿；
+#   新树里制品不在 ⇒ 案例「工具错误（不写回执）」。判定与构建只在
+#   `构建制品.py --确保预构建` 一个节点（与 pre-commit 钩子同一份口径，不写第二套）。
+案例命令 = (". ./构建环境/进入.sh >/dev/null 2>&1 || exit 1; "
+        "\"{}\" 构建装配/上线切换/构建制品.py --确保预构建 || exit 1; "
+        "cargo run --quiet --locked -p v1-case-runner").format(sys.executable)
 
 
 def 找钩子路径(工作树):
