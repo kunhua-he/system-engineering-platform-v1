@@ -17,6 +17,51 @@ pub(crate) const 头区上限: usize = 16 * 1024;
 /// 请求体的字节上限。**旁路策略**：不设上限就是让一次请求决定进程的内存。
 pub(crate) const 体上限: usize = 1 << 20;
 
+/// 读请求失败的三类 —— **可编程区分**，调用方只看 [`报文错误::种类名`]，不许匹配文字。
+///
+/// 为什么要有它：三类失败原先在返回类型里就被拍平成一句 `String` ⇒ 慢客户端
+/// 读超时与非法报文同码同字段，调用方只能匹配自由文本。冻结面只允许「请求本身合不合法」
+/// 一种状态码语义（`接口面形状.md` §三）⇒ **不加 408、不改码值**，差别放进正文旁路字段 `种类`。
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) enum 报文错误 {
+    /// 报文本身不合法（请求行 / 头 / 体形状，含超上限、非 UTF-8）。
+    协议(String),
+    /// 读超时：`SO_RCVTIMEO` 到点（`io::ErrorKind::{WouldBlock, TimedOut}`）—— 慢客户端，不是坏报文。
+    读超时(String),
+    /// 对端在报文写完前断开（读到 0 字节 / 连接被复位）。
+    对端断开(String),
+}
+
+impl 报文错误 {
+    /// 机器可判的种类名（写进正文 `种类`；**逐字固定**，改它就是改接口面）。
+    pub(crate) fn 种类名(&self) -> &'static str {
+        match self {
+            Self::协议(_) => "协议",
+            Self::读超时(_) => "读超时",
+            Self::对端断开(_) => "对端断开",
+        }
+    }
+
+    /// 一句可读说明（照旧进正文 `协议错误`，调用方**不必**解析它）。
+    pub(crate) fn 说明(&self) -> &str {
+        match self {
+            Self::协议(说明) | Self::读超时(说明) | Self::对端断开(说明) => 说明,
+        }
+    }
+}
+
+/// 读侧 io 失败 → 种类。**按 `ErrorKind` 判，不许匹配错误文字**（文字随平台/语言变）。
+///
+/// 其余 io 错误（复位 / 中断 / 已关）一律算**对端断开**：不许回落成「协议」—— 那会把
+/// 读侧故障说成「请求不合法」，正是本条要消掉的错分类。
+fn 读失败(动作: &str, 错误: &std::io::Error) -> 报文错误 {
+    let 说明 = format!("{动作}：{错误}");
+    match 错误.kind() {
+        std::io::ErrorKind::WouldBlock | std::io::ErrorKind::TimedOut => 报文错误::读超时(说明),
+        _ => 报文错误::对端断开(说明),
+    }
+}
+
 /// 一条已读完的 HTTP 请求。**方法 · 目标 · 体 · 三个边界头**。
 ///
 /// # 为什么留 `主机` / `来源站点` / `内容类型`（审计发现2 · P1）
@@ -47,8 +92,8 @@ pub struct 报文 {
     pub 内容类型: String,
 }
 
-/// 读一条请求。错误是**一句可读说明**（⇒ 400）。
-pub(crate) fn 读报文(输出流: &mut TcpStream) -> Result<报文, String> {
+/// 读一条请求。失败给**结构化种类 + 一句可读说明**（⇒ 仍 400）。
+pub(crate) fn 读报文(输出流: &mut TcpStream) -> Result<报文, 报文错误> {
     let mut 缓冲: Vec<u8> = Vec::with_capacity(1024);
     let mut 读缓冲 = [0u8; 4096];
     let 头尾 = loop {
@@ -56,17 +101,17 @@ pub(crate) fn 读报文(输出流: &mut TcpStream) -> Result<报文, String> {
             break 字节位置;
         }
         if 缓冲.len() > 头区上限 {
-            return Err(format!("请求头超过 {头区上限} 字节"));
+            return Err(报文错误::协议(format!("请求头超过 {头区上限} 字节")));
         }
-        let 读到 = 输出流.read(&mut 读缓冲).map_err(|错误| format!("读请求失败：{错误}"))?;
+        let 读到 = 输出流.read(&mut 读缓冲).map_err(|错误| 读失败("读请求失败", &错误))?;
         if 读到 == 0 {
-            return Err("连接在请求写完之前就断了".to_owned());
+            return Err(报文错误::对端断开("连接在请求写完之前就断了".to_owned()));
         }
         缓冲.extend_from_slice(&读缓冲[..读到]);
     };
 
     let 头部 = core::str::from_utf8(&缓冲[..头尾])
-        .map_err(|_| "请求头不是合法 UTF-8".to_owned())?
+        .map_err(|_| 报文错误::协议("请求头不是合法 UTF-8".to_owned()))?
         .to_owned();
     let 体起 = 头尾 + 4;
     let 余料 = 缓冲.get(体起..).unwrap_or(&[]).to_vec();
@@ -75,7 +120,7 @@ pub(crate) fn 读报文(输出流: &mut TcpStream) -> Result<报文, String> {
     let 首行 = 行迭代器.next().unwrap_or("");
     let 部件: Vec<&str> = 首行.split(' ').filter(|号段| !号段.is_empty()).collect();
     if 部件.len() != 3 {
-        return Err("请求行必须是「方法 目标 版本」三段".to_owned());
+        return Err(报文错误::协议("请求行必须是「方法 目标 版本」三段".to_owned()));
     }
     let (请求方法, 请求目标) = (部件[0].to_owned(), 部件[1].to_owned());
 
@@ -99,15 +144,15 @@ pub(crate) fn 读报文(输出流: &mut TcpStream) -> Result<报文, String> {
         if 名称 == "content-length" {
             内容长度 = 待处理值
                 .parse::<usize>()
-                .map_err(|_| "Content-Length 不是非负整数".to_owned())?;
+                .map_err(|_| 报文错误::协议("Content-Length 不是非负整数".to_owned()))?;
         }
         if 名称 == "transfer-encoding" && !待处理值.eq_ignore_ascii_case("identity") {
             // 分块传输要做流式状态机 = 连接管理，本面明确不做（文件头）。
-            return Err("本面不支持 Transfer-Encoding：请用 Content-Length".to_owned());
+            return Err(报文错误::协议("本面不支持 Transfer-Encoding：请用 Content-Length".to_owned()));
         }
     }
     if 内容长度 > 体上限 {
-        return Err(format!("请求体超过 {体上限} 字节"));
+        return Err(报文错误::协议(format!("请求体超过 {体上限} 字节")));
     }
 
     let mut 体字节 = 余料;
@@ -117,13 +162,14 @@ pub(crate) fn 读报文(输出流: &mut TcpStream) -> Result<报文, String> {
         let 还差 = (内容长度 - 体字节.len()).min(读缓冲.len());
         let 读到 = 输出流
             .read(&mut 读缓冲[..还差])
-            .map_err(|错误| format!("读请求体失败：{错误}"))?;
+            .map_err(|错误| 读失败("读请求体失败", &错误))?;
         if 读到 == 0 {
-            return Err("请求体没读完连接就断了".to_owned());
+            return Err(报文错误::对端断开("请求体没读完连接就断了".to_owned()));
         }
         体字节.extend_from_slice(&读缓冲[..读到]);
     }
-    let 请求体 = String::from_utf8(体字节).map_err(|_| "请求体不是合法 UTF-8".to_owned())?;
+    let 请求体 = String::from_utf8(体字节)
+        .map_err(|_| 报文错误::协议("请求体不是合法 UTF-8".to_owned()))?;
     Ok(报文 { 请求方法, 请求目标, 报文体: 请求体, 主机, 来源站点, 内容类型 })
 }
 

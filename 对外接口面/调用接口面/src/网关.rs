@@ -208,12 +208,17 @@ impl 服务 {
         let 造应答 = match 读报文(&mut 输出流) {
             Ok(报文) => self.造应答(&报文),
             // 请求本身不合法 ⇒ 400（**协议层**失败，不是业务失败）。
-            Err(说明文字) => {
-                let 造应答 = 造应答::协议错误(400, &说明文字);
+            // 读侧失败带**结构化种类**（协议 / 读超时 / 对端断开）：码值仍 400，
+            // 差别只在正文 `种类` —— 调用方不必再匹配自由文本。
+            Err(错误) => {
+                let 造应答 = 造应答::协议错误带种类(400, 错误.说明(), 错误.种类名());
                 写响应(&mut 输出流, &造应答)?;
                 // 先交出应答再有限排空，避免未读请求体导致TCP复位吞掉拒收对象。
-                let _ = 输出流.shutdown(std::net::Shutdown::Write);
+                // 排空超时**先武装**：macOS 上「对端已半关闭写侧」之后再 `setsockopt(SO_RCVTIMEO)`
+                // 返回 EINVAL（受控探针：4 种组合里只有这一种红）⇒ 顺序反了会让排空退回 2 s
+                // 读超时、并把本函数的 Err 带出去。先设 50 ms 再交 shutdown，排空上限与关闭边界都不动。
                 输出流.set_read_timeout(Some(Duration::from_millis(50)))?;
+                let _ = 输出流.shutdown(std::net::Shutdown::Write);
                 let 排空截止 = std::time::Instant::now() + Duration::from_millis(200);
                 let mut 排空字节数 = 0usize;
                 let mut 排空缓冲 = [0u8; 4096];
