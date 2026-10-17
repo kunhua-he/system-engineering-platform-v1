@@ -25,7 +25,7 @@ use crate::最小JSON::{self, JSON值};
 pub const 程序文本文件名: &str = "输入.程序文本";
 
 /// 实参的取值来源。**封闭枚举**。
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum 实参来源 {
     /// 案例目录里的 `输入.程序文本`。
     程序文本,
@@ -38,6 +38,11 @@ pub enum 实参来源 {
     十六进制字节(Vec<u8>),
     /// 一个整数（**内联槽**，不经缓冲）：模块类能力的两个整数入参走这条。
     整数值(i64),
+    /// 一个**数值列表**（`100 列表` 复合载荷，编好字节后走指针槽）：模块类能力的列表入参走这条。
+    ///
+    /// 元素按 `双精度` 编码（`[1.5, 2.5, 3.5]` 与 `[1, 2, 3]` 都收）；字节由契约层唯一 codec
+    /// `编码复合值载荷(列表标签, …)` 编，本件不写第二套编码。
+    数值列表(Vec<f64>),
     /// 上一步的返回字节集（步骤链；`1105 → 1104` 的往返就走它）。
     上一步返回,
     /// **原样**文本：`值` 直接当 UTF-8 字节送进能力，**不**按案例目录解析（相对路径 / 任意文本）。
@@ -47,14 +52,14 @@ pub enum 实参来源 {
 }
 
 /// 一个实参：类型标签 + 来源。**行序即契约**，由 `案例.json` 里 `实参` 数组的排列给出。
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct 实参 {
     pub 类型标签: u32,
     pub 来源: 实参来源,
 }
 
 /// 一步：调能力（`通知号` / `读留痕条数` 均 `None`）· 发生命周期通知（`通知号 = Some`）· 读留痕（`读留痕条数 = Some`）。三者互斥。
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct 案例步骤 {
     pub 名字: String,
     pub 能力编号: u32,
@@ -64,7 +69,7 @@ pub struct 案例步骤 {
 }
 
 /// 成功时看返回槽的哪一件事。**封闭枚举**。
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum 产物判据 {
     /// 返回槽是空槽（`槽标志::空槽标志`）。
     空槽,
@@ -93,10 +98,12 @@ pub enum 产物判据 {
 }
 
 /// 一条字段期望值。**封闭枚举**：整数或文本 —— `103 结果结构` 里这两种就够用。
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum 复合字段期望 {
     /// 整数字段（`字节数` · `行数` 这类；文件类取值不会为负）。
     整数(i64),
+    /// 双精度字段（`结果` 这类；求和 / 平均类能力的返回值就是它）。
+    双精度(f64),
     /// 文本字段（`摘要文本` 这类）。
     文本(String),
 }
@@ -112,7 +119,7 @@ pub struct 错误码期望 {
 }
 
 /// 一步的期望。
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum 期望 {
     /// 期望转发成功。`派发结果` 只对通知步骤有意义（`Some` = 比对，`None` = 不看）。
     成功 { 产物: 产物判据, 派发结果: Option<String> },
@@ -128,7 +135,7 @@ pub enum 期望 {
 }
 
 /// 一个案例。
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct 案例 {
     pub 名字: String,
     pub 案例目录: PathBuf,
@@ -152,6 +159,24 @@ pub struct 模块部署 {
     pub 标识串: String,
     pub 版本: (u32, u32, u32),
     pub 能力号: u32,
+    /// 声明依赖的支持库制品（按声明侧 `依赖清单` 算好的**部署事实**；空 = 不依赖任何扩展）。
+    ///
+    /// 跑案例不猜路径：这一栏由案例显式写出，与网关 `--跨进程配置` 的 `制品路径` 同源。
+    pub 依赖制品: Vec<PathBuf>,
+}
+
+impl 模块部署 {
+    /// 工作进程启动参数的第二栏：依赖制品 → 逗号分隔；空表 = `-`（与 `工作进程` 例子的约定同一条）。
+    pub fn 依赖栏(&self) -> String {
+        if self.依赖制品.is_empty() {
+            return String::from("-");
+        }
+        self.依赖制品
+            .iter()
+            .map(|制品路径| 制品路径.display().to_string())
+            .collect::<Vec<_>>()
+            .join(",")
+    }
 }
 
 impl 案例 {
@@ -235,11 +260,24 @@ fn 读模块(案例清单: &JSON值) -> Result<Option<模块部署>, String> {
         .and_then(|成员值| 成员值.取整数())
         .and_then(|号值| u32::try_from(号值).ok())
         .ok_or_else(|| "`模块.能力号` 缺失或不是 32 位整数".to_owned())?;
+    let mut 依赖路径项: Vec<PathBuf> = Vec::new();
+    if let Some(依赖项表) = 模块值.取成员("依赖制品") {
+        let 依赖项表 = 依赖项表
+            .取数组()
+            .ok_or_else(|| "`模块.依赖制品` 不是数组".to_owned())?;
+        for 数组项 in 依赖项表 {
+            let 依赖路径 = 数组项
+                .取字符串()
+                .ok_or_else(|| "`模块.依赖制品` 里有一项不是字符串".to_owned())?;
+            依赖路径项.push(PathBuf::from(依赖路径));
+        }
+    }
     Ok(Some(模块部署 {
         模块制品: PathBuf::from(模块制品),
         标识串: 标识串.to_owned(),
         版本: (取段("主版本")?, 取段("次版本号")?, 取段("构建")?),
         能力号,
+        依赖制品: 依赖路径项,
     }))
 }
 
@@ -321,6 +359,22 @@ fn 读步骤(案例清单: &JSON值, 案例目录: &Path) -> Result<Vec<案例�
                 "整数" => 实参来源::整数值(值项.and_then(|成员值| 成员值.取数值()).ok_or_else(|| {
                     format!("{}：步骤[{序号}].实参[{实参序号}] 来源是 `整数`，缺 `值`（整数）", 案例目录.display())
                 })? as i64),
+                // `数值列表`：JSON 数组 → 双精度元素表 → `100 列表` 复合载荷。
+                "数值列表" => {
+                    let 数值项表 = 值项
+                        .and_then(|成员值| 成员值.取数组())
+                        .ok_or_else(|| {
+                            format!("{}：步骤[{序号}].实参[{实参序号}] 来源是 `数值列表`，缺 `值`（数值数组）", 案例目录.display())
+                        })?;
+                    let mut 数值表: Vec<f64> = Vec::with_capacity(数值项表.len());
+                    for 数组项 in 数值项表 {
+                        let 列表数值 = 数组项.取数值().ok_or_else(|| {
+                            format!("{}：步骤[{序号}].实参[{实参序号}] 的 `数值列表` 里有一项不是数", 案例目录.display())
+                        })?;
+                        数值表.push(列表数值);
+                    }
+                    实参来源::数值列表(数值表)
+                }
                 "原样文本" => 实参来源::原样文本(
                     值项
                         .and_then(|成员值| 成员值.取字符串())
@@ -356,7 +410,7 @@ fn 读步骤(案例清单: &JSON值, 案例目录: &Path) -> Result<Vec<案例�
                 )),
                 其他来源 => {
                     return Err(format!(
-                        "{}：步骤[{序号}].实参[{实参序号}] 的 `来源` 不认：`{其他来源}`（只认 程序文本 / 文件 / 十六进制 / 上一步返回 / 路径文本 / 原样文本 / 临时件）",
+                        "{}：步骤[{序号}].实参[{实参序号}] 的 `来源` 不认：`{其他来源}`（只认 程序文本 / 文件 / 十六进制 / 上一步返回 / 路径文本 / 原样文本 / 临时件 / 整数 / 数值列表）",
                         案例目录.display()
                     ));
                 }
@@ -481,8 +535,25 @@ fn 读复合字段(产物值: &JSON值) -> Result<Vec<(String, 复合字段期�
     }
     let mut 期望表 = Vec::with_capacity(项表.len());
     for (字段名, 字段值) in 项表 {
+        // 对象形 = **显式双精度期望**：`{"双精度": 7.5}` —— JSON 数字本身分不出 `6` 与 `6.0`
+        // （解析器只给 `f64`），故双精度字段必须显式写形状，不靠「看上去像整数」。
+        if matches!(字段值, JSON值::对象值(_)) {
+            let 双精度值 = 字段值
+                .取成员("双精度")
+                .and_then(|成员值| 成员值.取数值())
+                .ok_or_else(|| {
+                    format!("`复合字段` 的字段 `{字段名}` 是对象，只认 `{{\"双精度\": <数>}}`")
+                })?;
+            期望表.push((字段名.clone(), 复合字段期望::双精度(双精度值)));
+            continue;
+        }
         if let Some(整数值) = 字段值.取整数() {
             期望表.push((字段名.clone(), 复合字段期望::整数(整数值 as i64)));
+            continue;
+        }
+        // 非整数数值 = 双精度期望（`103 结果结构` 里的 `结果` 这类）。
+        if let Some(字段数值) = 字段值.取数值() {
+            期望表.push((字段名.clone(), 复合字段期望::双精度(字段数值)));
             continue;
         }
         if let Some(文本值) = 字段值.取字符串() {
