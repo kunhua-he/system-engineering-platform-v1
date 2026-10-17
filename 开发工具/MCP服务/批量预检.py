@@ -194,9 +194,7 @@ def 派发(参数表: dict, 仓根) -> tuple:
     if not 开工号 or not isinstance(改动表, list) or not 改动表:
         return 2, "只读预检要开工ID及非空改动表"
     try:
-        库件 = 账本.子目录路径(账本.解析当前环境(), 账本.子目录类别) / 账本.库文件名
-        连接 = sqlite3.connect(库件.absolute().as_uri() + "?mode=ro", uri=True)
-        连接.row_factory = sqlite3.Row
+        连接 = 账本.只读连账本()
         try:
             一条开工 = 账本.读开工(连接, 开工号)
             if not 一条开工 or 一条开工["状态"] != 账本.状态_进行中:

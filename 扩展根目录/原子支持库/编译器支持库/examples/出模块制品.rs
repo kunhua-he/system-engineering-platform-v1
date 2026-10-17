@@ -45,6 +45,8 @@
 
 #[path = "出模块制品/声明读取.rs"]
 mod 声明读取;
+#[path = "出模块制品/契约产物.rs"]
+mod 契约产物;
 
 use std::collections::BTreeMap;
 use std::fs;
@@ -345,7 +347,12 @@ fn 扫包目录(扫描根: &Path) -> Vec<PathBuf> {
 /// 标签超出 `u16` 的声明（`4294967295` 这类占位号）不进表：名号表的号是 `u16`。
 fn 收集类型表(仓根: &Path, 依赖目录表: &[PathBuf]) -> Result<语义::名号表, String> {
     let mut 声明目录表 = vec![仓根.join("契约声明/类型声明")];
-    声明目录表.extend(依赖目录表.iter().map(|依赖目录| 依赖目录.join("类型声明")));
+    for 依赖目录 in 依赖目录表 {
+        let 声明目录 = 依赖目录.join("类型声明");
+        if 声明目录.try_exists().map_err(|错误| format!("类型声明目录无法检查：{错误}"))? {
+            声明目录表.push(声明目录);
+        }
+    }
     let mut 类型表项: BTreeMap<Vec<u8>, u16> = BTreeMap::new();
     for 声明目录 in 声明目录表 {
         for 声明件 in 列声明目录(&声明目录)? {
@@ -542,33 +549,7 @@ fn 取工具链() -> (String, String, PathBuf) {
     (工具链身份, 平台身份, 工具链命令)
 }
 
-/// 编执行体要两样东西：契约产物（`libv1_contract-*.rlib`）与它所在的依赖目录。
-///
-/// 例子二进制住在 `target/<档>/examples/`，契约产物在 `target/<档>/deps/` ⇒ 上一层再进 `deps`。
+/// 由当前构建图定位契约产物，不扫描缓存目录猜测。
 fn 找契约产物() -> Result<(PathBuf, PathBuf), String> {
-    let 自身 = std::env::current_exe().map_err(|错误| format!("取不到自身路径：{错误}"))?;
-    let 同级 = 自身.parent().ok_or_else(|| "取不到自身所在目录".to_owned())?;
-    let 依赖目录 = if 同级.file_name().is_some_and(|名称| 名称 == "examples") {
-        同级.parent().unwrap_or(同级).join("deps")
-    } else {
-        同级.to_owned()
-    };
-    let mut 契约产物表: Vec<PathBuf> = Vec::new();
-    for 目录项 in fs::read_dir(&依赖目录)
-        .map_err(|错误| format!("读不到依赖目录 {}：{错误}", 依赖目录.display()))?
-    {
-        let 路径 = 目录项.map_err(|错误| format!("读目录项失败：{错误}"))?.path();
-        if 路径
-            .file_name()
-            .is_some_and(|名称| 名称.to_string_lossy().starts_with("libv1_contract-"))
-            && 路径.extension().is_some_and(|名称| 名称 == "rlib")
-        {
-            契约产物表.push(路径);
-        }
-    }
-    match 契约产物表.as_slice() {
-        [唯一] => Ok((唯一.clone(), 依赖目录)),
-        [] => Err(format!("依赖目录 {} 里没有 libv1_contract-*.rlib", 依赖目录.display())),
-        _ => Err(format!("依赖目录 {} 里有 {} 份契约产物，分不清用哪份", 依赖目录.display(), 契约产物表.len())),
-    }
+    契约产物::找契约产物()
 }

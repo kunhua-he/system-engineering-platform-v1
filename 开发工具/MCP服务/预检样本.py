@@ -362,6 +362,9 @@ def 跑命令(仓根: Path, 临时根: Path, 参数表: dict, 监听端口: int)
     assert 状态码 == 200, "MCP帧非 200：%s" % (状态码,)
     查询读数 = json.loads(应答数据)
     assert 路径表 == {路径 for 路径 in 观测路径表(临时根)}, "目录或件集合改变"
-    assert 指纹表 == {路径: hashlib.sha256(路径.read_bytes()).hexdigest()
-                    for 路径 in 观测路径表(临时根) if 路径.is_file()}, "预检/拒绝发生写入"
+    写后指纹表 = {路径: hashlib.sha256(路径.read_bytes()).hexdigest()
+               for 路径 in 观测路径表(临时根) if 路径.is_file()}
+    差异路径表 = sorted(str(路径.relative_to(临时根)) for 路径 in set(指纹表) | set(写后指纹表)
+                   if 指纹表.get(路径) != 写后指纹表.get(路径))
+    assert not 差异路径表, "预检/拒绝发生写入：%s" % "、".join(差异路径表)
     return 0, 查询读数["result"]
