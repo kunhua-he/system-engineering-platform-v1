@@ -99,6 +99,14 @@ def 开工账本路径() -> Path:
     return 确保子目录(解析当前环境(), 子目录类别) / 库文件名
 
 
+def 只读连账本() -> sqlite3.Connection:
+    """查询用连接：缺库直接失败，不建目录、不补表、不迁移。"""
+    库件 = 子目录路径(解析当前环境(), 子目录类别) / 库文件名
+    连接 = sqlite3.connect(库件.absolute().as_uri() + "?mode=ro", uri=True)
+    连接.row_factory = sqlite3.Row
+    return 连接
+
+
 def 连账本() -> sqlite3.Connection:
     """开账本（第一次用就建表）。"""
     连接 = sqlite3.connect(str(开工账本路径()))

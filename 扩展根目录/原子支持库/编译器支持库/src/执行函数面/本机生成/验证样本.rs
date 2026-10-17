@@ -1,6 +1,10 @@
 use super::{生成本机源码, 本机依赖, 本机生成请求, 本机源码产物, 本机生成错误};
 use crate::语义::名号表;
 use std::{fs, path::PathBuf, process::Command};
+#[path = "../../../examples/出模块制品/声明读取.rs"]
+mod 声明读取;
+#[path = "../../../examples/出模块制品/契约产物.rs"]
+mod 契约产物;
 
 const 常量初版: &[u8] = include_bytes!("样本/常量初版.程序文本");
 const 常量改版: &[u8] = include_bytes!("样本/常量改版.程序文本");
@@ -44,12 +48,7 @@ fn 构建并执行(产物: &本机源码产物, 工具链命令: &PathBuf, 运�
     fs::create_dir(&验证目录.0).unwrap();
     let 源码路径 = 验证目录.0.join("native_probe.rs");
     let 执行路径 = 验证目录.0.join("native_probe");
-    let 依赖目录 = std::env::current_exe().unwrap().parent().unwrap().to_owned();
-    let 契约产物表: Vec<_> = fs::read_dir(&依赖目录).unwrap().map(|目录项| 目录项.unwrap().path()).filter(|路径|
-        路径.file_name().unwrap().to_string_lossy().starts_with("libv1_contract-")
-            && 路径.extension().is_some_and(|扩展名| 扩展名 == "rlib")
-    ).collect();
-    assert_eq!(契约产物表.len(), 1, "请用本腿独立target目录验证，避免混用工具链契约产物");
+    let (契约产物路径, 依赖目录) = 契约产物::找契约产物().unwrap();
     let 验证入口 = r#"
 fn main() {
     let 运行参数: Vec<String> = std::env::args().skip(1).collect();
@@ -111,7 +110,7 @@ fn 按槽打印(返回槽: &数据槽) -> () {
     fs::write(&源码路径, format!("{}\n{验证入口}", 产物.执行源码)).unwrap();
     let 编译输出 = Command::new(工具链命令).arg("--edition=2024")
         .arg("--crate-name").arg("native_probe").arg("--target").arg(&产物.平台身份)
-        .arg("--extern").arg(format!("v1_contract={}", 契约产物表[0].display()))
+        .arg("--extern").arg(format!("v1_contract={}", 契约产物路径.display()))
         .arg("-L").arg(format!("dependency={}", 依赖目录.display()))
         .arg(&源码路径).arg("-o").arg(&执行路径).output().unwrap();
     assert!(编译输出.status.success(), "{}", String::from_utf8_lossy(&编译输出.stderr));
