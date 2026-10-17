@@ -162,6 +162,12 @@ def 记条款(字段表: dict) -> int:
               f"改 md 重跑 `建库` 即刷新（`建库` 的分片源件会把本行抽回去）。", file=sys.stderr)
         return 1
     连接 = sqlite3.connect(表定义.库路径(仓根))
+    # ★ 2026-10-17：占用检查与写入必须**同一原子事务**（367 的承重根因）。原先 `检查占用`（SELECT）
+    #   → `insert or replace` 是两条独立语句、不持写锁 ⇒ 两个进程同键并发时都能读到「空」，
+    #   后写者静默覆盖先写者。`BEGIN IMMEDIATE` 一进来就拿 RESERVED 锁：第二个写者排队到
+    #   第一个提交后才读 ⇒ 它读到的是已占用（默认拒写）。复用 SQLite 自带锁，不引锁文件。
+    连接.isolation_level = None
+    连接.execute("BEGIN IMMEDIATE")
     try:
         # ★ 2026-10-10：防**孤儿行** —— 只过「仓内相对路径闸」还不够：一个拼错的新路径
         #   （盘上没 md、库里也别处没有）写进去，就成了 `条款` 表里一行无主正文。
@@ -190,8 +196,11 @@ def 记条款(字段表: dict) -> int:
             return 1
         连接.execute("insert or replace into 条款 values(?,?,?,?,?)",
                    (文档路径, int(序号), 标题, 正文, 权威档 or (已有[0] if 已有 else "")))
-        连接.commit()
+        连接.execute("COMMIT")
     finally:
+        # 拒写（提前 return）与异常都在这里把事务放掉：不留 RESERVED 锁、不留半笔。
+        if 连接.in_transaction:
+            连接.execute("ROLLBACK")
         连接.close()
     print(f"记条款：{文档路径} §{序号} · {标题}")
     print("★ 库变了 ⇒ 收口前记得 `v1_task` 功能=6 记账"
