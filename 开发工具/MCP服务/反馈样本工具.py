@@ -59,3 +59,31 @@ def 造开工(临时根, 开工号表) -> None:
                             str(临时根 / 开工号))
     finally:
         连接.close()
+
+
+def 造夹具仓根(临时根) -> Path:
+    """给「按仓根读台账 / 校验承接提交」的样本造一个**夹具仓根**：自带 `未完成` 一行 + 一个真提交。
+
+    **为什么要它**：`承接有效` 的台账那一支读的是**调用方给的仓根**下的 `未完成` 表；
+    台账核销到 0 行后，债务正例必然被判「未知台账条目」（码 2），连带审完 / 未蒸馏 /
+    关闭 / 对账一起红 —— 夹具不许靠真实台账里恰好有行，得由夹具自建一行（真仓台账保持 0 行）。
+    """
+    import sqlite3
+
+    from .仓操作 import 跑命令
+    仓根 = Path(临时根) / "夹具仓"
+    库件 = 仓根 / "开发工具" / "信息核心" / "信息核心.db"
+    库件.parent.mkdir(parents=True, exist_ok=True)
+    if not 库件.is_file():
+        连接 = sqlite3.connect(str(库件))
+        连接.execute("create table 未完成(号 integer primary key, 缺什么 text, 落点 text, 验证命令 text)")
+        连接.execute("insert into 未完成 values (1, '夹具台账行（样本自建，不代表真实债务）', "
+                 "'开发工具/信息核心/信息核心.db', 'python3 构建装配/一键验证/闸0.py')")
+        连接.commit()
+        连接.close()
+    if not (仓根 / ".git").is_dir():
+        跑命令(["git", "init", "-q"], cwd=仓根)
+        跑命令(["git", "add", "-A"], cwd=仓根)
+        跑命令(["git", "-c", "user.name=样本", "-c", "user.email=样本@样例",
+              "commit", "-qm", "夹具仓根"], cwd=仓根)
+    return 仓根
