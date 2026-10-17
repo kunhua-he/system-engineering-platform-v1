@@ -24,23 +24,38 @@
 
 use std::os::fd::FromRawFd;
 use std::os::unix::net::UnixStream;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
 use v1_adapter::工作进程::工作进程;
 
 fn main() -> ExitCode {
     let 参数表: Vec<String> = std::env::args().skip(1).collect();
-    if 参数表.len() != 2 {
-        eprintln!("用法：工作进程 <制品路径> <缓存根目录>");
+    if 参数表.len() != 3 {
+        eprintln!("用法：工作进程 <模块制品|-> <支持库制品,逗号分隔|-> <缓存根目录>");
         return ExitCode::from(2);
     }
-    let 制品路径 = PathBuf::from(&参数表[0]);
-    let 缓存根目录 = PathBuf::from(&参数表[1]);
+    // `-` = 这一栏为空（模块栏空 = 不装模块；依赖栏空 = 不装支持库）。
+    let 模块制品 = (参数表[0] != "-").then(|| Path::new(参数表[0].as_str()));
+    let 支持库引用表: Vec<&Path> = if 参数表[1] == "-" {
+        Vec::new()
+    } else {
+        参数表[1]
+            .split(',')
+            .filter(|段项| !段项.is_empty())
+            .map(Path::new)
+            .collect()
+    };
+    let 缓存根目录 = PathBuf::from(&参数表[2]);
     // SAFETY: fd 0 由 `进程池::生成进程` 接上 UnixStream 的子端（Stdio::from(OwnedFd)）；
     // 每个进程恰好接管一次 ⇒ 不存在二次接管同一个 fd。
     let 流通道 = unsafe { UnixStream::from_raw_fd(0) };
-    let mut 进程 = match 工作进程::创建(流通道, &制品路径, &缓存根目录) {
+    let mut 进程 = match 工作进程::创建(
+        流通道,
+        &支持库引用表,
+        模块制品,
+        &缓存根目录,
+    ) {
         Ok(进程) => 进程,
         Err(错误) => {
             eprintln!("工作进程装载失败：{错误:?}");
