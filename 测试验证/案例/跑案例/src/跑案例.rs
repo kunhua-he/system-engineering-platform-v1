@@ -125,40 +125,54 @@ pub fn 跑案例(仓根: &Path, 案例根: &Path, 回执路: &Path) -> Result<�
     // **模块案例**：案例点名了模块部署事实 ⇒ 登记模块执行域（同一个池、同一个工作进程启动器）。
     // 支持库与模块是两种身份，归同一张域表 —— 本段只调适配器的模块登记口，不新开执行腿。
     #[cfg(unix)]
-    if let Some(适配器实例) = 适配器.as_mut()
-        && let Some(模块条目) = 案例表.iter().find_map(|案例记录| 案例记录.模块部署值.clone())
-    {
-        let 工作进程路径 = std::env::var("V1_工作进程路径").unwrap_or_else(|_| {
-            仓根
-                .join("构建环境/构建缓存/debug/examples/工作进程")
-                .display()
-                .to_string()
-        });
-        // fail-closed：缺可执行时当场点名（否则进程池只回一句「拉起失败」，看不出缺的是哪件产物）。
-        if !std::path::Path::new(&工作进程路径).is_file() {
-            return Err(format!(
-                "模块案例要的工作进程可执行不在位：{工作进程路径}（跑 `构建制品.py --预构建` 产出）"
-            ));
+    if let Some(适配器实例) = 适配器.as_mut() {
+        // 一个案例可以点名一个模块部署事实；**多个模块案例共存**时每个都要登记
+        // （同一身份 + 同一能力号只登记一次）—— 只登记第一个会把别的模块判成「提供者未载入」。
+        let 模块条目表: Vec<案例件::模块部署> = 案例表
+            .iter()
+            .filter_map(|案例记录| 案例记录.模块部署值.clone())
+            .collect();
+        if !模块条目表.is_empty() {
+            let 工作进程路径 = std::env::var("V1_工作进程路径").unwrap_or_else(|_| {
+                仓根
+                    .join("构建环境/构建缓存/debug/examples/工作进程")
+                    .display()
+                    .to_string()
+            });
+            // fail-closed：缺可执行时当场点名（否则进程池只回一句「拉起失败」，看不出缺的是哪件产物）。
+            if !std::path::Path::new(&工作进程路径).is_file() {
+                return Err(format!(
+                    "模块案例要的工作进程可执行不在位：{工作进程路径}（跑 `构建制品.py --预构建` 产出）"
+                ));
+            }
+            let 模块缓存根 = 仓根.join("构建环境/构建缓存/模块缓存");
+            std::fs::create_dir_all(&模块缓存根)
+                .map_err(|错误| format!("建不了模块缓存根：{错误}"))?;
+            适配器实例.开跨进程(v1_adapter::进程池::进程池配置::default());
+            let mut 已登记模块: Vec<(String, u32)> = Vec::new();
+            for 模块条目 in &模块条目表 {
+                let 模块键 = (模块条目.标识串.clone(), 模块条目.能力号);
+                if 已登记模块.contains(&模块键) {
+                    continue;
+                }
+                适配器实例
+                    .登记模块跨进程域(
+                        &模块条目.标识串,
+                        模块条目.版本,
+                        模块条目.能力号,
+                        v1_adapter::进程调用::域部署 {
+                            启动程序: 工作进程路径.clone(),
+                            启动参数: vec![
+                                模块条目.模块制品.display().to_string(),
+                                模块条目.依赖栏(),
+                                模块缓存根.display().to_string(),
+                            ],
+                        },
+                    )
+                    .map_err(|错误| format!("模块执行域登记失败：{错误:?}"))?;
+                已登记模块.push(模块键);
+            }
         }
-        let 模块缓存根 = 仓根.join("构建环境/构建缓存/模块缓存");
-        std::fs::create_dir_all(&模块缓存根)
-            .map_err(|错误| format!("建不了模块缓存根：{错误}"))?;
-        适配器实例.开跨进程(v1_adapter::进程池::进程池配置::default());
-        适配器实例
-            .登记模块跨进程域(
-                &模块条目.标识串,
-                模块条目.版本,
-                模块条目.能力号,
-                v1_adapter::进程调用::域部署 {
-                    启动程序: 工作进程路径,
-                    启动参数: vec![
-                        模块条目.模块制品.display().to_string(),
-                        String::from("-"),
-                        模块缓存根.display().to_string(),
-                    ],
-                },
-            )
-            .map_err(|错误| format!("模块执行域登记失败：{错误:?}"))?;
     }
     for 案例记录 in &案例表 {
         let 案例起点 = Instant::now();
