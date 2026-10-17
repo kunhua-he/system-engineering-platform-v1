@@ -21,6 +21,7 @@
 """
 from __future__ import annotations
 
+import shlex
 import sqlite3
 from pathlib import Path
 
@@ -70,9 +71,13 @@ def 样本_台账面(上层读数: dict) -> int:
 
 
 def 取首字(命令文本: str) -> str:
-    """命令的**首字**（前导空白之后的第一段）；空串 ⇒ 空串。"""
-    命令文本 = str(命令文本 or "").strip()
-    return 命令文本.split()[0] if 命令文本 else ""
+    """安全解析首个 shell 词，去引号但不执行或展开；空串与未闭合引号拒收。"""
+    命令词法 = shlex.shlex(str(命令文本 or ""), posix=True)
+    命令词法.whitespace_split = True
+    try:
+        return 命令词法.get_token() or ""
+    except ValueError:
+        return ""
 
 
 def 入口命中(文本值: str) -> bool:
@@ -83,7 +88,8 @@ def 入口命中(文本值: str) -> bool:
     九条**目录前缀**（`构建环境/` 等）永远命中不上、等于没写（实测：以
     `构建环境/python/bin/python3` 开头的那几条验证命令曾被判「首字不是仓内可跑的入口（散文）」而红）。
     """
-    return any(文本值.startswith(入口项) if 入口项.endswith("/") else 取首字(文本值) == 入口项
+    文本值 = 取首字(文本值)
+    return any(文本值.startswith(入口项) if 入口项.endswith("/") else 文本值 == 入口项
                for 入口项 in 可跑入口首字)
 
 
