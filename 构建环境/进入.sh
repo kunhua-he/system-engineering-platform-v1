@@ -36,7 +36,7 @@ export CARGO_NET_OFFLINE=true
 # ★ 解释器唯一化（3.14 · 唯一一份 · 无回落）：venv **只住主仓** —— 腿（linked 工作树）里
 #   没有 `构建环境/python`（`并行工作树.sh` 不再为腿建），一律用主仓那份；找不到就是环境不成立。
 #   主仓由 **git** 解析（linked 工作树的 common dir 就是主仓 `.git`），不手工拼 gitdir。
-MAIN_ROOT="$(dirname "$(git -C "$ROOT" rev-parse --path-format=absolute --git-common-dir 2>/dev/null || echo "$ROOT/.git")")"
+MAIN_ROOT="$(dirname "$(env -u GIT_DIR -u GIT_WORK_TREE -u GIT_INDEX_FILE -u GIT_COMMON_DIR -u GIT_OBJECT_DIRECTORY -u GIT_ALTERNATE_OBJECT_DIRECTORIES git -C "$ROOT" rev-parse --path-format=absolute --git-common-dir 2>/dev/null || echo "$ROOT/.git")")"
 # 依赖原包与索引只住主仓一份，Cargo自身的文件锁协调访问；各树的编译输出仍独立。
 export CARGO_HOME="$MAIN_ROOT/构建环境/构建缓存/cargo"
 export VIRTUAL_ENV="$MAIN_ROOT/构建环境/python"
