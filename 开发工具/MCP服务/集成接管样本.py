@@ -37,6 +37,9 @@ def _建规则库(路径):
     连接.execute("create table 命名登记(名字 text primary key, 语义 text, 模式 text, 来源 text, 状态 text)")
     连接.execute("create table 命名例外(名字 text primary key, 说明 text)")
     连接.execute("create table 规则(编号 integer primary key, 类 text, 名 text, 内容 text, 依据 text)")
+    # 发号口径要读台账点名号集（`开工账本.新开工号`）⇒ 夹具库必须有 `未完成` 表；
+    # 缺表时 `新开工号` 抛 `no such table: 未完成`，接管样本一条都跑不出来。
+    连接.execute("create table 未完成(号 integer primary key, 缺什么 text, 落点 text, 验证命令 text)")
     连接.execute("insert into 规则 values (1, '样本', '语义', '基值', '')")
     连接.commit()
     连接.close()
