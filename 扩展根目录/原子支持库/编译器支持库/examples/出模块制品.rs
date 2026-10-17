@@ -347,7 +347,12 @@ fn 扫包目录(扫描根: &Path) -> Vec<PathBuf> {
 /// 标签超出 `u16` 的声明（`4294967295` 这类占位号）不进表：名号表的号是 `u16`。
 fn 收集类型表(仓根: &Path, 依赖目录表: &[PathBuf]) -> Result<语义::名号表, String> {
     let mut 声明目录表 = vec![仓根.join("契约声明/类型声明")];
-    声明目录表.extend(依赖目录表.iter().map(|依赖目录| 依赖目录.join("类型声明")));
+    for 依赖目录 in 依赖目录表 {
+        let 声明目录 = 依赖目录.join("类型声明");
+        if 声明目录.try_exists().map_err(|错误| format!("类型声明目录无法检查：{错误}"))? {
+            声明目录表.push(声明目录);
+        }
+    }
     let mut 类型表项: BTreeMap<Vec<u8>, u16> = BTreeMap::new();
     for 声明目录 in 声明目录表 {
         for 声明件 in 列声明目录(&声明目录)? {
