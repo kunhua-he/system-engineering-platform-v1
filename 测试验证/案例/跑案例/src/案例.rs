@@ -188,9 +188,20 @@ impl 案例 {
 /// 案例库里不是案例的目录（**写死一处**）：跑案例的程序自身住在这里。
 const 非案例目录: &[&str] = &["跑案例"];
 
+/// 这个目录是不是**真空**（一个条目都没有）。
+///
+/// 空目录**不是案例**：Git 不跟踪空目录，删末件 / 改名残留 / 外部 rm 都会留下空壳。
+/// 只认「真空」这一种 —— 非空却缺 `案例.json` 仍是破损案例，照旧工具错误。
+fn 是空目录(路径: &Path) -> Result<bool, String> {
+    let mut 迭代器 = std::fs::read_dir(路径)
+        .map_err(|错误| format!("读不到案例目录 {}：{错误}", 路径.display()))?;
+    // `Some(Err)` 当「非空」：真读不动就交给 `读一个` 报，不在这一层吞掉。
+    Ok(迭代器.next().is_none())
+}
+
 /// 读一个案例根下的全部案例，按目录名排序（顺序确定 ⇒ 回执可比）。
 ///
-/// **fail-closed**：除 [`非案例目录`] 外，任何一个子目录缺 `案例.json` 或 `期望.json`
+/// **fail-closed**：除 [`非案例目录`] 与**真空目录**外，任何一个子目录缺 `案例.json` 或 `期望.json`
 /// 都是**工具错误**（不是「跳过这个案例」）——静默跳过就是假绿。
 pub fn 读全部(案例根: &Path) -> Result<Vec<案例>, String> {
     let 目录迭代器 = std::fs::read_dir(案例根).map_err(|错误| format!("读不到案例根 {}：{错误}", 案例根.display()))?;
@@ -202,9 +213,14 @@ pub fn 读全部(案例根: &Path) -> Result<Vec<案例>, String> {
             continue;
         }
         let 名称 = 目录项.file_name().to_string_lossy().into_owned();
-        if !非案例目录.contains(&名称.as_str()) {
-            名表.push(名称);
+        if 非案例目录.contains(&名称.as_str()) {
+            continue;
         }
+        // 空目录不是案例（Git 不跟踪空目录：删末件 / 改名残留都会留下空壳）。
+        if 是空目录(&路径)? {
+            continue;
+        }
+        名表.push(名称);
     }
     名表.sort();
     if 名表.is_empty() {
