@@ -196,7 +196,7 @@ pub fn 发到端口(监听端口: u16, 请求: &str) -> 收到应答 {
 }
 
 /// 解析原始应答文本。
-fn 解析应答(字节: &[u8]) -> 收到应答 {
+pub fn 解析应答(字节: &[u8]) -> 收到应答 {
     let 源文本 = String::from_utf8(字节.to_vec()).expect("应答必须是 UTF-8");
     let (头部, 应答体) = 源文本
         .split_once("\r\n\r\n")
