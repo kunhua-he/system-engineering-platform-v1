@@ -119,6 +119,18 @@ def 读账本改动(夹具根: Path) -> list:
         连接.close()
 
 
+def 造目录链接(样本仓根: Path, 仓外目录: Path) -> None:
+    """把样本制品的父目录换成**符号链接**指向 `仓外目录`（父核探针 P4 的形状）。
+
+    目录本身是链接 ⇒ `is_symlink()` 只看末段看不见它；写入经它落到仓外。
+    """
+    制品路径 = 样本仓根 / 样本制品相对
+    仓外目录.mkdir(parents=True, exist_ok=True)
+    (仓外目录 / 制品路径.name).write_bytes(旧字节)
+    shutil.rmtree(制品路径.parent)
+    制品路径.parent.symlink_to(仓外目录, target_is_directory=True)
+
+
 def 清理夹具(夹具根: Path) -> None:
     """删掉夹具（含隔离账本）；不碰真账本。"""
     shutil.rmtree(夹具根, ignore_errors=True)
