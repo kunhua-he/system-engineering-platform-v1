@@ -30,7 +30,6 @@ if [ -z "$ROOT" ] || [ ! -f "$ROOT/rust-toolchain.toml" ]; then
   return 1 2>/dev/null || exit 1
 fi
 
-export CARGO_HOME="$ROOT/构建环境/构建缓存/cargo"
 export CARGO_TARGET_DIR="$ROOT/构建环境/构建缓存"
 export RUSTUP_TOOLCHAIN="$(sed -n 's/^channel *= *"\(.*\)"/\1/p' "$ROOT/rust-toolchain.toml")"
 export CARGO_NET_OFFLINE=true
@@ -38,6 +37,8 @@ export CARGO_NET_OFFLINE=true
 #   没有 `构建环境/python`（`并行工作树.sh` 不再为腿建），一律用主仓那份；找不到就是环境不成立。
 #   主仓由 **git** 解析（linked 工作树的 common dir 就是主仓 `.git`），不手工拼 gitdir。
 MAIN_ROOT="$(dirname "$(git -C "$ROOT" rev-parse --path-format=absolute --git-common-dir 2>/dev/null || echo "$ROOT/.git")")"
+# 依赖原包与索引只住主仓一份，Cargo自身的文件锁协调访问；各树的编译输出仍独立。
+export CARGO_HOME="$MAIN_ROOT/构建环境/构建缓存/cargo"
 export VIRTUAL_ENV="$MAIN_ROOT/构建环境/python"
 export PATH="$VIRTUAL_ENV/bin:$PATH"
 # ★ 解释器唯一化：`V1_PY` 是**唯一来源**（仓内 3.14 的绝对路径），下游一律取它，不靠 PATH 解析。
