@@ -24,6 +24,13 @@ pub enum 消息类别 {
     就绪 = 5,
     停止 = 6,
     停止回执 = 7,
+    /// **留痕记录**（工作进程 → 宿主，只读旁路）：工作进程内层调用记下的留痕，经**同一条 IPC**
+    /// 回传宿主，由宿主追加进本实例那份留痕缓冲。
+    ///
+    /// **只增不复用**：8 在既有类别里未占用；`调用` / `调用结果` 的载荷形状一字未动。
+    /// 归属靠**通道（= 一个执行域）+ 帧请求标识（= 该次调用）**钉住，不往留痕九键里加字段
+    /// （`留痕` 是冻结形状）。
+    留痕记录 = 8,
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -147,6 +154,7 @@ pub(crate) fn 接收续帧(
         5 => 消息类别::就绪,
         6 => 消息类别::停止,
         7 => 消息类别::停止回执,
+        8 => 消息类别::留痕记录,
         _ => return Err(io::Error::new(io::ErrorKind::InvalidData, "未知IPC消息类别")),
     };
     let 帧请求标识 = NonZeroU64::new(u64::from_le_bytes(帧头[8..16].try_into().unwrap()))
@@ -171,6 +179,63 @@ pub fn 接收帧(通信通道: &mut UnixStream, 请求标识: NonZeroU64, 预算
         return Err(io::Error::new(io::ErrorKind::InvalidData, "IPC请求、长度或预算不符"));
     }
     Ok(帧体)
+}
+
+/// 一条留痕记录过线时的定宽字节数（`实例号 u64` + `能力号 u32` + `入参指纹 u64` + `结果码 i32`
+/// + `耗时微秒 u64` + `追踪号 u64` + `调用类 u8` + `资源号 u32` + `操作号 u32`）。
+pub const 留痕记录字节数: usize = 49;
+
+/// 把一条留痕压成 `留痕记录` 帧的载荷（**唯一编码口**）。
+///
+/// 只搬字段，不解释语义：留痕的形状归 `v1_trace`，本层只负责让它过线。
+pub fn 编码留痕记录(留痕项: &v1_trace::留痕) -> Vec<u8> {
+    let mut 载荷 = Vec::with_capacity(留痕记录字节数);
+    载荷.extend_from_slice(&留痕项.实例号.to_le_bytes());
+    载荷.extend_from_slice(&留痕项.能力号.取号值().to_le_bytes());
+    载荷.extend_from_slice(&留痕项.入参指纹.to_le_bytes());
+    载荷.extend_from_slice(&留痕项.结果码.to_le_bytes());
+    载荷.extend_from_slice(&留痕项.耗时微秒.to_le_bytes());
+    载荷.extend_from_slice(&留痕项.追踪号.to_le_bytes());
+    载荷.push(留痕项.调用类 as u8);
+    载荷.extend_from_slice(&留痕项.资源号.取号值().to_le_bytes());
+    载荷.extend_from_slice(&留痕项.操作号.取号值().to_le_bytes());
+    载荷
+}
+
+/// 解一条 `留痕记录` 帧的载荷（**唯一解码口**）。长度不对 ⇒ `None`（不成形就丢，不猜）。
+pub fn 解码留痕记录(载荷: &[u8]) -> Option<v1_trace::留痕> {
+    if 载荷.len() != 留痕记录字节数 {
+        return None;
+    }
+    let 实例号 = u64::from_le_bytes(载荷[0..8].try_into().ok()?);
+    let 能力号 = u32::from_le_bytes(载荷[8..12].try_into().ok()?);
+    let 入参指纹 = u64::from_le_bytes(载荷[12..20].try_into().ok()?);
+    let 结果码 = i32::from_le_bytes(载荷[20..24].try_into().ok()?);
+    let 耗时微秒 = u64::from_le_bytes(载荷[24..32].try_into().ok()?);
+    let 追踪号 = u64::from_le_bytes(载荷[32..40].try_into().ok()?);
+    let 调用类 = 载荷[40];
+    let 资源号 = u32::from_le_bytes(载荷[41..45].try_into().ok()?);
+    let 操作号 = u32::from_le_bytes(载荷[45..49].try_into().ok()?);
+    match 调用类 {
+        0 => Some(v1_trace::留痕::能力调用(
+            实例号,
+            v1_contract::能力号::构造(能力号),
+            入参指纹,
+            结果码,
+            耗时微秒,
+            追踪号,
+        )),
+        1 => Some(v1_trace::留痕::资源访问(
+            实例号,
+            v1_contract::资源号::构造(资源号),
+            v1_contract::操作号::构造(操作号),
+            入参指纹,
+            结果码,
+            耗时微秒,
+            追踪号,
+        )),
+        _ => None,
+    }
 }
 
 pub struct 有界帧队列 {
