@@ -14,9 +14,7 @@ def 收集扩展指纹(包目录):
             for 文件路径 in sorted(文件表) if 文件路径.is_file()}
 
 
-def 入口函数(参数表):
-    仓根 = Path(__file__).resolve().parents[3]
-    是检查 = '--检查' in 参数表
+def 处理扩展指纹(仓根, 是检查):
     失败表 = []
     for 声明路径 in sorted((仓根/'扩展根目录').glob('*/*/包声明.json')):
         包目录 = 声明路径.parent
@@ -40,3 +38,7 @@ def 入口函数(参数表):
         print('扩展指纹不一致：\n'+'\n'.join(失败表))
         return 1
     return 0
+
+
+def 入口函数(参数表):
+    return 处理扩展指纹(Path(__file__).resolve().parents[3], '--检查' in 参数表)
