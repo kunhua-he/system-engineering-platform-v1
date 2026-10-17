@@ -1,0 +1,14 @@
+[package]
+name = "v1-sqlite"
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+
+[lib]
+name = "v1_sqlite"
+path = "src/lib.rs"
+
+[dependencies]
+v1-contract = { path = "../../../契约声明" }
+
+[workspace]
