@@ -40,6 +40,9 @@ def 预构建(纳入的扩展: list) -> int:
     跑子进程(["cargo", "build", "--locked", "--offline", "--release", "-p", "v1-gateway", "--example", "启动网关"], cwd=仓根)
     # 构建期打包 bin：扩展编出 cdylib 后由它包成 `.支持库制品`（容器 codec 在 契约声明）。
     跑子进程(["cargo", "build", "--locked", "--offline", "--release", "-p", "v1-contract", "--example", "装支持库制品"], cwd=仓根)
+    # 模块案例要拉起的**工作进程可执行**（`examples/工作进程`，debug —— 案例 runner 取的就是这一份）：
+    # 与支持库制品同属「案例要装/要拉起的 gitignored 构建产物」，同一步产出，不另立脚本、不双猜 profile。
+    跑子进程(["cargo", "build", "--locked", "--offline", "-p", "v1-adapter", "--example", "工作进程"], cwd=仓根)
     for 扩展 in 纳入的扩展:
         if 扩展["种类"] == "支持库":
             建扩展产物(扩展)
@@ -97,6 +100,15 @@ def 缺支持库制品(纳入的扩展: list) -> str:
             取制品路径(扩展)
         except SystemExit as 错误:
             缺件表.append(str(错误))
+    # ★ 模块案例要拉起的**工作进程可执行**（`examples/工作进程`，debug）也是案例产物：
+    #   实测（合并门禁首跑）戳相符、支持库制品在位，案例仍回「模块执行域登记失败：拉起失败」
+    #   —— 缺的正是它。产物由本件 `预构建` 同一步产出，新鲜度判定只住这里，不写第二套。
+    if not (构建缓存 / "debug" / "examples" / "工作进程").is_file():
+        缺件表.append(
+            "工作进程可执行不在位（{}）—— 模块案例要拉起它".format(
+                (构建缓存 / "debug" / "examples" / "工作进程").relative_to(仓根).as_posix()
+            )
+        )
     return "；".join(缺件表)
 
 

@@ -134,6 +134,12 @@ pub fn 跑案例(仓根: &Path, 案例根: &Path, 回执路: &Path) -> Result<�
                 .display()
                 .to_string()
         });
+        // fail-closed：缺可执行时当场点名（否则进程池只回一句「拉起失败」，看不出缺的是哪件产物）。
+        if !std::path::Path::new(&工作进程路径).is_file() {
+            return Err(format!(
+                "模块案例要的工作进程可执行不在位：{工作进程路径}（跑 `构建制品.py --预构建` 产出）"
+            ));
+        }
         let 模块缓存根 = 仓根.join("构建环境/构建缓存/模块缓存");
         std::fs::create_dir_all(&模块缓存根)
             .map_err(|错误| format!("建不了模块缓存根：{错误}"))?;
