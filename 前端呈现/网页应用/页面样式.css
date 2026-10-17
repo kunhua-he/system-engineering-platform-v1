@@ -1,0 +1,395 @@
+/* 页面样式 —— 手写 CSS，零依赖、零框架、零外链（离线可跑）。
+ *
+ * 骨架与配色**逐像素取自 `e.exe` 的运行态截图**（`项目文档/参考/易语言IDE_截图.png`，1426×755）：
+ * 八条带的高度、左右分栏宽度、底色的十六进制值都是量出来的，不是估的。取证见 `前端呈现/说明.md`。
+ * 为什么以截图为准：反解只能给静态资源里的东西（菜单文字 · 对话框控件 · 字体名）；
+ * 主窗体分栏与配色在资源里**不存在**（`项目文档/设计文档/界面实测.md` §七），只在运行态里。
+ * 菜单栏与对话框那两块（同样是复刻件）在 `样式-复刻.css`；窗口设计视图三栏在 `样式-设计.css`。
+ * 字体：全站 宋体 9pt —— 反解的对话框字体是「宋体 9pt」，截图里菜单/编辑/面板的汉字步距实测 12px，两处一致。
+ * 视觉全部落在这里：JS 只摆数据，不用 JS 堆 DOM 骨架。
+ */
+
+:root {
+  /* 下列色值全部由截图逐像素读出（众数/定点采样），括号里是它在图里的份额或位置。 */
+  --底: #ffffff;        /* 编辑区 / 列表底：客户区 88% 的像素 */
+  --面板: #f0f0f0;      /* 标题外的全部灰面：菜单栏 88% · 页签带 83% · 工具条 77% */
+  --题: #f0f3f9;        /* 标题条：60% */
+  --线: #a0a0a0;        /* 3D 暗边：分带线 y=31/59/128/601 · 状态条 y=746 */
+  --深线: #696969;      /* 3D 更深的边：y=602/747 两处复线 */
+  --板二: #ececec;      /* 左栏右侧那条 20 像素竖带（x=232..251） */
+  --文: #000000;        /* 正文：参考图里 1.91% 的像素是纯黑，那是它的 WindowText */
+  --灰: #000000;        /* 阅读性文字一律纯黑 —— 参考图的菜单 / 树 / 页签 / 状态条字都是纯黑。
+                          色值不另立：`--灰` 这个位保留成别名，免得各处写法分叉。 */
+  --灰二: #888888;      /* 只留给禁用态（参考图里 0.50% 的像素是这个灰，是它的 GrayText） */
+  --主: #000080;        /* 深蓝：菜单栏 4% 的选中项 */
+  --主文: #ffffff;
+  --好: #000080;
+  --坏: #ff0000;        /* 红：工具条图标里的红块 · 提示里的失败行 */
+  --警: #800000;        /* 深红 */
+  /* 下面两个只在窗口设计视图里出现，出自第二张截图（`易语言IDE_窗口设计区_截图.png`）。 */
+  --画布: #a0a0a0;      /* 设计视图画布底：x=752..1274 整条 */
+  --属性名: #d0dee3;    /* 属性面板属性名列底：x=12..104 整列 */
+  --宋体: 宋体, SimSun, "Songti SC", "STSong", "MS Song", serif;
+  --等宽: 宋体, SimSun, "Songti SC", "STSong", "MS Song", monospace;
+}
+
+* { box-sizing: border-box; }
+
+/* ── 字的边缘：参考图是 Win32 GDI 的字，笔画芯子是纯黑 ─────────────────────
+ *
+ * 这是「配色不像」的真身，量出来的：参考图里亮度 0–39 的像素占 2.36%，本页原来只有 0.38%。
+ * 两者字数差不了几倍，差的是**边缘**：GDI 的宋体 12px 走位图，笔画芯子直接落在纯黑上；
+ * Chrome 在 macOS 上默认给字加灰度抗锯齿，笔画芯子被摊成一圈中间灰 —— 于是纯黑少、浅灰多
+ * （实测浅灰 160–219 档本页 2.60% / 参考 1.86%）。把抗锯齿关掉，字的芯子回到纯黑：
+ * 纯黑 0.38% → 1.30%，浅灰 2.60% → 1.18%，全图色数 1039 → 450（参考 759 / 采样 448）。
+ *
+ * 只对正文面关，标题条不关：参考图里**唯一**带抗锯齿的那块就是标题条的字（它的字亮度摊在
+ * 33/67/99/129/157/184/208 一堆中间值上，那一条带 408 个色），正文各条带都是硬边
+ * （菜单栏 83 色 · 客户区 43 色 · 页签带 14 色）。这一条就是照这个分界写的。
+ *
+ * `font-smooth` 是标准名，Chrome 不认，留着给认得它的引擎；`-webkit-` 那条才是生效的。
+ */
+body, body * { -webkit-font-smoothing: none; font-smooth: never; }
+.标题条, .标题条 * { -webkit-font-smoothing: auto; font-smooth: auto; }
+
+html, body { height: 100%; margin: 0; }
+
+body {
+  display: grid;
+  /* 行序＝DOM 序。每条带的高度是**按「每行主导色换色」逐行量出来对齐的**
+     （读法与脚本见 `开发工具/取证/配色对拍.py` 那一族），单位 px：
+       标题条 32 · 菜单栏 27 · 工具条区 70 · 客户区 442（内含它自身的 24 像素页签行）·
+       底部页签带 31 · 页签内容 141 · 状态条 12。
+     参考图那一侧逐行量出来是 32 / 27 / 70 / 418+24 / 31 / 145 / 6+2 —— **前六条逐像素同高**
+     （所以每条带的起止行也对上了：中带 547 · 底页签带 571 · 页签内容 602），只有最后两条
+     差 4 与 4：参考图那条最下的沉条只有 6 像素、里面一个字都没有（e.exe 那个状态条此刻是
+     空的），本页那条要装四格真读数，9pt 的字最矮要 12 像素（实测：给 8 像素时字形只剩 5 行
+     可见，等于把读数裁掉）。这 4 像素是**拿读数换的**，不是没对齐 —— 要严格照参考图，就得
+     把状态条那四格读数撤掉，那是另一条裁决。
+     客户区是唯一的弹性行，给 240px 下限：装不下就让整页滚，而不是把编辑区压成几十像素
+     。 */
+  grid-template-rows: 32px 27px 70px minmax(240px, 1fr) 31px 145px 8px;
+  height: 100vh;
+  background: var(--底);
+  color: var(--文);
+  font: 9pt/1.45 var(--宋体);
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* ── 标题条（截图 y=0..31 · 底 #f0f3f9）────────────────────────────────── */
+.标题条 {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 8px;
+  background: var(--题);
+  /* 上下都收边：上 y=0 是窗口外框（截图量到 rgb(70,69,72)），下 y=31 是 3D 暗边 #a0a0a0。 */
+  border-top: 1px solid #464548;
+  border-bottom: 1px solid var(--线);
+  overflow: hidden;
+}
+
+.牌 { font-weight: 700; white-space: nowrap; }
+
+.复刻标 {
+  margin-left: auto;
+  color: var(--灰);
+  border: 1px dashed var(--灰二);
+  border-radius: 2px;
+  padding: 0 6px;
+  white-space: nowrap;
+  cursor: help;
+}
+
+/* ── 工具条区（截图 y=59..128 · 底 #f0f0f0）：上面一条图标行，下面一条控制行 ── */
+.工具条区 {
+  display: grid;
+  grid-template-rows: 30px minmax(0, 1fr);
+  min-height: 0;
+  background: var(--面板);
+  border-bottom: 1px solid var(--线);
+  /* 上边一条白高光（截图 y=60 是 #ffffff），与菜单栏下边的 #a0a0a0 成刻蚀对。 */
+  box-shadow: inset 0 1px 0 var(--底);
+  overflow: hidden;
+}
+
+/* 图标行：截图里图标列从 x=12 起，行高约 25（y=60..84）。图标用内联 SVG 画，
+   不引外链、不引字体（自检第四条：离线可跑）。 */
+.图标行 {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  padding: 2px 6px;
+  border-bottom: 1px solid var(--线);
+  /* 分隔线下面再压一条白高光：截图那条图标行分隔是 #a0a0a0 + #ffffff 一对。 */
+  box-shadow: 0 1px 0 var(--底);
+}
+
+.图标钮 {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  /* 经典 Win32 工具钮：外圈纯黑 1px，内圈左上白高光（凸起）。 */
+  border: 1px solid var(--文);
+  box-shadow: inset 1px 1px 0 var(--底), inset -1px -1px 0 var(--线);
+  background: transparent;
+  cursor: pointer;
+}
+
+.图标钮:hover { background: var(--板二); border-color: var(--线); }
+.图标钮:active {
+  border-color: var(--文);
+  box-shadow: inset 1px 1px 0 var(--线), inset -1px -1px 0 var(--底);
+}
+.图标钮 svg { width: 16px; height: 16px; display: block; }
+.图标隔 { width: 0; height: 20px; margin: 0 4px; border-left: 1px solid var(--线); border-right: 1px solid var(--底); }
+
+.控制行 {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  padding: 3px 6px;
+}
+
+.控制行 label { display: flex; gap: 5px; align-items: center; color: var(--文); }
+.控制行 select { max-width: 380px; }
+
+.读数 { color: var(--灰); white-space: nowrap; }
+
+button {
+  font: 9pt/1.3 var(--宋体);
+  color: var(--文);
+  background: var(--面板);
+  /* 经典 Win32 凸起钮：外圈纯黑 1px，内圈一对斜面（左上亮、右下暗）。 */
+  border: 1px solid var(--文);
+  box-shadow: inset 1px 1px 0 var(--底), inset -1px -1px 0 var(--线);
+  padding: 2px 9px;
+  cursor: pointer;
+}
+
+button:hover { background: var(--板二); }
+button:active {
+  border-color: var(--文);
+  box-shadow: inset 1px 1px 0 var(--线), inset -1px -1px 0 var(--底);
+}
+button:disabled { color: var(--灰二); cursor: not-allowed; }
+
+button.主 { font-weight: 700; }
+button.次 { color: var(--灰); }
+button.小 { padding: 1px 5px; }
+
+input, select, textarea {
+  font: 9pt/1.4 var(--等宽);
+  color: var(--文);
+  background: var(--底);
+  /* 经典 Win32 凹陷框：外圈纯黑 1px，内圈一对斜面（左上暗、右下亮 —— 与凸起钮相反）。 */
+  border: 1px solid var(--文);
+  box-shadow: inset 1px 1px 0 var(--线), inset -1px -1px 0 var(--底);
+  padding: 1px 3px;
+}
+
+.状态 { color: var(--灰); }
+.状态.好 { color: var(--好); }
+.状态.坏 { color: var(--坏); }
+.状态.警 { color: var(--警); }
+
+.灰 { color: var(--灰); }
+
+
+/* ── 编辑器（截图里这块是纯白，没有表头 —— 所以本区不摆区头）──────────── */
+.编辑框 {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  min-height: 0;
+  overflow: hidden;
+  /* 经典 Win32 编辑区的外框：外圈纯黑 1px，内圈左上暗、右下亮（凹陷）。 */
+  border: 1px solid var(--文);
+  box-shadow: inset 1px 1px 0 var(--线), inset -1px -1px 0 var(--底);
+}
+
+/* 行距 21px 是截图量的（编辑区文字行起点差 21）；字号 9pt 由汉字步距 12px 反推。 */
+.行号 {
+  margin: 0;
+  padding: 2px 6px;
+  text-align: right;
+  color: var(--灰);
+  background: var(--面板);
+  border-right: 1px solid var(--线);
+  font: 9pt/21px var(--等宽);
+  white-space: pre;
+  overflow: hidden;
+  user-select: none;
+}
+
+.编辑区 {
+  margin: 0;
+  padding: 2px 6px;
+  border: 0;
+  box-shadow: none;
+  outline: none;
+  resize: none;
+  background: var(--底);
+  color: var(--文);
+  font: 9pt/21px var(--宋体);
+  white-space: pre;
+  overflow: auto;
+  tab-size: 4;
+}
+
+/* ── 折（details）：截图里没有这个控件，方形细边是照面板的做派配的 ────── */
+.折 { border: 1px solid var(--线); background: var(--底); margin-top: 6px; overflow: hidden; }
+
+.折 > summary {
+  cursor: pointer;
+  padding: 2px 6px;
+  font-weight: 700;
+  background: var(--面板);
+  list-style: none;
+}
+
+.折 > summary::marker { content: ""; }
+.折 > summary::before { content: "▸ "; color: var(--灰); }
+.折[open] > summary::before { content: "▾ "; }
+
+.折体 { padding: 6px; }
+
+.提示 { margin: 0 0 6px; color: var(--灰); }
+.提示.坏 { color: var(--坏); }
+.提示.警 { color: var(--警); }
+.提示 b { color: var(--文); }
+.提示 code { color: var(--主); }
+
+.行 { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 5px 0; }
+.行 label { display: flex; gap: 4px; align-items: center; color: var(--灰); }
+.行 input.号 { width: 84px; }
+.行 input.长 { width: 120px; }
+.行 input.路 { width: 100%; }
+
+.纵 { display: grid; gap: 3px; color: var(--灰); margin: 5px 0; }
+.纵 textarea.正文 { width: 100%; }
+
+/* ── 区头：底格里每一块的标题带 ───────────────────────────────────────── */
+.区头 {
+  display: flex;
+  gap: 12px;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 2px 8px;
+  background: var(--面板);
+  border-bottom: 1px solid var(--线);
+}
+
+.区头 h2 { margin: 0; font-weight: 700; }
+.区头 .灰 { color: var(--灰); }
+
+/* ── 步卡（诊断逐级读数）───────────────────────────────────────────────── */
+.步列表 { display: grid; gap: 6px; }
+
+.步卡 { border: 1px solid var(--线); background: var(--面板); overflow: hidden; }
+
+.步卡头 {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: baseline;
+  padding: 2px 6px;
+  border-bottom: 1px solid var(--线);
+  background: var(--板二);
+}
+
+.步名 { font-weight: 700; }
+.步号, .步时 { color: var(--灰); }
+
+.步卡.坏 .步名 { color: var(--坏); }
+.步卡.好 .步名 { color: var(--好); }
+
+.步体 { padding: 4px 6px; }
+.步体 .行内 { margin-bottom: 4px; }
+
+.徽标 { border: 1px solid currentColor; padding: 0 5px; }
+.徽标.好 { color: var(--好); }
+.徽标.坏 { color: var(--坏); }
+.徽标.灰 { color: var(--灰); }
+
+/* ── 摆出来的 JSON（只看值的类型）───────────────────────────────────── */
+.果 { font: 9pt/1.5 var(--等宽); }
+
+.应答头 { margin-bottom: 4px; }
+
+.键值行 { display: grid; grid-template-columns: minmax(72px, max-content) minmax(0, 1fr); gap: 6px; padding: 1px 0; }
+.键 { color: var(--灰); }
+.内 { min-width: 0; overflow-wrap: anywhere; }
+
+.数组项 { border-left: 2px solid var(--线); padding-left: 6px; margin: 3px 0; }
+.位 { color: var(--文); }
+
+.空 { color: var(--灰); font-style: italic; }
+.真 { color: var(--好); }
+.假 { color: var(--坏); }
+.数 { color: var(--主); }
+.文 { overflow-wrap: anywhere; }
+
+.体盒.有假 { border-left: 3px solid var(--坏); padding-left: 6px; }
+
+.原文盒 { margin-top: 6px; }
+.原文盒 summary { cursor: pointer; color: var(--灰); }
+
+pre.原文 {
+  margin: 4px 0 0;
+  padding: 5px;
+  max-height: 240px;
+  overflow: auto;
+  background: var(--底);
+  border: 1px solid var(--线);
+  font: 9pt/1.5 var(--等宽);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.行内 { font: 9pt/1.5 var(--等宽); }
+.行内 .对 { margin-right: 10px; white-space: nowrap; }
+.行内 .键 { margin-right: 3px; }
+
+/* ── 空状态 ───────────────────────────────────────────────────────────── */
+.空状态 { padding: 8px; color: var(--灰); }
+.空状态 b { display: block; margin-bottom: 5px; color: var(--文); font-weight: 700; }
+.空状态 p { margin: 0 0 6px; }
+.空状态 code { color: var(--主); }
+
+/* ── 监视表：五种出口这一个选择 ───────────────────────────────────────── */
+.出口卡 { display: grid; gap: 1px; margin: 6px 0; font: 9pt/1.5 var(--等宽); }
+.出口卡 .卡点 { color: var(--坏); }
+
+/* ── 调用表：值行三列 ─────────────────────────────────────────────────── */
+.值行表头, .值行 {
+  display: grid;
+  grid-template-columns: 32px 58px minmax(0, 1fr) 26px;
+  gap: 4px;
+  align-items: center;
+  padding: 1px 0;
+}
+
+.值行表头 { color: var(--灰); }
+.值行 .序 { color: var(--灰); text-align: right; }
+.值行 input { width: 100%; }
+
+.体预览 { margin-top: 6px; }
+.体预览 summary { cursor: pointer; color: var(--灰); }
+
+/* ── 剪辑历史 ─────────────────────────────────────────────────────────── */
+.史表 { display: grid; gap: 2px; font: 9pt/1.5 var(--等宽); }
+.史行 { display: grid; grid-template-columns: 88px 96px minmax(0, 1fr); gap: 8px; }
+.史时, .史类 { color: var(--灰); }
+.史空 { color: var(--灰); font-style: italic; }
+
+/* 窄视口：客户区改单列。原来那条 1080px 规则会把主区压成 1 像素，
+   现在客户区有 240px 下限、行高固定，压不下去。 */
+@media (max-width: 1080px) {
+  .客户区 { grid-template-columns: minmax(0, 1fr); }
+  .左栏 { border-bottom: 1px solid var(--线); }
+}

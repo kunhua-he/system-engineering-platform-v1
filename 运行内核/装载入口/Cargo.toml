@@ -1,0 +1,17 @@
+[package]
+name = "v1-loader"
+description = "装载入口 —— 可装载性判定六步 + 载入 + 唯一导出符号"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lib]
+name = "v1_loader"
+path = "src/lib.rs"
+
+[dependencies]
+v1-contract = { path = "../../契约声明" }
+v1-registry = { path = "../统一注册表" }
+
+[lints]
+workspace = true

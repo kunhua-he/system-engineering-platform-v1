@@ -1,0 +1,19 @@
+.版本 2
+
+.子程序 DllMain, 逻辑型
+.参数 hModule, 整数型
+.参数 ul_reason_for_call, 整数型
+.参数 lpReserved, 整数型
+
+.判断开始 (ul_reason_for_call ＝ #DLL_PROCESS_DETACH)
+
+.判断 (ul_reason_for_call ＝ #DLL_PROCESS_ATTACH)
+
+.判断 (ul_reason_for_call ＝ #DLL_THREAD_ATTACH)
+
+.判断 (ul_reason_for_call ＝ #DLL_THREAD_DETACH)
+
+.默认
+
+.判断结束
+返回 (真)

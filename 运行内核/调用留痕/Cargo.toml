@@ -1,0 +1,16 @@
+[package]
+name = "v1-trace"
+description = "调用留痕 —— 谁 · 调什么 · 入参指纹 · 结果 · 耗时；不进关键路径"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lib]
+name = "v1_trace"
+path = "src/lib.rs"
+
+[dependencies]
+v1-contract = { path = "../../契约声明" }
+
+[lints]
+workspace = true

@@ -1,0 +1,8 @@
+# 模板 · 支持库 —— [lib] 不许声明 crate-type（只出 rlib；机器码由装配侧现场编）。
+[package]
+name = "示例支持库"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+path = "src/lib.rs"

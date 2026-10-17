@@ -1,0 +1,851 @@
+.版本 2
+
+.数据类型 菜单条目结构_问号, , MENUITEMINFO
+    .成员 结构大小, 整数型, , , cbSize,结构大小，通常为44bytes
+    .成员 标识符, 整数型, , , fMask,
+    .成员 条目类型, 整数型, , , fType,
+    .成员 条目状态, 整数型, , , fState,
+    .成员 条目ID, 整数型, , , wID,
+    .成员 子菜单句柄, 整数型, , , hSubMenu,
+    .成员 选中位图句柄, 整数型, , , hbmpChecked,
+    .成员 未选中位图句柄, 整数型, , , hbmpUnchecked,
+    .成员 条目数据, 整数型, , , dwItemData,
+    .成员 条目内容, 文本型, , , dwTypeData,
+    .成员 条目长度, 整数型, , , cch,
+
+.数据类型 矩形_问号, , RECT
+    .成员 左边, 整数型, , , Left
+    .成员 顶边, 整数型, , , Top
+    .成员 右边, 整数型, , , Right
+    .成员 底边, 整数型, , , Bottom
+
+.数据类型 表单结构_问号, , FORM_问号INFO_问号1
+    .成员 标志, 整数型, , , Flags,如表单内建到打印机，则为常数FORM_问号BUILTIN
+    .成员 表单名字, 整数型, , , pName,表单的名字
+    .成员 宽度, 整数型, , , width,以千分之一毫米为单位的打印媒介尺寸
+    .成员 高度, 整数型, , , height,以千分之一毫米为单位的打印媒介尺寸
+    .成员 左边, 整数型, , , Left,可以绘图的实际区域左边
+    .成员 顶边, 整数型, , , Top ,可以绘图的实际区域顶边
+    .成员 右边, 整数型, , , Right ,可以绘图的实际区域右边
+    .成员 底边, 整数型, , , Bottom ,可以绘图的实际区域底边
+
+.数据类型 设备初始设置_问号, , DEVMODE
+    .成员 dmDeviceName, 字节型, , "32"
+    .成员 dmSpecVersion, 整数型
+    .成员 dmDriverVersion, 整数型
+    .成员 dmSize, 整数型
+    .成员 dmDriverExtra, 整数型
+    .成员 dmFields, 整数型
+    .成员 dmOrientation, 整数型
+    .成员 dmPaperSize, 整数型
+    .成员 dmPaperLength, 整数型
+    .成员 dmPaperWidth, 整数型
+    .成员 dmScale, 整数型
+    .成员 dmCopies, 整数型
+    .成员 dmDefaultSource, 整数型
+    .成员 dmPrintQuality, 整数型
+    .成员 dmColor, 整数型
+    .成员 dmDuplex, 整数型
+    .成员 dmYResolution, 整数型
+    .成员 dmTTOption, 整数型
+    .成员 dmCollate, 整数型
+    .成员 dmFormName, 字节型, , "32"
+    .成员 dmUnusedPadding, 整数型
+    .成员 dmBitsPerPel, 整数型
+    .成员 dmPelsWidth, 整数型
+    .成员 dmPelsHeight, 整数型
+    .成员 dmDisplayFlags, 整数型
+    .成员 dmDisplayFrequency, 整数型
+
+.数据类型 供应商结构_问号, , PROVIDOR_问号INFO_问号1
+    .成员 供应商名字, 文本型, , , pName,供应商的名字
+    .成员 设计环境, 文本型, , , pEnvironment,参见相关帮助
+    .成员 DLL名称, 文本型, , , pDLLName,供应商使用的DLL的名字
+
+.数据类型 打印默认_问号, , PRINTER_问号DEFAULTS
+    .成员 数据类型, 文本型, , , pDatatype
+    .成员 设备模式, 整数型, , , pDevMode
+    .成员 权限标志, 整数型, , , DesiredAccess
+
+.数据类型 波形数据格式_问号, , WAVEFORMATEX
+    .成员 格式标签, 短整数型, , , wFormatTag，记录着此声音的格式代号
+    .成员 声道数, 短整数型, , , nChannels，记录声音的声道数
+    .成员 采样率, 整数型, , , nSamplesPerSec，记录每秒采样率，取样率
+    .成员 取样字节数, 整数型, , , nAvgBytesPerSec，记录每秒取样的字节数=声道数*取样率*比特率/8
+    .成员 数据块对齐单位, 短整数型, , , nBlockAlign，记录数据块的对齐单位=声道数*比特率/8
+    .成员 比特率, 短整数型, , , wBitsPerSample，比特率,记录每个取样所需的位元数
+    .成员 后数据块长度, 短整数型, , , cbSize，长度
+
+.数据类型 波形数据块_问号, , WAVEHDR，波形音频数据块结构(32)
+    .成员 数据缓冲区, 整数型, , , lpData，指向锁定的数据缓冲区的指针
+    .成员 缓冲区大小, 整数型, , , dwBufferLength，数据缓冲区的大小
+    .成员 已录音字节长度, 整数型, , , dwBytesRecorded，已录音的字节长度
+    .成员 用户数据, 整数型, , , dwUser，用户数据
+    .成员 缓冲区信息标志, 整数型, , , dwFlags，提供缓冲区信息的标志
+    .成员 循环次数, 整数型, , , dwLoops，循环次数
+    .成员 保留参数1, 整数型, , , lpNext，保留
+    .成员 保留参数2, 整数型, , , Reserved，保留
+
+.数据类型 波形输出设备性能_问号, , WAVEOUTCAPS
+    .成员 厂商识别符, 短整数型, , , wMid
+    .成员 产品识别符, 短整数型, , , wPid
+    .成员 驱动版本, 整数型, , , vDriverVersion
+    .成员 产品名称, 字节型, , "32", szPname
+    .成员 标准支持格式, 整数型, , , dwFormats
+    .成员 通道数, 短整数型, , , wChannels
+    .成员 支持功能, 整数型, , , dwSupport
+
+.数据类型 波形输入设备性能_问号, , WAVEINCAPS
+    .成员 厂商识别符, 短整数型, , , wMid
+    .成员 产品识别符, 短整数型, , , wPid
+    .成员 驱动版本, 整数型, , , vDriverVersion
+    .成员 产品名称, 字节型, , "32", szPname
+    .成员 标准支持格式, 整数型, , , dwFormats
+    .成员 通道数, 短整数型, , , wChannels
+
+.数据类型 MIDI输出设备性能_问号, , MIDIOUTCAPS
+    .成员 厂商识别符, 短整数型, , , wMid
+    .成员 产品识别符, 短整数型, , , wPid
+    .成员 驱动版本, 整数型, , , vDriverVersion
+    .成员 产品名称, 字节型, , "32", szPname
+    .成员 输出设备类型, 短整数型, , , wTechnology
+    .成员 声音数量, 短整数型, , , wVoices
+    .成员 最大数量, 短整数型, , , wNotes
+    .成员 通道掩码, 短整数型, , , wChannelMask
+    .成员 支持功能, 短整数型, , , dwSupport
+
+.数据类型 MIDI数据块_问号, , MIDIHDR
+    .成员 数据缓冲区地址, 整数型, , , lpData，波形音频数据缓冲区地址
+    .成员 数据缓冲区大小, 整数型, , , dwBufferLength，波形音频数据缓冲区大小
+    .成员 缓冲区数据量, 整数型, , , dwBytesRecorded，录音时指明缓冲区中的数据量
+    .成员 用户数据, 短整数型, , , dwUser，用户数据
+    .成员 缓冲区信息标志, 整数型, , , dwFlags，提供缓冲区信息的标志
+    .成员 保留参数1, 整数型, , , lpNext，保留
+    .成员 保留参数2, 短整数型, , , Reserved，保留
+    .成员 保留参数3, 整数型, , , dwOffset，保留
+    .成员 保留参数4, 短整数型, , "4", dwReserved，保留
+
+.数据类型 尺寸_问号, , SIZE
+    .成员 宽度, 整数型, , , width
+    .成员 高度, 整数型, , , height
+
+.数据类型 坐标_问号, , POINTAPI
+    .成员 横向位置, 整数型, , , x，横向位置
+    .成员 纵向位置, 整数型, , , y，纵向位置
+
+.数据类型 修改的文件信息_问号, , VS_问号FIXEDFILEINFO
+    .成员 dwSignature, 整数型
+    .成员 dwStrucVersionl, 短整数型
+    .成员 dwStrucVersionh, 短整数型
+    .成员 dwFileVersionMSl, 短整数型
+    .成员 dwFileVersionMSh, 短整数型
+    .成员 dwFileVersionLSl, 短整数型
+    .成员 dwFileVersionLSh, 短整数型
+    .成员 dwProductVersionMSl, 短整数型
+    .成员 dwProductVersionMSh, 短整数型
+    .成员 dwProductVersionLSl, 短整数型
+    .成员 dwProductVersionLSh, 短整数型
+    .成员 dwFileFlagsMask, 整数型
+    .成员 dwFileFlags, 整数型
+    .成员 dwFileOS, 整数型
+    .成员 dwFileType, 整数型
+    .成员 dwFileSubtype, 整数型
+    .成员 dwFileDateMS, 整数型
+    .成员 dwFileDateLS, 整数型
+
+.数据类型 刷子结构_问号, , LOGBRUSH
+    .成员 样式, 整数型, , , lbStyle 
+    .成员 颜色, 整数型, , , lbColor 
+    .成员 属性, 整数型, , , lbHatch 
+
+.数据类型 逻辑字体_问号, , LOGFONT
+    .成员 高度, 整数型, , , lfHeight
+    .成员 宽度, 整数型, , , lfWidth
+    .成员 控制摆, 整数型, , , lfEscapement
+    .成员 定方位, 整数型, , , lfOrientation
+    .成员 加粗, 整数型, , , lfWeight
+    .成员 斜体, 字节型, , , lfItalic
+    .成员 下划线, 字节型, , , lfUnderline
+    .成员 袭击出, 字节型, , , lfStrikeOut
+    .成员 零碎工作组合, 字节型, , , lfCharSet
+    .成员 出自精确, 字节型, , , lfOutPrecision
+    .成员 修剪精确, 字节型, , , lfClipPrecision
+    .成员 性质, 字节型, , , lfQuality
+    .成员 间距, 字节型, , , lfPitchAndFamily
+    .成员 字体名称, 字节型, , "32", 用LF_问号FACESIZE,lfFaceName?
+
+.数据类型 共享资源信息_问号, , SHARE_问号INFO_问号2
+    .成员 共享资源名, 整数型, , , shi2_问号netname
+    .成员 共享资源类型, 整数型, , , shi2_问号type
+    .成员 共享资源注释, 整数型, , , shi2_问号remark
+    .成员 共享方式, 整数型, , , shi2_问号permissions
+    .成员 最大用户数, 整数型, , , shi2_问号max_问号uses
+    .成员 当前用户, 整数型, , , shi2_问号current_问号uses
+    .成员 共享资源路径, 整数型, , , shi2_问号path
+    .成员 共享资源密码, 整数型, , , shi2_问号passwd
+
+.数据类型 服务器信息_问号, , SERVER_问号INFO_问号100
+    .成员 平台标识符, 整数型, , , sv100_问号platform_问号id
+    .成员 服务器名称, 整数型, , , sv100_问号name
+
+.数据类型 工作站环境信息_问号, , WKSTA_问号INFO_问号102
+    .成员 平台标识符, 整数型, , , wki102_问号platform_问号id
+    .成员 计算机名, 整数型, , , wki102_问号computername
+    .成员 网络组, 整数型, , , wki102_问号langroup
+    .成员 主版本, 整数型, , , wki102_问号ver_问号major
+    .成员 次版本, 整数型, , , wki102_问号ver_问号minor
+    .成员 网络根路径, 整数型, , , wki102_问号lanroot
+    .成员 用户数量, 整数型, , , wki102_问号logged_问号on_问号users
+
+.数据类型 查找替换_问号, , FINDREPLACE
+    .成员 结构大小, 整数型, , , lStructSize
+    .成员 窗口句柄, 整数型, , , hwndOwner
+    .成员 实例句柄, 整数型, , , hInstance
+    .成员 标志, 整数型, , , flags
+    .成员 查找文本, 整数型, , , lpstrFindWhat
+    .成员 替换文本, 整数型, , , lpstrReplaceWith
+    .成员 查找文本长度, 短整数型, , , wFindWhatLen
+    .成员 替换文本长度, 短整数型, , , wReplaceWithLen
+    .成员 自定义数据, 整数型, , , lCustData
+    .成员 回调函数地址, 整数型, , , lpfnHook
+    .成员 模板名称, 整数型, , , lpTemplateName
+
+.数据类型 主机信息_问号, , HostEnt
+    .成员 主机名称, 整数型, , , h_问号name
+    .成员 主机别名, 整数型, , , h_问号aliases
+    .成员 主机地址类型, 短整数型, , , h_问号addrtype
+    .成员 主机地址长度, 短整数型, , , h_问号length
+    .成员 主机地址列表, 整数型, , , h_问号addr_问号list
+
+.数据类型 网络适配器状态_问号
+    .成员 适配器地址, 字节型, , "6", adapter_问号address
+    .成员 主版本, 字节型, , , rev_问号major
+    .成员 保留参数, 字节型, , , reserved0
+    .成员 适配器类型, 字节型, , , adapter_问号type
+    .成员 次版本, 字节型, , , rev_问号minor
+    .成员 持续时间, 短整数型, , , duration
+    .成员 收到frmr数, 短整数型, , , frmr_问号recv
+    .成员 发送frmr数, 短整数型, , , frmr_问号xmit
+    .成员 收到frmr错误代码, 短整数型, , , iframe_问号recv_问号err
+    .成员 发送frmr失败数, 短整数型, , , xmit_问号aborts
+    .成员 发送frmr成功数, 整数型, , , xmit_问号success
+    .成员 收到frmr成功数, 整数型, , , recv_问号success
+    .成员 发送frmr错误代码, 短整数型, , , iframe_问号xmit_问号err
+    .成员 收到无效缓冲区, 短整数型, , , recv_问号buff_问号unavail
+    .成员 DLCT1超时, 短整数型, , , t1_问号timeouts
+    .成员 超时, 短整数型, , , ti_问号timeouts
+    .成员 保留参数, 整数型, , , Reserved1
+    .成员 当前免费网络控制块数, 短整数型, , , free_问号ncbs
+    .成员 未定义, 短整数型, , , max_问号cfg_问号ncbs
+    .成员 未定义, 短整数型, , , max_问号ncbs
+    .成员 未定义, 短整数型, , , xmit_问号buf_问号unavail
+    .成员 数据块最大尺寸, 短整数型, , , max_问号dgram_问号size
+    .成员 会话数, 短整数型, , , pending_问号sess
+    .成员 会话最大限制数, 短整数型, , , max_问号cfg_问号sess
+    .成员 未定义, 短整数型, , , max_问号sess
+    .成员 会话数据块最大尺寸, 短整数型, , , max_问号sess_问号pkt_问号size
+    .成员 本地名称数量, 短整数型, , , name_问号count
+    .成员 本地网络名, 字节型, , "496", name
+    .成员 本地网络名数量, 短整数型, , "42", name_问号num
+    .成员 本地网络名标志, 短整数型, , "42", name_问号flags
+
+.数据类型 颜色调节器_问号, , COLORADJUSTMENT
+    .成员 结构大小, 短整数型, , , caSize
+    .成员 标志, 短整数型, , , caFlags
+    .成员 标准光源型态, 短整数型, , , caIlluminantIndex
+    .成员 红色灰阶, 短整数型, , , caRedGamma
+    .成员 绿色灰阶, 短整数型, , , caGreenGamma
+    .成员 蓝色灰阶, 短整数型, , , caBlueGamma
+    .成员 黑色来源, 短整数型, , , caReferenceBlack
+    .成员 白色来源, 短整数型, , , caReferenceWhite
+    .成员 对比数量, 短整数型, , , caContrast
+    .成员 亮度, 短整数型, , , caBrightness
+    .成员 色彩, 短整数型, , , caColorfulness
+    .成员 红绿色调整数量, 短整数型, , , caRedGreenTint
+
+.数据类型 安全性结构_问号, , SECURITY_问号ATTRIBUTES
+    .成员 nLength, 整数型
+    .成员 lpSecurityDescriptor, 整数型
+    .成员 bInheritHandle, 整数型
+
+.数据类型 进程启动信息_问号, , STARTUPINFO
+    .成员 cb, 整数型
+    .成员 lpReserved, 整数型
+    .成员 lpDesktop, 整数型
+    .成员 lpTitle, 整数型
+    .成员 dwX, 整数型
+    .成员 dwY, 整数型
+    .成员 dwXSize, 整数型
+    .成员 dwYSize, 整数型
+    .成员 dwXCountChars, 整数型
+    .成员 dwYCountChars, 整数型
+    .成员 dwFillAttribute, 整数型
+    .成员 dwFlags, 整数型
+    .成员 wShowWindow, 整数型
+    .成员 cbReserved2, 整数型
+    .成员 lpReserved2, 字节型
+    .成员 hStdInput, 整数型
+    .成员 hStdOutput, 整数型
+    .成员 hStdError, 整数型
+
+.数据类型 文件时间_问号, , FILETIME,size = 8
+    .成员 底部时间数据, 整数型, , , dwLowDateTime,
+    .成员 顶部时间数据, 整数型, , , dwHighDateTime,
+
+.数据类型 重叠操作_问号, , OVERLAPPED
+    .成员 内部保留参数, 整数型, , , Internal
+    .成员 内部高位保留参数, 整数型, , , InternalHigh
+    .成员 低32位, 整数型, , , offset
+    .成员 高32位, 整数型, , , offsethigh
+    .成员 事件句柄, 整数型, , , hevent
+
+.数据类型 GUI线程信息_问号, , GUITHREADINFO
+    .成员 结构大小, 整数型, , , cbSize
+    .成员 标志, 整数型, , , flags
+    .成员 当前句柄, 整数型, , , hwndActive
+    .成员 焦点句柄, 整数型, , , hwndFocus
+    .成员 捕获句柄, 整数型, , , hwndCapture
+    .成员 当前菜单句柄, 整数型, , , hwndMenuOwner
+    .成员 移动大小句柄, 整数型, , , hwndMoveSize
+    .成员 插入符句柄, 整数型, , , hwndCaret
+    .成员 左边, 整数型, , , Left
+    .成员 顶边, 整数型, , , Top
+    .成员 右边, 整数型, , , Right
+    .成员 底边, 整数型, , , Bottom
+
+.数据类型 进程内存统计_问号, , PROCESS_问号MEMORY_问号COUNTERS
+    .成员 结构大小, 整数型, , , cb
+    .成员 页错误数量, 整数型, , , PageFaultCount
+    .成员 最高工作设置大小, 整数型, , , PeakWorkingSetSize
+    .成员 当前工作设置大小, 整数型, , , WorkingSetSize
+    .成员 最高页使用, 整数型, , , QuotaPeakPagedPoolUsage
+    .成员 当前页使用, 整数型, , , QuotaPagedPoolUsage
+    .成员 最高非页使用, 整数型, , , QuotaPeakNonPagedPoolUsage
+    .成员 当前非页使用, 整数型, , , QuotaNonPagedPoolUsage
+    .成员 页文件使用, 整数型, , , PagefileUsage
+    .成员 最高页文件使用, 整数型, , , PeakPagefileUsage
+
+.数据类型 窗口放置_问号, , WINDOWPLACEMENT
+    .成员 Length, 整数型
+    .成员 flags, 整数型
+    .成员 showCmd, 整数型
+    .成员 ptMinPosition_问号x, 整数型
+    .成员 ptMinPosition_问号y, 整数型
+    .成员 ptMaxPosition_问号x, 整数型
+    .成员 ptMaxPosition_问号y, 整数型
+    .成员 rcNormalPosition_问号left, 整数型
+    .成员 rcNormalPosition_问号top, 整数型
+    .成员 rcNormalPosition_问号right, 整数型
+    .成员 rcNormalPosition_问号bottom, 整数型
+
+.数据类型 消息_问号, , Msg
+    .成员 窗口句柄, 整数型, , , hWnd
+    .成员 消息号, 整数型, , , Message
+    .成员 附加参数1, 整数型, , , wParam
+    .成员 附加参数2, 整数型, , , lParam
+    .成员 发送时间, 整数型, , , time
+    .成员 光标横坐标, 整数型, , , x
+    .成员 光标纵坐标, 整数型, , , y
+
+.数据类型 超级组合框信息_问号, , COMBOBOXINFO
+    .成员 结构大小, 整数型, , , cbSize
+    .成员 条目左边, 整数型, , , Left1
+    .成员 条目顶边, 整数型, , , Top1
+    .成员 条目右边, 整数型, , , Right1
+    .成员 条目底边, 整数型, , , Bottom1
+    .成员 按钮左边, 整数型, , , Left2
+    .成员 按钮顶边, 整数型, , , Top2
+    .成员 按钮右边, 整数型, , , Right2
+    .成员 按钮底边, 整数型, , , Bottom2
+    .成员 按钮状态, 整数型, , , stateButton
+    .成员 超级组合框句柄, 整数型, , , hwndCombo
+    .成员 编辑框句柄, 整数型, , , hwndEdit
+    .成员 列表框句柄, 整数型, , , hwndList
+
+.数据类型 标题栏信息_问号, , TITLEBARINFO
+    .成员 结构大小, 整数型, , , cbSize
+    .成员 标题栏左边, 整数型, , , Left
+    .成员 标题栏顶边, 整数型, , , Top
+    .成员 标题栏右边, 整数型, , , Right
+    .成员 标题栏底边, 整数型, , , Bottom
+    .成员 标题栏状态, 整数型, , "5", rgstate
+
+.数据类型 初始化组件扩展_问号, , InitCommonControlsExType
+    .成员 结构大小, 整数型, , , dwSize
+    .成员 标志, 整数型, , , dwICC
+
+.数据类型 文字区_问号, , DRAWTEXTPARAMS
+    .成员 结构尺寸, 整数型, , , cbSize
+    .成员 输入长度, 整数型, , , iTabLength
+    .成员 左边空, 整数型, , , iLeftMargin
+    .成员 右边空, 整数型, , , iRightMargin
+    .成员 间隔长度, 整数型, , , uiLengthDrawn
+
+.数据类型 转换数据_问号, , XFORM
+    .成员 平行缩放, 小数型, , , eM11 
+    .成员 平行旋转, 小数型, , , eM12 
+    .成员 垂直旋转, 小数型, , , eM21 
+    .成员 垂直缩放, 小数型, , , eM22 
+    .成员 平行, 小数型, , , eDx 
+    .成员 垂直, 小数型, , , eDy 
+
+.数据类型 区域数据_问号, , RGNDATA 本数据类型嵌套了两个其它数据类型，调用时请注意
+    .成员 dwSize, 整数型, , , 区域大小
+    .成员 iType, 整数型, , , 区域类型
+    .成员 nCount, 整数型, , , 区域数量
+    .成员 nRgnSize, 整数型, , , 缓冲器大小
+    .成员 区域左边, 整数型, , , left
+    .成员 区域顶边, 整数型, , , top
+    .成员 区域右边, 整数型, , , right
+    .成员 区域底边, 整数型, , , bottom
+    .成员 区域数据缓冲区左边, 整数型, , , left
+    .成员 区域数据缓冲区顶边, 整数型, , , top
+    .成员 区域数据缓冲区右边, 整数型, , , right
+    .成员 区域数据缓冲区底边, 整数型, , , bottom
+
+.数据类型 套接字信息_问号, , WSADataType
+    .成员 版本, 短整数型, , , wVersion
+    .成员 高版本, 短整数型, , , wHighVersion
+    .成员 种类, 字节型, , "257", * WSA_问号DescriptionSize
+    .成员 系统状态, 字节型, , "2", * WSA_问号SysStatusSize
+    .成员 最大套接字, 短整数型, , , iMaxSockets
+    .成员 最大Udp, 短整数型, , , iMaxUdpDg
+    .成员 信息, 整数型, , , lpVendorInfo
+
+.数据类型 套接字地址_问号, , sockaddr
+    .成员 常量, 短整数型, , , sin_问号family
+    .成员 端口, 短整数型, , , sin_问号port
+    .成员 地址, 整数型, , , sin_问号addr
+    .成员 地址范围, 字节型, , "8", sin_问号zero
+
+.数据类型 空闲_问号, , LingerType
+    .成员 开关选项, 短整数型, , , l_问号onoff
+    .成员 空闲时间, 短整数型, , , l_问号linger
+
+.数据类型 网络控制块_问号, , NET_问号CONTROL_问号BLOCK，NCB
+    .成员 命令行代码, 字节型, , , ncb_问号command
+    .成员 返回代码, 字节型, , , ncb_问号retcode
+    .成员 本地会话标识符, 字节型, , , ncb_问号lsn
+    .成员 本地网络名称数, 字节型, , , ncb_问号num
+    .成员 信息缓冲区, 整数型, , , ncb_问号buffer
+    .成员 信息缓冲区大小, 短整数型, , , ncb_问号length
+    .成员 远程程序名, 字节型, , "16", ncb_问号callname
+    .成员 程序名, 字节型, , "16", ncb_问号name
+    .成员 接收超时, 字节型, , , ncb_问号rto
+    .成员 发送超时, 字节型, , , ncb_问号sto
+    .成员 发送地址, 整数型, , , ncb_问号post
+    .成员 网络适配器数, 字节型, , , ncb_问号lana_问号num
+    .成员 命令完成标志, 字节型, , , ncb_问号cmd_问号cplt
+    .成员 保留参数, 字节型, , "9", (9)Reserved, must be 0
+    .成员 对象事件句柄, 整数型, , , ncb_问号event
+
+.数据类型 传输控制协议记录_问号, , PMIB_问号TCPSTATS
+    .成员 再传输暂停规则, 整数型, , , dwRtoAlgorithm
+    .成员 再传输暂停最小值, 整数型, , , dwRtoMin
+    .成员 再传输暂停最大值, 整数型, , , dwRtoMax
+    .成员 连接最大值, 整数型, , , dwMaxConn
+    .成员 活跃公开值, 整数型, , , dwActiveOpens
+    .成员 消极公开值, 整数型, , , dwPassiveOpens
+    .成员 失败重试次数, 整数型, , , dwAttemptFails
+    .成员 重连次数, 整数型, , , dwEstabResets
+    .成员 当前连接, 整数型, , , dwCurrEstab
+    .成员 标准段, 整数型, , , dwInSegs
+    .成员 被传输段, 整数型, , , dwOutSegs
+    .成员 传输段, 整数型, , , dwRetransSegs
+    .成员 错误号, 整数型, , , dwInErrs
+    .成员 再传输段标志, 整数型, , , dwOutRsts
+    .成员 连接数量, 整数型, , , dwNumConns
+
+.数据类型 位图结构_问号, , BITMAP
+    .成员 bmType, 整数型, , , 一定是0
+    .成员 位图宽度, 整数型, , , bmWidth
+    .成员 位图高度, 整数型, , , bmHeight
+    .成员 bmWidthBytes, 整数型
+    .成员 bmPlanes, 整数型
+    .成员 bmBitsPixel, 整数型
+    .成员 bmBits, 整数型
+
+.数据类型 设备无关位图_问号, , BITMAPINFOHEADER
+    .成员 biSize, 整数型
+    .成员 biWidth, 整数型
+    .成员 biHeight, 整数型
+    .成员 biPlanes, 整数型
+    .成员 biBitCount, 整数型
+    .成员 biCompression, 整数型
+    .成员 biSizeImage, 整数型
+    .成员 biXPelsPerMeter, 整数型
+    .成员 biYPelsPerMeter, 整数型
+    .成员 biClrUsed, 整数型
+    .成员 biClrImportant, 整数型
+
+.数据类型 位图信息_问号, , BITMAPINFO
+    .成员 biSize, 整数型
+    .成员 biWidth, 整数型
+    .成员 biHeight, 整数型
+    .成员 biPlanes, 整数型
+    .成员 biBitCount, 整数型
+    .成员 biCompression, 整数型
+    .成员 biSizeImage, 整数型
+    .成员 biXPelsPerMeter, 整数型
+    .成员 biYPelsPerMeter, 整数型
+    .成员 biClrUsed, 整数型
+    .成员 biClrImportant, 整数型
+    .成员 rgbBlue, 字节型
+    .成员 rgbGreen, 字节型
+    .成员 rgbRed, 字节型
+    .成员 rgbReserved, 字节型
+
+.数据类型 文件信息_问号, , BY_问号HANDLE_问号FILE_问号INFORMATION
+    .成员 dwFileAttributes, 整数型
+    .成员 ftCreationTime_问号lowdatetime, 整数型
+    .成员 ftCreationTime_问号hightdatetime, 整数型
+    .成员 ftLastAccessTime_问号lowdatetime, 整数型
+    .成员 ftLastAccessTime_问号hightdatetime, 整数型
+    .成员 ftLastWriteTime_问号lowdatetime, 整数型
+    .成员 ftLastWriteTime_问号hightdatetime, 整数型
+    .成员 dwVolumeSerialNumber, 整数型
+    .成员 nFileSizeHigh, 整数型
+    .成员 nNumberOfLinks, 整数型
+    .成员 nFileIndexLow, 整数型
+
+.数据类型 物理字体属性信息_问号, , TEXTMETRIC
+    .成员 tmHeight, 整数型
+    .成员 tmAscent, 整数型
+    .成员 tmDescent, 整数型
+    .成员 tmInternalLeading, 整数型
+    .成员 tmExternalLeading, 整数型
+    .成员 tmAveCharWidth, 整数型
+    .成员 tmMaxCharWidth, 整数型
+    .成员 tmWeight, 整数型
+    .成员 tmOverhang, 整数型
+    .成员 tmDigitizedAspectX, 整数型
+    .成员 tmDigitizedAspectY, 整数型
+    .成员 tmFirstChar, 字节型
+    .成员 tmLastChar, 字节型
+    .成员 tmDefaultChar, 字节型
+    .成员 tmBreakChar, 字节型
+    .成员 tmItalic, 字节型
+    .成员 tmUnderlined, 字节型
+    .成员 tmStruckOut, 字节型
+    .成员 tmPitchAndFamily, 字节型
+    .成员 tmCharSet, 字节型
+
+.数据类型 字符集信息_问号, , FONTSIGNATURE
+    .成员 fsUsb, 整数型, , "5"
+    .成员 fsCsb, 整数型, , "3"
+
+.数据类型 图标信息_问号, , ICONINFO
+    .成员 fIcon, 整数型
+    .成员 xHotspot, 整数型
+    .成员 yHotspot, 整数型
+    .成员 hbmMask, 整数型
+    .成员 hbmColor, 整数型
+
+.数据类型 设定执行文件信息_问号, , SHELLEXECUTEINFO
+    .成员 结构大小, 整数型, , , cbSize
+    .成员 标志, 整数型, , , fMask
+    .成员 窗口句柄, 整数型, , , hwnd
+    .成员 操作命令, 文本型, , , lpVerb
+    .成员 文件名, 文本型, , , lpFile
+    .成员 应用程序参数, 文本型, , , lpParameters
+    .成员 目录, 文本型, , , lpDirectory
+    .成员 显示标志, 整数型, , , nShow
+    .成员 实例句柄, 整数型, , , hInstApp
+    .成员 项目标识符列表结构指针, 整数型, , , lpIDList
+    .成员 文件类别, 文本型, , , lpClass
+    .成员 热键句柄, 整数型, , , hkeyClass
+    .成员 热键, 整数型, , , dwHotKey
+    .成员 图标句柄, 整数型, , , hIcon
+    .成员 进程句柄, 整数型, , , hProcess
+
+.数据类型 工作状态区域信息_问号, , NOTIFYICONDATA
+    .成员 结构大小, 整数型, , , cbSize
+    .成员 窗口句柄, 整数型, , , hWnd
+    .成员 标识符, 整数型, , , uId
+    .成员 标志, 整数型, , , uFlags
+    .成员 返回信息, 整数型, , , ucallbackMessage
+    .成员 图标句柄, 整数型, , , hIcon
+    .成员 提示文本, 字节型, , "64", szTip
+
+.数据类型 选择字体_问号, , CHOOSEFONT
+    .成员 结构大小, 整数型, , , lStructSize
+    .成员 窗口句柄, 整数型, , , hwndOwner，caller's window handle
+    .成员 设备场景句柄, 整数型, , , hDC，printer DC/IC or NULL
+    .成员 字体结构指针, 整数型, , , lpLogFont‘ptr. to a LOGFONT struct
+    .成员 点大小, 整数型, , , iPointSize，10 * size in points of selected font
+    .成员 标志, 整数型, , , flags，enum. type flags
+    .成员 颜色值, 整数型, , , rgbColors，returned text color
+    .成员 自定义数据, 整数型, , , lCustData，data passed to hook fn.
+    .成员 回调函数地址, 整数型, , , lpfnHook，ptr. to hook function
+    .成员 模板名称, 文本型, , , lpTemplateName，custom template name
+    .成员 实例句柄, 整数型, , , hInstance，instance handle of.EXE that contains cust. dlg. template
+    .成员 字体风格, 文本型, , , lpszStyle，return the style field here must be LF_问号FACESIZE(32) or bigger
+    .成员 字体类型, 短整数型, , , nFontType，same value reported to the EnumFonts,call back with the extra FONTTYPE_问号 bits added
+    .成员 空白队列, 短整数型
+    .成员 最小尺寸, 整数型
+    .成员 最大尺寸, 整数型
+
+.数据类型 路径结构_问号, , ADDJOB_问号INFO_问号1
+    .成员 路径, 整数型, , , lpPath,到文件名的一个路径
+    .成员 作业编号, 整数型, , , JobId,一个作业编号
+
+.数据类型 文件结构信息_问号, , OFSTRUCT
+    .成员 结构长度, 字节型, , , cBytes,设置成结构的长度（目前是136）
+    .成员 文件盘符, 字节型, , , fFixedDisk,参见相关帮助
+    .成员 错误代码, 整数型, , , nErrCode，参见相关帮助
+    .成员 保留1, 整数型, , , Reserved1,保留不用
+    .成员 保留2, 整数型, , , Reserved2,保留不用
+    .成员 文件路径, 文本型, , "128", szPathName,文件的完整路径名
+
+.数据类型 查找的文件信息_问号, , WIN32_问号FIND_问号DATA
+    .成员 dwFileAttributes, 整数型
+    .成员 dwLowDateTime, 整数型
+    .成员 dwHighDateTime, 整数型
+    .成员 dwLowDateTime1, 整数型
+    .成员 dwHighDateTime1, 整数型
+    .成员 dwLowDateTime2, 整数型
+    .成员 dwHighDateTime2, 整数型
+    .成员 nFileSizeHigh, 整数型
+    .成员 nFileSizeLow, 整数型
+    .成员 dwReserved0, 整数型
+    .成员 dwReserved1, 整数型
+    .成员 cFileName, 文本型, , "260"
+    .成员 cAlternate, 文本型, , "14"
+
+.数据类型 系统时间_问号, , SYSTEMTIME
+    .成员 年, 短整数型, , , wYear
+    .成员 月, 短整数型, , , wMonth
+    .成员 星期, 短整数型, , , wDayOfWeek
+    .成员 日, 短整数型, , , wDay
+    .成员 小时, 短整数型, , , wHour
+    .成员 分, 短整数型, , , wMinute
+    .成员 秒, 短整数型, , , wSecond
+    .成员 毫秒, 短整数型, , , wMilliseconds
+
+.数据类型 项目标识符列表_问号, , ITEMIDLIST
+    .成员 结构大小, 整数型, , , cb
+    .成员 标识符长度, 字节型, , "255", abID
+
+.数据类型 文件夹信息_问号, , BROWSEINFO
+    .成员 窗口句柄, 整数型, , , hOwner
+    .成员 根目录, 整数型, , , pidlRoot
+    .成员 显示名称, 文本型, , , pszDisplayName
+    .成员 标题, 文本型, , , lpszTitle
+    .成员 标志, 整数型, , , ulFlags
+    .成员 回调函数地址, 整数型, , , lpfn
+    .成员 回调函数参数, 整数型, , , lParam
+    .成员 图像索引, 整数型, , , iImage
+
+.数据类型 打开文件名_问号, , OPENFILENAME
+    .成员 结构大小, 整数型, , , lStructSize
+    .成员 窗口句柄, 整数型, , , hwndOwner
+    .成员 实例句柄, 整数型, , , hInstance
+    .成员 过滤器, 字节集, , , lpstrFilter
+    .成员 自定义过滤器, 文本型, , , lpstrCustomFilter
+    .成员 自定义过滤器最大长度, 整数型, , , nMaxCustFilter
+    .成员 过滤器索引, 整数型, , , nFilterIndex
+    .成员 文件名, 字节集, , , lpstrFile
+    .成员 文件名最大长度, 整数型, , , nMaxFile
+    .成员 文件标题, 文本型, , , lpstrFileTitle
+    .成员 文件标题最大长度, 整数型, , , nMaxFileTitle
+    .成员 初始目录, 文本型, , , lpstrInitialDir
+    .成员 标题, 文本型, , , lpstrTitle
+    .成员 标志, 整数型, , , flags
+    .成员 文件偏移量, 整数型, , , nFileOffset
+    .成员 文件扩展名, 整数型, , , nFileExtension
+    .成员 默认扩展名, 文本型, , , lpstrDefExt
+    .成员 自定义数据, 整数型, , , lCustData
+    .成员 回调函数地址, 整数型, , , lpfnHook
+    .成员 模板名, 文本型, , , lpTemplateName
+
+.数据类型 系统信息_问号, , SYSTEM_问号INFO
+    .成员 dwOemID, 整数型
+    .成员 dwPageSize, 整数型
+    .成员 lpMinimumApplicationAddress, 整数型
+    .成员 lpMaximumApplicationAddress, 整数型
+    .成员 dwActiveProcessorMask, 整数型
+    .成员 dwNumberOrfProcessors, 整数型
+    .成员 dwProcessorType, 整数型
+    .成员 dwAllocationGranularity, 整数型
+    .成员 dwReserved, 整数型
+
+.数据类型 电源状态信息_问号, , SYSTEM_问号POWER_问号STATUS
+    .成员 ACLineStatus, 字节型
+    .成员 BatteryFlag, 字节型
+    .成员 BatteryLifePercent, 字节型
+    .成员 Reserved1, 字节型
+    .成员 BatteryLifeTime, 整数型
+    .成员 BatteryFullLifeTime, 整数型
+
+.数据类型 页码信息_问号, , CPINFO
+    .成员 最大字符尺寸, 整数型, , , MaxCharSize,参见相关帮助
+    .成员 默认字符, 字节型, , "2", DefaultChar,参见相关帮助
+    .成员 首字节, 字节型, , "12", LeadByte,
+
+.数据类型 模块地址_问号, , MODULEENTRY32
+    .成员 结构大小, 整数型, , , dwSize
+    .成员 模块标识符, 整数型, , , th32ModuleID
+    .成员 进程标识符, 整数型, , , th32ProcessID
+    .成员 模块数, 整数型, , , GlblcntUsage
+    .成员 进程数, 整数型, , , ProccntUsage
+    .成员 模块基址, 整数型, , , modBaseAddr
+    .成员 模块基址大小, 整数型, , , modBaseSize
+    .成员 模块句柄, 整数型, , , hModule
+    .成员 模块名称, 字节型, , "256", szModule
+    .成员 文件路径, 字节型, , "260", szExePath
+
+.数据类型 长整数型_问号, , LARGE_问号INTEGER，此数据类型的意思请看msdn帮助
+    .成员 低三十二位, 整数型, , , lowpart
+    .成员 高三十二位, 整数型, , , highpart
+
+.数据类型 系统状态栏信息_问号, , APPBARDATA
+    .成员 结构大小, 整数型, , , cbSize
+    .成员 窗口句柄, 整数型, , , hwnd
+    .成员 回调信息值, 整数型, , , uCallbackMessage
+    .成员 边框位置, 整数型, , , uEdge
+    .成员 左边, 整数型, , , Left
+    .成员 顶边, 整数型, , , Top
+    .成员 右边, 整数型, , , Right
+    .成员 底边, 整数型, , , Bottom
+    .成员 参数值, 整数型, , , lParam
+
+.数据类型 回收站信息_问号, , SHQUERYRBINFO
+    .成员 结构大小, 整数型, , , cbSize
+    .成员 尺寸大小低64位, 整数型, , , i64Size_问号LowPart
+    .成员 尺寸大小高64位, 整数型, , , i64Size_问号HighPart
+    .成员 条目数量低64位, 整数型, , , i64NumItems_问号LowPart
+    .成员 条目数量高64位, 整数型, , , i64NumItems_问号HighPart
+
+.数据类型 版本信息_问号, , OSVERSIONINFO
+    .成员 版本信息大小, 整数型, , , dwOSVersionInfoSize
+    .成员 主版本, 整数型, , , dwMajorVersion
+    .成员 次版本, 整数型, , , dwMinorVersion
+    .成员 构造版本, 整数型, , , dwBuildNumber
+    .成员 平台标识符, 整数型, , , dwPlatformId
+    .成员 CSD版本, 文本型, , "128", szCSDVersion
+
+.数据类型 内存状态_问号, , MEMORYSTATUS
+    .成员 结构长度, 整数型, , , dwLength
+    .成员 实际存储器百分比, 整数型, , , dwMemoryLoad
+    .成员 总物理内存, 整数型, , , dwTotalPhys
+    .成员 可用内存, 整数型, , , dwAvailPhys
+    .成员 总页文件, 整数型, , , dwTotalPageFile
+    .成员 可用页文件, 整数型, , , dwAvailPageFile
+    .成员 总虚拟内存, 整数型, , , dwTotalVirtual
+    .成员 可用虚拟内存, 整数型, , , dwAvailVirtual
+
+.数据类型 系统能源性能_问号, , SYSTEM_问号POWER_问号CAPABILITIES
+    .成员 当前能量按钮, 整数型, , , PowerButtonPresent
+    .成员 当前睡眠按钮, 整数型, , , SleepButtonPresent
+    .成员 当前限制, 整数型, , , LidPresent
+    .成员 支持睡眠状态1, 整数型, , , SystemS1
+    .成员 支持睡眠状态2, 整数型, , , SystemS2
+    .成员 支持睡眠状态3, 整数型, , , SystemS3
+    .成员 支持睡眠状态4, 整数型, , , SystemS4
+    .成员 支持关机状态5, 整数型, , , SystemS5
+    .成员 支持文件冬眠, 整数型, , , HiberFilePresent
+    .成员 支持守夜能力, 整数型, , , FullWake
+    .成员 支持视频显示调节, 整数型, , , VideoDimPresent
+    .成员 支持高级电源管理, 整数型, , , ApmPresent
+    .成员 支持不间断电源, 整数型, , , UpsPresent
+    .成员 热量控制, 整数型, , , ThermalControl
+    .成员 支持处理器减速, 整数型, , , ProcessorThrottle
+    .成员 处理器最小减速, 字节型, , , ProcessorMinThrottle
+    .成员 处理器最大减速, 字节型, , , ProcessorMaxThrottle
+    .成员 保留参数1, 字节型, , "4", spare2(4)
+    .成员 支持移动固定磁盘, 整数型, , , DiskSpinDown
+    .成员 保留参数2, 字节型, , "8", spare3
+    .成员 是否多电池, 整数型, , , SystemBatteriesPresent
+    .成员 是否短期系统电池, 整数型, , , BatteriesAreShortTerm
+    .成员 系统电池间隔尺寸, 整数型, , "3", Granularity
+    .成员 系统电池容量, 整数型, , "3", Capacity
+    .成员 最低系统睡眠状态1, 整数型, , , AcOnLineWake
+    .成员 最低系统睡眠状态2, 整数型, , , SoftLidWake
+    .成员 最低系统睡眠状态3, 整数型, , , RtcWake
+    .成员 最小可允许系统能力, 整数型, , , MinDeviceWakeState
+    .成员 默认系统能力状态, 整数型, , , DefaultLowLatencyWake
+
+.数据类型 闪烁信息_问号, , FLASHWINFO
+    .成员 结构大小, 整数型, , , cbSize
+    .成员 窗口句柄, 整数型, , , hwnd
+    .成员 标志, 整数型, , , dwFlags
+    .成员 闪烁数量, 整数型, , , uCount
+    .成员 超时值, 整数型, , , dwTimeout
+
+.数据类型 LUID_问号
+    .成员 LowPart, 整数型
+    .成员 HighPart, 整数型
+
+.数据类型 数值格式化_问号, , NUMBERFMT
+    .成员 小数位数, 整数型, , , NumDigits
+    .成员 是否使用0, 整数型, , , LeadingZero
+    .成员 组大小, 整数型, , , Grouping
+    .成员 小数点符号, 文本型, , , lpDecimalSep
+    .成员 组分隔符号, 文本型, , , lpThousandSep
+    .成员 负数模式, 整数型, , , NegativeOrder
+
+.数据类型 INTERNET高速缓存信息_问号, , INTERNET_问号CACHE_问号ENTRY_问号INFO
+    .成员 结构大小, 整数型, , , dwStructSize
+    .成员 网络地址源名称, 整数型, , , lpszSourceUrlName
+    .成员 本地文件名, 整数型, , , lpszLocalFileName
+    .成员 缓存入口类型, 整数型, , , CacheEntryType
+    .成员 使用者数量, 整数型, , , dwUseCount
+    .成员 连接速度, 整数型, , , dwHitRate
+    .成员 最低尺寸, 整数型, , , dwSizeLow
+    .成员 最高尺寸, 整数型, , , dwSizeHigh
+    .成员 最后修改时间低位, 整数型, , , dwLowDateTime
+    .成员 最后修改时间高位, 整数型, , , dwHighDateTime
+    .成员 终止时间低位, 整数型, , , dwLowDateTime1
+    .成员 终止时间高位, 整数型, , , dwHighDateTime1
+    .成员 最后访问时间低位, 整数型, , , dwLowDateTime2
+    .成员 最后访问时间高位, 整数型, , , dwHighDateTime2
+    .成员 最后同步时间低位, 整数型, , , dwLowDateTime3
+    .成员 最后同步时间高位, 整数型, , , dwHighDateTime3
+    .成员 头信息, 整数型, , , lpHeaderInfo
+    .成员 头信息大小, 整数型, , , dwHeaderInfoSize
+    .成员 文件扩展名, 整数型, , , lpszFileExtension
+    .成员 保留参数, 整数型, , , dwReserved
+    .成员 解除时间, 整数型, , , dwExemptDelta
+
+.数据类型 操纵杆信息_问号, , JOYINFO
+    .成员 横坐标, 长整数型, , , x
+    .成员 纵坐标, 长整数型, , , y
+    .成员 z坐标, 长整数型, , , z
+    .成员 按钮状态, 长整数型, , , Buttons
+
+.数据类型 操纵杆性能_问号, , JOYCAPS
+    .成员 厂商识别符, 整数型, , , wMid
+    .成员 产品识别符, 整数型, , , wPid
+    .成员 产品名称, 文本型, , , szPname
+    .成员 最小横坐标, 长整数型, , , wXmin
+    .成员 最大横坐标, 长整数型, , , wXmax
+    .成员 最小纵坐标, 长整数型, , , wYmin
+    .成员 最大纵坐标, 长整数型, , , wYmax
+    .成员 最小Z座标, 长整数型, , , wZmin
+    .成员 最大Z座标, 长整数型, , , wZmax
+    .成员 按钮数量, 长整数型, , , wNumButtons
+    .成员 最小频率, 长整数型, , , wPeriodMin
+    .成员 最大频率, 长整数型, , , wPeriodMax
+
+.数据类型 时区信息_问号, , TIME_问号ZONE_问号INFORMATION
+    .成员 Bias, 整数型
+    .成员 StandardName, 短整数型, , "32"
+    .成员 系统时间年, 短整数型
+    .成员 系统时间月, 短整数型
+    .成员 系统时间星期, 短整数型
+    .成员 系统时间天, 短整数型
+    .成员 系统时间时, 短整数型
+    .成员 系统时间分, 短整数型
+    .成员 系统时间秒, 短整数型
+    .成员 系统时间毫秒, 短整数型
+    .成员 StandardBias, 整数型
+    .成员 DaylightName, 短整数型, , "32"
+    .成员 时区时间年, 短整数型
+    .成员 时区时间月, 短整数型
+    .成员 时区时间星期, 短整数型
+    .成员 时区时间天, 短整数型
+    .成员 时区时间时, 短整数型
+    .成员 时区时间分, 短整数型
+    .成员 时区时间秒, 短整数型
+    .成员 时区时间毫秒, 短整数型
+    .成员 DaylightBias, 整数型

@@ -1,0 +1,19 @@
+{
+  "算法": "sha256",
+  "生成器": "构建装配/形态装配/扩展指纹.py",
+  "生成物声明": "生成物，禁手改。生成器：构建装配/形态装配/扩展指纹.py",
+  "生成命令": "python3 构建装配/形态装配/扩展指纹.py",
+  "范围": "声明、Rust源码、Cargo清单与锁文件、程序文本、模块及技能制品；不含机器局部支持库制品、说明散文、缓存、指纹本身。",
+  "指纹": {
+    "包声明.json": "2ab77e9ef98067b93ecb6f9a95692bd18b8937c9e63f3d00b2346c90907fba07",
+    "能力声明/7977.json": "3f9a55840bd6929b77e73bcb0f873e3e81a992677c63e313ae3576aa9b881065",
+    "路径参数编码模块.模块制品": "ac8ec14047bf92d8aa4c7bef13dece6d4903ce522dd220ac891e4da5700554b8",
+    "路径参数编码模块.程序文本": "5c997be0ca32939fe247baa51aeb9c1bc5e969a432dd42f29ba2e8566f72aaef",
+    "错误码表/3301.json": "92123cc33508954f1ad575012c3fad94c88fac85076fcee9d6ea1b0ebd2a16a4",
+    "错误码表/3302.json": "a099faa418a81676b4e1de5863850d5dba185226cff4601c960e92030d21a7fa",
+    "错误码表/3303.json": "65e697ae075d07d90d5902d366428d2ba1b7ce185615a7cce0ae5bb09ab8ca5f",
+    "错误码表/4101.json": "3c6d5cd73f4b54b18d18b697c021efa0cae7a15d07b080dfed07ae75a17dba51",
+    "错误码表/4102.json": "7698364ae8289d6ee3f902ff1a7db562114f844cbc10c74ef68e0bbf9ed41ffe",
+    "错误码表/4103.json": "67dee13f54c2e25dd21d271d961a4fbc0a72d97ac9c3d6d073fb3beaae96dedc"
+  }
+}

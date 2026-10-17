@@ -1,0 +1,45 @@
+# -*- coding: utf-8 -*-
+"""常量 —— PE/资源格式规范里的名称表与位表（原 `界面反解.py` 模块级常量，纯搬家）。
+
+名称只为出报告，不参与解码。
+"""
+
+资源类型名 = {1: "CURSOR", 2: "BITMAP", 3: "ICON", 4: "MENU", 5: "DIALOG", 6: "STRING",
+              7: "FONTDIR", 8: "FONT", 9: "ACCELERATOR", 10: "RCDATA", 11: "MESSAGETABLE",
+              12: "GROUP_CURSOR", 14: "GROUP_ICON", 16: "VERSION", 17: "DLGINCLUDE",
+              19: "PLUGPLAY", 20: "VXD", 21: "ANICURSOR", 22: "ANIICON", 23: "HTML",
+              24: "MANIFEST"}
+资源类型名[240] = "自定义240"
+预定义控件类 = {0x80: "BUTTON", 0x81: "EDIT", 0x82: "STATIC", 0x83: "LISTBOX",
+                0x84: "SCROLLBAR", 0x85: "COMBOBOX"}
+菜单选项位 = {0x01: "MF_GRAYED", 0x02: "MF_DISABLED", 0x04: "MF_CHECKED", 0x08: "MF_POPUP_ALT",
+              0x10: "MF_POPUP", 0x20: "MF_MENUBARBREAK", 0x40: "MF_MENUBREAK", 0x80: "MF_END"}
+控件样式位 = {0x80000000: "WS_POPUP", 0x40000000: "WS_CHILD", 0x10000000: "WS_VISIBLE",
+              0x08000000: "WS_DISABLED", 0x04000000: "WS_CLIPSIBLINGS", 0x02000000: "WS_CLIPCHILDREN",
+              0x00800000: "WS_BORDER", 0x00200000: "WS_VSCROLL", 0x00100000: "WS_HSCROLL",
+              0x00020000: "WS_GROUP", 0x00010000: "WS_TABSTOP"}
+对话框样式位 = {0x80000000: "DS_MODALFRAME", 0x40000000: "DS_CONTROL", 0x00000040: "DS_SETFONT",
+                0x00000001: "DS_ABSALIGN", 0x00000004: "DS_SYSMODAL", 0x00000100: "DS_NOIDLEMSG",
+                0x00000400: "DS_3DLOOK", 0x00000800: "DS_FIXEDSYS", 0x00008000: "DS_CENTER",
+                0x00010000: "DS_CENTERMOUSE", 0x00020000: "DS_CONTEXTHELP"}
+按钮样式 = {0x00000000: "BS_PUSHBUTTON", 0x00000001: "BS_DEFPUSHBUTTON", 0x00000002: "BS_CHECKBOX",
+            0x00000003: "BS_AUTOCHECKBOX", 0x00000004: "BS_RADIOBUTTON", 0x00000005: "BS_3STATE",
+            0x00000006: "BS_AUTO3STATE", 0x00000007: "BS_GROUPBOX", 0x00000009: "BS_AUTORADIOBUTTON",
+            0x0000000B: "BS_OWNERDRAW", 0x00000080: "BS_BITMAP", 0x000000A0: "BS_AUTOCHECKBOX|BS_LEFTTEXT"}
+编辑样式 = {0x00000000: "ES_LEFT", 0x00000001: "ES_CENTER", 0x00000002: "ES_RIGHT",
+            0x00000004: "ES_MULTILINE", 0x00000008: "ES_UPPERCASE", 0x00000020: "ES_AUTOVSCROLL",
+            0x00000040: "ES_AUTOHSCROLL", 0x00000080: "ES_NOHIDESEL", 0x00000800: "ES_READONLY",
+            0x00001000: "ES_WANTRETURN", 0x00002000: "ES_NUMBER", 0x00000100: "ES_PASSWORD"}
+静态样式 = {0x00000000: "SS_LEFT", 0x00000001: "SS_CENTER", 0x00000002: "SS_RIGHT",
+            0x00000003: "SS_ICON", 0x0000000E: "SS_BITMAP", 0x0000000B: "SS_SIMPLE",
+            0x0000000C: "SS_LEFTNOWORDWRAP", 0x00000100: "SS_SUNKEN", 0x00000200: "SS_NOPREFIX"}
+组合框样式 = {0x00000000: "CBS_SIMPLE", 0x00000001: "CBS_DROPDOWN", 0x00000002: "CBS_DROPDOWNLIST",
+              0x00000003: "CBS_DROPDOWN|CBS_AUTOHSCROLL"}
+虚拟键名 = {0x1B: "VK_ESCAPE", 0x21: "VK_PRIOR/PageUp", 0x22: "VK_NEXT/PageDown", 0x0D: "VK_RETURN",
+            0x08: "VK_BACK", 0x09: "VK_TAB", 0x2E: "VK_DELETE", 0x2D: "VK_INSERT", 0x24: "VK_HOME",
+            0x23: "VK_END", 0x25: "VK_LEFT", 0x26: "VK_UP", 0x27: "VK_RIGHT", 0x28: "VK_DOWN",
+            0x70: "VK_F1", 0x71: "VK_F2", 0x72: "VK_F3", 0x77: "VK_F8", 0x78: "VK_F9"}
+压缩签名 = [(b"\x78\x9c", "zlib 默认"), (b"\x78\x01", "zlib 最快"), (b"\x78\xda", "zlib 最优"),
+            (b"\x1f\x8b\x08", "gzip"), (b"\xfd7zXZ\x00", "xz/lzma"), (b"PK\x03\x04", "zip"),
+            (b"7z\xbc\xaf\x27\x1c", "7z"), (b"UPX0", "UPX"), (b"Rar!\x1a\x07", "rar"),
+            (b"\x28\xb5\x2f\xfd", "zstd"), (b"BZh", "bzip2")]

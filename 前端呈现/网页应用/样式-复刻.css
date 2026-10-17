@@ -1,0 +1,131 @@
+/* 样式-复刻 —— 菜单栏与对话框这两块「1:1 复刻件」的样式，与全站骨架分开放。
+ *
+ * 复刻源两个，各管一半（取证见 `前端呈现/说明.md`）：
+ *   · 菜单栏：**文字**取自 `e.exe` 的菜单资源 127（静态反解，181 项逐字）；
+ *     **位置/底/字号/项距/助记字下划线**取自运行态截图（菜单栏 y=32..58，底 #f0f0f0，
+ *     首项字母在 x=32 且带下划线，项距 ~43px，汉字步距 12px ⇒ 宋体 9pt）。
+ *   · 对话框：**控件类/坐标/尺寸/标题/字体**取自资源类型 5（静态反解，18 个 / 281 控件）；
+ *     **配色**取自截图（资源里没有配色表，见 `项目文档/设计文档/界面实测.md` §七）。
+ *
+ * 配色全部走 `页面样式.css` 的变量（那些值也是从截图读的），本文件不另立一套色。
+ */
+
+/* ── 菜单栏（截图 y=32..58 · 高 27 · 底 #f0f0f0）───────────────────────── */
+.菜单栏 {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  padding: 0 4px;
+  background: var(--面板);
+  /* 上 1px 白高光 + 下 1px 3D 暗边：截图 y=32 是 #ffffff、y=59 是 #a0a0a0（刻蚀分隔）。 */
+  border-top: 1px solid var(--底);
+  border-bottom: 1px solid var(--线);
+  overflow: visible;
+}
+
+.易顶层包 { position: relative; }
+
+/* 顶层项：截图里首字母带下划线（`&F.程序` 的 F 在 x=32 处有 6px 下划线）。 */
+.易顶层 {
+  font: inherit;
+  color: var(--文);
+  background: transparent;
+  border: 1px solid transparent;
+  padding: 1px 6px;
+  cursor: pointer;
+}
+
+.易顶层:hover, .易顶层[aria-expanded="true"] {
+  background: var(--板二);
+  border-color: var(--线);
+}
+
+.易弹出 {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 40;
+  min-width: 168px;
+  padding: 2px 0;
+  background: var(--底);
+  border: 1px solid var(--深线);
+  box-shadow: 2px 2px 0 var(--线);
+  font: 9pt/1.5 var(--宋体);
+}
+
+.易项 {
+  position: relative;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 1px 10px 1px 12px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.易项:hover { background: var(--主); color: var(--主文); }
+.易项:hover .键 { color: var(--主文); }
+.易项.灰 { color: var(--灰二); cursor: default; }
+.易项.灰:hover { background: transparent; color: var(--灰二); }
+
+.易项 .键 { margin-left: auto; padding-left: 22px; color: var(--灰); }
+.易项 .角 { margin-left: auto; padding-left: 14px; color: var(--灰); }
+.易项:hover .角 { color: var(--主文); }
+
+.易分隔 { height: 0; margin: 2px 5px; border-top: 1px solid var(--线); }
+
+.易项 .易弹出 { top: -3px; left: 100%; }
+
+/* ── 对话框区（布局 1:1 · 颜色取自截图）────────────────────────────────── */
+.台 {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  max-height: 46vh;
+  margin-top: 6px;
+  padding: 12px;
+  overflow: auto;
+  background: var(--板二);
+  border: 1px solid var(--线);
+}
+
+/* 对话框本体：位置与尺寸照资源。边框用 box-shadow 画而不用 border：
+   绝对定位的子控件以 padding box 为原点，用 border 会让每个控件整体偏 1 像素（实测过）。
+   overflow: hidden 是照 Win32 的做派：组合框的 cy 含下拉区（实测 284 的 cy=135 而框高 76），
+   真对话框把它裁掉，这里也裁。 */
+.易对话框 {
+  position: relative;
+  flex: none;
+  overflow: hidden;
+  color: var(--文);
+  background: var(--面板);
+  box-shadow: 0 0 0 1px var(--深线), inset 1px 1px 0 var(--底), inset -1px -1px 0 var(--线);
+}
+
+.易控件 {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  padding: 0 3px;
+  font: inherit;
+  font-size: 9pt;
+  line-height: 1.15;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.易控件.钮 {
+  justify-content: center;
+  background: var(--面板);
+  border: 1px solid var(--深线);
+}
+
+.易控件.编, .易控件.列, .易控件.组, .易控件.他 {
+  justify-content: flex-start;
+  background: var(--底);
+  border: 1px solid var(--深线);
+}
+
+.易控件.静 { justify-content: flex-start; align-items: flex-start; }
+.易控件.灰 { color: var(--灰二); }

@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>系统工程平台 · 网页版编译器</title>
+<link rel="stylesheet" href="页面样式.css">
+<link rel="stylesheet" href="样式-框架.css">
+<link rel="stylesheet" href="样式-复刻.css">
+<link rel="stylesheet" href="样式-设计.css">
+</head>
+<body class="视图-代码">
+
+<!-- 骨架按 `e.exe` 运行态截图逐像素量出来的八条带摆（取证见 `前端呈现/说明.md`）：
+     标题条 32 · 菜单栏 27 · 工具条区 69 · 客户区 439（内含 23 像素页签行）· 底部页签带 36 ·
+     页签内容 139 · 状态条 13。配色与字号同出这张截图：底 #f0f3f9 / #f0f0f0 / #ffffff，
+     暗边 #a0a0a0，字 宋体 9pt。 -->
+<!-- 底部那 8 个页签的名字逐字照抄参考图（提示 · 输出 · 调用表 · 监视表 · 变量表 ·
+     搜寻1 · 搜寻2 · 剪辑历史）—— 名字是人家的固定页签，**内容是我们的**：每个格里
+     装的是本平台四个冻结端点的真读数，没有一格是摆设。 -->
+
+<header class="标题条">
+  <span class="牌">系统工程平台 · 网页版编译器</span>
+  <span id="连接状态" class="状态">未连接</span>
+  <span class="复刻标" title="八条带 · 配色 · 字号逐像素取自两张运行态截图；菜单文字与对话框布局取自资源反解">复刻自截图</span>
+</header>
+
+<!-- 菜单栏：10 个顶层弹出 / 181 项，1:1 取自 e.exe 菜单资源 127（易语言 5.9.0.0）。
+     树与文字在 菜单表.js，渲染与点一下的读数在 菜单栏.js。 -->
+<nav class="菜单栏" id="易菜单栏" aria-label="主菜单（复刻自 e.exe 菜单资源 127）"></nav>
+
+<div class="工具条区">
+  <!-- 图标行：截图 y=60..84，图标列自 x=12 起。按钮与图标在 工具栏.js。 -->
+  <div class="图标行" id="图标行"></div>
+  <div class="控制行">
+    <label>载入示例 <select id="示例选"></select></label>
+    <button id="载入按钮">载入到编辑器</button>
+    <button id="编译按钮" class="主">编译</button>
+    <button id="清空按钮" class="次">清空</button>
+    <button id="视图按钮">窗口设计视图</button>
+    <span id="工具状态" class="状态"></span>
+  </div>
+</div>
+
+<main class="客户区">
+
+  <aside class="左栏">
+    <!-- 窗口设计视图时，这一栏换成属性面板（参考图：左=属性面板）。 -->
+    <div class="属性面板" id="属性面板">
+      <div class="属头">
+        <span class="对" id="属头名">窗体1</span>
+        <span class="灰" id="属头类">窗口</span>
+      </div>
+      <div class="属表" id="属表"></div>
+      <div class="属脚">在此处选择加入事件处理子程序</div>
+    </div>
+
+    <div class="左格 选" id="左格_支持库">
+      <div class="树" id="支持库树"></div>
+      <p class="提示" id="树状态" style="padding: 0 6px"></p>
+    </div>
+
+    <div class="左格" id="左格_程序">
+      <div class="折体">
+        <p class="提示">
+          UTF-8 · 换行 LF（读入认 CRLF）· <code>Tab</code> 插 4 个半角空格 · 行号只报位置 ·
+          关键字以 <code>.</code> 开头 · 注释 <code>'</code> 至行尾 · 文本字面量全角引号 ·
+          常量 <code>#名字</code> · 运算符全角 · 界符半角 · 逗号间的空实参是有意义的位次。
+          判据：<code>项目文档/设计文档/程序文本格式.md</code>。
+        </p>
+        <p class="提示">
+          <b>案例族</b>（<code>GET /接口/案例</code> · <code>POST /接口/案例/跑</code>）：列案例 ·
+          跑案例 · 回执都在应答里（清单每项带「最新回执」，跑完带回「回执」）。判定在后端：
+          案例根读不到回 <code>9002</code>、回执缺失回 <code>9003</code> —— 本页原样摆结构化回执，不吞错。
+        </p>
+        <div class="行">
+          <button id="案例列按钮" class="次">列案例</button>
+          <input id="案例标识" class="路" type="text" placeholder="案例标识（一个目录名）">
+          <button id="案例跑按钮" class="次">跑案例</button>
+          <span id="案例状态" class="状态"></span>
+        </div>
+        <div id="案例果" class="果"></div>
+        <p class="提示">
+          <b>程序文本</b>（<code>POST /接口/程序文本</code>，体 <code>{"动作":"读"|"写","路径":…,"正文":…}</code>）：后端按<b>调用方自带的那份路径</b>真读 / 真写（路径留空时「读」回内置模板）；失败逐种各一个明确码 <code>9008</code>–<code>9012</code> —— 本页<b>如实显示</b>回执，不假装成功。
+        </p>
+        <div class="行">
+          <button id="程序文本读" class="次">读</button>
+          <button id="程序文本写" class="次">写</button>
+          <span id="程序文本状态" class="状态"></span>
+        </div>
+        <div id="程序文本果" class="果"></div>
+        <details class="折">
+          <summary>通用同源只读口（静态件，不是端点）</summary>
+          <div class="折体">
+            <p class="提示">
+              案例根 <code>测试验证/案例/</code>：每案例一个目录（<code>案例.json</code> ·
+              <code>输入.程序文本</code> · <code>期望.json</code>），跑完追加一行到
+              <code>测试验证/案例/运行回执.jsonl</code>。静态托管只托管前端自身的件，仓内别处一律 404。
+            </p>
+            <div class="行">
+              <input id="读件路" class="路" type="text" placeholder="仓内相对路径，例如 测试验证/案例/运行回执.jsonl">
+            </div>
+            <div class="行">
+              <button id="读件按钮" class="次">同源只读取回原文</button>
+              <button id="载入读件" class="次">载入到编辑器</button>
+              <span id="读件状态" class="状态"></span>
+            </div>
+            <div id="读件果" class="果"></div>
+          </div>
+        </details>
+      </div>
+    </div>
+
+    <div class="左格" id="左格_对话框">
+      <div class="折体">
+        <p class="提示">
+          `e.exe` 的资源类型 5 有 <b>56 个对话框 / 606 个控件</b>，每个控件的
+          <code>类 · x · y · cx · cy · 样式 · id · 标题</code> 全部解出（读数见
+          <code>项目文档/设计文档/界面实测.md</code> §三）。这里搬的是<b>判定与主界面相关</b>的
+          <b>18 个 / 281 个控件</b>：可达命令、进与不进的依据逐条写在
+          <code>前端呈现/说明.md</code>。坐标单位是<b>对话框单位</b>（资源里就是它），
+          按 <b>1 单位 = 1 像素</b>摆 —— 像素折换要 Windows 下 <code>宋体 9pt</code> 的字体度量，
+          本平台量不到，所以<b>不做折换</b>（缺口见 <code>说明.md</code>）。
+          控件只摆样子、<b>不接动作</b>：它是「资源里长什么样」的读数，不是能用的对话框。
+        </p>
+        <div class="行">
+          <label>对话框 <select id="对话框选"></select></label>
+        </div>
+        <div id="对话框读数" class="状态"></div>
+        <div id="对话框台" class="台"></div>
+      </div>
+    </div>
+
+    <!-- 左栏底部那一条页签：截图 y=544..565 是「支持库 · 程序 · 属性」三格。
+         第三格我们改叫「对话框」—— 内容是我们的资源读数，不是易语言的属性表。 -->
+    <div class="左页签带" id="左页签带">
+      <button class="页签 选" data-左="左格_支持库">支持库</button>
+      <button class="页签" data-左="左格_程序">程序</button>
+      <button class="页签" data-左="左格_对话框">对话框</button>
+    </div>
+  </aside>
+
+  <section class="主区">
+    <div class="编辑框 代码面" id="代码面">
+      <pre id="行号" class="行号" aria-hidden="true">1</pre>
+      <textarea id="编辑区" class="编辑区" spellcheck="false" wrap="off"
+                placeholder="在这里写 .程序文本，或从上方「载入示例」取一份内置模板。"></textarea>
+    </div>
+
+    <!-- 窗口设计视图（第二张截图的形状）：左=属性面板 · 中=窗体画布 · 右=组件箱。
+         三栏都在 设计视图.js 里装；画布上如实标注「拖放出代码：不做（缺控件库 · 代码生成器）」。
+         画布上的控件是**真 DOM**（能选中、属性面板跟着走），不是一张静态图。 -->
+    <div class="画布面" id="画布面" hidden>
+      <div class="画布" id="画布">
+        <div class="窗体">
+          <div class="窗题" id="窗体题">窗体1</div>
+          <div class="窗体身" id="窗体身"></div>
+        </div>
+        <div class="画布注" title="拖放出代码不做：缺运行时控件库（界面与呈现，号段 6000–6999 的能力编号一个都还没有）与代码生成器（本仓没有这一层）—— 语言主线（含语义分析与编译）已于 2026-09-28 落地，不再是卡点">拖放出代码：不做（缺控件库 · 代码生成器）</div>
+      </div>
+    </div>
+  </section>
+
+  <aside class="右栏" id="右栏">
+    <div class="箱" id="组件箱"></div>
+  </aside>
+
+  <div class="编辑页签带" id="编辑页签带">
+    <button class="页签 选" id="编辑页签">未命名.程序文本</button>
+    <span class="页签" id="设计页签" hidden>窗体1</span>
+  </div>
+
+</main>
+
+<div class="底页签带" id="底页签带"></div>
+
+<div class="页签体" id="页签体">
+
+  <div class="底格 选" id="底格_提示">
+    <div class="区头"><h2>诊断 · 逐级读数</h2><span id="诊断状态" class="状态"></span></div>
+    <p class="提示 警">
+      <b>链上有哪几步、各叫什么、编号几，全部实时取自 <code>GET /接口</code> —— 本页不写死一条编译链。</b>
+      判据是契约形状：一个能力只要它的参数表首行是<b>文本</b>，它就吃这份程序文本，就在链上；
+      顺序＝端点给的顺序。每一步成不成、码几，以点「编译」后的逐级读数为准（下面那几块就是它）。
+      <b>2026-09-27 实测</b>（curl 打真网关逐条量过）：首两段（词法 · 语法）成功；
+      语义那一步回 <code>码 1 提供者未载入</code>；诊断那一步成功 —— 它回一个零字节集，
+      读作「它覆盖到的阶段全过」，<b>不是</b>「编译成功」；另两条吃字节集的能力回
+      <code>码 1135 参数槽不符</code>（它们参数表不同，是 <code>.e</code> 容器互操作那条路，
+      拿本编辑器这份文本去喂本来就不对位），所以它们<b>不在</b>链上。
+      所以本页<b>不假装成功、不放假按钮</b>：点「编译」看到的那个逐级读数，就是此刻的真实读数。
+    </p>
+    <div id="步列表" class="步列表"></div>
+    <details class="折" open id="折_链末">
+      <summary>链末一步 · 结构化错误码（此刻是「诊断」，名字取自端点）</summary>
+      <div class="折体">
+        <p class="提示">
+          编译各阶段的失败由<b>链末那一步</b>整理成诊断（本页不预设哪一步是它，取的是端点给的顺序里最后一条）。
+          它的返回与各步一样是 <b>结构化失败</b>：<code>码</code> · <code>名称</code> · 三项业务判定
+          <code>可重试</code> / <code>可自愈</code> / <code>需人工</code>。
+        </p>
+        <div class="行">
+          <button id="诊断按钮" class="次">单独调链末一步</button>
+          <span id="诊断果状态" class="状态"></span>
+        </div>
+        <div id="诊断果" class="果"></div>
+      </div>
+    </details>
+    <details class="折" id="折_菜单命令">
+      <summary>菜单命令 · 结构化回执（POST /接口/菜单命令）</summary>
+      <div class="折体">
+        <p class="提示">
+          点菜单栏里任一<b>非编译族</b>命令，本页真发 <code>POST /接口/菜单命令</code>（体 <code>{"编号":"0x…"}</code>），
+          把后端的<b>结构化回执</b>摆在这里。此刻后端一律回 <code>9001 端点未实现</code>（命令没有后端落点）——
+          <b>如实显示</b>，不自行编一句「未接线」。
+        </p>
+        <div class="行"><span id="菜单命令状态" class="状态"></span></div>
+        <div id="菜单命令果" class="果"></div>
+      </div>
+    </details>
+  </div>
+
+  <div class="底格" id="底格_输出">
+    <div class="区头"><h2>运行 / 结果</h2><span class="灰">无按钮</span></div>
+    <div class="空状态">
+      <b>运行：不做。</b>
+      <p>
+        这里不是「点了没反应」，是<b>真的没有可跑的东西</b>。编译能力（编号经 <code>GET /接口</code> 查得）已于 2026-09-28 落地：
+        <code>.程序文本</code> 能走成 <code>.能力包件</code> 的字节。但「运行」还差三样，本仓一样都没有：
+        ① 产物 <code>.能力包件</code> 是<b>载入件不是可执行件</b>（没有自身入口，被载入而不是被运行）；
+        ② 全仓<b>没有 WASM 执行器</b>（<code>Cargo.lock</code> 里 wasm 运行时依赖 0 个；本仓零第三方依赖，引入须先裁）；
+        ③ <b>没有代码生成器</b>（<code>.能力包件</code> 的能力码段由调用方传入，本仓没有这一层）。
+      </p>
+      <p>
+        所以本栏<b>不放按钮</b>（放假按钮就是假成功）。「运行」也<b>不新立能力号</b> ——
+        立了号却没有执行器，就是<b>假绿</b>。等执行模型裁出来、运行时供给到位，这一栏才该长出「运行」。
+      </p>
+    </div>
+    <div class="区头" style="margin-top: 8px"><h2>编译输出 · 每一步的原样应答</h2><span id="输出状态" class="状态"></span></div>
+    <div id="输出体" class="果"></div>
+  </div>
+
+  <div class="底格" id="底格_调用表">
+    <div class="区头"><h2>调用表 · 调一次能力</h2><span class="灰">维护者用</span></div>
+    <p class="提示">
+      调 <code>POST /接口/调用</code>：体是 <code>{"编号":N,"值":[{"类型标签":T,"值":V},…]}</code>。
+      <b>值按契约行序对位</b> —— 本页按你排的行序拼，不重排、不补位、不判定。
+      空位也要占一行（<code>{"类型标签":0,"值":0}</code>），省略位次就是改行序。
+    </p>
+    <div class="行">
+      <label>编号 <input id="调用编号" class="号" type="text" placeholder="链上第一步的编号"></label>
+    </div>
+    <div class="值行表头">
+      <span class="序">行序</span><span class="标签">类型标签</span><span class="值">值（原文）</span><span></span>
+    </div>
+    <div id="值行容器" class="值行容器"></div>
+    <div class="行">
+      <button id="加行按钮" class="次">加一行</button>
+      <button id="调用按钮">发送</button>
+      <span id="调用状态" class="状态"></span>
+    </div>
+    <details class="体预览">
+      <summary>将要发出去的体（原文）</summary>
+      <pre id="调用体文" class="原文"></pre>
+    </details>
+    <div id="调用果" class="果"></div>
+
+    <div class="区头" style="margin-top: 10px"><h2>调用表 · 写一份声明</h2><span class="灰">维护者用</span></div>
+    <p class="提示">
+      调 <code>POST /接口/声明</code>：体是 <code>{"类别":…,"编号":…,"正文":…}</code>。
+      三个框都<b>原样发出</b>（所以 <code>编号</code> 框里预填了 <code>null</code>，要手填号就把它替换掉）。
+      落不落盘由面决定 —— 本页不判定。
+    </p>
+    <div class="行">
+      <label>类别 <input id="声明类别" class="长" type="text" value="&quot;能力&quot;"></label>
+      <label>编号 <input id="声明编号" class="号" type="text" value="null"></label>
+    </div>
+    <label class="纵">正文
+      <textarea id="声明正文" class="正文" rows="5" spellcheck="false">{}</textarea>
+    </label>
+    <div class="行">
+      <button id="声明按钮">发送</button>
+      <span id="声明状态" class="状态"></span>
+    </div>
+    <details class="体预览">
+      <summary>将要发出去的体（原文）</summary>
+      <pre id="声明体文" class="原文"></pre>
+    </details>
+    <div id="声明果" class="果"></div>
+  </div>
+
+  <div class="底格" id="底格_监视表">
+    <div class="区头">
+      <h2>监视表 · 导出目标 · 五种出口</h2>
+      <span class="灰">差别只在这一个选择</span>
+    </div>
+    <div class="行">
+      <label>导出目标 <select id="出口选"></select></label>
+      <button id="探出口按钮" class="主">真调一次 · 探导出前提</button>
+      <span id="出口状态" class="状态"></span>
+    </div>
+    <p class="提示">
+      <b>触发导出</b>：真发 <code>POST /接口/导出</code>（体 <code>{"目标":"…"}</code>，§七 旁路端点），
+      把结构化回执（<code>程序</code> · <code>参数</code> · <code>退出码</code> · <code>标准输出</code> ·
+      <code>标准错误</code>，或真错误码 <code>9004</code> / <code>9005</code>）原样摆出来 —— <b>不假装成功</b>。
+      <code>标识</code> 可省（填了走装配器的只读检查，不填就是一次真构建）。
+    </p>
+    <div class="行">
+      <input id="导出标识" class="路" type="text" placeholder="标识（可省，形如 &lt;提交12位&gt;-&lt;指纹16位&gt;）">
+      <button id="导出按钮" class="主">触发导出</button>
+      <span id="导出状态" class="状态"></span>
+    </div>
+    <div id="导出果" class="果"></div>
+    <div id="出口卡" class="出口卡"></div>
+    <p class="提示 警">
+      上面那个「真调一次」按钮<b>不导出任何东西</b>：它真调编译链（链上有哪几步、各叫什么，实时取自
+      <code>GET /接口</code>，吃编辑器里那份文本），把「死在哪一步 · HTTP 几 · 码几」原样摆出来 ——
+      导出要先把声明与最小代码编成产物。下面是<b>此刻真调回来的</b>读数。
+    </p>
+    <div id="出口探果" class="果"></div>
+  </div>
+
+  <div class="底格" id="底格_变量表">
+    <div class="区头"><h2>变量表 · 平台读数</h2><span id="变量状态" class="状态"></span></div>
+    <p class="提示">
+      调 <code>GET /接口</code>，把应答**顶层的每一个值**按类型摆出来：标量成一行，
+      数组成一张表。这是本平台此刻的「变量」—— 契约版本 · 声明格式号 · 端口来源 ·
+      实际端口 · 端点表（含 §七 旁路）· 能力清单。键名与行序都取自应答本身，本页不写死一个字段名。
+    </p>
+    <div id="变量体" class="果"></div>
+  </div>
+
+  <div class="底格" id="底格_搜寻1">
+    <div class="区头"><h2>搜寻1 · 能力清单</h2><span class="灰">GET /接口</span></div>
+    <p class="提示">
+      一次拿到端点表 + 能力全量清单 + 契约版本 + 端口来源。
+      <b>行序即契约</b>，值按行序对位；每个值都带 <code>类型标签</code>。
+    </p>
+    <div class="行">
+      <button id="清单按钮">取清单</button>
+      <span id="清单状态" class="状态"></span>
+    </div>
+    <div id="清单果" class="果"></div>
+  </div>
+
+  <div class="底格" id="底格_搜寻2">
+    <div class="区头"><h2>搜寻2 · 单条能力的契约</h2><span class="灰">GET /接口/能力/&lt;编号&gt;</span></div>
+    <p class="提示">
+      参数表（<b>行序即契约</b>）· 返回表 ·
+      <b>可抛错误码</b>（每项带 <code>可重试</code> / <code>可自愈</code> / <code>需人工</code>）。
+      在左栏树上点一条能力，也会落到这里。
+    </p>
+    <div class="行">
+      <label>编号 <input id="契约编号" class="号" type="text" placeholder="能力编号"></label>
+      <button id="契约按钮">取契约</button>
+      <span id="契约状态" class="状态"></span>
+    </div>
+    <div id="契约果" class="果"></div>
+  </div>
+
+  <div class="底格" id="底格_剪辑历史">
+    <div class="区头"><h2>剪辑历史 · 本页动作流水</h2><span id="史状态" class="状态"></span></div>
+    <p class="提示">
+      本页每一次真动作（载入示例 · 清空 · 编译 · 取清单 · 取契约 · 探出口 · 发调用 …）
+      都追加一行到这张表 —— 它是<b>本页自身记账</b>，不是从后端取的。
+      判据：底格的这一格照参考图叫「剪辑历史」，内容是我们的动作流水。
+    </p>
+    <div id="史列表" class="史表"></div>
+  </div>
+
+</div>
+
+<div class="状态条">
+  <span class="格">网关 <span id="条_连接" class="状态">未连接</span></span>
+  <span class="格" id="条_菜单">菜单读数 —</span>
+  <span class="格 推">行列 <span id="行列读数">1 : 1</span></span>
+  <span class="格">字符 <span id="字数读数">0</span></span>
+</div>
+
+<script type="module" src="应用.js"></script>
+</body>
+</html>

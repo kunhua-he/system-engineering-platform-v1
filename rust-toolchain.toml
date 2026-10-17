@@ -1,2 +1,6 @@
+# 钉死工具链：机器上装别的版本也没用，rustup 按这个文件选。
+# 改这里 = 改环境，必须同时更新 项目文档/设计文档/内核落点.md 的实测记录。
 [toolchain]
-channel="stable"
+channel = "1.95.0"
+components = ["rustfmt", "clippy"]
+profile = "minimal"
