@@ -95,11 +95,16 @@ def 样本列表(仓根, 工具表) -> list:
     with tempfile.TemporaryDirectory(prefix="v1推名样本-") as 临时根:
         工作树 = Path(临时根)
         (工作树 / "开发工具/信息核心").mkdir(parents=True)
+        from 开发工具.信息核心 import 表定义
         连接 = sqlite3.connect(str(工作树 / "开发工具/信息核心/信息核心.db"))
-        连接.execute("create table 命名登记(名字 text, 语义 text, 模式 text, 来源 text, 状态 text)")
-        连接.execute("create table 命名例外(名字 text, 说明 text)")
-        连接.execute("insert into 命名登记 values('读配置','样本','动作+对象','新定义','合格')")
-        连接.execute("insert into 命名登记 values('待改样例','样本','动作+对象','新定义','待改名')")
+        # ★ 夹具复用统一建库节点（`表定义.建表语句`）—— 不手写建表清单：手写必与统一口径分叉，
+        #   实测漏 `命名泛名` ⇒ 推名走 `批量登记.读判据名单` 报 `no such table`，整组红。
+        for 建表语句 in 表定义.建表语句:
+            连接.execute(建表语句)
+        连接.execute("insert into 命名登记(名字, 语义, 模式, 来源, 状态)"
+                  " values('读配置','样本','动作+对象','新定义','合格')")
+        连接.execute("insert into 命名登记(名字, 语义, 模式, 来源, 状态)"
+                  " values('待改样例','样本','动作+对象','新定义','待改名')")
         连接.commit()
         连接.close()
         源码 = "def 样例函数(读配置):\n    局部值 = 读配置\n    待改样例 = 局部值\n    新样例名 = 待改样例\n"
