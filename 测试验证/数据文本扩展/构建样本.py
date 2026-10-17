@@ -1,5 +1,6 @@
 """原生库构建目标接线单元；真实引擎与HTTP另由正式预构建及验收覆盖。"""
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import patch
 
 
@@ -8,7 +9,8 @@ def 执行构建接线样本():
     记录表=[]
     def 记命令(命令表,**具名参数):
         记录表.append(命令表)
-    with patch.object(构建节点,'跑子进程',side_effect=记命令),patch.object(构建节点,'打包支持库制品') as 打包函数,patch.object(Path,'glob',side_effect=AssertionError('不允许扫描缓存猜依赖')):
+        return SimpleNamespace(stdout="本次Cargo回执")
+    with patch.object(构建节点,'跑子进程',side_effect=记命令),patch.object(构建节点,'打包支持库制品') as 打包函数,patch.object(构建节点,'读库名',return_value='示例库名'),patch.object(构建节点,'记扩展产物回执') as 回执函数,patch.object(Path,'glob',side_effect=AssertionError('不允许扫描缓存猜依赖')):
         构建节点.建扩展产物(dict(落点=Path('示例支持库')))
         assert len(记录表)==1,记录表
         命令表=记录表[0]
@@ -17,6 +19,8 @@ def 执行构建接线样本():
         assert 命令表[-2:]==['--crate-type','cdylib'],命令表
         assert '--locked' in 命令表 and '--offline' in 命令表,命令表
         assert 打包函数.call_count==1
+        assert "--message-format=json-render-diagnostics" in 命令表
+        assert 回执函数.call_args.args[0]=="本次Cargo回执"
     with patch.object(构建节点,'跑子进程',side_effect=SystemExit('引擎构建拒绝')),patch.object(构建节点,'打包支持库制品') as 打包函数:
         try:
             构建节点.建扩展产物(dict(落点=Path('示例支持库')))
