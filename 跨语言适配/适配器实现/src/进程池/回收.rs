@@ -49,12 +49,17 @@ pub(crate) fn 按退出状态分档(状态: ExitStatus) -> 回收结局 {
 /// 三档：等到子进程退出 ⇒ 按退出状态分档；预算内没退 ⇒ `超时强杀`；
 /// 收尸本身出错 ⇒ `未确认退出`（**不假装收干净了**）。
 pub(crate) fn 击杀并确认退出(工作: &mut 工作进程, 确认预算毫秒: u64) -> 回收结局 {
+    if 工作.回收已确认 { return 回收结局::正常退出; }
     击杀进程组(工作.进程组号);
     let _ = 工作.子进程.kill();
     let 期限 = Instant::now() + Duration::from_millis(确认预算毫秒);
     loop {
         match 工作.子进程.try_wait() {
-            Ok(Some(状态)) => return 按退出状态分档(状态),
+            Ok(Some(状态)) => {
+                工作.回收已确认 = true;
+                工作.额度租约.take();
+                return 按退出状态分档(状态);
+            },
             Err(_) => return 回收结局::未确认退出,
             Ok(_) => {}
         }
@@ -90,6 +95,17 @@ impl Drop for 进程池 {
 }
 
 impl 进程池 {
+    /// 域租约已排除新请求后，正常回收并摘掉活进程槽。
+    pub(crate) fn 回收空闲域(&self, 标识: &super::执行域标识) -> bool {
+        let Some(句柄) = self.取域句柄(标识) else { return false; };
+        if !句柄.监督().仍在运行 { return false; }
+        if !matches!(句柄.击杀并报结局(), Ok(回收结局::正常退出 | 回收结局::被信号杀)) { return false; }
+        let mut 域表锁 = 取锁(&self.域表);
+        let Some(序号) = 域表锁.iter().position(|格子| &格子.标识 == 标识 && std::sync::Arc::ptr_eq(&格子.工作, &句柄.工作)) else { return false; };
+        域表锁.remove(序号);
+        true
+    }
+
     /// **移除一域**（物理回收）：从域表摘格 → 按进程组强杀 → 收尸。
     ///
     /// 与 [`进程池::击杀一域`] 分开：击杀只杀进程、**留格**（下次调用走「保证域在」重拉）；

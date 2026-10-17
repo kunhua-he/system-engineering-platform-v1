@@ -30,7 +30,7 @@ if [ -z "$ROOT" ] || [ ! -f "$ROOT/rust-toolchain.toml" ]; then
   return 1 2>/dev/null || exit 1
 fi
 
-export CARGO_HOME="$ROOT/构建环境/cargo"
+export CARGO_HOME="$ROOT/构建环境/构建缓存/cargo"
 export CARGO_TARGET_DIR="$ROOT/构建环境/构建缓存"
 export RUSTUP_TOOLCHAIN="$(sed -n 's/^channel *= *"\(.*\)"/\1/p' "$ROOT/rust-toolchain.toml")"
 export CARGO_NET_OFFLINE=true

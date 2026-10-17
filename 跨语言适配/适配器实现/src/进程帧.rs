@@ -66,9 +66,37 @@ impl 调用帧预算 {
     }
 }
 
-fn 继续等待(预算: &调用帧预算) -> io::Result<()> {
-    std::thread::sleep(预算.剩余时限()?.min(Duration::from_millis(1)));
-    Ok(())
+#[repr(C)]
+struct 轮询描述 {
+    描述符: std::ffi::c_int,
+    关注事件: std::ffi::c_short,
+    就绪事件: std::ffi::c_short,
+}
+#[cfg(any(target_vendor = "apple", target_os = "freebsd", target_os = "openbsd", target_os = "netbsd", target_os = "dragonfly"))]
+type 轮询项数 = u32;
+#[cfg(not(any(target_vendor = "apple", target_os = "freebsd", target_os = "openbsd", target_os = "netbsd", target_os = "dragonfly")))]
+type 轮询项数 = usize;
+unsafe extern "C" {
+    fn poll(描述表: *mut 轮询描述, 描述项数: 轮询项数, 超时毫秒: std::ffi::c_int) -> std::ffi::c_int;
+}
+
+fn 继续等待(通信通道: &UnixStream, 关注事件: i16, 预算: &调用帧预算) -> io::Result<()> {
+    use std::os::fd::AsRawFd;
+    let mut 描述表 = 轮询描述 { 描述符: 通信通道.as_raw_fd(), 关注事件, 就绪事件: 0 };
+    loop {
+        let 超时毫秒 = 预算.剩余时限()?.as_nanos().div_ceil(1_000_000).min(i32::MAX as u128) as i32;
+        // SAFETY: 单项C布局与目标平台pollfd一致，借用的通道在调用期间保持有效。
+        let 就绪数 = unsafe { poll(&mut 描述表, 1, 超时毫秒) };
+        if 就绪数 > 0 {
+            if 描述表.就绪事件 & 0x20 != 0 { return Err(io::Error::new(io::ErrorKind::InvalidInput, "IPC描述符已失效")); }
+            return Ok(());
+        }
+        if 就绪数 < 0 {
+            let 错误 = io::Error::last_os_error();
+            if 错误.kind() != io::ErrorKind::Interrupted { return Err(错误); }
+        }
+        预算.剩余时限()?;
+    }
 }
 
 fn 写全帧(通信通道: &mut UnixStream, mut 待写字节: &[u8], 预算: &调用帧预算) -> io::Result<()> {
@@ -77,7 +105,7 @@ fn 写全帧(通信通道: &mut UnixStream, mut 待写字节: &[u8], 预算: &�
         match 通信通道.write(待写字节) {
             Ok(0) => return Err(io::Error::new(io::ErrorKind::WriteZero, "通道不再接收帧")),
             Ok(写入长度) => 待写字节 = &待写字节[写入长度..],
-            Err(错误) if 错误.kind() == io::ErrorKind::WouldBlock => 继续等待(预算)?,
+            Err(错误) if 错误.kind() == io::ErrorKind::WouldBlock => 继续等待(通信通道, 4, 预算)?,
             Err(错误) if 错误.kind() == io::ErrorKind::Interrupted => continue,
             Err(错误) => return Err(错误),
         }
@@ -92,7 +120,7 @@ fn 读全帧(通信通道: &mut UnixStream, 待填字节: &mut [u8], 预算: &�
         match 通信通道.read(&mut 待填字节[已读长度..]) {
             Ok(0) => return Err(io::Error::new(io::ErrorKind::UnexpectedEof, "通道断开或帧截断")),
             Ok(读取长度) => 已读长度 += 读取长度,
-            Err(错误) if 错误.kind() == io::ErrorKind::WouldBlock => 继续等待(预算)?,
+            Err(错误) if 错误.kind() == io::ErrorKind::WouldBlock => 继续等待(通信通道, 1, 预算)?,
             Err(错误) if 错误.kind() == io::ErrorKind::Interrupted => continue,
             Err(错误) => return Err(错误),
         }

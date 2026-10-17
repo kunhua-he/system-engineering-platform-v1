@@ -16,7 +16,7 @@ def 编译环境(暂存目录: Path) -> dict:
     """子进程环境：暂存目录 + cargo 家 / 目标目录 + 离线（不联网、不猜路径）。"""
     环境 = dict(os.environ)
     环境[暂存目录环境变量] = str(暂存目录)
-    环境.setdefault("CARGO_HOME", str(Path("构建环境/cargo").resolve()))
+    环境.setdefault("CARGO_HOME", str(Path("构建环境/构建缓存/cargo").resolve()))
     环境.setdefault("CARGO_TARGET_DIR", str(Path("构建环境/构建缓存").resolve()))
     环境.setdefault("CARGO_NET_OFFLINE", "true")
     return 环境
