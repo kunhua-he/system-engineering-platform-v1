@@ -32,8 +32,32 @@
 //! **底座声明不经接缝取**（[`取底座声明`]）：同一进程里接缝 `GetPlatformInfo` 被扩展那份
 //! 解析走了（见上），拿接缝取底座会拿到扩展的声明 —— 那是假绿。故底座走同源只读口
 //! `v1_adapter::底座声明()`。
+//!
+//! # 第三个导出者：只能走制品，不能静态链接（实测）
+//!
+//! 再加一份支持库（`文件支持库`）时，**静态链接直接链不起来**：
+//! `warning: Linking globals named 'GetPlatformInfo': symbol multiply defined!` +
+//! `error: failed to load bitcode of module "v1_file-….rcgu.o"`（release 实测，runner 退出 101）。
+//! 这不是环境问题，是「一个进程只能有一个 `GetPlatformInfo` 定义」的直接后果。
+//!
+//! 所以第二份支持库走**与网关同一条装载腿**：
+//! `v1_adapter::工作进程::装载支持库(制品路径, 缓存根)` = 解包制品 → `dlopen` → `dlsym` 接缝 → 取声明。
+//! 前置：制品由 `python3 构建装配/上线切换/构建制品.py --预构建` 生成（装配产物 · 不入库）。
 
 use v1_adapter::平台信息;
+use v1_adapter::工作进程::装载支持库;
+
+/// 仓根 —— 编译期由 `CARGO_MANIFEST_DIR` 定（`<仓根>/测试验证/案例/跑案例` ⇒ 向上三级）。
+///
+/// 为什么不在运行期找：找仓根就是「认盘上目录」的第二条腿；`CARGO_MANIFEST_DIR` 是编译期事实，
+/// 与 `案例件` 认案例目录同一条纪律。
+fn 仓根() -> std::path::PathBuf {
+    std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .ancestors()
+        .nth(3)
+        .expect("跑案例 比仓根还浅？`CARGO_MANIFEST_DIR` 布局变了")
+        .to_path_buf()
+}
 
 /// 取被验扩展的声明。
 ///
@@ -79,9 +103,32 @@ pub fn 解析声明名(声明名: &str) -> Result<&'static 平台信息, String>
     match 声明名 {
         "底座" => Ok(取底座声明()),
         "编译器支持库" => 取扩展声明(),
+        // 第二个扩展：**不静态链接，走制品**。同一进程里 `GetPlatformInfo` 只能解析到一个定义
+        // （本件文件头已报这个实测硬矛盾；再加第三份连 LLVM 都拒：
+        //  `Linking globals named 'GetPlatformInfo': symbol multiply defined!` ⇒ 整个 runner 链不起来）。
+        // 故第二个支持库走与网关同一条装载腿：解包制品 → dlopen → dlsym 接缝 → 取声明
+        // （`v1_adapter::工作进程::装载支持库`，全仓唯一实现，本件不自带 dlopen）。
+        // ★ 前置：制品是装配产物（不入库），由 `python3 构建装配/上线切换/构建制品.py --预构建` 生成。
+        "文件支持库" => {
+            let 缓存根 = v1_dataroot::解析当前环境()
+                .map(|根目录| 根目录.join("装载件缓存"))
+                .map_err(|错误| format!("取运行数据根失败：{错误:?}（装载制品要仓外缓存目录）"))?;
+            std::fs::create_dir_all(&缓存根)
+                .map_err(|错误| format!("建装载缓存目录 {} 失败：{错误}", 缓存根.display()))?;
+            装载支持库(
+                &仓根().join("扩展根目录/原子支持库/文件支持库/文件支持库.支持库制品"),
+                &缓存根,
+            )
+            .map_err(|错误| {
+                format!(
+                    "装载 `文件支持库` 的制品失败：{错误:?}。\
+                     制品是装配产物（不入库），先跑：python3 构建装配/上线切换/构建制品.py --预构建"
+                )
+            })
+        }
         其他值 => Err(format!(
             "案例点名要装载声明 `{其他值}`，但跑案例的声明名表里没有它\
-             （只认 `底座` / `编译器支持库`；声明名表在 `装载声明.rs::解析声明名`）"
+             （只认 `底座` / `编译器支持库` / `文件支持库`；声明名表在 `装载声明.rs::解析声明名`）"
         )),
     }
 }

@@ -29,6 +29,7 @@ dependencies = [
  "v1-adapter",
  "v1-compiler",
  "v1-contract",
+ "v1-dataroot",
  "v1-loader",
 ]
 
