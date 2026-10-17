@@ -15,6 +15,7 @@ from pathlib import Path
 from .命令 import 跑子进程
 from .常量 import 仓根, 构建缓存
 from .输出 import 打印文本
+from .产物回执 import 记扩展产物回执, 取扩展产物回执
 
 # 后缀集的**唯一权威**（与运行期 `扫扩展根.rs::读后缀表` 读同一份）：候选资格与制品落点都按它判。
 后缀表源 = 仓根 / "扩展装载" / "后缀表.json"
@@ -102,12 +103,13 @@ def 建扩展产物(扩展: dict) -> None:
     清单路径 = 扩展["落点"] / "Cargo.toml"
     缓存 = 构建缓存 / "扩展"
     子进程环境 = dict(os.environ, CARGO_TARGET_DIR=str(缓存))
-    跑子进程(
+    运行结果 = 跑子进程(
         ["cargo", "rustc", "--locked", "--offline", "--release", "--manifest-path", str(清单路径),
-         "--crate-type", "cdylib"],
+         "--message-format=json-render-diagnostics", "--crate-type", "cdylib"],
         cwd=仓根,
         env=子进程环境,
     )
+    记扩展产物回执(运行结果.stdout, 清单路径, 读库名(清单路径), 缓存)
     # ★ 容器写：把编出的 cdylib 字节包成 `.支持库制品`（落点照 `扩展装载/后缀表.json`）。
     打包支持库制品(扩展)
 
@@ -116,18 +118,7 @@ def 找扩展产物(扩展: dict) -> Path:
     """**只找不编** —— 命令本体用。找不到（没预构建 / 缓存被清）即 fail-closed 指路。"""
     清单路径 = 扩展["落点"] / "Cargo.toml"
     缓存 = 构建缓存 / "扩展"
-    动态库 = sorted((缓存 / "release" / "deps").glob("lib*.dylib")) + sorted((缓存 / "release" / "deps").glob("lib*.so"))
-    # 只认**编出来的那一个**：按 Cargo.toml 的 `[lib] name` 找（`[package] name` 不是库名）。
-    名称 = 读库名(清单路径)
-    命中 = [库文件 for 库文件 in 动态库 if 名称 and 库文件.name.startswith("lib{}".format(名称))]
-    if len(命中) != 1:
-        raise SystemExit(
-            "找不到已编好的可装载库（按 [lib] name 找 {}，命中 {} 个）：{}\n"
-            "  先跑环境步：python3 构建装配/上线切换/构建制品.py --预构建".format(
-                名称, len(命中), 缓存 / "release" / "deps"
-            )
-        )
-    return 命中[0]
+    return 取扩展产物回执(清单路径, 读库名(清单路径), 缓存)
 
 
 def 读库名(清单路径: Path) -> str:
