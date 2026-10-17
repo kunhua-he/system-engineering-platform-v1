@@ -1,0 +1,12 @@
+[package]
+name = "v1-url-text"
+version = "0.1.0"
+edition = "2024"
+[lib]
+name = "v1_url_text"
+path = "src/lib.rs"
+[dependencies]
+v1-contract = { path = "../../../契约声明" }
+url = "=2.5.8"
+serde_json = "=1.0.154"
+[workspace]

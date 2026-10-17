@@ -13,7 +13,7 @@ import struct
 from pathlib import Path
 
 from .命令 import 跑子进程
-from .常量 import 仓根, 构建缓存, 底座依赖名
+from .常量 import 仓根, 构建缓存
 from .输出 import 打印文本
 
 # 后缀集的**唯一权威**（与运行期 `扫扩展根.rs::读后缀表` 读同一份）：候选资格与制品落点都按它判。
@@ -86,13 +86,8 @@ def 扫扩展(声明: dict) -> list:
 def 扩展产物(扩展: dict) -> Path:
     """把一个扩展编成**可装载库**（`GetPlatformInfo` 能被 dlopen 取到），返回库文件路径。
 
-    为什么要有这一步：扩展仓自身声明的是 **rlib**（`[lib]` 没写 `crate-type`），
-    静态库进不了 `dlopen`。装配侧把它按 `cdylib` 再编一遍 —— 这是**装配动作**，
-    不改扩展一行源（`cargo rustc -- --crate-type cdylib`）。
-
-    `--extern <底座依赖名>=<rlib 路径>` 是必须的：cargo 给依赖传的是**只含元数据**的
-    `.rmeta`，而 `cdylib` 要的是可链接的 `.rlib`；不显式指路就报
-    「crate `v1_contract` required to be available in rlib format」（实测）。
+    Cargo直接接收cdylib目标，统一决定全部依赖的链接形态。
+    不把crate-type放在参数分隔符后，不扫描缓存或人工指定某一份rlib。
 
     **本函数 = 建 + 找**（公开行为逐字不变：`构建装配/演示/装配.py` 转调的就是它）。
     命令本体（装配档）**不许**用它 —— 它含构建段，会把命令顶上五秒硬顶；
@@ -107,13 +102,9 @@ def 建扩展产物(扩展: dict) -> None:
     清单路径 = 扩展["落点"] / "Cargo.toml"
     缓存 = 构建缓存 / "扩展"
     子进程环境 = dict(os.environ, CARGO_TARGET_DIR=str(缓存))
-    跑子进程(["cargo", "build", "--locked", "--offline", "--release", "--manifest-path", str(清单路径)], cwd=仓根, env=子进程环境)
-    rlibs = sorted((缓存 / "release" / "deps").glob("lib{}*.rlib".format(底座依赖名)))
-    if not rlibs:
-        raise SystemExit("找不到底座依赖的 rlib：{}".format(缓存 / "release" / "deps"))
     跑子进程(
-        ["cargo", "rustc", "--locked", "--offline", "--release", "--manifest-path", str(清单路径), "--",
-         "--crate-type", "cdylib", "--extern", "{}={}".format(底座依赖名, rlibs[0])],
+        ["cargo", "rustc", "--locked", "--offline", "--release", "--manifest-path", str(清单路径),
+         "--crate-type", "cdylib"],
         cwd=仓根,
         env=子进程环境,
     )

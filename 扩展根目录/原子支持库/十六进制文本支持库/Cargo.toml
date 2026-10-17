@@ -1,0 +1,11 @@
+[package]
+name = "v1-hex-text"
+version = "0.1.0"
+edition = "2024"
+[lib]
+name = "v1_hex_text"
+path = "src/lib.rs"
+[dependencies]
+v1-contract = { path = "../../../契约声明" }
+
+[workspace]

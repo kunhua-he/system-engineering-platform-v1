@@ -1,0 +1,12 @@
+[package]
+name = "v1-xml-text"
+version = "0.1.0"
+edition = "2024"
+[lib]
+name = "v1_xml_text"
+path = "src/lib.rs"
+[dependencies]
+v1-contract = { path = "../../../契约声明" }
+quick-xml = "=0.42.0"
+serde_json = "=1.0.154"
+[workspace]

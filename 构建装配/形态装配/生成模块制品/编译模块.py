@@ -16,9 +16,16 @@ def 编译环境(暂存目录: Path) -> dict:
     """子进程环境：暂存目录 + cargo 家 / 目标目录 + 离线（不联网、不猜路径）。"""
     环境 = dict(os.environ)
     环境[暂存目录环境变量] = str(暂存目录)
-    环境.setdefault("CARGO_HOME", str(Path("构建环境/cargo").resolve()))
-    环境.setdefault("CARGO_TARGET_DIR", str(Path("构建环境/构建缓存").resolve()))
-    环境.setdefault("CARGO_NET_OFFLINE", "true")
+    # 正式入口是唯一配置源；不继承别的树的依赖家，也不另拼默认目录。
+    环境回执 = subprocess.run(["sh", "-c", '. ./构建环境/进入.sh >/dev/null && printf "%s\\000" "$CARGO_HOME" "$CARGO_TARGET_DIR" "$CARGO_NET_OFFLINE"'], capture_output=True, timeout=5)
+    if 环境回执.returncode:
+        raise RuntimeError("读取正式构建环境失败：" + 环境回执.stderr.decode(errors="replace"))
+    环境片段 = 环境回执.stdout.split(bytes([0]))
+    if len(环境片段) != 4 or 环境片段[-1] or not all(环境片段[:3]):
+        raise RuntimeError("正式构建环境未返回完整的依赖家、编译目录与离线模式")
+    环境["CARGO_HOME"] = os.fsdecode(环境片段[0])
+    环境.setdefault("CARGO_TARGET_DIR", os.fsdecode(环境片段[1]))
+    环境["CARGO_NET_OFFLINE"] = os.fsdecode(环境片段[2])
     return 环境
 
 

@@ -86,7 +86,7 @@ from .命名扫描 import 剥后缀
 走树排除路径 = (
     tuple(目录名 for 目录名 in 排除目录 if 目录名 not in ("构建环境", ".codegraph"))
     + ("__pycache__", "node_modules", "target",
-       "构建环境/构建缓存", "构建环境/cargo", "构建环境/python")
+       "构建环境/构建缓存", "构建环境/python")
 )
 
 
