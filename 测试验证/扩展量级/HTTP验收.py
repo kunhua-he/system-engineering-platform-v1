@@ -1,9 +1,7 @@
 """多扩展真实HTTP验收：公开调用、独立对照、并发、反复装卸和资源回收。"""
 import concurrent.futures
 import json
-import os
 from pathlib import Path
-import signal
 import socket
 import sqlite3
 import subprocess
@@ -14,7 +12,7 @@ import urllib.request
 import zlib
 
 
-def 执行量级验收(仓根, 缓存根, 扩展验证=None):
+def 执行量级验收(仓根, 缓存根, 扩展验证=None, 装载后验证=None):
     仓根, 缓存根 = Path(仓根).resolve(), Path(缓存根).resolve()
     缓存根.mkdir(parents=True, exist_ok=True)
     from 构建装配.门禁.常量 import 效率目标毫秒
@@ -29,7 +27,7 @@ def 执行量级验收(仓根, 缓存根, 扩展验证=None):
         起始时刻 = time.monotonic()
         批量装载 = 路径 == '/接口/生命周期' and 请求体 and 请求体.get('动作') == '装载'
         请求预算秒 = 效率目标毫秒 / 1000 if 批量装载 else min(5, 效率目标毫秒 / 1000)
-        请求对象 = urllib.request.Request('http://127.0.0.1:%s%s' % (网关实例['端口'], urllib.parse.quote(路径, safe='/')), data=None if 请求体 is None else json.dumps(请求体, ensure_ascii=False).encode(), headers={'Content-Type':'application/json'})
+        请求对象 = urllib.request.Request('http://127.0.0.1:%s%s' % (网关实例['端口'], urllib.parse.urlunsplit(('', '', urllib.parse.quote(urllib.parse.urlsplit(路径).path, safe='/'), urllib.parse.quote(urllib.parse.urlsplit(路径).query, safe='=&%+/?'), ''))), data=None if 请求体 is None else json.dumps(请求体, ensure_ascii=False).encode(), headers={'Content-Type':'application/json'})
         try:
             with 连接器.open(请求对象, timeout=请求预算秒) as 响应: 状态码, 返回 = 响应.status, json.loads(响应.read())
         except urllib.error.HTTPError as 错误响应:
@@ -66,7 +64,7 @@ def 执行量级验收(仓根, 缓存根, 扩展验证=None):
             部署表.append(dict(标识串=包声明['标识串'],版本=dict(主版本=包声明['实现版本']['主'],次版本号=包声明['实现版本']['次'],构建=包声明['实现版本']['构建']),制品路径=str(包目录/(包目录.name+制品后缀)),启动程序=str(仓根/'构建环境/构建缓存/debug/examples/工作进程') if 模块包 else ''))
         配置路径=实例目录/'跨进程.json'; 配置路径.write_text(json.dumps(dict(跨进程=部署表,子进程数上限=sum(bool(部署项['启动程序']) for 部署项 in 部署表)),ensure_ascii=False))
         日志文件=open(实例目录/'网关.log','w')
-        网关进程=subprocess.Popen([str(仓根/'构建环境/构建缓存/release/examples/启动网关'),'--声明根','扩展装载/扩展根声明.json','--后缀表','扩展装载/后缀表.json','--端口',str(端口号),'--缓存根',str(代码缓存根),'--跨进程配置',str(配置路径),'--工具根','.'],cwd=仓根,stdout=日志文件,stderr=subprocess.STDOUT,start_new_session=True)
+        网关进程=subprocess.Popen([str(仓根/'构建环境/构建缓存/release/examples/启动网关'),'--声明根','扩展装载/扩展根声明.json','--后缀表','扩展装载/后缀表.json','--端口',str(端口号),'--缓存根',str(代码缓存根),'--跨进程配置',str(配置路径),'--工具根','.'],cwd=仓根,stdout=日志文件,stderr=subprocess.STDOUT,start_new_session=False)
         网关实例=dict(端口=端口号,进程=网关进程,日志=日志文件,部署=部署表,目录=实例目录)
         实例表.append(网关实例)
         准备预算秒=5
@@ -99,6 +97,7 @@ def 执行量级验收(仓根, 缓存根, 扩展验证=None):
         print('执行映像环境准备 %.3f 秒；随后两份新实例复用不可变代码，不冒充无准备冷跑。'%环境准备秒,flush=True)
         for 实例序号 in range(2): 起网关(实例序号)
         for 网关实例 in 实例表: 装载(网关实例)
+        if 装载后验证 is not None: 装载后验证(请求,检查,实例表)
         源库网关=实例表[0]
         原文='中文🙂 /?+%\x00跨库'
         编码文=urllib.parse.quote(原文,safe='-._~')
@@ -137,6 +136,12 @@ def 执行量级验收(仓根, 缓存根, 扩展验证=None):
             检查(状态码==200 and 返回.get('成功'),'SQLite复合类型与新文本库同实例共存',返回)
             状态码,返回=请求(网关实例,'/接口/调用',dict(编号=7950,值=[dict(类型标签=1,值=2),dict(类型标签=1,值=3)]))
             检查(状态码==200 and 返回.get('成功') and 返回['值'][0]['值']==5,'旧模块同网关不回退',返回)
+        for 网关实例 in 实例表:
+            数值列表=[dict(类型标签=1,值=2),dict(类型标签=2,值=5.5)]
+            状态码,原子返回=请求(网关实例,'/接口/调用',dict(编号=1330,值=[dict(类型标签=100,值=数值列表)]))
+            检查(状态码==200 and 原子返回.get('成功'),'数值原子真实求和',原子返回)
+            状态码,模块返回=请求(网关实例,'/接口/调用',dict(编号=7951,值=[dict(类型标签=100,值=数值列表)]))
+            检查(状态码==200 and 模块返回.get('成功') and 模块返回['值']==原子返回['值'],'同包列表求和跨域真实返回与原子一致',模块返回)
         if 扩展验证 is not None:
             扩展验证(请求,检查,实例表)
         def 并发往返(请求序号):
@@ -151,10 +156,10 @@ def 执行量级验收(仓根, 缓存根, 扩展验证=None):
     finally:
         for 网关实例 in 实例表:
             if 网关实例['进程'].poll() is None:
-                os.killpg(网关实例['进程'].pid,signal.SIGTERM)
+                网关实例['进程'].terminate()
                 try: 网关实例['进程'].wait(timeout=3)
                 except subprocess.TimeoutExpired:
-                    os.killpg(网关实例['进程'].pid,signal.SIGKILL); 网关实例['进程'].wait(timeout=3)
+                    网关实例['进程'].kill(); 网关实例['进程'].wait(timeout=3)
             网关实例['日志'].close()
         (缓存根/'完整回执.json').write_text(json.dumps(回执表,ensure_ascii=False,indent=2))
     报告=dict(环境准备秒=环境准备秒,环境准备实例数=1,代码缓存复用=True,通过数=len(检查表),HTTP请求数=len(回执表),包数=len(包目录表),实例数=len(实例表),检查项=检查表,网关均退出=all(网关实例['进程'].poll() is not None for 网关实例 in 实例表))

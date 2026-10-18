@@ -50,6 +50,10 @@ mod 报文校验;
 #[path = "请求.rs"]
 mod 请求;
 
+#[path = "索引请求.rs"]
+mod 索引请求;
+#[path = "索引响应.rs"]
+mod 索引响应;
 #[path = "搜索请求.rs"]
 mod 搜索请求;
 #[path = "搜索响应.rs"]

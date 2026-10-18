@@ -9,7 +9,7 @@ import subprocess
 from pathlib import Path
 
 from .路径形状 import (编译器支持库目录, 制品后缀, 能力声明目录名, 暂存目录环境变量,
-                  出制品示例名, 默认暂存目录)
+                  出制品示例名, 默认暂存目录, 组合模块库根)
 
 
 def 编译环境(暂存目录: Path) -> dict:
@@ -30,10 +30,10 @@ def 编译环境(暂存目录: Path) -> dict:
 
 
 def 跑模块(模块目录: Path) -> int:
-    """编一个模块 ⇒ 退出码（0 = 产物已写出）。能力声明不是恰好一份 ⇒ 不编、直接 1。"""
+    """编一个模块 ⇒ 退出码（0 = 产物已写出）。能力声明为空 ⇒ 不编、直接 1。"""
     能力声明表 = sorted((模块目录 / 能力声明目录名).glob("*.json"))
-    if len(能力声明表) != 1:
-        print("✗ %s：能力声明必须恰好一份，实际 %d" % (模块目录, len(能力声明表)))
+    if not 能力声明表:
+        print("✗ %s：能力声明不能为空，实际 %d" % (模块目录, len(能力声明表)))
         return 1
     暂存目录 = Path(os.environ.get(暂存目录环境变量) or 默认暂存目录)
     暂存目录.mkdir(parents=True, exist_ok=True)
@@ -42,3 +42,17 @@ def 跑模块(模块目录: Path) -> int:
     print(("✓ " if 完成.returncode == 0 else "✗ ")
           + "%s（退出码 %d · 产物 %s%s）" % (模块目录.name, 完成.returncode, 模块目录.name, 制品后缀))
     return 完成.returncode
+
+
+def 回收退役模块():
+    """整包源码与声明已撤且只剩自有生成物，才回收本生成器的制品。"""
+    for 模块目录 in sorted(组合模块库根.iterdir()):
+        if not 模块目录.is_dir() or (模块目录/'包声明.json').exists():
+            continue
+        剩余文件表 = [文件路径 for 文件路径 in 模块目录.rglob('*') if 文件路径.is_file() or 文件路径.is_symlink()]
+        if not 剩余文件表 or any(文件路径.is_symlink() or 文件路径.parent != 模块目录 or 文件路径.name not in (模块目录.name+制品后缀, '指纹.json') for 文件路径 in 剩余文件表):
+            continue
+        退役制品 = 模块目录/(模块目录.name+制品后缀)
+        if 退役制品.is_file():
+            退役制品.unlink()
+

@@ -48,6 +48,12 @@ pub const 入口符号: &str = "v1_module_exec";
 /// 装载侧先取本符号、取不到回落旧符号。
 pub const 上下文入口符号: &str = "v1_module_exec_ctx";
 
+/// 包内按编号定位能力；函数参数形状仍复用已有 C 入口。
+pub fn 模块能力入口符号(编号: u32, 是否带上下文: bool) -> alloc::string::String {
+    let 符号前缀 = if 是否带上下文 { 上下文入口符号 } else { 入口符号 };
+    alloc::format!("{符号前缀}_{编号}")
+}
+
 /// 平台身份的长度前缀宽度（字节）—— 大端 `u16`。
 pub const 身份长度宽度: usize = 2;
 

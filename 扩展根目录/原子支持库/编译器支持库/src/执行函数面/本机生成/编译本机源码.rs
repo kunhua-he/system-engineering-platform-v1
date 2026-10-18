@@ -153,14 +153,39 @@ pub fn 编译本机源码(
     依赖目录: &Path,
     输出路径: &Path,
 ) -> Result<(), String> {
-    let 源码路径 = 输出路径.with_extension("rs");
     let 全源 = format!("{}\n{}\n{}", 产物.执行源码, 生成入口包装(编号), 生成上下文入口包装(编号));
+    编译源码到库(&全源, &产物.平台身份, 工具链命令, 契约产物, 依赖目录, 输出路径)
+}
+
+/// 同包多项生成结果合编一次；按编号导出真函数，不复制进程与 IPC。
+pub fn 编译模块源码组(
+    产物组: &[(u32, 本机源码产物)], 工具链命令: &Path,
+    契约产物: &Path, 依赖目录: &Path, 输出路径: &Path,
+) -> Result<(), String> {
+    let 首项 = &产物组.first().ok_or("模块源码组为空")?.1;
+    let mut 已有编号 = std::collections::BTreeSet::new();
+    let mut 全源 = String::new();
+    for (能力号, 产物) in 产物组 {
+        if !已有编号.insert(*能力号) { return Err(format!("模块源码组重复编号：{能力号}")); }
+        if 产物.平台身份 != 首项.平台身份 || 产物.工具链身份 != 首项.工具链身份 { return Err("模块源码组的平台或工具链不一致".to_owned()); }
+        let 执行符号 = v1_contract::容器::模块能力入口符号(*能力号, false);
+        let 上下文符号 = v1_contract::容器::模块能力入口符号(*能力号, true);
+        let 普通包装 = 生成入口包装(*能力号).replace(&format!("fn {入口符号}("), &format!("fn {执行符号}("));
+        let 上下文包装 = 生成上下文入口包装(*能力号).replace(&format!("fn {上下文入口符号}("), &format!("fn {上下文符号}("));
+        全源.push_str(&format!("mod 模块能力{能力号} {{\n{}\n{普通包装}\n{上下文包装}\n}}\n", 产物.执行源码));
+    }
+    编译源码到库(&全源, &首项.平台身份, 工具链命令, 契约产物, 依赖目录, 输出路径)
+}
+
+fn 编译源码到库(全源: &str, 平台身份: &str, 工具链命令: &Path, 契约产物: &Path, 依赖目录: &Path, 输出路径: &Path) -> Result<(), String> {
+    let 源码路径 = 输出路径.with_extension("rs");
     std::fs::write(&源码路径, 全源).map_err(|失败因由| format!("写源码失败：{失败因由}"))?;
     let 编译输出 = Command::new(工具链命令)
         .arg("--edition=2024")
         .arg("--crate-type").arg("cdylib")
+        .arg("-C").arg("opt-level=2")
         .arg("--crate-name").arg("v1_模块执行体")
-        .arg("--target").arg(&产物.平台身份)
+        .arg("--target").arg(平台身份)
         .arg("--extern").arg(format!("v1_contract={}", 契约产物.display()))
         .arg("-L").arg(format!("dependency={}", 依赖目录.display()))
         .arg(&源码路径)

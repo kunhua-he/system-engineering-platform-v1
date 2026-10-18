@@ -2,9 +2,7 @@
 import base64
 import concurrent.futures
 import json
-import os
 from pathlib import Path
-import signal
 import socket
 import sqlite3
 import subprocess
@@ -31,7 +29,7 @@ def 执行HTTP验收(仓根, 缓存根):
         except urllib.error.HTTPError as 失败响应:
             with 失败响应:
                 状态码, 正文 = 失败响应.code, json.loads(失败响应.read())
-        完整回执.append({'端口': 网关实例['端口'], '路径': 路径, 'HTTP状态': 状态码, '返回': 正文})
+        完整回执.append({'端口': 网关实例['端口'], '路径': 路径, '请求': 请求体, 'HTTP状态': 状态码, '返回': 正文})
         return 状态码, 正文
 
     def 断言(条件, 名称, 返回=None):
@@ -73,7 +71,7 @@ def 执行HTTP验收(仓根, 缓存根):
             监听探针.bind(('127.0.0.1', 0))
             端口号 = 监听探针.getsockname()[1]
         部署表 = []
-        for 相对目录 in ['扩展根目录/原子支持库/SQLite支持库', '扩展根目录/组合模块库/数据库查询模块', '扩展根目录/组合模块库/数据库事务模块']:
+        for 相对目录 in ['扩展根目录/原子支持库/SQLite支持库', '扩展根目录/组合模块库/数据库访问模块']:
             包目录 = 仓根 / 相对目录
             包声明 = json.loads((包目录 / '包声明.json').read_text())
             是模块 = '组合模块库' in 相对目录
@@ -81,7 +79,7 @@ def 执行HTTP验收(仓根, 缓存根):
         配置文件 = 实例目录 / '跨进程配置.json'
         配置文件.write_text(json.dumps({'跨进程': 部署表}, ensure_ascii=False))
         日志文件 = open(实例目录 / '网关.log', 'w')
-        网关进程 = subprocess.Popen([str(仓根 / '构建环境/构建缓存/release/examples/启动网关'), '--声明根', '扩展装载/扩展根声明.json', '--后缀表', '扩展装载/后缀表.json', '--端口', str(端口号), '--缓存根', str(实例目录 / '装载缓存'), '--跨进程配置', str(配置文件), '--工具根', '.'], cwd=仓根, stdout=日志文件, stderr=subprocess.STDOUT, start_new_session=True)
+        网关进程 = subprocess.Popen([str(仓根 / '构建环境/构建缓存/release/examples/启动网关'), '--声明根', '扩展装载/扩展根声明.json', '--后缀表', '扩展装载/后缀表.json', '--端口', str(端口号), '--缓存根', str(实例目录 / '装载缓存'), '--跨进程配置', str(配置文件), '--工具根', '.'], cwd=仓根, stdout=日志文件, stderr=subprocess.STDOUT, start_new_session=False)
         网关实例 = {'端口': 端口号, '进程': 网关进程, '日志': 日志文件, '数据库': 实例目录 / '验收.db', '部署': 部署表}
         实例表.append(网关实例)
         截止时刻 = time.monotonic() + 5
@@ -150,10 +148,10 @@ def 执行HTTP验收(仓根, 缓存根):
                 for 部署项 in reversed(网关实例['部署']): 请求(网关实例, '/接口/生命周期', {'动作':'卸载','标识串':部署项['标识串']})
             finally:
                 if 网关实例['进程'].poll() is None:
-                    os.killpg(网关实例['进程'].pid, signal.SIGTERM)
+                    网关实例['进程'].terminate()
                     try: 网关实例['进程'].wait(timeout=3)
                     except subprocess.TimeoutExpired:
-                        os.killpg(网关实例['进程'].pid, signal.SIGKILL); 网关实例['进程'].wait(timeout=3)
+                        网关实例['进程'].kill(); 网关实例['进程'].wait(timeout=3)
                 网关实例['日志'].close()
         (缓存根 / '完整回执.json').write_text(json.dumps(完整回执, ensure_ascii=False, indent=2))
     报告 = {'通过数': len(检查项), '检查项': 检查项, 'HTTP请求数': len([回执 for 回执 in 完整回执 if 'HTTP状态' in 回执]), '实例数':len(实例表), '网关全部退出':all(网关实例['进程'].poll() is not None for 网关实例 in 实例表)}

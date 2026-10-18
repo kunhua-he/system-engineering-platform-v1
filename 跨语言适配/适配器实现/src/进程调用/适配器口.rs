@@ -90,6 +90,22 @@ impl crate::适配器 {
         Ok(())
     }
 
+    /// 一包多个编号原子登记到一个域；不占用运行进程，冲突时整批零写。
+    pub fn 登记模块能力组(&self, 模块身份串: &str, 制品版本: (u32,u32,u32), 能力号表: &[u32], 部署: 域部署) -> Result<(), String> {
+        if 模块身份串.is_empty() || 能力号表.is_empty() { return Err("模块身份或能力号表为空".to_owned()); }
+        let 模块域标识 = 执行域标识 { 适配器实例号: self.实例号, 扩展标识串: 模块身份串.to_owned(), 制品版本 };
+        let 域表 = self.跨进程.as_ref().ok_or("模块进程表未开启")?;
+        let mut 域表锁 = 取锁(域表);
+        let mut 已有编号 = std::collections::BTreeSet::new();
+        for 能力号 in 能力号表 {
+            if !已有编号.insert(*能力号) { return Err(format!("模块能力号重复：{能力号}")); }
+            if let Some(已有标识) = 域表锁.取模块域标识(*能力号) && 已有标识 != 模块域标识 { return Err(format!("模块能力号{能力号}已归属其他域")); }
+        }
+        域表锁.登记跨进程域(模块域标识.clone(), 部署).map_err(|错误| format!("模块部署登记失败：{错误:?}"))?;
+        for 能力号 in 能力号表 { 域表锁.登记模块路由(*能力号, 模块域标识.clone()); }
+        Ok(())
+    }
+
     /// 这条号归哪个已装载单元 —— 判据与路由**同一套**（「谁认这个号就归谁」）。
     fn 按号找声明(&self, 号值: v1_contract::能力号) -> Option<&'static v1_contract::平台信息> {
         for 装载单元 in &self.装载单元s {

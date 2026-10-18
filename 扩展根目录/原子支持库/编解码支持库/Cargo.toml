@@ -1,0 +1,12 @@
+[package]
+name = "v1-codec-family"
+version = "0.1.0"
+edition = "2024"
+[lib]
+name = "v1_codec_family"
+path = "src/lib.rs"
+[dependencies]
+v1-contract = { path = "../../../契约声明" }
+base64 = "=0.23.1"
+encoding_rs = "=0.8.42"
+[workspace]
