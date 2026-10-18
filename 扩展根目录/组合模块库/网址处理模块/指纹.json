@@ -1,0 +1,30 @@
+{
+  "算法": "sha256",
+  "生成器": "构建装配/形态装配/扩展指纹.py",
+  "生成物声明": "生成物，禁手改。生成器：构建装配/形态装配/扩展指纹.py",
+  "生成命令": "$V1_PY 构建装配/形态装配/扩展指纹.py",
+  "范围": "声明、Rust源码、Cargo清单与锁文件、程序文本、模块及技能制品；不含机器局部支持库制品、说明散文、缓存、指纹本身。",
+  "指纹": {
+    "包声明.json": "c85e825dfbe241ccfaefa65b8e453a39462840fc09ae5e2586826ff600f9db3a",
+    "流程/网址参数提取.程序文本": "94aa32da5ba3312d8b2253969919b12580b685fce39afb8b98cbd446d82b760a",
+    "流程/网址参数编码.程序文本": "f5abc75ad66a11a8eed43394fd4f3afd06f22ea5f402355c01cb410f6f1c7dea",
+    "流程/路径参数编码.程序文本": "fafca6312711fcbcedf0f1a8ea5d34d80f8152fa6188d3c9f5021709ed78dd23",
+    "网址处理模块.模块制品": "95d18bdfad5c39e753737194ab8385db1e1beface131599f65d2eb4639150190",
+    "能力声明/7975.json": "9735047715780c6bedf7e7d4aedf1767228c89239e79db186c56431b9a093839",
+    "能力声明/7976.json": "e10a949dc8b4eb34bb83adb25b076ba48d3cdabb17a56f29b1626cd04e98e56e",
+    "能力声明/7977.json": "39462a5f4d08e7d4d545ed6d5e583ad6bbcd978ea0bc185aeeec83a9b0fd6aef",
+    "错误码表/3301.json": "92123cc33508954f1ad575012c3fad94c88fac85076fcee9d6ea1b0ebd2a16a4",
+    "错误码表/3302.json": "a099faa418a81676b4e1de5863850d5dba185226cff4601c960e92030d21a7fa",
+    "错误码表/3303.json": "65e697ae075d07d90d5902d366428d2ba1b7ce185615a7cce0ae5bb09ab8ca5f",
+    "错误码表/4101.json": "3c6d5cd73f4b54b18d18b697c021efa0cae7a15d07b080dfed07ae75a17dba51",
+    "错误码表/4102.json": "7698364ae8289d6ee3f902ff1a7db562114f844cbc10c74ef68e0bbf9ed41ffe",
+    "错误码表/4103.json": "67dee13f54c2e25dd21d271d961a4fbc0a72d97ac9c3d6d073fb3beaae96dedc",
+    "错误码表/4201.json": "710f8ac22dca548997abb4f8c7791ae5258107163a0b6a8c2dadab1a96a09070",
+    "错误码表/4202.json": "435687c02c25bfd22df87bd7d16e35fba4971e4016ce14da349d50633e0d1a2e",
+    "错误码表/4203.json": "ff4013d1edc5f918441f74266f53825862b46c68fca7cf1b5c184183d76153e2",
+    "错误码表/5201.json": "f5aaa1d127b1c51b4d4f33f7f9da829959b725d02f7c7ea8abd29edaa38c61e3",
+    "错误码表/5202.json": "fbc3d440e0b45b3441e2e96bebaeb3d8d45cf65ce1ff8126468b063cce975573",
+    "错误码表/5203.json": "25e9bfb64b912d9022ea3c672e4fe4be17ff859dfd0e4d59a9b9253145d40bec",
+    "错误码表/5204.json": "54d4fa79ebde34fc9d06eefdea638a2cc3384ad4c55c436af58dc65811aacef4"
+  }
+}

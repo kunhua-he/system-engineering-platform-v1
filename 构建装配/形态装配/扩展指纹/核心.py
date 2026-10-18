@@ -8,7 +8,7 @@ from pathlib import Path
 
 def 收集扩展指纹(包目录):
     文件表 = {包目录/'包声明.json'}
-    for 通配形状 in ('能力声明/*.json','错误码表/*.json','类型声明/*.json','src/**/*.rs','Cargo.toml','Cargo.lock','*.程序文本','*.模块制品','*.技能制品','说明.md'):
+    for 通配形状 in ('能力声明/*.json','错误码表/*.json','类型声明/*.json','src/**/*.rs','Cargo.toml','Cargo.lock','**/*.程序文本','*.模块制品','*.技能制品','说明.md'):
         文件表.update(包目录.glob(通配形状))
     return {str(文件路径.relative_to(包目录)):hashlib.sha256(文件路径.read_bytes()).hexdigest()
             for 文件路径 in sorted(文件表) if 文件路径.is_file()}
@@ -16,6 +16,23 @@ def 收集扩展指纹(包目录):
 
 def 处理扩展指纹(仓根, 是检查):
     失败表 = []
+    for 退役目录 in sorted((仓根/'扩展根目录').glob('*/*')):
+        if not 退役目录.is_dir() or (退役目录/'包声明.json').exists():
+            continue
+        剩余文件表 = [文件路径 for 文件路径 in 退役目录.rglob('*') if 文件路径.is_file() or 文件路径.is_symlink()]
+        退役指纹 = 退役目录/'指纹.json'
+        if 剩余文件表 != [退役指纹] or 退役指纹.is_symlink():
+            continue
+        退役声明 = json.loads(退役指纹.read_text())
+        if 退役声明.get('生成器') != 生成器相对路径:
+            continue
+        if 是检查:
+            失败表.append(str(退役指纹.relative_to(仓根))+'：退役生成物尚未回收')
+        else:
+            退役指纹.unlink()
+            for 空目录 in sorted((文件路径 for 文件路径 in 退役目录.rglob('*') if 文件路径.is_dir()),key=lambda 文件路径:len(文件路径.parts),reverse=True):
+                空目录.rmdir()
+            退役目录.rmdir()
     for 声明路径 in sorted((仓根/'扩展根目录').glob('*/*/包声明.json')):
         包目录 = 声明路径.parent
         指纹路径 = 包目录/'指纹.json'
@@ -31,7 +48,7 @@ def 处理扩展指纹(仓根, 是检查):
         else:
             指纹正文 = dict(算法='sha256',生成器=生成器相对路径,
                 生成物声明='生成物，禁手改。生成器：'+生成器相对路径,
-                生成命令='python3 '+生成器相对路径,
+                生成命令='$V1_PY '+生成器相对路径,
                 范围='声明、Rust源码、Cargo清单与锁文件、程序文本、模块及技能制品；不含机器局部支持库制品、说明散文、缓存、指纹本身。',指纹=新指纹)
             指纹路径.write_text(json.dumps(指纹正文,ensure_ascii=False,indent=2)+'\n')
     if 失败表:

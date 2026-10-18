@@ -252,7 +252,7 @@ fn 生命周期装载_模块依赖不过即如实报() {
     std::fs::create_dir_all(&模块目录).expect("建扫描点");
     std::fs::write(
         模块目录.join("包声明.json"),
-        "{\"标识串\":\"7a3f0c5e91b2d84a6f0e1c3b7d925a48\",\"名称\":\"缺依赖模块\",\
+        "{\"标识串\":\"a9f29510f9a555bd855fbed911fc2f0a\",\"名称\":\"缺依赖模块\",\
          \"依赖清单\":[\"ffffffffffffffffffffffffffffffff\"],\"依赖版本要求\":[{\"主\":0,\"次\":0}]}",
     )
     .expect("写包声明");
