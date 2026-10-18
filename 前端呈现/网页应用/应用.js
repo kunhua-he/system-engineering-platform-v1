@@ -12,20 +12,20 @@
 //
 // 本文件里没有一条业务分支：按钮点了就把活交给上面那些文件。
 
-import { 装编辑器 } from "./编辑器.js";
-import { 摆空状态, 跑编译, 跑诊断, 拉编译链, 链表 } from "./编译.js";
-import { 装案例库 } from "./案例库.js";
-import { 装支持库视图 } from "./支持库.js";
-import { 装导出目标 } from "./导出目标.js";
-import { 装调试 } from "./调试.js";
-import { 装菜单栏 } from "./菜单栏.js";
-import { 装程序文本 } from "./程序文本.js";
-import { 装对话框 } from "./对话框.js";
-import { 装支持库树 } from "./支持库树.js";
-import { 装底页签 } from "./底部页签.js";
-import { 装工具栏 } from "./工具栏.js";
-import { 装设计视图 } from "./设计视图.js";
-import { 装剪辑历史, 记流水 } from "./剪辑历史.js";
+import { 装编辑器 } from "./交互编辑/编辑器.js";
+import { 摆空状态, 跑编译, 跑诊断, 拉编译链, 链表 } from "./编译调试/编译.js";
+import { 装案例库 } from "./能力浏览/案例库.js";
+import { 装支持库视图 } from "./能力浏览/支持库.js";
+import { 装导出目标 } from "./编译调试/导出目标.js";
+import { 装调试 } from "./编译调试/调试.js";
+import { 装菜单栏 } from "./界面组件/菜单栏.js";
+import { 装程序文本 } from "./接口请求/程序文本.js";
+import { 装对话框 } from "./界面组件/对话框.js";
+import { 装支持库树 } from "./能力浏览/支持库树.js";
+import { 装底页签 } from "./界面组件/底部页签.js";
+import { 装工具栏 } from "./界面组件/工具栏.js";
+import { 装设计视图 } from "./交互编辑/设计视图.js";
+import { 装剪辑历史, 记流水 } from "./交互编辑/剪辑历史.js";
 
 const 取元素 = (编号) => document.getElementById(编号);
 

@@ -1,0 +1,113 @@
+# -*- coding: utf-8 -*-
+"""写盘账本 —— `v1_edit` 写盘与账本的**同一事务**落点，以及写盘意图的落 / 销 / 列。
+
+**为什么单开一件**（判据 ⑲ 单源文件 ≤400 行）：`开工账本.py` 已 351 行 ⇒ 写盘侧那四件
+（`记一件写盘` · `记写盘意图` · `销写盘意图` · `列写盘意图`）塞进去越限。
+
+**为什么必须同一事务**（2026-10-08 隔离复现）：原先逐条走「写回指纹（单独 commit）→
+记改动（另一次 commit）」两次提交。两次之间失败（DB 锁 / 崩溃）⇒ **盘上已写、认领指纹已新、
+改动行没有** —— 释放的越界检测拿它当「没走过 v1_edit」拒整条腿，而绕过检测又因指纹已刷
+看不见。`记一件写盘` 把两步压进**一条** sqlite 事务：要么都在，要么都不在。
+
+**写盘意图**（`写盘意图` 一表）：FS 与 DB 没有共同事务 ⇒ 盘已写、DB 未提之间必然有窗口。
+故落盘**之前**先在同一本账本记一行意图（写前指纹 + 期望写后指纹 + 功能 + 时间），
+落盘与同一事务记账都成功后**销掉**它。窗口内崩溃 ⇒ 意图行留下 ⇒ `写盘恢复` 只按
+「盘上 == 期望写后」认收敛、按「盘上 == 写前」认「没写成」，其余一律拒（**不洗指纹**）。
+"""
+
+import sqlite3
+
+from .. import 开工账本 as 账本
+
+意图建表语句 = (
+    """create table if not exists 写盘意图 (
+        开工号      text not null,
+        路径        text not null,
+        功能        text not null,
+        写前指纹    text,
+        期望写后指纹 text,
+        时间        text not null,
+        primary key (开工号, 路径)
+    )""",
+)
+
+
+def 补意图表(连接) -> None:
+    """老账本补 `写盘意图` 表（幂等）。本表是本工具私有的写盘生命周期，落同一本账本，不另立第二系统。"""
+    for 建表语句行 in 意图建表语句:
+        连接.execute(建表语句行)
+    连接.commit()
+
+
+def 记写盘意图(连接, 开工号: str, 路径: str, 功能名: str, 写前指纹: str, 期望写后: str) -> None:
+    """落盘**之前**记一行意图（同 (开工号, 路径) 覆盖）。这份意图就是「盘可能已写、账未记」的凭据。"""
+    连接.execute(
+        "insert into 写盘意图 (开工号, 路径, 功能, 写前指纹, 期望写后指纹, 时间) "
+        "values (?, ?, ?, ?, ?, ?) "
+        "on conflict(开工号, 路径) do update set 功能 = excluded.功能, 写前指纹 = excluded.写前指纹, "
+        "期望写后指纹 = excluded.期望写后指纹, 时间 = excluded.时间",
+        (开工号, 路径, 功能名, 写前指纹, 期望写后, 账本.时刻串()))
+    连接.commit()
+
+
+def 销写盘意图(连接, 开工号: str, 路径: str) -> int:
+    """销掉一条意图 ⇒ 销掉的行数（0 = 本来就没有，幂等）。"""
+    行数 = 连接.execute("delete from 写盘意图 where 开工号 = ? and 路径 = ?", (开工号, 路径)).rowcount
+    连接.commit()
+    return 行数
+
+
+def 列写盘意图(连接, 开工号: str) -> list:
+    """列出一条开工的全部未决意图（按路径定序，便于逐条报）。
+
+    ★ **意图表不在 = 没有未决意图**（2026-10-08）：建表是惰性的（`补意图表` 只在真有写盘时跑）
+    ⇒ 一本从没写过盘的账本没有它，而 `门禁.py` 的漂移归因与释放前的漂移检查都会先列意图 ——
+    不设这一条，它们会在「从没写过盘的干净账本」上抛 `no such table` 把门禁打崩。
+    只吞**缺表**那一种；别的 sqlite 错（锁 / 腐坏）照旧抛。
+    """
+    try:
+        return [dict(数据行) for 数据行 in 连接.execute(
+            "select * from 写盘意图 where 开工号 = ? order by 路径", (开工号,))]
+    except sqlite3.OperationalError as 读不动:
+        if "no such table" not in str(读不动):
+            raise
+        return []
+
+
+def 记一件写盘(连接, 开工号: str, 路径: str, 功能名: str, 写前指纹: str, 写后指纹: str,
+             说明: str = "") -> None:
+    """认领指纹更新 + 改动记录 + 销写盘意图，压进**一条** sqlite 事务（要么都在，要么都不在）。
+
+    取代原先 `写回指纹` 与 `记改动` 各自 commit 的两步 —— 那两步之间失败会留下
+    「盘已写、指纹已新、改动行没有」的半态。失败原样抛（不吞），由调用方如实报阶段。
+    `说明` 只有**写盘恢复**（`写盘恢复.恢复开工`）填 —— 「据哪条意图收敛的」，不是补造历史。
+    """
+    连接.execute("begin immediate")
+    try:
+        连接.execute(
+            "insert into 认领 (开工号, 路径, 指纹) values (?, ?, ?) "
+            "on conflict(开工号, 路径) do update set 指纹 = excluded.指纹",
+            (开工号, 路径, 写后指纹))
+        连接.execute(
+            "insert into 改动 (开工号, 路径, 功能, 写前指纹, 写后指纹, 时间, 说明) "
+            "values (?, ?, ?, ?, ?, ?, ?)",
+            (开工号, 路径, 功能名, 写前指纹, 写后指纹, 账本.时刻串(), 说明))
+        连接.execute("delete from 写盘意图 where 开工号 = ? and 路径 = ?", (开工号, 路径))
+        连接.commit()
+    except BaseException:
+        连接.rollback()
+        raise
+
+
+def 记已记账恢复(连接, 开工号, 路径, 改动记录, 候选指纹):
+    """恢复动作独立审计并销意图，不改原成功行和认领。"""
+    连接.execute("create table if not exists 已记账恢复 (原改动编号 integer primary key, 开工号 text not null, 路径 text not null, 写前指纹 text not null, 写后指纹 text not null, 候选SHA256 text not null, 时间 text not null)")
+    连接.commit()
+    连接.execute("begin immediate")
+    try:
+        连接.execute("insert or ignore into 已记账恢复 values (?, ?, ?, ?, ?, ?, ?)", (改动记录["编号"], 开工号, 路径, 改动记录["写前指纹"], 改动记录["写后指纹"], 候选指纹, 账本.时刻串()))
+        连接.execute("delete from 写盘意图 where 开工号 = ? and 路径 = ?", (开工号, 路径))
+        连接.commit()
+    except BaseException:
+        连接.rollback()
+        raise

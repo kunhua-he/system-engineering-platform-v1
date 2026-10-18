@@ -9,7 +9,7 @@ from 构建装配.形态装配.生成模块制品.编译模块 import 编译环�
 
 
 def 自检_共享构建缓存():
-    from 构建装配.一键验证.一键验证.判据_散文 import 版本库环境
+    from 构建装配.一键验证.一键验证.检查规则.规范文本.判据_散文 import 版本库环境
     with patch.dict(os.environ,版本库环境(),clear=True):
         return _验证共享缓存()
 

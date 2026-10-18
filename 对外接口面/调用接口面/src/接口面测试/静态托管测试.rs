@@ -40,8 +40,8 @@ fn 静态托管_根路径回首页() {
 fn 静态托管_前端自身的件按扩展名给内容类型() {
     let 服务 = 起服务();
     for (路径, 类型, 特征) in [
-        ("/页面样式.css", "text/css; charset=utf-8", "{"),
-        ("/取接口.js", "text/javascript; charset=utf-8", "fetch"),
+        ("/样式资源/页面样式.css", "text/css; charset=utf-8", "{"),
+        ("/接口请求/取接口.js", "text/javascript; charset=utf-8", "fetch"),
         ("/应用.js", "text/javascript; charset=utf-8", "import"),
     ] {
         let 造应答 = 发请求(&服务, &取请求(路径));

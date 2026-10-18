@@ -23,10 +23,10 @@ from pathlib import Path
 
 起始时刻 = time.monotonic()
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
+sys.path.insert(0, str(Path(__file__).resolve().parents[0]))
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from 构建装配.门禁 import 报告环境步  # noqa: E402
-from 开发工具.MCP服务.合主干编排 import 派发  # noqa: E402
+from 开发工具.MCP服务.集成管理.合主干编排 import 派发  # noqa: E402
 
 
 def 入口函数(命令行参数):

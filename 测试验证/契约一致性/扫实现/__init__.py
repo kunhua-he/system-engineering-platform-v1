@@ -9,11 +9,11 @@
     默认范围 · 找仓根
 """
 
-from .常量 import 判据名表, 短名表, 空话表, 接缝符号, 默认范围
-from .读盘 import 扫实现, 找仓根, 读盘, 常量表名集
-from .组装 import 样本状态
-from .自测 import 跑自测
-from .输出 import 打印比对结果, 打印读数
+from .结果编排.常量 import 判据名表, 短名表, 空话表, 接缝符号, 默认范围
+from .源码解析.读盘 import 扫实现, 找仓根, 读盘, 常量表名集
+from .结果编排.组装 import 样本状态
+from .验证样本.自测 import 跑自测
+from .结果编排.输出 import 打印比对结果, 打印读数
 
 __all__ = [
     "默认范围",

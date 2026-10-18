@@ -33,7 +33,7 @@ from pathlib import Path
 
 # 外层采样环境变量的名字：**唯一主人**在 `一键验证/墙钟采样.py`（本件不另写一份字面量）。
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "构建装配" / "一键验证"))
-from 一键验证.墙钟采样 import 采样环境变量  # noqa: E402
+from 一键验证.判据编排.墙钟采样 import 采样环境变量  # noqa: E402
 
 
 def 跑一条闸(名称: str, 相对: str, 仓根: Path, 硬顶秒: float, 外层起表秒: float) -> tuple:

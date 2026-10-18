@@ -27,8 +27,10 @@ from pathlib import Path
 sys.path.insert(0, str(仓根 / "开发工具"))
 sys.path.insert(0, str(仓根))
 
-from MCP服务 import 工具表, 服务管理, 传输_http, http传输样本, http自愈  # noqa: E402
-from MCP服务.服务常量 import 默认监听端口  # noqa: E402
+from MCP服务 import 工具表
+from MCP服务.服务协议 import 服务管理, 传输_http, http自愈
+from MCP服务.验证样本.服务协议 import http传输样本  # noqa: E402
+from MCP服务.服务协议.服务常量 import 默认监听端口  # noqa: E402
 
 # 用法面（`--帮助` / `-h` / `--help` 只打它然后返回 0）：**先打用法、不碰端口** ——
 # 新会话查用法不能把服务起了（端口已被占时会抛 OSError）。
