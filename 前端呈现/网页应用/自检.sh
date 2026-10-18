@@ -31,7 +31,7 @@ START_EPOCH="$(date +%s)"
 
 # 扫描面：本目录下的 .html / .js / .css。自检.sh 自身不在扫描面内（它当然含这些词）。
 SCAN=""
-for f in *.html *.js *.css; do
+for f in $(find . -type f \( -name '*.html' -o -name '*.js' -o -name '*.css' \)); do
   [ -f "$f" ] && SCAN="${SCAN} ${f}"
 done
 SCAN="${SCAN# }"

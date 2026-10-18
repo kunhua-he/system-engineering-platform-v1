@@ -31,7 +31,7 @@ def 读文本(路径: Path) -> str:
         return ""
 
 
-# 子进程不许继承的 Git 定位变量（会把 git 带到别的树 / 别的 index 上）—— 同 `开发工具/MCP服务/shell.py`
+# 子进程不许继承的 Git 定位变量（会把 git 带到别的树 / 别的 index 上）—— 同 `开发工具/MCP服务/作业执行/shell.py`
 继承定位变量 = ("GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE", "GIT_OBJECT_DIRECTORY",
               "GIT_COMMON_DIR", "GIT_ALTERNATE_OBJECT_DIRECTORIES")
 

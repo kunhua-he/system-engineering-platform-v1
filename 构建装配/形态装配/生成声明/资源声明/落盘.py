@@ -8,7 +8,7 @@
 import hashlib
 import os
 
-from ..路径形状 import 仓根, 生成失败
+from ..生成编排.路径形状 import 仓根, 生成失败
 from .路径与枚举 import 生成器相对路径, 落盘件
 from .渲染 import 渲染资源声明
 

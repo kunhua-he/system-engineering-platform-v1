@@ -7,7 +7,7 @@
 
 import sys
 
-from ..路径形状 import 生成失败
+from ..生成编排.路径形状 import 生成失败
 from .路径与枚举 import 生成器相对路径, 建资源根
 from .落盘 import 生成资源声明, 检查资源声明
 

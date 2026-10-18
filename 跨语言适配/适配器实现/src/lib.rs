@@ -68,31 +68,31 @@ pub use 边界面::{对外边界, 平台_取接口描述, 平台_调用, 平台_
 // 形状翻译的零件（读侧）在 `契约读取.rs`；JSON 写在 `小写出.rs`；接口描述在 `接口描述.rs`；
 // 三个导出符号在 `边界面.rs`；适配器本体与四份摘要在 `核心实现.rs` + `核心实现/`；
 // 两份测试各自成文件（整文件即测试）。
-#[path = "契约读取.rs"] mod 契约读取;
-#[path = "小写出.rs"]
+#[path = "扩展装载/契约读取.rs"] mod 契约读取;
+#[path = "协议传值/小写出.rs"]
 // 公开：上层（对外接口面）也要写 JSON，**转义表只许有一份** —— 见 `小写出.rs` 文件头。
 pub mod 小写出;
-#[path = "接口描述.rs"] mod 接口描述;
-#[path = "边界面.rs"] mod 边界面;
+#[path = "扩展装载/接口描述.rs"] mod 接口描述;
+#[path = "边界接缝/边界面.rs"] mod 边界面;
 // 通知口（注册端点 · 派发 · 卸载协商）· 线程安全（唯一那条 `unsafe` 断言）· 留痕口（写留痕 + 取留痕）。
-#[path = "通知口.rs"] mod 通知口;
-#[path = "线程安全.rs"] mod 线程安全;
-#[path = "留痕口.rs"] mod 留痕口;
-#[path = "值归还.rs"] mod 值归还;  // 跨边界「释放口」的唯一实现（C 面与 Rust 面同语义）
-#[path = "装载件缓存.rs"] pub mod 装载件缓存;  // 能力码段解包物落仓外（本层是接口面唯一的腿）
-#[path = "动态库口.rs"] mod 动态库口;  // dlopen/dlsym/dlerror 的唯一声明处（两条装载腿共用）
-#[path = "模块执行体装载.rs"] pub mod 模块执行体装载;  // 段 20 执行体：判平台身份 → dlopen → 取入口 → 调用
-#[cfg(unix)] #[path = "进程监督.rs"] pub mod 进程监督;
-#[cfg(unix)] #[path = "进程帧.rs"] pub mod 进程帧;
-#[cfg(unix)] #[path = "进程池.rs"] pub mod 进程池;  // 跨进程执行域：拉起 · 监督 · 崩溃重拉（每域一进程 · 不落 static）
-#[cfg(unix)] #[path = "线协议.rs"] pub mod 线协议;  // Unix socket 上承载同一份 `边界协议.md` 的调用语义（复用帧编解码）
-#[cfg(unix)] #[path = "进程调用.rs"] pub mod 进程调用;  // 跨进程执行域表：送调用 + 失败翻结构化 `0034`（不 panic）
+#[path = "边界接缝/通知口.rs"] mod 通知口;
+#[path = "协议传值/线程安全.rs"] mod 线程安全;
+#[path = "边界接缝/留痕口.rs"] mod 留痕口;
+#[path = "协议传值/值归还.rs"] mod 值归还;  // 跨边界「释放口」的唯一实现（C 面与 Rust 面同语义）
+#[path = "扩展装载/装载件缓存.rs"] pub mod 装载件缓存;  // 能力码段解包物落仓外（本层是接口面唯一的腿）
+#[path = "扩展装载/动态库口.rs"] mod 动态库口;  // dlopen/dlsym/dlerror 的唯一声明处（两条装载腿共用）
+#[path = "扩展装载/模块执行体装载.rs"] pub mod 模块执行体装载;  // 段 20 执行体：判平台身份 → dlopen → 取入口 → 调用
+#[cfg(unix)] #[path = "原池执行/进程监督.rs"] pub mod 进程监督;
+#[cfg(unix)] #[path = "原池执行/进程帧.rs"] pub mod 进程帧;
+#[cfg(unix)] #[path = "原池执行/进程池.rs"] pub mod 进程池;  // 跨进程执行域：拉起 · 监督 · 崩溃重拉（每域一进程 · 不落 static）
+#[cfg(unix)] #[path = "协议传值/线协议.rs"] pub mod 线协议;  // Unix socket 上承载同一份 `边界协议.md` 的调用语义（复用帧编解码）
+#[cfg(unix)] #[path = "原池执行/进程调用.rs"] pub mod 进程调用;  // 跨进程执行域表：送调用 + 失败翻结构化 `0034`（不 panic）
 // 工作进程：扩展侧收调用循环（解帧 → 查注册表 → 调执行函数 → 回结果 + 答通知回执）。
 // 复用同 crate 的 `线协议` / `进程帧`（**不另造第二套编解码**）。
-#[cfg(unix)] #[path = "工作进程.rs"] pub mod 工作进程;
+#[cfg(unix)] #[path = "原池执行/工作进程.rs"] pub mod 工作进程;
 // 候选发布与版本切换：执行引用快照 · 在途引用 · 同身份新版切换（W05）。
-#[path = "候选发布.rs"] mod 候选发布;
-#[path = "发布阶段.rs"] pub mod 发布阶段;  // 四类目录分层（W12）：创作/待验/发布/旧版本（盘上归属，与上件互补）
+#[path = "扩展装载/候选发布.rs"] mod 候选发布;
+#[path = "扩展装载/发布阶段.rs"] pub mod 发布阶段;  // 四类目录分层（W12）：创作/待验/发布/旧版本（盘上归属，与上件互补）
 // 核心实现：适配器本体（装载 · 转发调用）与它对外交出的形状（结果与四份摘要）。
 #[path = "核心实现.rs"]
 mod 核心实现;
@@ -101,15 +101,15 @@ pub use 核心实现::{参数摘要, 声明就绪, 能力身份, 能力摘要, �
 //
 // 为什么放文件末：一键验证按「`#[cfg(test)]` 之后第一个 `{`」求测试区边界；
 // `mod X;` 声明没有花括号，放中间会被当成「下一个 `{` 之前的代码都是测试」。
-#[cfg(test)] #[path = "测试夹具.rs"] pub(crate) mod 测试夹具;
+#[cfg(test)] #[path = "验证样本/测试夹具.rs"] pub(crate) mod 测试夹具;
 #[cfg(test)] #[path = "适配器测试.rs"] mod 适配器测试;
-#[cfg(test)] #[path = "边界测试.rs"] mod 边界测试;
-#[cfg(test)] #[path = "调用测试.rs"] mod 调用测试;
-#[cfg(test)] #[path = "写出测试.rs"] mod 写出测试;
-#[cfg(test)] #[path = "生命周期协商测试.rs"] mod 生命周期协商测试;
-#[cfg(all(test, unix))] #[path = "进程监督测试.rs"] mod 进程监督测试;
-#[cfg(all(test, unix))] #[path = "进程帧测试.rs"] mod 进程帧测试;
-#[cfg(all(test, unix))] #[path = "进程池测试.rs"] mod 进程池测试;
-#[cfg(all(test, unix))] #[path = "子进程环境测试.rs"] mod 子进程环境测试;
-#[cfg(all(test, unix))] #[path = "线协议测试.rs"] mod 线协议测试;
-#[cfg(all(test, unix))] #[path = "进程调用测试.rs"] mod 进程调用测试;
+#[cfg(test)] #[path = "验证样本/边界测试.rs"] mod 边界测试;
+#[cfg(test)] #[path = "验证样本/调用测试.rs"] mod 调用测试;
+#[cfg(test)] #[path = "验证样本/写出测试.rs"] mod 写出测试;
+#[cfg(test)] #[path = "验证样本/生命周期协商测试.rs"] mod 生命周期协商测试;
+#[cfg(all(test, unix))] #[path = "验证样本/进程监督测试.rs"] mod 进程监督测试;
+#[cfg(all(test, unix))] #[path = "验证样本/进程帧测试.rs"] mod 进程帧测试;
+#[cfg(all(test, unix))] #[path = "验证样本/进程池测试.rs"] mod 进程池测试;
+#[cfg(all(test, unix))] #[path = "验证样本/子进程环境测试.rs"] mod 子进程环境测试;
+#[cfg(all(test, unix))] #[path = "验证样本/线协议测试.rs"] mod 线协议测试;
+#[cfg(all(test, unix))] #[path = "验证样本/进程调用测试.rs"] mod 进程调用测试;

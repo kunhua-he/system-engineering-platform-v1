@@ -28,17 +28,14 @@ import uuid
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))     # 开发工具/
-from .shell import _取工作树, _执行环境, _收流, _关日志夹, 输出上限, 日志上限, 开工号形状  # noqa: E402
-from .仓操作 import 禁终端提示环境, 跑命令  # noqa: E402
+from .作业执行.shell import _取工作树, _执行环境, _收流, _关日志夹, 输出上限, 日志上限, 开工号形状  # noqa: E402
+from .施工管理.仓操作 import 禁终端提示环境, 跑命令  # noqa: E402
 from .作业账本 import (  # noqa: E402
     可抢态集, 工作日志后缀, 时刻串, 日志后缀, 日志路径, 状态_取消中, 状态_启动中, 状态_失败,
     状态_已取消, 状态_崩溃失联, 状态_运行中, 终态集, 落新行, 落终态, 改行, 非终态集, 读行,
     错误日志后缀,
 )
-from .作业进程 import (  # noqa: E402
-    _补齐小输出, _开日志夹, 杀组, 组在吗, 等命令组, 读后台预算, 轮询间隔秒, 收尾秒, 进程读数,
-    预算硬顶名, 预算规则类, 预算规则名,
-)
+from .作业执行.作业进程 import _补齐小输出, _开日志夹, 杀组, 组在吗, 等命令组, 读后台预算, 轮询间隔秒, 收尾秒, 进程读数, 预算硬顶名, 预算规则类, 预算规则名
 
 启动握手上限秒 = 5          # start 等「工作进程报回命令组号」的上限（同步路硬顶，判据 ㊲）
 任务号形状 = re.compile(r"^[0-9a-f]{32}$")
@@ -67,7 +64,7 @@ from .作业进程 import (  # noqa: E402
            " && cargo run --quiet --locked -p v1-case-runner"
            # ★ 债务 573：链尾按**树内容指纹**记一笔「放行全绿」——`释放` 的跑验证命中就复用，
            #   不再把闸 0 重跑一遍（同一树内容 ⇒ 同一批读数）。`-B` 免落 __pycache__。
-           " && \"$V1_PY\" -B -c \"import sys;sys.path.insert(0,'开发工具');from MCP服务.放行结果 import 记放行;记放行('.') \""
+           " && \"$V1_PY\" -B -c \"import sys;sys.path.insert(0,'开发工具');from MCP服务.验证管理.放行结果 import 记放行;记放行('.') \""
            ),
 }
 
@@ -390,7 +387,7 @@ def 合主线命令(作业参数, 仓根):
     if type(推送) is not bool:
         return 2, "推送须逻辑型，默认假"
     try:
-        from .合主干集成树 import 定位主仓
+        from .集成管理.合主干集成树 import 定位主仓
     except ImportError:
         return 2, "合主线依赖唯一主仓定位与合并互斥修复，接口未就绪 ⇒ 不启动"
     退出码, 主仓路径 = 定位主仓(仓根)

@@ -28,7 +28,7 @@ import sqlite3
 import sys
 from pathlib import Path
 
-from .合主干有界跑 import 跑有界命令
+from .集成管理.合主干有界跑 import 跑有界命令
 
 # 本件在 开发工具/MCP服务/ ⇒ parents[1] = 开发工具（parents[2] 已是仓根，取不到信息核心）。
 _信息核心目录 = Path(__file__).resolve().parents[1] / "信息核心"
