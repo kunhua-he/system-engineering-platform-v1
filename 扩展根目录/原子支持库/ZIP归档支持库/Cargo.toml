@@ -1,0 +1,11 @@
+[package]
+name = "v1-zip-archive"
+version = "0.1.0"
+edition = "2024"
+[lib]
+name = "v1_zip_archive"
+path = "src/lib.rs"
+[dependencies]
+v1-contract = { path = "../../../契约声明" }
+zip = { version = "=9.0.5", default-features = false, features = ["deflate-flate2-zlib-rs"] }
+[workspace]

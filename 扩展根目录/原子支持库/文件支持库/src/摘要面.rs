@@ -124,8 +124,8 @@ impl 摘要状态 {
     /// 对已满的 64 字节块做一轮压缩（FIPS 180-4 §6.2.2）。
     fn 压块(&mut self) {
         let mut 字表 = [0u32; 64];
-        for 位次 in 0..16 {
-            字表[位次] = u32::from_be_bytes([
+        for (位次, 初始字) in 字表.iter_mut().enumerate().take(16) {
+            *初始字 = u32::from_be_bytes([
                 self.缓冲[位次 * 4],
                 self.缓冲[位次 * 4 + 1],
                 self.缓冲[位次 * 4 + 2],
@@ -162,8 +162,8 @@ impl 摘要状态 {
             工作字[1] = 工作字[0];
             工作字[0] = 临时字.wrapping_add(状态混零).wrapping_add(多择);
         }
-        for 位次 in 0..8 {
-            self.状态字[位次] = self.状态字[位次].wrapping_add(工作字[位次]);
+        for (状态项, 工作项) in self.状态字.iter_mut().zip(工作字) {
+            *状态项 = 状态项.wrapping_add(工作项);
         }
     }
 }
