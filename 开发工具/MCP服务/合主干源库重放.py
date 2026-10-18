@@ -137,6 +137,9 @@ def 合并三方库(基库, 腿库, 主干库, 集成树) -> tuple:
             if 表名 == 条款表名 and 腿值 is not None and (Path(集成树) / str(腿值[0])).is_file():
                 跳过表.append((表名, 主键值, 源件权威说明))
                 continue
+            if 表名 == "命名登记" and 主键值 == ("None",) and 腿值 is not None:
+                跳过表.append((表名, 主键值, "施工误登记占位名，不进入主干"))
+                continue
             if 主语 == 基语:
                 动作表.append({"表": 表名, "键": 主键值, "列名表": 列名表, "腿值": 腿值})
             else:
