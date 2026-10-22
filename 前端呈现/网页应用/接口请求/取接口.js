@@ -94,7 +94,8 @@ export async function 发导出(导出目标, 标识) {
 export async function 发程序文本(动作, 路径, 正文) {
   const 尾部 = 正文 === undefined ? "" : ',"正文":' + JSON.stringify(正文);
   return 发请求(路径_程序文本, '{"动作":' + JSON.stringify(动作)
-    + ',"路径":' + JSON.stringify(路径 || "") + 尾部 + "}");
+    + ',"路径":' + JSON.stringify(路径 || "") + 尾部
+    + (动作 === "写" ? ',"权限":"读写"' : "") + "}");
 }
 
 /** `POST /接口/菜单命令`，体 `{"编号":"0xe100"}`。后端此刻一律回 `9001`，本页如实显示。 */
