@@ -30,6 +30,7 @@ import 记规则  # noqa: E402  （复用它的参数解析 —— 不许写第�
 
 用法文本 = ("用法：信息核心.py 命名字典登记 --名字 X --语义 Y --模式 Z --来源 W [--状态 V]"
           " ／ 命名字典登记 --名字 X --分组 G --说明 S"
+          " ／ 登记 --泛名 --名字 X --说明 S [--删]"
           " ／ 登记 --批 <表文件> [--干跑] [--不落库]（一次登记多个名）")
 
 
@@ -169,8 +170,38 @@ def 记例外(名字: str, 说明: str) -> int:
     return 0
 
 
+def 登记泛名(字段表: dict) -> int:
+    """登记 --泛名 [--删]：更新说明保留创建时间，删除须确有该名。"""
+    名字 = (字段表.get("名字") or "").strip()
+    if not 名字 or ("删" not in 字段表 and "说明" not in 字段表):
+        print("泛名登记须给名字，写入须显式给说明", file=sys.stderr)
+        return 2
+    连接 = sqlite3.connect(表定义.库路径(仓根))
+    try:
+        连接.execute("begin immediate")
+        if "删" in 字段表:
+            已有 = 连接.execute("delete from 命名泛名 where 名字=?", (名字,)).rowcount
+            if not 已有:
+                连接.rollback()
+                return 2
+        else:
+            连接.execute("insert into 命名泛名(名字,说明) values(?,?) "
+                       "on conflict(名字) do update set 说明=excluded.说明",
+                       (名字, 字段表["说明"]))
+        连接.commit()
+    except sqlite3.Error as 错误:
+        连接.rollback()
+        print("泛名登记失败：%s" % 错误, file=sys.stderr)
+        return 1
+    finally:
+        连接.close()
+    return 0
+
+
 def 登记(字段表: dict) -> int:
     """按字段表分派：`--删` ⇒ `删名字`；`--例外` ⇒ `记例外`；有 `--分组`/`--说明` ⇒ `登记核心词`；否则 ⇒ `登记名字`。"""
+    if "泛名" in 字段表:
+        return 登记泛名(字段表)
     if "删" in 字段表:
         return 删名字(字段表.get("名字", ""))
     if "例外" in 字段表:
