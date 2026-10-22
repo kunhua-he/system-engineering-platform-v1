@@ -13,6 +13,12 @@
 
 四栏与原先的 JSON 逐字对齐：`号` · `缺什么` · `落点` · `验证命令`（后两栏可空）。
 **做完即删**：一条债务修好了就把那一行删掉（`--删 --号 N`）—— 台账只留未完成的。
+
+**保真值**（2026-10-22 第三轮维修）：后两栏的「**显式空串**」与「**没给**」是两件事 ——
+`--落点 ""` = 把这栏**清成空串**，不给 `--落点` = 更新时保留原值、新增时留 NULL。旧写法 `落点 or None` 把两者
+混成一个 NULL ⇒ 腿侧的「清空」在合主干重放时被静默丢掉（`合主干源库重放` 逐栏比对随之假绿）。
+写入走**单一事务**（`begin immediate` + upsert）：读「有没有这行」与写在同一事务里，
+同一号的读改写串行执行，缺参字段不会覆盖另一事务已提交的值。
 """
 from __future__ import annotations
 
@@ -33,6 +39,16 @@ import 记规则  # noqa: E402  （复用它的参数解析 —— 不许写第�
         "（`源件` = `开发工具/信息核心/信息核心.db`），否则释放的越界检测会拒")
 
 
+def _栏值(字段表: dict, 栏名: str):
+    """⇒ 该栏本次要落的值：**显式给了（含空串）** ⇒ 原值；**没给** ⇒ `None`（该栏留 NULL）。
+
+    判据是「键在不在 `字段表`」，不是「值真不真」—— `--落点 ""` 进来就是空串，那是**清栏**。
+    """
+    if 栏名 not in 字段表:
+        return None
+    return (字段表.get(栏名) or "").strip()
+
+
 def 记未完成(字段表: dict) -> int:
     """按 `号` 就地写一行 / 删一行 / 列出来 ⇒ 退出码。"""
     号原文 = (字段表.get("号") or "").strip()
@@ -49,14 +65,26 @@ def 记未完成(字段表: dict) -> int:
         print(f"拒：`--号 {台账号}` 给了却没给 `--缺什么` —— 台账一行必须说清缺什么。",
               file=sys.stderr)
         return 2
-    落点 = (字段表.get("落点") or "").strip()
-    验证命令 = (字段表.get("验证命令") or "").strip()
-    连接 = sqlite3.connect(表定义.库路径(仓根))
+    落点 = _栏值(字段表, "落点")
+    验证命令 = _栏值(字段表, "验证命令")
+    连接 = sqlite3.connect(表定义.库路径(仓根), timeout=10)
     try:
-        已有 = 连接.execute("select 1 from 未完成 where 号 = ?", (台账号,)).fetchone()
-        连接.execute("insert or replace into 未完成 values(?,?,?,?)",
-                   (台账号, 缺什么, 落点 or None, 验证命令 or None))
+        连接.execute("begin immediate")     # 读改写同一事务：并发两写不互相覆盖
+        已有 = 连接.execute("select 落点, 验证命令 from 未完成 where 号 = ?", (台账号,)).fetchone()
+        if 已有 is not None:
+            if "落点" not in 字段表:
+                落点 = 已有[0]
+            if "验证命令" not in 字段表:
+                验证命令 = 已有[1]
+        连接.execute("insert into 未完成(号, 缺什么, 落点, 验证命令) values(?,?,?,?) "
+                   "on conflict(号) do update set 缺什么 = excluded.缺什么, "
+                   "落点 = excluded.落点, 验证命令 = excluded.验证命令",
+                   (台账号, 缺什么, 落点, 验证命令))
         连接.commit()
+    except sqlite3.Error as 错误:
+        连接.rollback()
+        print(f"拒：`未完成` 第 {台账号} 行写入失败（已回滚，库未变）：{错误}", file=sys.stderr)
+        return 1
     finally:
         连接.close()
     print(f"记未完成：{'改' if 已有 else '增'} 第 {台账号} 行 · {缺什么[:40]}")
@@ -66,14 +94,20 @@ def 记未完成(字段表: dict) -> int:
 
 def 删一行(台账号: int) -> int:
     """把一行从 `未完成` 表删掉（修好了就删，台账只留未完成的）⇒ 退出码。"""
-    连接 = sqlite3.connect(表定义.库路径(仓根))
+    连接 = sqlite3.connect(表定义.库路径(仓根), timeout=10)
     try:
+        连接.execute("begin immediate")
         已有 = 连接.execute("select 1 from 未完成 where 号 = ?", (台账号,)).fetchone()
         if not 已有:
+            连接.rollback()
             print(f"拒：`未完成` 表里没有第 {台账号} 行（先 `--列` 看现行号）。", file=sys.stderr)
             return 2
         连接.execute("delete from 未完成 where 号 = ?", (台账号,))
         连接.commit()
+    except sqlite3.Error as 错误:
+        连接.rollback()
+        print(f"拒：`未完成` 第 {台账号} 行删除失败（已回滚，库未变）：{错误}", file=sys.stderr)
+        return 1
     finally:
         连接.close()
     print(f"记未完成：删第 {台账号} 行")
