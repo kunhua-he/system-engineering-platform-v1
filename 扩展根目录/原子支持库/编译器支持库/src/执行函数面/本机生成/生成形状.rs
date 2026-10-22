@@ -53,6 +53,8 @@ pub struct 本机源码产物 {
     pub 工具链身份: String,
     pub 平台身份: String,
     pub 执行源码: String,
+    pub 参数类型号表: Vec<u32>,
+    pub 返回类型号: u32,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
