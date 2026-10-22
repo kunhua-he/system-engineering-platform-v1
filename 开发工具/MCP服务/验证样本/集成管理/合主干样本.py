@@ -442,6 +442,8 @@ def _验源库三态():
         "根目录副本必须已删：唯一实现住 开发工具/MCP服务/集成管理/合主干有界跑.py"
     from ... import 合主干源库重放
     assert 合主干源库重放.跑有界命令 is 跑有界命令, "源库重放必须引用同一个有界跑函数"
+    from .源库边界样本 import 验源库边界
+    验源库边界(仓根目录)
     for 名称 in 源库重放样本:
         with tempfile.TemporaryDirectory(prefix="v1源库三态-") as 临时目录:
             仓根, 腿树 = _建三态夹具(Path(临时目录), 名称)
