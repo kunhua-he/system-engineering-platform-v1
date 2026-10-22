@@ -394,7 +394,12 @@ def 读盘指纹(工作树: Path, 相对路径表: list) -> tuple:
         if 相对路径项.startswith("/") or ".." in Path(相对路径项).parts:
             读不出表.append(相对路径项)
             continue
-        件路径 = 工作树 / 相对路径项
+        from .路径守卫 import 核树内路径
+        try:
+            件路径 = 核树内路径(工作树, 相对路径项)
+        except ValueError:
+            读不出表.append(相对路径项)
+            continue
         if not 件路径.is_file():
             读不出表.append(相对路径项)
             continue

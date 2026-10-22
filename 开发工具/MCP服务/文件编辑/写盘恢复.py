@@ -80,6 +80,12 @@ def 恢复一次(连接, 工作树: Path, 开工号: str) -> tuple:
         return 3, "存在已记账恢复意图，须同改动编号/候选全文调用恢复已记账写后", [], []
     if not 意图表:
         return 0, "没有未决的写盘意图 —— 盘账已是一致态（不必恢复）", [], []
+    from ..施工管理.路径守卫 import 核树内路径
+    try:
+        for 意图行 in 意图表:
+            核树内路径(工作树, 意图行["路径"])
+    except ValueError as 错误:
+        return 3, str(错误), [], []
     认领表 = 账本.读认领(连接, 开工号)
     自错表, 未写成表, 外部表 = 分漂移(工作树, 认领表, 意图表)
     已收敛行表, 拒收表, 记账错 = [], [], ""
@@ -203,6 +209,16 @@ def 越界归因(连接, 工作树: Path, 开工号: str, 越界表: list) -> st
 
 
 def 恢复开工(仓根, 开工号: str) -> tuple:
+    """恢复与正常修改共用开工写锁，拒绝并发恢复。"""
+    from .写盘执行 import 开工写盘锁, 写盘占用
+    try:
+        with 开工写盘锁(开工号):
+            return _恢复开工受锁(仓根, 开工号)
+    except 写盘占用 as 错误:
+        return 3, str(错误)
+
+
+def _恢复开工受锁(仓根, 开工号: str) -> tuple:
     """`v1_edit` 操作 `恢复` 的入口 ⇒ `(退出码, 说明)`。只对本开工、只按意图，不动别的开工。"""
     连接 = 账本.连账本()
     try:
@@ -210,6 +226,8 @@ def 恢复开工(仓根, 开工号: str) -> tuple:
         一条开工 = 账本.读开工(连接, 开工号)
         if not 一条开工:
             return 1, "没有这条开工：%s ⇒ 先 功能 = 1 登记（`v1_task`）" % 开工号
+        if 一条开工["状态"] != 账本.状态_进行中:
+            return 3, "开工不在进行中，拒绝恢复"
         工作树 = Path(一条开工["工作树"])
         if not 工作树.is_dir():
             return 1, "工作树不在了：%s ⇒ 查清再恢复（别改了账、活却找不回）" % 工作树
@@ -222,19 +240,12 @@ def 恢复开工(仓根, 开工号: str) -> tuple:
 def 核恢复路径(仓根, 开工号, 工作树, 路径):
     """公共仓真实登记树和无链接的规范相对路径。"""
     from ..施工管理.仓操作 import 找工作树, 跑命令
-    if not isinstance(路径, str) or not 路径 or Path(路径).is_absolute() or str(Path(路径)) != 路径 or ".." in Path(路径).parts:
-        raise ValueError("路径须为规范仓内相对路径")
-    if 工作树.is_symlink() or not 工作树.is_dir():
-        raise ValueError("工作树不存在或为链接")
+    from ..施工管理.路径守卫 import 核树内路径
+    当前路径 = 核树内路径(工作树, 路径)
     登记树 = 找工作树(仓根, 开工号)
     if 登记树 is None or 登记树.resolve() != 工作树.resolve():
         raise ValueError("工作树与公共仓真实登记不同")
-    当前路径 = 工作树
-    for 路径段 in Path(路径).parts:
-        当前路径 = 当前路径 / 路径段
-        if 当前路径.is_symlink():
-            raise ValueError("路径含链接")
-    if not 当前路径.is_file() or not 当前路径.resolve().is_relative_to(工作树.resolve()):
+    if not 当前路径.is_file():
         raise ValueError("目标不是树内普通文件")
     公共值 = []
     from ..只读查询.仓状态 import 跑git
