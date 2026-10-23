@@ -221,6 +221,10 @@ def 模拟整批(工作树: Path, 项表: list, 写前快照=None) -> tuple:
         if 功能号 == 功能_删除:
             if 全文 is None:
                 continue          # 件已经不在了 ⇒ 删除已生效（幂等跳过）
+            if 旧内容 != 全文:
+                定位失败表.append((序号, 路径,
+                              "功能=2 整件删除要求 `旧内容` 逐字等于盘上全文 ⇒ 拒绝删除"))
+                continue
             最终态表[路径] = None
             continue
         if 全文 is None:

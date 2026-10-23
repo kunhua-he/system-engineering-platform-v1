@@ -34,6 +34,11 @@ def 入口函数(命令行参数) -> int:
         for 源码行 in 帮助文本():
             print(源码行)
         return 0
+    已知模块名集合 = set(模块名表(组合模块库根))
+    未知模块名表 = [参数词 for 参数词 in 命令行参数 if 参数词 not in 已知模块名集合]
+    if 未知模块名表:
+        print("未知模块名：%s" % "、".join(dict.fromkeys(未知模块名表)))
+        return 1
     只要 = set(命令行参数)
     模块目录表 = [模块目录 for 模块目录 in 找模块(组合模块库根)
               if not 只要 or 模块目录.name in 只要]
