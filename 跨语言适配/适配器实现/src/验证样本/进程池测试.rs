@@ -42,7 +42,8 @@ fn 默认配置值与默认常量一致() {
     let 配置 = 进程池配置::default();
     assert_eq!(配置.退避基数毫秒, 默认退避基数毫秒);
     assert_eq!(配置.退避上限毫秒, 默认退避上限毫秒);
-    assert_eq!(配置.子进程数上限, 默认子进程数上限);
+    assert_eq!(配置.子进程数上限, std::thread::available_parallelism()
+        .map_or(默认子进程数上限, |CPU核数| CPU核数.get() as u32));
 }
 
 /// **子进程数上限**：上限 = 0 时一个新进程都不拉、一格都不建（判定在 `spawn` 之前）。
@@ -188,6 +189,7 @@ fn 重启后旧实例状态与代次都不带走() {
         执行池.取域资源读数(&标识).unwrap().在跑,
         "重启后新实例真在跑（不是假恢复的空壳）"
     );
+
 }
 
 #[test]
@@ -368,4 +370,42 @@ fn 发送侧恰好单帧上限不判过大() {
     let 发送回执 =
         句柄.发一调用帧按预算(NonZeroU64::new(2).unwrap(), &待发载荷, &mut 造长预算());
     assert!(发送回执 != Err(进程池错误::载荷过大), "恰好等于上限不许判过大：{发送回执:?}");
+}
+
+#[test]
+fn 半帧失败关闭通道并回收额度再换代() {
+    use std::io::{Read, Write};
+    let (域池, 标识, mut 对端) = 造发送侧域(88);
+    let 句柄 = 域池.取域句柄(&标识).unwrap();
+    let 旧代次 = 句柄.当前代次();
+    // 仅送半个帧头，宿主已消费部分字节后预算耗尽，无法继续复用原流。
+    对端.write_all(b"V1IP").unwrap();
+    let mut 预算 = crate::进程帧::调用帧预算::创建(Instant::now() + Duration::from_millis(30)).unwrap();
+    assert_eq!(句柄.收一调用回帧按预算(NonZeroU64::MIN, &mut 预算, None), Err(进程池错误::预算耗尽));
+    assert!(!句柄.监督().仍在运行);
+    assert!(!句柄.已重放装载());
+    assert_eq!(域池.活进程数(), 0, "确认收尸才归还额度");
+    对端.set_read_timeout(Some(Duration::from_millis(30))).unwrap();
+    let mut 回读字节 = [0u8; 1];
+    assert_eq!(对端.read(&mut 回读字节).unwrap(), 0, "失步通道必须双向关闭");
+    let (程序, 启动参数) = 慢进程();
+    句柄.保证在(程序, &启动参数).unwrap();
+    assert!(句柄.当前代次() > 旧代次);
+    assert_eq!(域池.活进程数(), 1);
+}
+
+#[test]
+fn 错号回执失败不复用握手状态() {
+    let (域池, 标识, mut 对端) = 造发送侧域(89);
+    let 句柄 = 域池.取域句柄(&标识).unwrap();
+    let 帧体 = crate::进程帧::消息帧 {
+        消息类型: crate::进程帧::消息类别::通知回执,
+        请求标识: NonZeroU64::new(2).unwrap(), 载荷: Vec::new(),
+    };
+    crate::进程帧::发送帧(&mut 对端, &帧体, &mut 造长预算()).unwrap();
+    assert!(句柄.收装载回执按预算(NonZeroU64::MIN, &mut 造长预算()).is_err());
+    assert!(!句柄.已重放装载());
+    assert!(!句柄.监督().仍在运行);
+    assert_eq!(域池.活进程数(), 0);
+    assert_eq!(句柄.重放装载初始化按预算(NonZeroU64::MIN, &mut 造长预算()), Err(进程池错误::通道断开));
 }

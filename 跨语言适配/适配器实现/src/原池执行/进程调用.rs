@@ -426,3 +426,27 @@ fn 分段预算(总期限: std::time::Instant, 阶段毫秒: u64) -> Result<crat
     crate::进程帧::调用帧预算::创建(阶段期限).map_err(|_| 4)
 }
 
+
+#[cfg(test)]
+#[test]
+fn 子进程没了后调用得结构化0034不是panic() {
+    let 配置 = 进程池配置 {
+        退避基数毫秒: 300, 退避上限毫秒: 300, ..进程池配置::default()
+    };
+    let mut 域表 = 跨进程域表::创建(配置);
+    let 标识 = 执行域标识 {
+        适配器实例号: 7, 扩展标识串: String::from("扩展测试"), 制品版本: (1, 0, 0),
+    };
+    域表.登记跨进程域(标识.clone(), 域部署 {
+        启动程序: String::from("/bin/sh"),
+        启动参数: vec![String::from("-c"), String::from("sleep 0.1")],
+    }).unwrap();
+    assert_eq!(域表.已建执行域(), 0, "登记不拉进程");
+    // 先走按需启动的真实入口，否则等待期间根本没有能力进程。
+    let 登记 = 域表.取登记(&标识).unwrap();
+    let 句柄 = 登记.取调用句柄(std::time::Instant::now() + std::time::Duration::from_secs(1)).unwrap();
+    assert!(句柄.监督().仍在运行);
+    std::thread::sleep(std::time::Duration::from_millis(250));
+    assert!(!句柄.监督().仍在运行);
+    assert_eq!(域表.送一调用(&标识, 1101, &[数据槽::空槽()]), Err(34));
+}

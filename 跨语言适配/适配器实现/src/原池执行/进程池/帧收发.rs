@@ -41,6 +41,7 @@ impl 域句柄 {
             return Err(进程池错误::载荷过大);
         }
         let mut 工作 = self.互斥锁();
+        if !工作.运行中 { return Err(进程池错误::通道断开); }
         let 调用帧 = crate::进程帧::消息帧 {
             消息类型: crate::进程帧::消息类别::调用,
             请求标识,
@@ -48,8 +49,7 @@ impl 域句柄 {
         };
         let 执行结果 = crate::进程帧::发送帧(&mut 工作.流通道, &调用帧, budget);
         if 执行结果.is_err() {
-            查实崩溃(self.配置, &mut 工作);
-            return Err(按存活判错(&工作));
+            return Err(废弃失步通道(self.配置, &mut 工作));
         }
         Ok(())
     }
@@ -62,6 +62,7 @@ impl 域句柄 {
         收痕口: Option<&dyn Fn(&v1_trace::留痕)>,
     ) -> Result<Vec<u8>, 进程池错误> {
         let mut 工作 = self.互斥锁();
+        if !工作.运行中 { return Err(进程池错误::通道断开); }
         loop {
             match crate::进程帧::接收帧(&mut 工作.流通道, 请求标识, budget) {
                 Ok(帧体) if 帧体.消息类型 == crate::进程帧::消息类别::调用结果 => {
@@ -77,8 +78,7 @@ impl 域句柄 {
                     }
                 }
                 Ok(_) | Err(_) => {
-                    查实崩溃(self.配置, &mut 工作);
-                    return Err(按存活判错(&工作));
+                    return Err(废弃失步通道(self.配置, &mut 工作));
                 }
             }
         }
@@ -100,14 +100,14 @@ impl 域句柄 {
         budget: &mut 调用帧预算,
     ) -> Result<(), 进程池错误> {
         let mut 工作 = self.互斥锁();
+        if !工作.运行中 { return Err(进程池错误::通道断开); }
         match crate::进程帧::接收帧(&mut 工作.流通道, 请求标识, budget) {
             Ok(帧体) if 帧体.消息类型 == crate::进程帧::消息类别::通知回执 => {
                 工作.装载已重放 = true;
                 Ok(())
             },
             _ => {
-                查实崩溃(self.配置, &mut 工作);
-                Err(按存活判错(&工作))
+                Err(废弃失步通道(self.配置, &mut 工作))
             }
         }
     }
@@ -119,13 +119,15 @@ impl 域句柄 {
         budget: &mut 调用帧预算,
     ) -> Result<(), 进程池错误> {
         let mut 工作 = self.互斥锁();
+        if !工作.运行中 { return Err(进程池错误::通道断开); }
         let 通知帧 = crate::进程帧::消息帧 {
             消息类型: crate::进程帧::消息类别::通知,
             请求标识,
             载荷: v1_contract::声明数据::通知号_2000.to_le_bytes().to_vec(),
         };
-        crate::进程帧::发送帧(&mut 工作.流通道, &通知帧, budget)
-            .map_err(|_| 进程池错误::通道断开)?;
+        if crate::进程帧::发送帧(&mut 工作.流通道, &通知帧, budget).is_err() {
+            return Err(废弃失步通道(self.配置, &mut 工作));
+        }
         Ok(())
     }
 
@@ -162,4 +164,15 @@ fn 按存活判错(工作: &super::工作进程) -> 进程池错误 {
 fn 自造预算() -> Result<调用帧预算, 进程池错误> {
     let 截止 = Instant::now() + Duration::from_millis(重放预算毫秒);
     调用帧预算::创建(截止).map_err(|_| 进程池错误::拉起失败)
+}
+
+/// 故障处置与停止状态同持本域锁；只弃通道、不重放已发业务调用。
+fn 废弃失步通道(配置: super::进程池配置, 工作: &mut super::工作进程) -> 进程池错误 {
+    查实崩溃(配置, 工作);
+    let 错误 = 按存活判错(工作);
+    let _ = 工作.流通道.shutdown(std::net::Shutdown::Both);
+    工作.装载已重放 = false;
+    let _ = super::击杀并确认退出(工作, super::默认确认预算毫秒);
+    工作.运行中 = false;
+    错误
 }
