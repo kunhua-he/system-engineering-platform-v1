@@ -58,6 +58,19 @@ def 缺的祖先目录(工作树: Path, 新建路径表: list) -> list:
     return sorted(缺集, key=lambda 相对目录: (相对目录.count("/"), 相对目录))
 
 
+def 清理新建目录(工作树: Path, 缺目录表: list) -> list:
+    """失败收尾：只删除本批新建且仍为空的目录，返回真实删除路径。"""
+    清理结果 = []
+    for 清理项 in sorted(缺目录表, key=lambda 清理项: (清理项.count("/"), 清理项), reverse=True):
+        目录路径 = 工作树 / 清理项
+        try:
+            目录路径.rmdir()
+        except OSError:
+            continue
+        清理结果.append(清理项 + "/")
+    return 清理结果
+
+
 def 建目录记(连接, 工作树: Path, 开工号: str, 缺目录表: list) -> None:
     """逐个建目录（幂等）⇒ 每个新建的目录记一条改动（档「新建目录」）。
 

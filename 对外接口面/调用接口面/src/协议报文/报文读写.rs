@@ -98,9 +98,12 @@ pub(crate) fn 读报文(输出流: &mut TcpStream) -> Result<报文, 报文错�
     let mut 读缓冲 = [0u8; 4096];
     let 头尾 = loop {
         if let Some(字节位置) = 找头体分界(&缓冲) {
+            if 字节位置 > 头区上限 {
+                return Err(报文错误::协议(format!("请求头超过 {头区上限} 字节")));
+            }
             break 字节位置;
         }
-        if 缓冲.len() > 头区上限 {
+        if 缓冲.len() > 头区上限 + 3 {
             return Err(报文错误::协议(format!("请求头超过 {头区上限} 字节")));
         }
         let 读到 = 输出流.read(&mut 读缓冲).map_err(|错误| 读失败("读请求失败", &错误))?;
@@ -124,7 +127,7 @@ pub(crate) fn 读报文(输出流: &mut TcpStream) -> Result<报文, 报文错�
     }
     let (请求方法, 请求目标) = (部件[0].to_owned(), 部件[1].to_owned());
 
-    let mut 内容长度 = 0usize;
+    let mut 内容长度 = None;
     // 边界判定要的三个头（审计发现2）：**原样留值**，判定全在 `报文校验.rs`。
     let mut 主机 = String::new();
     let mut 来源站点 = String::new();
@@ -142,15 +145,18 @@ pub(crate) fn 读报文(输出流: &mut TcpStream) -> Result<报文, 报文错�
             _ => {}
         }
         if 名称 == "content-length" {
-            内容长度 = 待处理值
-                .parse::<usize>()
-                .map_err(|_| 报文错误::协议("Content-Length 不是非负整数".to_owned()))?;
+            if 内容长度.is_some() {
+                return Err(报文错误::协议("Content-Length 重复：不接受歧义长度".to_owned()));
+            }
+            内容长度 = Some(待处理值.parse::<usize>()
+                .map_err(|_| 报文错误::协议("Content-Length 不是非负整数".to_owned()))?);
         }
         if 名称 == "transfer-encoding" && !待处理值.eq_ignore_ascii_case("identity") {
             // 分块传输要做流式状态机 = 连接管理，本面明确不做（文件头）。
             return Err(报文错误::协议("本面不支持 Transfer-Encoding：请用 Content-Length".to_owned()));
         }
     }
+    let 内容长度 = 内容长度.unwrap_or(0);
     if 内容长度 > 体上限 {
         return Err(报文错误::协议(format!("请求体超过 {体上限} 字节")));
     }
@@ -205,5 +211,38 @@ fn 原因短语(状态: u16) -> &'static str {
         404 => "Not Found",
         405 => "Method Not Allowed",
         _ => "Unknown",
+    }
+}
+
+#[cfg(test)]
+mod 报文边界测试 {
+    use super::*;
+    use crate::测试夹具::{起服务, 发请求};
+
+    #[test]
+    fn 报文边界_重复长度明确拒绝() {
+        let 服务实例 = 起服务();
+        for 重复长度 in ["1", "0"] {
+            let 请求文本 = format!("GET /接口 HTTP/1.1\r\nHost: localhost\r\nContent-Length: 0\r\ncontent-length: {重复长度}\r\n\r\nx");
+            let 实际应答 = 发请求(&服务实例, &请求文本);
+            assert_eq!(实际应答.状态, 400, "重复长度{重复长度}不能采用后值覆盖前值");
+        }
+    }
+
+    #[test]
+    fn 报文边界_完整头越界仍拒绝() {
+        let 服务实例 = 起服务();
+        let 请求前缀 = "GET /接口 HTTP/1.1\r\nHost: localhost\r\nX-Test: ";
+        let 请求文本 = format!("{请求前缀}{}\r\n\r\n", "x".repeat(头区上限 + 1 - 请求前缀.len()));
+        let 实际应答 = 发请求(&服务实例, &请求文本);
+        assert_eq!(实际应答.状态, 400, "完整头的终止符不能绕过头区上限");
+    }
+
+    #[test]
+    fn 报文边界_大请求体不算头越界() {
+        let 服务实例 = 起服务();
+        let 请求正文 = "x".repeat(头区上限 + 1);
+        let 请求文本 = format!("GET /接口 HTTP/1.1\r\nHost: localhost\r\nContent-Length: {}\r\n\r\n{请求正文}", 请求正文.len());
+        assert_eq!(发请求(&服务实例, &请求文本).状态, 200);
     }
 }

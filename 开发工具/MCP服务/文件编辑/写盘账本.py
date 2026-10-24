@@ -99,6 +99,16 @@ def 记一件写盘(连接, 开工号: str, 路径: str, 功能名: str, 写前�
         raise
 
 
+def 销新建目录记(连接, 开工号: str, 路径表: list) -> None:
+    """失败已清掉空目录时，同步销掉只为本批创建的目录改动记录。"""
+    if not 路径表:
+        return
+    连接.execute(
+        "delete from 改动 where 开工号 = ? and 功能 = ? and 路径 in (%s)" % ",".join("?" for _ in 路径表),
+        (开工号, "新建目录", *路径表))
+    连接.commit()
+
+
 def 记已记账恢复(连接, 开工号, 路径, 改动记录, 候选指纹):
     """恢复动作独立审计并销意图，不改原成功行和认领。"""
     连接.execute("create table if not exists 已记账恢复 (原改动编号 integer primary key, 开工号 text not null, 路径 text not null, 写前指纹 text not null, 写后指纹 text not null, 候选SHA256 text not null, 时间 text not null)")
