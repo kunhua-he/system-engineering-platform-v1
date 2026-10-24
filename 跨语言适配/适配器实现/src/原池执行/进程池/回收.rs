@@ -97,28 +97,54 @@ impl Drop for 进程池 {
 impl 进程池 {
     /// 域租约已排除新请求后，正常回收并摘掉活进程槽。
     pub(crate) fn 回收空闲域(&self, 标识: &super::执行域标识) -> bool {
-        let Some(句柄) = self.取域句柄(标识) else { return false; };
-        if !句柄.监督().仍在运行 { return false; }
-        if !matches!(句柄.击杀并报结局(), Ok(回收结局::正常退出 | 回收结局::被信号杀)) { return false; }
-        let mut 域表锁 = 取锁(&self.域表);
-        let Some(序号) = 域表锁.iter().position(|格子| &格子.标识 == 标识 && std::sync::Arc::ptr_eq(&格子.工作, &句柄.工作)) else { return false; };
-        域表锁.remove(序号);
-        true
+        self.移除一域(标识)
     }
 
-    /// **移除一域**（物理回收）：从域表摘格 → 按进程组强杀 → 收尸。
+    /// **移除一域**：停止旧通道 → 按归属强杀并确认退出 → 摘格；未确认则保留归属及额度。
     ///
     /// 与 [`进程池::击杀一域`] 分开：击杀只杀进程、**留格**（下次调用走「保证域在」重拉）；
     /// 移除是**摘表 + 杀**（部署下架 / 切换后回收旧版用）。返回是否真摘了一格。
     pub fn 移除一域(&self, 标识: &super::执行域标识) -> bool {
+        self.移除一域按回收(标识, |工作| 击杀并确认退出(工作, 默认确认预算毫秒))
+    }
+
+    fn 移除一域按回收(&self, 标识: &super::执行域标识, 回收动作: impl FnOnce(&mut 工作进程) -> 回收结局) -> bool {
+        let Some(句柄) = self.取域句柄(标识) else { return false; };
+        {
+            let mut 工作 = 句柄.互斥锁();
+            工作.运行中 = false;
+            let _ = 工作.流通道.shutdown(std::net::Shutdown::Both);
+            let _ = 回收动作(&mut 工作);
+            if !工作.回收已确认 { return false; }
+        }
         let mut 域表锁 = 取锁(&self.域表);
-        let Some(序号) = 域表锁.iter().position(|格子| &格子.标识 == 标识) else {
-            return false;
+        let Some(序号) = 域表锁.iter().position(|格子| &格子.标识 == 标识 && std::sync::Arc::ptr_eq(&格子.工作, &句柄.工作)) else { return false; };
+        let 工作 = match 句柄.工作.try_lock() {
+            Ok(工作) => 工作,
+            Err(std::sync::TryLockError::Poisoned(中毒)) => 中毒.into_inner(),
+            Err(std::sync::TryLockError::WouldBlock) => return false,
         };
-        let 格子 = 域表锁.remove(序号);
-        drop(域表锁);
-        // 摘表之后才杀：先断路由，再收进程，不留「还在表里但已被杀」的窗口。
-        let _ = 回收孤儿(&格子);
+        if !工作.回收已确认 { return false; }
+        域表锁.remove(序号);
         true
     }
+}
+
+#[cfg(test)]
+#[test]
+fn 移除未确认不得丢归属或归还额度() {
+    use super::{执行域标识, 进程池配置};
+    let 执行池 = 进程池::创建(进程池配置::default());
+    let 域标识 = 执行域标识 { 适配器实例号: 92, 扩展标识串: String::from("回收归属验证"), 制品版本: (1,0,0) };
+    执行池.保证域在(&域标识, "/bin/cat", &[]).unwrap();
+    let 域引用 = 执行池.取域句柄(&域标识).unwrap();
+    let 移除结局 = 执行池.移除一域按回收(&域标识, |_| 回收结局::未确认退出);
+    let 保留归属 = 执行池.含域(&域标识);
+    let 保留额度 = 执行池.活进程数();
+    if !保留归属 { let _ = 域引用.击杀并报结局(); }
+    assert!(!移除结局 && 保留归属 && 保留额度 == 1, "未确认退出不能假装移除成功、也不能丢失归属");
+    drop(域引用);
+    assert!(执行池.移除一域(&域标识));
+    assert_eq!(执行池.活进程数(), 0);
+    assert_eq!(执行池.已建域数(), 0);
 }

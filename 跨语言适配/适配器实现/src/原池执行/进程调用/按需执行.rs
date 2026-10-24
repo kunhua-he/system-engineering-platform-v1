@@ -115,16 +115,19 @@ impl 域登记 {
         句柄.保证在(&self.部署.启动程序, &self.部署.启动参数)
     }
     fn 空闲期限(&self) -> Option<Instant> {
-        if !self.执行池.取域句柄(&self.标识).is_some_and(|句柄| 句柄.监督().仍在运行) { return None; }
+        let 句柄 = self.执行池.取域句柄(&self.标识)?;
+        let 停止待收 = !句柄.监督().仍在运行;
         let 活动 = 取锁(&self.活动);
-        if 活动.在途数 != 0 || 活动.回收中 || 活动.已注销 { return None; }
+        if 活动.在途数 != 0 || 活动.回收中 { return None; }
+        if 活动.已注销 || 停止待收 { return Some(Instant::now()); }
         Some(活动.最近调用 + 空闲保活时长)
     }
     fn 回收空闲(&self, 现在时刻: Instant, 资源紧张: bool) -> bool {
+        let 停止待收 = self.执行池.取域句柄(&self.标识).is_some_and(|句柄| !句柄.监督().仍在运行);
         {
             let mut 活动 = 取锁(&self.活动);
-            if 活动.在途数 != 0 || 活动.回收中 || 活动.已注销 { return false; }
-            if !资源紧张 && 现在时刻 < 活动.最近调用 + 空闲保活时长 { return false; }
+            if 活动.在途数 != 0 || 活动.回收中 { return false; }
+            if !活动.已注销 && !停止待收 && !资源紧张 && 现在时刻 < 活动.最近调用 + 空闲保活时长 { return false; }
             活动.回收中 = true;
         }
         let 已回收 = self.执行池.回收空闲域(&self.标识);
@@ -153,6 +156,10 @@ pub(super) fn 启动回收(域表: Weak<Mutex<跨进程域表>>, 信号: Arc<回
                 if let Some(期限) = 登记.空闲期限() {
                     if 登记.回收空闲(Instant::now(), 资源紧张) {
                         if 资源紧张 { 信号.资源紧张.store(false, Ordering::Release); }
+                        if 取锁(&登记.活动).已注销
+                            && let Some(表引用) = 域表.upgrade() {
+                            取锁(&表引用).部署表.retain(|格子| !Arc::ptr_eq(&格子.1, 登记));
+                        }
                     } else {
                         let 期限 = 期限.max(Instant::now() + Duration::from_millis(1));
                         下次期限 = Some(下次期限.map_or(期限, |旧期限| 旧期限.min(期限)));
@@ -175,4 +182,42 @@ impl Drop for 跨进程域表 {
         }
         for (_, 登记) in &self.部署表 { 登记.注销(); }
     }
+}
+
+#[cfg(test)]
+#[test]
+fn 满载自动让出空闲资源且任务结束全部归还() {
+    use crate::进程调用::{跨进程域表, 域部署};
+    use crate::进程池::进程池配置;
+    let 域表实例 = Arc::new(Mutex::new(跨进程域表::创建(进程池配置 { 子进程数上限: 1, ..进程池配置::default() })));
+    let 空闲执行域 = 执行域标识 { 适配器实例号: 88, 扩展标识串: String::from("资源复用1"), 制品版本: (1, 0, 0) };
+    let 新进执行域 = 执行域标识 { 扩展标识串: String::from("资源复用2"), ..空闲执行域.clone() };
+    let 部署参数 = 域部署 { 启动程序: String::from("/bin/sh"), 启动参数: vec![String::from("-c"), String::from("sleep 30")] };
+    let (空闲域登记, 新进域登记, 执行池) = {
+        let mut 域表守卫 = 取锁(&域表实例);
+        域表守卫.登记跨进程域(空闲执行域.clone(), 部署参数.clone()).unwrap();
+        域表守卫.登记跨进程域(新进执行域.clone(), 部署参数).unwrap();
+        域表守卫.回收线程 = Some(启动回收(Arc::downgrade(&域表实例), Arc::clone(&域表守卫.回收通知)).unwrap());
+        (域表守卫.取登记(&空闲执行域).unwrap(), 域表守卫.取登记(&新进执行域).unwrap(), Arc::clone(&域表守卫.执行池))
+    };
+    assert_eq!(执行池.活进程数(), 0, "登记不预占运行资源");
+    let 总期限 = Instant::now() + Duration::from_secs(3);
+    let 先行任务租约 = 空闲域登记.领用(总期限).unwrap();
+    空闲域登记.取调用句柄(总期限).unwrap();
+    assert_eq!(执行池.活进程数(), 1);
+    assert!(!空闲域登记.回收空闲(Instant::now(), true), "在途任务不能为腾额度被回收");
+    drop(先行任务租约);
+    let 后续任务租约 = 新进域登记.领用(总期限).unwrap();
+    新进域登记.取调用句柄(总期限).unwrap();
+    assert!(执行池.取域句柄(&空闲执行域).is_none(), "容量紧张须自动让出空闲域，不等30秒");
+    assert!(执行池.取域句柄(&新进执行域).is_some());
+    assert_eq!(执行池.活进程数(), 1);
+    drop(后续任务租约);
+    {
+        let mut 域表守卫 = 取锁(&域表实例);
+        assert!(域表守卫.移除一域(&空闲执行域));
+        assert!(域表守卫.移除一域(&新进执行域));
+    }
+    assert_eq!(执行池.活进程数(), 0, "卸载后真实子进程及额度必须全部归还");
+    assert_eq!(执行池.已建域数(), 0);
 }
