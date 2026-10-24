@@ -15,8 +15,9 @@ def 执行构建接线样本():
         assert len(记录表)==1,记录表
         命令表=记录表[0]
         assert 命令表[:2]==['cargo','rustc'],命令表
-        assert '--' not in 命令表 and '--extern' not in 命令表,命令表
-        assert 命令表[-2:]==['--crate-type','cdylib'],命令表
+        assert '--extern' not in 命令表,命令表
+        assert 命令表[-3:]==['--','-C','strip=none'],命令表
+        assert 命令表[命令表.index('--crate-type')+1]=='cdylib',命令表
         assert '--locked' in 命令表 and '--offline' in 命令表,命令表
         assert 打包函数.call_count==1
         assert "--message-format=json-render-diagnostics" in 命令表

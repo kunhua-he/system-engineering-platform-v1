@@ -102,10 +102,11 @@ def 建扩展产物(扩展: dict) -> None:
     """**只编不找** —— 环境步（`--预构建`）用。产物落 `构建缓存/扩展/release/deps`。"""
     清单路径 = 扩展["落点"] / "Cargo.toml"
     缓存 = 构建缓存 / "扩展"
+    # 动态库保留符号：符号裁剪会破坏 Mach-O 字符串池对齐，macOS 27 会真实拒绝装载。
     子进程环境 = dict(os.environ, CARGO_TARGET_DIR=str(缓存))
     运行结果 = 跑子进程(
         ["cargo", "rustc", "--locked", "--offline", "--release", "--manifest-path", str(清单路径),
-         "--message-format=json-render-diagnostics", "--crate-type", "cdylib"],
+         "--message-format=json-render-diagnostics", "--crate-type", "cdylib", "--", "-C", "strip=none"],
         cwd=仓根,
         env=子进程环境,
     )
