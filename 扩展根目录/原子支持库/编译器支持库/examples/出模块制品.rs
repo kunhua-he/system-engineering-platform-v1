@@ -128,7 +128,30 @@ fn 出制品(模块目录: &Path) -> Result<Vec<接口说明>, String> {
     let 回读 = v1_contract::接口说明段::解码接口组(&三段.接口说明段).ok_or("模块接口组解不开")?;
     if 回读 != 说明表 || 三段.本体段 != 执行体 || 三段.本体段类别 != v1_contract::容器::本体段类别::本机执行体 { return Err("模块接口组与执行体往返不一致".to_owned()); }
     let 制品件 = 模块目录.join(format!("{目录名}.模块制品"));
-    fs::write(&制品件, &包件字节).map_err(|错误| format!("写不到 {}：{错误}", 制品件.display()))?;
+    if 制品件.is_symlink() {
+        return Err(format!("制品目标是符号链接：{}", 制品件.display()));
+    }
+    let 暂存制品 = 模块目录.join(format!(
+        ".模块制品-{}-{}.临时",
+        std::process::id(),
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map_err(|错误| format!("取制品时间失败：{错误}"))?
+            .as_nanos()
+    ));
+    use std::io::Write;
+    let mut 制品文件 = fs::OpenOptions::new().write(true).create_new(true).open(&暂存制品)
+        .map_err(|错误| format!("创建暂存制品失败 {}：{错误}", 暂存制品.display()))?;
+    if let Err(错误) = 制品文件.write_all(&包件字节) {
+        drop(制品文件);
+        let _ = fs::remove_file(&暂存制品);
+        return Err(format!("写不到 {}：{错误}", 暂存制品.display()));
+    }
+    drop(制品文件);
+    if let Err(错误) = fs::rename(&暂存制品, &制品件) {
+        let _ = fs::remove_file(&暂存制品);
+        return Err(format!("替换制品失败 {}：{错误}", 制品件.display()));
+    }
     println!("  {}个能力合编一件：{}（{}字节）", 说明表.len(), 制品件.display(), 包件字节.len());
     Ok(说明表)
 }
