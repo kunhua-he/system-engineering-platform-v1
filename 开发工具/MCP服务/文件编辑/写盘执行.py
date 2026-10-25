@@ -23,6 +23,7 @@
 import hashlib
 import os
 import sqlite3
+import time
 from pathlib import Path
 
 from 代码地图 import 文件指纹
@@ -70,6 +71,29 @@ def 清理新建目录(工作树: Path, 缺目录表: list) -> list:
         清理结果.append(清理项 + "/")
     return 清理结果
 
+
+def 清理陈旧写盘临时件(工作树: Path, 路径表: list, 陈旧期限: int = 86400) -> list:
+    """只清理本次目标同目录、匹配唯一暂存名的过期件；期限单位为秒，是文件年龄而非执行超时；调用方持开工锁。"""
+    import re
+    现在 = time.time()
+    清理表 = []
+    for 相对路径 in sorted(set(路径表)):
+        件路径 = 核树内路径(工作树, 相对路径)
+        if not 件路径.parent.is_dir():
+            continue
+        名称模式 = re.compile(re.escape(件路径.name) + r"\.[a-z0-9_]{8}" + re.escape(写盘后缀))
+        for 临时件 in 件路径.parent.iterdir():
+            if not 名称模式.fullmatch(临时件.name) or 临时件.is_symlink():
+                continue
+            核树内路径(工作树, 临时件.relative_to(工作树).as_posix())
+            try:
+                if not 临时件.is_file() or 现在 - 临时件.stat().st_mtime < 陈旧期限:
+                    continue
+                临时件.unlink()
+                清理表.append(临时件.relative_to(工作树).as_posix())
+            except FileNotFoundError:
+                continue
+    return 清理表
 
 def 建目录记(连接, 工作树: Path, 开工号: str, 缺目录表: list) -> None:
     """逐个建目录（幂等）⇒ 每个新建的目录记一条改动（档「新建目录」）。
