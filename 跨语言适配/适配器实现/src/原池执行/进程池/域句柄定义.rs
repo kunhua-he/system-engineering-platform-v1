@@ -34,6 +34,7 @@ use super::{
 pub struct 域句柄 {
     pub(crate) 配置: 进程池配置,
     pub(crate) 活进程数: Arc<std::sync::atomic::AtomicU32>,
+    pub(crate) 动态预算: Arc<Mutex<super::动态预算::动态预算状态>>,
     pub(crate) 工作: Arc<Mutex<工作进程>>,
     pub(crate) 代次源: Arc<Mutex<u64>>,
     pub(crate) 事务锁: Arc<Mutex<()>>,
@@ -115,7 +116,7 @@ impl 域句柄 {
             let _ = super::击杀并确认退出(&mut 工作, super::默认确认预算毫秒);
             if !工作.回收已确认 { return Err(进程池错误::拉起失败); }
         }
-        let 额度租约 = super::申请进程额度(&self.活进程数, self.配置.子进程数上限)?;
+        let 额度租约 = super::申请进程额度(&self.活进程数, &self.动态预算, self.配置.子进程数上限)?;
         let (子进程, 流通道) = 生成进程按前提(启动程序, 启动参数, 前提)?;
         装新进程(&mut 工作, 子进程, 流通道, self.取单调代次(), 指纹, (前提指纹, 额度租约))?;
         Ok(())
