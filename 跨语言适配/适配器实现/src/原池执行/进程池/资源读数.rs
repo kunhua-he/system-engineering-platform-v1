@@ -95,6 +95,7 @@ pub struct 池资源读数 {
 
 /// 读一个进程组的四类读数；本平台给不出 ⇒ `None`。
 fn 读进程组读数(进程组号: i32) -> Option<进程组读数> {
+    if 进程组号 <= 0 { return None; }
     #[cfg(all(target_os = "macos", target_pointer_width = "64"))]
     {
         系统读数::读进程组读数(进程组号)
@@ -201,8 +202,15 @@ mod 系统读数 {
         fn proc_pid_rusage(进程号: i32, 用量版本: i32, 缓冲: *mut u8) -> i32;
     }
 
-    /// 一个进程组里的进程号表（读不出 ⇒ 空表）。
-    fn 取进程表(进程组号: i32) -> Vec<i32> {
+    fn 核扫描项数(读出: i32, 字节数: i32, 单项字节: usize) -> Option<usize> {
+        let 已读字节 = usize::try_from(读出).ok()?;
+        let 缓冲容量 = usize::try_from(字节数).ok()?;
+        if 单项字节 == 0 || 已读字节 >= 缓冲容量 || !已读字节.is_multiple_of(单项字节) { return None; }
+        Some(已读字节 / 单项字节)
+    }
+
+    /// 一个进程组里的进程号表；失败或缓冲已满不可判，只有零项确认为空。
+    fn 取进程表(进程组号: i32) -> Option<Vec<i32>> {
         let mut 缓冲 = vec![0i32; 进程扫描上限];
         let 字节数 = i32::try_from(进程扫描上限 * std::mem::size_of::<i32>()).unwrap_or(i32::MAX);
         // SAFETY: 缓冲是可写的一片；`进程组键` 传进程组号（种类已指名按组取）。
@@ -214,18 +222,14 @@ mod 系统读数 {
                 字节数,
             )
         };
-        if 读出 <= 0 {
-            return Vec::new();
-        }
-        let 进程表项数 =
-            (usize::try_from(读出).unwrap_or(0) / std::mem::size_of::<i32>()).min(进程扫描上限);
+        let 进程表项数 = 核扫描项数(读出, 字节数, std::mem::size_of::<i32>())?;
         缓冲.truncate(进程表项数);
         缓冲.retain(|进程号| *进程号 > 0);
-        缓冲
+        Some(缓冲)
     }
 
-    /// 一个进程打开的文件描述符表（读不出 ⇒ 空表）。
-    fn 取句柄表(进程号: i32) -> Vec<句柄项> {
+    /// 一个进程打开的文件描述符表；读失败或容量截断不可判。
+    fn 取句柄表(进程号: i32) -> Option<Vec<句柄项>> {
         let mut 缓冲: Vec<句柄项> =
             (0..句柄扫描上限).map(|_| 句柄项 { _句柄号: 0, 句柄种类: 0 }).collect();
         let 字节数 =
@@ -234,40 +238,57 @@ mod 系统读数 {
         let 读出 = unsafe {
             proc_pidinfo(进程号, 句柄表种类, 0, 缓冲.as_mut_ptr().cast(), 字节数)
         };
-        if 读出 <= 0 {
-            return Vec::new();
-        }
-        let 句柄表项数 = (usize::try_from(读出).unwrap_or(0) / std::mem::size_of::<句柄项>())
-            .min(句柄扫描上限);
+        // proc_pidinfo 对不存在的进程也回0，不能伪装为合法空表。
+        if 读出 <= 0 { return None; }
+        let 句柄表项数 = 核扫描项数(读出, 字节数, std::mem::size_of::<句柄项>())?;
         缓冲.truncate(句柄表项数);
-        缓冲
+        Some(缓冲)
     }
 
-    /// 一个进程的常驻内存字节（读不出 ⇒ 0）。
-    fn 取常驻字节(进程号: i32) -> u64 {
+    /// 一个进程的常驻内存字节；读失败不可判，不伪装零内存。
+    fn 取常驻字节(进程号: i32) -> Option<u64> {
         // SAFETY: 全零是合法的初值；函数只按 `用量版本` 声明的布局写缓冲。
         let mut 用量: 用量信息 = unsafe { std::mem::zeroed() };
         // SAFETY: 缓冲大小 = 本结构体大小，够装版本 2 的那一段。
         let 用量回执 =
             unsafe { proc_pid_rusage(进程号, 用量版本, std::ptr::from_mut(&mut 用量).cast()) };
-        if 用量回执 != 0 {
-            return 0;
-        }
-        用量.常驻内存字节
+        if 用量回执 != 0 { return None; }
+        Some(用量.常驻内存字节)
     }
 
     /// 读一个进程组的四类读数：进程数 · 句柄数 · 文件数 · 常驻字节。
     pub(super) fn 读进程组读数(进程组号: i32) -> Option<进程组读数> {
-        let 进程表 = 取进程表(进程组号);
+        if 进程组号 <= 0 { return None; }
+        let 进程表 = 取进程表(进程组号)?;
         let mut 读数 =
             进程组读数 { 进程数: 进程表.len(), 句柄数: 0, 文件数: 0, 常驻字节: 0 };
         for 进程号 in 进程表 {
-            let 句柄表 = 取句柄表(进程号);
+            let 句柄表 = 取句柄表(进程号)?;
             读数.句柄数 += 句柄表.len();
             读数.文件数 +=
                 句柄表.iter().filter(|单项| 单项.句柄种类 == 句柄种类_普通文件).count();
-            读数.常驻字节 += 取常驻字节(进程号);
+            读数.常驻字节 += 取常驻字节(进程号)?;
         }
         Some(读数)
     }
+
+    #[cfg(test)]
+    #[test]
+    fn 底层失败截断与非整项不得伪装读数() {
+        assert!(取句柄表(-1).is_none());
+        assert!(取常驻字节(-1).is_none());
+        assert_eq!(核扫描项数(-1, 16, 4), None);
+        assert_eq!(核扫描项数(16, 16, 4), None);
+        assert_eq!(核扫描项数(20, 16, 4), None);
+        assert_eq!(核扫描项数(3, 16, 4), None);
+        assert_eq!(核扫描项数(0, 16, 0), None);
+        assert_eq!(核扫描项数(0, 16, 4), Some(0));
+        assert_eq!(核扫描项数(12, 16, 4), Some(3));
+    }
+}
+
+#[cfg(test)]
+#[test]
+fn 无效进程组不得伪装零占用() {
+    assert!(读进程组读数(-1).is_none(), "内核读取失败必须不可判，不能报零占用");
 }

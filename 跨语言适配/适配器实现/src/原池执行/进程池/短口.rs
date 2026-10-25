@@ -15,6 +15,22 @@ use crate::进程帧::调用帧预算;
 use super::{重放预算毫秒, 执行域标识, 域资源读数, 监督判读, 进程池, 进程池错误};
 
 impl 进程池 {
+    #[cfg(test)]
+    pub(crate) fn 设置压力样本(&self, CPU忙碌: Option<u32>, 内存压力: Option<u32>) {
+        crate::线程安全::取锁(&self.动态预算).固定样本 = Some((CPU忙碌, 内存压力));
+    }
+
+    /// 当前准入数量及样本是否齐全。未知不伪造正常值；配置仍是硬护栏。
+    pub fn 当前进程预算(&self) -> (u32, bool) {
+        let mut 预算守卫 = crate::线程安全::取锁(&self.动态预算);
+        let 上限 = 预算守卫.取上限(self.配置.子进程数上限);
+        (上限, 预算守卫.样本可信)
+    }
+
+    pub(crate) fn 资源承压(&self) -> bool {
+        self.活进程数() > self.当前进程预算().0 as usize
+    }
+
     /// 这个域的装载初始化重放过没有。
     pub fn 已重放装载(&self, 标识: &执行域标识) -> bool {
         self.取域句柄(标识).is_some_and(|句柄| 句柄.已重放装载())
