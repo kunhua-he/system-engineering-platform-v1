@@ -39,4 +39,44 @@ def 验源库边界(仓根):
             assert 写口模块.记未完成({"号":"7", "缺什么":"显式空值", "落点为空":""}) == 0
             with sqlite3.connect(库文件表[1]) as 连接:
                 assert 连接.execute("select 落点,验证命令 from 未完成 where 号=7").fetchone() == (None, "")
+        验条款三态(仓根, 临时根)
         print("通过 源库边界：列漂移拒绝、基缺表不漏行、缺参保值、空串和空值分离")
+
+def 验条款三态(仓根, 临时根):
+    """物理复制依赖，真实CLI与具名重放均逐字段回读；不触碰正式库。"""
+    import shutil
+    import subprocess
+    import sys
+    from ... import 合主干源库重放 as 重放
+    集成树 = 临时根 / "条款隔离"
+    for 目录名 in ("开发工具", "构建装配", "测试验证", "契约声明"):
+        shutil.copytree(Path(仓根) / 目录名, 集成树 / 目录名,
+                        ignore=shutil.ignore_patterns("__pycache__", "*.db", "target"))
+    库件 = 集成树 / "开发工具/信息核心/信息核心.db"
+    文档路径 = "项目文档/条款三态验证.md"
+    with sqlite3.connect(库件) as 连接:
+        for 建表语句 in 重放.表定义.建表语句:
+            连接.execute(建表语句)
+        连接.execute("insert into 条款 values(?,?,?,?,?)", (文档路径, 0, "标题", "正文", "正式"))
+    def 读权威档():
+        with sqlite3.connect(库件) as 连接:
+            return 连接.execute("select 权威档 from 条款 where 文档路径=? and 序号=0", (文档路径,)).fetchone()[0]
+    def 跑条款(参数表):
+        return subprocess.run([sys.executable, "开发工具/信息核心/信息核心.py", "记条款",
+                               "--文档路径", 文档路径, "--序号", "0", "--标题", "标题", "--正文", "正文"] + 参数表,
+                              cwd=集成树, capture_output=True, text=True, timeout=5)
+    assert 跑条款(["--覆盖"]).returncode == 0 and 读权威档() == "正式"
+    assert 跑条款(["--覆盖", "--权威档", ""]).returncode == 0 and 读权威档() == ""
+    assert 跑条款(["--覆盖", "--权威档为空"]).returncode == 0 and 读权威档() is None
+    assert 跑条款(["--覆盖"]).returncode == 0 and 读权威档() is None
+    assert 跑条款(["--覆盖", "--权威档", "候选"]).returncode == 0 and 读权威档() == "候选"
+    assert 跑条款(["--覆盖", "--权威档", "候选", "--权威档为空"]).returncode != 0 and 读权威档() == "候选"
+    assert 跑条款(["--权威档", "拒写"]).returncode != 0 and 读权威档() == "候选"
+    for 权威档 in ("", None, "正式"):
+        动作 = {"表":"条款", "键":(文档路径, 0),
+                "列名表":["文档路径", "序号", "标题", "正文", "权威档"],
+                "腿值":(文档路径, 0, "标题", "正文", 权威档)}
+        退出码, 说明 = 重放._重放一条(str(集成树), 动作)
+        assert 退出码 == 0 and 读权威档() == 权威档, (退出码, 说明, 读权威档(), 权威档)
+    print("通过 条款真实CLI7态与具名重放3态：缺参/空串/NULL/实值/冲突/覆盖保护逐字段一致")
+
