@@ -3,7 +3,7 @@
 import os
 import re
 
-from .常量 import 取证器路径, 样本路径, 源码根
+from .取证落点 import 取证器路径, 样本路径, 源码根
 from .跑取证 import 跑取证, 断言
 
 

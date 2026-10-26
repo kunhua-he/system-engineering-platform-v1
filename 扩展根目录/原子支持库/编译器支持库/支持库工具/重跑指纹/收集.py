@@ -4,7 +4,7 @@ import hashlib
 import json
 import os
 
-from .常量 import 扩展根路径, 指纹件
+from .指纹落点 import 扩展根路径, 指纹件
 
 
 def 相对路径(路径):

@@ -166,13 +166,13 @@ def 跑自测() -> int:
     临时扩展.parent.mkdir(parents=True, exist_ok=True)
     shutil.copytree(测试世界.扩展目录(), 临时扩展)
     # 先刷新（去掉漂移），再判
-    subprocess.run([sys.executable, str(临时扩展 / "工具/重跑指纹.py")],
+    subprocess.run([sys.executable, str(临时扩展 / "支持库工具/重跑指纹.py")],
                    capture_output=True, text=True, timeout=5)
     正向样本 = _复制(测试世界)
     正向样本.仓根 = 临时仓根
     正向样本.扩展目录 = lambda: 临时扩展  # 覆盖方法
     正向样本.指纹件 = lambda: 临时扩展 / "指纹.json"
-    正向样本.指纹脚本 = lambda: 临时扩展 / "工具/重跑指纹.py"
+    正向样本.指纹脚本 = lambda: 临时扩展 / "支持库工具/重跑指纹.py"
     断言("⑭", "指纹可跑", "正向样本（临时副本刷新后 --检查）", "通过", 判_14_指纹重跑命令(正向样本))
     # 反向：改一个哈希
     指纹 = json.loads((临时扩展 / "指纹.json").read_text(encoding="utf-8"))
@@ -184,7 +184,7 @@ def 跑自测() -> int:
     反向样本.仓根 = 临时仓根
     反向样本.扩展目录 = lambda: 临时扩展
     反向样本.指纹件 = lambda: 临时扩展 / "指纹.json"
-    反向样本.指纹脚本 = lambda: 临时扩展 / "工具/重跑指纹.py"
+    反向样本.指纹脚本 = lambda: 临时扩展 / "支持库工具/重跑指纹.py"
     断言("⑭", "指纹可跑", "反向样本（改一个哈希）", "失败", 判_14_指纹重跑命令(反向样本))
 
     # ⑯

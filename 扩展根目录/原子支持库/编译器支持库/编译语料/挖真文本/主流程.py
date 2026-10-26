@@ -6,7 +6,7 @@ import os
 import re
 
 from .容器段表 import 取常量名, 偏移所属段, 段表
-from .常量 import 真文本目录, 最少声明行数, 挖出JSON路径, 源码根, 版本锚, 版本行首, 弱证据白名单
+from .挖出落点 import 真文本目录, 最少声明行数, 挖出JSON路径, 源码根, 版本锚, 版本行首, 弱证据白名单
 from .行判定 import 检查候选文本, 声明行数, 扩张边界
 
 

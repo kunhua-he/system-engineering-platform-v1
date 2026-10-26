@@ -3,7 +3,7 @@
 import subprocess
 import sys
 
-from .常量 import 仓根, 取证器路径
+from .取证落点 import 仓根, 取证器路径
 
 
 def 跑取证(命令行参数):

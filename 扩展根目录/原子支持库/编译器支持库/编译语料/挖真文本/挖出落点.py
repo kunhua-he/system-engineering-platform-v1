@@ -5,7 +5,7 @@ import re
 import sys
 from pathlib import Path
 
-# 本件 = <语料>/挖真文本/常量.py ⇒ 上溯两层 = <语料>/（与拆分前的 语料根 同值）。
+# 本件 = <编译语料>/挖真文本/挖出落点.py ⇒ 上溯两层 = <编译语料>/（与拆分前的 语料根 同值）。
 语料根 = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # 语料源头（易语言原版安装树）——**不再写死 `/tmp`**（易失路径，重启即丢；实测 2026-10-01

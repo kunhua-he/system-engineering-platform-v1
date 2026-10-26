@@ -4,7 +4,7 @@ import json
 import os
 from datetime import datetime, timezone, timedelta
 
-from .常量 import 扩展根路径, 指纹件, 重跑指纹命令, 生成说明, 指纹范围, 指纹缺口
+from .指纹落点 import 扩展根路径, 指纹件, 重跑指纹命令, 生成说明, 指纹范围, 指纹缺口
 from .收集 import 相对路径, 算指纹表, 读旧指纹表
 
 

@@ -12,7 +12,7 @@ use crate::语言面::{记号, 记号流, 记号种类};
 /// 变量名）。**crate 内唯一一处**这个名字 —— `记录流` 与 `容器` 的测试件都从这里取
 /// （同一事实两处源）。
 ///
-/// 口径与仓内已有的 Python 侧一致（`语料/挖真文本/常量.py`·`工具/跑声明记录区取证/常量.py`
+/// 口径与仓内已有的 Python 侧一致（`编译语料/挖真文本/挖出落点.py`·`支持库工具/跑声明记录区取证/常量.py`
 /// 都读 `V1_CORPUS_ROOT`）—— 一个环境变量名，一处定义。
 pub(crate) const 语料路径变量名: &str = "V1_CORPUS_ROOT";
 
@@ -58,11 +58,11 @@ pub(crate) fn 取片段字节区间(原文: &str, 片段: &str) -> (u32, u32) {
     (区间起点 as u32, (区间起点 + 片段.len()) as u32)
 }
 
-/// 53 份真文本样本（`语料/真文本/*.txt`，UTF-8），按文件名排序。
+/// 53 份真文本样本（`编译语料/源码文本/*.txt`，UTF-8），按文件名排序。
 pub(crate) fn 语料文件() -> Vec<PathBuf> {
     let 语料目录 = Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("语料")
-        .join("真文本");
+        .join("编译语料")
+        .join("源码文本");
     let mut 路s: Vec<PathBuf> = std::fs::read_dir(&语料目录)
         .unwrap_or_else(|错误| panic!("读不到 {}：{错误}", 语料目录.display()))
         .filter_map(|目录项| 目录项.ok().map(|目录项| 目录项.path()))

@@ -6,9 +6,9 @@ mod 声明读取;
 #[path = "../../../examples/出模块制品/契约产物.rs"]
 mod 契约产物;
 
-const 常量初版: &[u8] = include_bytes!("样本/常量初版.程序文本");
-const 常量改版: &[u8] = include_bytes!("样本/常量改版.程序文本");
-const 支持库组合: &[u8] = include_bytes!("样本/支持库组合.程序文本");
+const 常量初版: &[u8] = include_bytes!("源码样本/常量初版.程序文本");
+const 常量改版: &[u8] = include_bytes!("源码样本/常量改版.程序文本");
+const 支持库组合: &[u8] = include_bytes!("源码样本/支持库组合.程序文本");
 
 fn 生成样本(
     程序文本: &[u8], 命令表: &名号表, 锁定依赖: &[本机依赖],
