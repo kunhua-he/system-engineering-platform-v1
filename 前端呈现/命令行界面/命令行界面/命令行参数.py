@@ -2,7 +2,7 @@
 
 import os
 
-from .常量 import 默认端口, 端口环境变量
+from .客户端常量 import 默认端口, 端口环境变量
 
 
 class 用法错误(Exception):

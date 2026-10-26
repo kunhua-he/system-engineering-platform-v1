@@ -13,7 +13,7 @@
 
 import { 主菜单 } from "../菜单表.js";
 import { 跑编译 } from "../编译调试/编译.js";
-import { 发菜单命令 } from "../接口请求/取接口.js";
+import { 发菜单命令 } from "../接口请求/请求客户端.js";
 import { 摆应答, 摆消息, 清空容器, 取应答摘要, 写状态 } from "./呈现.js";
 import { 记流水 } from "../交互编辑/剪辑历史.js";
 
