@@ -224,7 +224,8 @@ def 派发(参数表: dict, 仓根) -> tuple:
         if not 开工号:
             return 2, "功能 = 6 源件记账要 `开工ID`"
         from ..文件编辑.源件记账 import 记账        # 迟到导入：同上（避免环）
-        return 记账(仓根, 开工号, 参数表.get("源件"), str(参数表.get("源件说明") or ""))
+        return 记账(仓根, 开工号, 参数表.get("源件"), str(参数表.get("源件说明") or ""),
+                    参数表.get("改名自"))
     if 功能号 == 7:
         if not 开工号:
             return 2, "功能 = 7 释放（跳过验证）要 `开工ID`"
