@@ -15,7 +15,7 @@ def 核验输入输出(请求,检查,实例表):
         值表=[dict(类型标签=5,值=base64.b64encode(值).decode()) if isinstance(值,bytes) else dict(类型标签=4,值=值) for 值 in 参数表]
         状态码,正文=请求(网关实例,'/接口/调用',dict(编号=编号,值=值表))
         if 预期错误 is not None:
-            检查(状态码<500 and not 正文.get('成功') and 正文.get('错误',{}).get('码')==预期错误,'输入输出原码拒绝%s'%编号,正文)
+            检查(状态码<500 and 正文.get('成功') is False and 正文.get('错误',{}).get('码')==预期错误,'输入输出原码拒绝%s'%编号,正文)
             return None
         检查(状态码==200 and 正文.get('成功') and len(正文['值'])==1,'输入输出真实HTTP成功%s'%编号,正文)
         槽项=正文['值'][0]

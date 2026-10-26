@@ -46,7 +46,7 @@ def 执行量级验收(仓根, 缓存根, 扩展验证=None, 装载后验证=Non
     def 调用(网关实例, 编号, 输入文本, 错误码=None):
         状态码, 返回 = 请求(网关实例,'/接口/调用',dict(编号=编号,值=[dict(类型标签=4,值=输入文本)]))
         if 错误码 is not None:
-            assert not 返回.get('成功') and 返回.get('错误',{}).get('码')==错误码, (编号,返回)
+            assert 状态码<500 and 返回.get('成功') is False and 返回.get('错误',{}).get('码')==错误码, (编号,状态码,返回)
             return None
         assert 状态码==200 and 返回.get('成功'), (编号,返回)
         assert len(返回['值'])==1,返回
