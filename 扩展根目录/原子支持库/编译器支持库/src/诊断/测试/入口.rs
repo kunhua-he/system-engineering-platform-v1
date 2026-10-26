@@ -11,7 +11,7 @@ use crate::测试夹具::{读语料, 语料文件};
 use crate::语言面::形状错误;
 use crate::诊断::{入口, 整理诊断};
 
-/// 一份真程序文本（`语料/真文本/硬文本-samples_e8_ManyFiles_e8test3-0.txt` 的那一段形态，
+/// 一份真程序文本（`编译语料/源码文本/硬文本-samples_e8_ManyFiles_e8test3-0.txt` 的那一段形态，
 /// 照 `说明/真文本覆盖.md` 原样：`.版本 2` 起段 · 声明表 · 一句裸调用 · CRLF）。
 const 真文本: &str = ".版本 2\r\n\r\n.常量 网页事件_onactivate, “onactivate”, 公开\r\n\r\n.程序集 程序集1\r\n\r\n.子程序 _启动子程序, 整数型, , 本子程序在程序启动后最先执行\r\n\r\n    信息框 (“祖国，您好！”, 0, , )\r\n\r\n    返回 (0)\r\n";
 

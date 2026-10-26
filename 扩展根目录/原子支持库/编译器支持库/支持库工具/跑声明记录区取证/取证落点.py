@@ -4,7 +4,7 @@ import os
 import sys
 from pathlib import Path
 
-# 本件 = <仓根>/扩展根目录/原子支持库/编译器支持库/工具/跑声明记录区取证/常量.py
+# 本件 = <仓根>/扩展根目录/原子支持库/编译器支持库/支持库工具/跑声明记录区取证/取证落点.py
 本件路径 = Path(__file__).resolve()
 工具目录 = str(本件路径.parents[1])   # <扩展根>/工具/（与拆分前 dirname(__file__) 同值）
 扩展根路径 = str(本件路径.parents[2])     # <扩展根>
