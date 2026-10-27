@@ -6,7 +6,7 @@
 from __future__ import annotations
 
 from ...检查规则.规范文本.判据_十干 import 样本_十干面 as _样本_十干面, 十干基线路径
-from ...基础定义.常量 import 取全仓区面, 检查名
+from ...基础定义.判据取值常量 import 取全仓区面, 检查名
 
 十干判据元数据 = {
     # ㊵ 零字面十干：扫描面 = 逐字节全树（含未跟踪件；排除 只读参考/ 构建环境/ .git/ .codegraph/）；

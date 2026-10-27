@@ -6,7 +6,7 @@
 见 `备网关产物`）。
 """
 
-import importlib.util
+import 构建装配.运行演示.构建装配.util
 import json
 import os
 import shutil
@@ -17,7 +17,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from 常量 import 仓根, 扩展根声明源, 网关产物, 暂存根  # noqa: E402
+from 演示落点常量 import 仓根, 扩展根声明源, 网关产物, 暂存根  # noqa: E402
 
 # 后缀集的**唯一权威**是仓根这份 JSON —— 演示按它取后缀，**不手抄后缀字面**（与
 # `扩展装载/后缀表.json` 的立论一致：后缀集只许有一处落点）。
@@ -27,8 +27,8 @@ from 常量 import 仓根, 扩展根声明源, 网关产物, 暂存根  # noqa: 
 def 载入构建制品():
     """进程内加载 `构建装配/上线切换/构建制品.py`（转调它的扩展产物节点，不复制它的 cargo 命令）。"""
     制品脚本 = 仓根 / "构建装配" / "上线切换" / "构建制品.py"
-    规格 = importlib.util.spec_from_file_location("构建制品", 制品脚本)
-    制品模块 = importlib.util.module_from_spec(规格)
+    规格 = 构建装配.util.spec_from_file_location("构建制品", 制品脚本)
+    制品模块 = 构建装配.util.module_from_spec(规格)
     规格.loader.exec_module(制品模块)
     return 制品模块
 
@@ -111,7 +111,7 @@ def 搭暂存(制品件: Path) -> Path:
     声明 = dict(来源)
     声明["说明"] = (
         "演示暂存副本（在系统临时目录，仓内一字未改）：种类[].扩展落点 改指本次暂存下编出的扩展，"
-        "形状与 扩展装载/扩展根声明.json 一致。生成器：构建装配/演示/起演示.py"
+        "形状与 扩展装载/扩展根声明.json 一致。生成器：构建装配/运行演示/起演示.py"
     )
     声明["种类"] = [
         dict(扩展类别, 扩展落点=str(扩展树 / Path(扩展类别.get("扩展落点", "")).name)) for 扩展类别 in 来源.get("种类", [])

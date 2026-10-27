@@ -6,7 +6,7 @@
 from __future__ import annotations
 
 from ...检查规则.执行发布.判据_发布证据 import 样本_发布证据面 as _样本_发布证据面
-from ...基础定义.常量 import 取全仓区面, 检查名
+from ...基础定义.判据取值常量 import 取全仓区面, 检查名
 
 
 发布证据判据元数据 = {

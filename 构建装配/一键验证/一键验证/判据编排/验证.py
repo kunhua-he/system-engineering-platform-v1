@@ -8,14 +8,14 @@ import tempfile
 import time
 from pathlib import Path
 
-from ..基础定义 import 常量
+from ..基础定义 import 判据取值常量
 from . import 判据表, 判据选择
 
 from .判据元数据 import 判据元数据
 from .判据表 import 检查表
 from ..共享夹具.合成仓 import 造干净仓
 from .验证小工具 import 取未判, 清未判, 违规
-from ..基础定义.常量 import 判据池宽, 并发度, 提速开关, 检查名, 进程池最小件数, 起始时刻
+from ..基础定义.判据取值常量 import 判据池宽, 并发度, 提速开关, 检查名, 进程池最小件数, 起始时刻
 from ..共享夹具.自测用例 import 样本清单
 from ..源码解析.读文件 import 建上下文
 from ..源码解析.测试件 import 预扫生产区文本
@@ -43,7 +43,7 @@ def 用判据进程池(上层读数: dict) -> bool:
     ~15 件，判据本身几毫秒 ⇒ 付进程启动成本反而更慢，且自测要跑几十次 `验证` ⇒ 退回线程池。
     平台没有 `fork`（Windows）也退回线程池（不是假绿：判据照样全跑，只是不并行）。
     """
-    if not 常量.提速开关:
+    if not 判据取值常量.提速开关:
         return False
     if len(上层读数.get("文件") or {}) < 进程池最小件数:
         return False
@@ -277,7 +277,7 @@ def 跑全量判据(仓根: Path, 两遍=True, 元数据覆盖=None, 只跑=None
         if 名称 != 检查名[17]  # 见下：延迟判据不进「真红 vs 疑似瞬时」判别
         and (第一["结果"].get(名称) or 名称 in {未判项["检查"] for 未判项 in 第一["子未判"]})
     }
-    if 两遍 and not 常量.提速开关:
+    if 两遍 and not 判据取值常量.提速开关:
         需复核 = {名称 for 名称 in 名集 if 名称 != 检查名[17]}  # 退回一步：两遍全量（承重证明用）
     第二 = 跑一遍(仓根, 元数据覆盖, 只跑=需复核, 上层读数=上层读数) if (两遍 and 需复核) else None
     # 延迟判据 ⑱ 在**这里**判（`跑一遍` 那次用 `跑延迟=False` 关掉了）：

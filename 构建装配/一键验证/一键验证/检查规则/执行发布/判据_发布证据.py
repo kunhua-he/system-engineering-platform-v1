@@ -31,7 +31,7 @@ import sys
 from pathlib import Path
 
 from ...判据编排.验证小工具 import 判不了, 违规
-from ...基础定义.常量 import 检查名
+from ...基础定义.判据取值常量 import 检查名
 
 发布证据包相对路径 = "构建装配/上线切换/发布证据"
 矩阵相对路径 = "契约声明/兼容矩阵.json"

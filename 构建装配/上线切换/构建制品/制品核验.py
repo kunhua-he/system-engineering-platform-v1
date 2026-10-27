@@ -4,7 +4,7 @@ import json
 import os
 from pathlib import Path
 
-from .常量 import 跳过目录
+from .装配输入常量 import 跳过目录
 from .源文件 import 文件指纹
 
 

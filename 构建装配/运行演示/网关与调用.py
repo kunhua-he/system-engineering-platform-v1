@@ -15,14 +15,14 @@ import signal
 import subprocess
 import sys
 import time
-import urllib.error
-import urllib.parse
-import urllib.request
+import 构建装配.运行演示.构建装配.error
+import 构建装配.运行演示.构建装配.parse
+import 构建装配.运行演示.构建装配.request
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from 常量 import (  # noqa: E402
+from 演示落点常量 import (  # noqa: E402
     仓根, 回执落点, 健康超时秒, 停等秒, 打印文本, 打点, 扩展落点, 写回执, 端口监听读数,
     流量端口, 程序文本源, 被调能力号表, 暂存根, HTTP超时秒,
     硬顶毫秒, 尾巴余量毫秒, 阈值毫秒, 注入人为慢,
@@ -88,15 +88,15 @@ def 启动读数(源文本: str) -> dict:
 def 真调网关(监听端口: int, 被调号: int, 程序文本: str) -> dict:
     应答体 = json.dumps({"编号": 被调号, "值": [{"类型标签": 4, "值": 程序文本}]},
                     ensure_ascii=False).encode("utf-8")
-    请求对象 = urllib.request.Request(
-        "http://127.0.0.1:{}{}".format(监听端口, urllib.parse.quote("/接口/调用")),
+    请求对象 = 构建装配.request.Request(
+        "http://127.0.0.1:{}{}".format(监听端口, 构建装配.parse.quote("/接口/调用")),
         data=应答体, headers={"Content-Type": "application/json"}, method="POST",
     )
     状态, 应体 = 0, ""
     try:
-        with urllib.request.urlopen(请求对象, timeout=HTTP超时秒) as 造应答:
+        with 构建装配.request.urlopen(请求对象, timeout=HTTP超时秒) as 造应答:
             状态, 应体 = 造应答.status, 造应答.read().decode("utf-8")
-    except urllib.error.HTTPError as 错误:
+    except 构建装配.error.HTTPError as 错误:
         状态, 应体 = 错误.code, 错误.read().decode("utf-8", errors="replace")
     输出缓冲 = {"HTTP状态": 状态, "成功": None, "返回字节数": None, "耗时微秒": None}
     try:
@@ -166,7 +166,7 @@ def 跑主链(壳起表=None) -> int:
     回执 = {
         "生成物": True,
         "说明": "起演示回执 —— 「编扩展→装扫描点→起网关→HTTP 真调→清理」一条链的逐步读数。"
-                "生成器：构建装配/演示/起演示.py（每次跑覆盖本件）。",
+                "生成器：构建装配/运行演示/起演示.py（每次跑覆盖本件）。",
         "判据来源": "项目文档/决策记录/2026-09-27_内核完整度判据.md §三 第 1 条（② 常态接入）",
         "层": {},
         "待收编": [

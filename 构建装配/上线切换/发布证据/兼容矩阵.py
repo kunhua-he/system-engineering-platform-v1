@@ -9,7 +9,7 @@
 import hashlib
 import json
 
-from .常量 import 仓根, 兼容矩阵相对路径, 矩阵四维
+from .证据落点常量 import 仓根, 兼容矩阵相对路径, 矩阵四维
 
 
 def 读矩阵() -> tuple:

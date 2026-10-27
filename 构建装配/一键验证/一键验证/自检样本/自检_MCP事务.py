@@ -24,7 +24,7 @@ import sys
 import tempfile
 from pathlib import Path
 
-from ..基础定义.常量 import 仓根
+from ..基础定义.判据取值常量 import 仓根
 
 
 def 自检_MCP事务机制() -> list:

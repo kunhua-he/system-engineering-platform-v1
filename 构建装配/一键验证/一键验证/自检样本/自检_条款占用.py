@@ -14,7 +14,7 @@
 from __future__ import annotations
 
 from ..检查规则.规范文本.判据_条款占用 import 扫写口
-from ..基础定义.常量 import 仓根
+from ..基础定义.判据取值常量 import 仓根
 
 # 样例源一律**像素拼**出来：本件也在生产区扫描面内（`自检` 前缀已排除，这里再加一层不写整字连写）。
 写口句子 = '    连接.execute("insert or replace into ' + '条' + '款 values(?,?,?,?,?)", (文档路径, 序号, 标题, 正文, ""))\n'

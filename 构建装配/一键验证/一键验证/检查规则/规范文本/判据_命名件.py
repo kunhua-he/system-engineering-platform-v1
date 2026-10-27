@@ -25,7 +25,7 @@ import os
 from pathlib import Path
 
 from ...判据编排.验证小工具 import 判不了, 违规, 取相对路径
-from ...基础定义.常量 import 检查名, 跳过目录, 临时目录前缀
+from ...基础定义.判据取值常量 import 检查名, 跳过目录, 临时目录前缀
 from ...判据编排.判据基线 import 读件名基线
 
 

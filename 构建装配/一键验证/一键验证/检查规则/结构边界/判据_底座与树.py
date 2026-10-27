@@ -7,10 +7,10 @@ import os
 import re
 from pathlib import Path
 
-from ...基础定义 import 常量
+from ...基础定义 import 判据取值常量
 
 from ...判据编排.验证小工具 import 判不了, 取相对路径, 违规
-from ...基础定义.常量 import 临时目录前缀, 代码后缀, 底座代码树, 底座代码面排除, 扩展根三类, 检查名, 契约目录名
+from ...基础定义.判据取值常量 import 临时目录前缀, 代码后缀, 底座代码树, 底座代码面排除, 扩展根三类, 检查名, 契约目录名
 from ...源码解析.测试件 import 并行取生产区文本, 去注释保串
 from ...判据编排.判据基线 import 读底座扩展名基线, 库相对路径
 
@@ -271,12 +271,12 @@ def 检查17_临时件不落源码树(上层读数: dict) -> list:
     命中 = []
     for 根目录, 目录表, 文件表 in os.walk(仓根):
         目录表[:] = [目录名 for 目录名 in 目录表 if 目录名 != ".git"]
-        临时目录 = [目录名 for 目录名 in 目录表 if 目录名.startswith(常量.临时目录前缀)]
-        临时文件 = [文件名 for 文件名 in 文件表 if 文件名.startswith(常量.临时目录前缀)]
+        临时目录 = [目录名 for 目录名 in 目录表 if 目录名.startswith(判据取值常量.临时目录前缀)]
+        临时文件 = [文件名 for 文件名 in 文件表 if 文件名.startswith(判据取值常量.临时目录前缀)]
         命中 += [取相对路径(仓根, Path(根目录) / 目录名) for 目录名 in 临时目录]
         命中 += [取相对路径(仓根, Path(根目录) / 文件名) for 文件名 in 临时文件]
         # 不再往临时目录里钻（报最外层那一处就够，免得一个临时根报出几百条）
-        目录表[:] = [目录名 for 目录名 in 目录表 if not 目录名.startswith(常量.临时目录前缀)]
+        目录表[:] = [目录名 for 目录名 in 目录表 if not 目录名.startswith(判据取值常量.临时目录前缀)]
     for 键名 in sorted(set(命中)):
         输出缓冲.append(
             违规(

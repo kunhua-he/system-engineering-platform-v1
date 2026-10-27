@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from ...基础定义.常量 import 命令行件, 接口面件
+from ...基础定义.判据取值常量 import 命令行件, 接口面件
 from ...检查规则.结构边界.判据_网页端点 import 网页面件
 
 

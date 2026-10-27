@@ -9,7 +9,7 @@
 
 import json
 
-from .常量 import 证据落点, 四类材料
+from .证据落点常量 import 证据落点, 四类材料
 from .正式证据 import 出证据
 
 

@@ -25,7 +25,7 @@ from __future__ import annotations
 import ast
 
 from ...判据编排.验证小工具 import 判不了, 违规
-from ...基础定义.常量 import 检查名, 代码后缀
+from ...基础定义.判据取值常量 import 检查名, 代码后缀
 from ...源码解析.测试件 import 并行取生产区文本
 
 # 子命令名与「第二套解析」的字面一律**拆开拼**：本件自身也在扫描面内，整字连写会自命中。

@@ -4,7 +4,7 @@ import json
 import subprocess
 from pathlib import Path
 
-from .常量 import 仓根, 冻结登记相对路径, git命令路径
+from .基线口径常量 import 仓根, 冻结登记相对路径, git命令路径
 
 
 def _跑(命令行参数: list) -> tuple:

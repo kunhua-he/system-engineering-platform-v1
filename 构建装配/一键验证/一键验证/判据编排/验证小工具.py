@@ -6,14 +6,14 @@ from __future__ import annotations
 import threading
 from pathlib import Path
 
-from ..基础定义 import 常量
+from ..基础定义 import 判据取值常量
 
-from ..基础定义.常量 import 临时目录前缀
+from ..基础定义.判据取值常量 import 临时目录前缀
 
 
 def 是临时路径(相对键: str) -> bool:
     """路径的**任一段**以 `_临时_` 开头 ⇒ 是临时件（扫描面一律排除）。"""
-    return any(路径段.startswith(常量.临时目录前缀) for 路径段 in str(相对键).split("/"))
+    return any(路径段.startswith(判据取值常量.临时目录前缀) for 路径段 in str(相对键).split("/"))
 # ════════════════════════════════════════════════════════════════════════════
 # 验证小工具
 # ════════════════════════════════════════════════════════════════════════════

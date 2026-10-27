@@ -6,13 +6,13 @@ from __future__ import annotations
 import tempfile
 from pathlib import Path
 
-from ..基础定义 import 常量
+from ..基础定义 import 判据取值常量
 from ..判据编排 import 判据表
 
 from ..判据编排.判据元数据 import 判据元数据
 from ..判据编排.判据表 import 检查表
 from ..共享夹具.合成仓 import 造干净仓
-from ..基础定义.常量 import 硬顶毫秒, 空话表
+from ..基础定义.判据取值常量 import 硬顶毫秒, 空话表
 from ..判据编排 import 墙钟采样  # noqa: E402  —— ⑱ 的判决线（失控护栏）住这里；注入_硬顶失效 压的就是它
 from .自检_临时件 import 自检_临时件排除承重
 from .自检_前端 import 自检_前端内联脚本, 自检_前端语义判据
@@ -226,7 +226,7 @@ def _跑反向样本(序号: int) -> dict:
     with tempfile.TemporaryDirectory(prefix="一键验证反向样本-") as 临时目录:
         临根 = Path(临时目录) / "仓"
         造干净仓(临根)
-        原硬顶 = 常量.硬顶毫秒  # 注入可能临时改坏它 ⇒ 本轮结束必须还原
+        原硬顶 = 判据取值常量.硬顶毫秒  # 注入可能临时改坏它 ⇒ 本轮结束必须还原
         原护栏 = 墙钟采样.失控护栏毫秒  # ⑱ 的判决线：`注入_硬顶失效` 压的是它
         判定汇总 = 注入(临根)
         元数据覆盖 = 判定汇总 if isinstance(判定汇总, dict) else None
@@ -235,7 +235,7 @@ def _跑反向样本(序号: int) -> dict:
             # （60 条样本 × 37 条会把 `--自测` 顶过五秒硬顶，实测 7.4 s ⇒ ⑱ 假红）。
             判定汇总 = 跑全量判据(临根, 元数据覆盖=元数据覆盖, 只跑={该报的检查})
         finally:
-            常量.硬顶毫秒 = 原硬顶
+            判据取值常量.硬顶毫秒 = 原硬顶
             墙钟采样.失控护栏毫秒 = 原护栏
     退出码 = 0 if not 判定汇总["失败"] else 1
     条表 = [明细项 for 明细项 in (判定汇总["失败"] + 判定汇总["未判"]) if isinstance(明细项, dict)]

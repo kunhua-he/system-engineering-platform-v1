@@ -15,7 +15,7 @@ import zlib
 def 执行量级验收(仓根, 缓存根, 扩展验证=None, 装载后验证=None):
     仓根, 缓存根 = Path(仓根).resolve(), Path(缓存根).resolve()
     缓存根.mkdir(parents=True, exist_ok=True)
-    from 构建装配.门禁.常量 import 效率目标毫秒
+    from 构建装配.门禁.硬顶常量 import 效率目标毫秒
     连接器 = urllib.request.build_opener(urllib.request.ProxyHandler({}))
     实例表, 回执表, 检查表 = [], [], []
     代码缓存根 = 缓存根/'执行映像'

@@ -45,7 +45,7 @@ import os
 from pathlib import Path
 
 from ...判据编排.验证小工具 import 判不了, 违规
-from ...基础定义.常量 import 检查名, 排除目录
+from ...基础定义.判据取值常量 import 检查名, 排除目录
 from ...源码解析.命名面 import 取查名 as _查名
 from ...判据编排.判据基线 import 读禁译名基线, 库相对路径
 # 制品产物段判定**只此一份**（`判据_台账号.是制品产物`，与判据 ㊳ 同一条规则）—— 不抄第二份。

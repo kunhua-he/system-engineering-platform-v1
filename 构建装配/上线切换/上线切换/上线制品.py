@@ -4,7 +4,7 @@ import json
 import os
 from pathlib import Path
 
-from .常量 import 仓根, 制品落点
+from .落点环境常量 import 仓根, 制品落点
 from 构建制品.制品核验 import 检查制品  # 制品不可变判据的唯一实现（装配侧写清单 / --检查 同一条）
 
 

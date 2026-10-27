@@ -46,7 +46,7 @@ def _取扫描口径():
     根目录 = str(Path(__file__).resolve().parents[2] / "构建装配" / "一键验证")
     if 根目录 not in sys.path:
         sys.path.insert(0, 根目录)
-    from 一键验证.基础定义.常量 import 跳过目录, 临时目录前缀, 扫描后缀
+    from 一键验证.基础定义.判据取值常量 import 跳过目录, 临时目录前缀, 扫描后缀
     return 跳过目录, 临时目录前缀, 扫描后缀
 
 

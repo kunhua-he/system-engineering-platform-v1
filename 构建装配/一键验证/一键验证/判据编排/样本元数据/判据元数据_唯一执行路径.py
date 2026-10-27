@@ -6,7 +6,7 @@
 from __future__ import annotations
 
 from ...检查规则.结构边界.判据_唯一执行路径 import 样本_唯一执行路径
-from ...基础定义.常量 import 取全仓区面, 检查名
+from ...基础定义.判据取值常量 import 取全仓区面, 检查名
 
 
 唯一执行路径判据元数据 = {

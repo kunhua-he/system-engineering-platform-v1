@@ -6,7 +6,7 @@
 from __future__ import annotations
 
 from ...检查规则.执行发布.判据_MCP自检 import 样本_MCP自检面 as _样本_MCP自检面
-from ...基础定义.常量 import 取全仓区面, 检查名
+from ...基础定义.判据取值常量 import 取全仓区面, 检查名
 
 MCP自检判据元数据 = {
     # ㊽ MCP 工具面自检：对象数 = 恒 1（「本仓 MCP 工具面的自检」这一件事，不是扫描集，

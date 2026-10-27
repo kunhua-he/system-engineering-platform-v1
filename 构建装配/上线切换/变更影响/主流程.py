@@ -2,7 +2,7 @@
 
 import argparse
 
-from .常量 import 冻结登记相对路径
+from .基线口径常量 import 冻结登记相对路径
 from .比冻结面 import 取待查串, 比冻结面
 from .扫引用 import 数引用件
 from .读基线 import 取基线引用, 读基线登记, 读当前登记

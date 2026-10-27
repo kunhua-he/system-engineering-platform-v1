@@ -6,10 +6,10 @@ from __future__ import annotations
 import time
 from pathlib import Path
 
-from ...基础定义 import 常量
+from ...基础定义 import 判据取值常量
 
 from ...判据编排.验证小工具 import 违规
-from ...基础定义.常量 import 检查名, 起始时刻
+from ...基础定义.判据取值常量 import 检查名, 起始时刻
 from ...判据编排.判据基线 import 行数类别, 读行数基线, 库相对路径
 # 读数与报告的唯一一处 —— 进程内自量与闸 0 外层共用，不各写一份：
 # `定读数毫秒` 定「这次量的是谁」，`报告墙钟` 超效率目标就记一条债务（**不再判红**）。
@@ -66,7 +66,7 @@ def _行数工具(上层读数: dict):
     import importlib
     import sys as _sys
 
-    根目录 = str(常量.仓根 / "开发工具")
+    根目录 = str(判据取值常量.仓根 / "开发工具")
     if 根目录 not in _sys.path:
         _sys.path.insert(0, 根目录)
     import 查文件行数.核心 as 核心

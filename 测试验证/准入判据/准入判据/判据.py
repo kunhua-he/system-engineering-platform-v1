@@ -381,7 +381,7 @@ def 判_14_指纹重跑命令(测试世界: 判读世界):
     if 判定汇总.returncode == 0:
         import contextlib
         import io
-        from 构建装配.形态装配.扩展指纹.核心 import 处理扩展指纹, 生成器相对路径
+        from 构建装配.形态装配.扩展指纹.快照生成 import 处理扩展指纹, 生成器相对路径
         对象数 = 1 + sum((读JSON件(声明路径.parent/'指纹.json') or {}).get('生成器') == 生成器相对路径
             for 声明路径 in (测试世界.仓根/'扩展根目录').glob('*/*/包声明.json'))
         输出缓冲 = io.StringIO()

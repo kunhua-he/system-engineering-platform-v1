@@ -6,7 +6,7 @@
 from __future__ import annotations
 
 from ...检查规则.规范文本.判据_权威地图 import 样本_权威地图面 as _样本_权威地图面
-from ...基础定义.常量 import 取全仓区面, 检查名
+from ...基础定义.判据取值常量 import 取全仓区面, 检查名
 
 
 权威地图判据元数据 = {

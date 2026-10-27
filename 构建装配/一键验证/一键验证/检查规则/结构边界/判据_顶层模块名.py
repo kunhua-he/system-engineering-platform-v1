@@ -26,7 +26,7 @@ from __future__ import annotations
 import ast
 
 from ...判据编排.验证小工具 import 判不了, 违规
-from ...基础定义.常量 import 检查名
+from ...基础定义.判据取值常量 import 检查名
 
 # 标准库模块名单（**唯一主人**）：只有这些名字被 `.` 访问时才判。
 _标准模块名 = frozenset({

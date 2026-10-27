@@ -10,10 +10,10 @@ import re
 import threading
 from pathlib import Path
 
-from ..基础定义 import 常量
+from ..基础定义 import 判据取值常量
 
 from ..判据编排.验证小工具 import 判不了, 是临时路径, 取相对路径
-from ..基础定义.常量 import 临时目录前缀, 号段图路径, 契约目录名, 常量表路径, 并发度, 扫描后缀, 编号字段, 编号目录, 跳过目录, 顶层目录到层, 库目录名, 库文件名
+from ..基础定义.判据取值常量 import 临时目录前缀, 号段图路径, 契约目录名, 常量表路径, 并发度, 扫描后缀, 编号字段, 编号目录, 跳过目录, 顶层目录到层, 库目录名, 库文件名
 from .测试件 import 建测试文件集
 
 
@@ -24,7 +24,7 @@ def 扫源文件(仓根: Path) -> list:
         目录表[:] = [
             目录名
             for 目录名 in 目录表
-            if 目录名 not in 跳过目录 and not 目录名.startswith(常量.临时目录前缀)
+            if 目录名 not in 跳过目录 and not 目录名.startswith(判据取值常量.临时目录前缀)
         ]
         for 名称 in 文件表:
             if 名称.endswith(扫描后缀):
@@ -321,7 +321,7 @@ def 索引陈旧读数(仓根: Path, 件表: dict) -> tuple:
         return False, "合成索引（按当场件表现造）"
     import sys as _sys
 
-    根目录 = str(常量.仓根 / "开发工具")
+    根目录 = str(判据取值常量.仓根 / "开发工具")
     if 根目录 not in _sys.path:
         _sys.path.insert(0, 根目录)
     import 代码地图.索引库 as 索引库

@@ -12,7 +12,7 @@ import urllib.parse
 import urllib.request
 from pathlib import Path
 
-from .常量 import 仓根, 停等秒, 运行根, 健康超时秒
+from .落点环境常量 import 仓根, 停等秒, 运行根, 健康超时秒
 from .指针 import 读指针, 写指针
 from .上线制品 import 制品目录
 from .输出 import 打印文本

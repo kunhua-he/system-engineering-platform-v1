@@ -6,7 +6,7 @@
 from __future__ import annotations
 
 from ...检查规则.结构边界.判据_引用 import 样本_引用面 as _样本_引用面, 引用基线路径
-from ...基础定义.常量 import 取全仓区面, 检查名
+from ...基础定义.判据取值常量 import 取全仓区面, 检查名
 
 引用判据元数据 = {
     # ㊴ 引用可解析：扫描面 = 全树（含未跟踪件；后缀 .md/.rs/.py/.json/.js/.toml；

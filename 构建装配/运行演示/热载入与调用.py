@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
-"""热载入与调用 —— 「不重启网关载入新扩展」的主链与两个零件（台账 237）。
+"""热载入与调用 —— 「不重启网关载入新扩展」的主链与两个零件。
 
 拆自 `热载入.py`（入口 ≤160 行且零实现，开发规范 §六）。本件与 `起演示.py` 的兄弟件
-（`常量.py` / `装配.py` / `网关与调用.py`）是**同级**：起停与 HTTP 读法直接复用
+（`演示落点常量.py` / `装配.py` / `网关与调用.py`）是**同级**：起停与 HTTP 读法直接复用
 `网关与调用.py`，不另写第二套。
 
 一条链：
@@ -18,12 +18,12 @@ import json
 import os
 import shutil
 import time
-import urllib.error
-import urllib.parse
-import urllib.request
+import 构建装配.运行演示.构建装配.error
+import 构建装配.运行演示.构建装配.parse
+import 构建装配.运行演示.构建装配.request
 from pathlib import Path
 
-from 常量 import (
+from 演示落点常量 import (
     仓根, 扩展根声明源, 暂存根, 打印文本, 打点, 端口监听读数, 流量端口, 程序文本源, 被调能力号表,
     写回执, HTTP超时秒, 硬顶毫秒, 尾巴余量毫秒, 阈值毫秒, 注入人为慢,
 )
@@ -35,16 +35,16 @@ from 网关与调用 import 起网关, 启动读数, 真调网关, 停网关
 
 def 发JSON(监听端口: int, 路径: str, 体对象: dict) -> tuple:
     """发一条 POST JSON，收 `(HTTP 状态, 解析后的对象)`（非 JSON 给说明字典）。"""
-    请求对象 = urllib.request.Request(
-        "http://127.0.0.1:{}{}".format(监听端口, urllib.parse.quote(路径)),
+    请求对象 = 构建装配.request.Request(
+        "http://127.0.0.1:{}{}".format(监听端口, 构建装配.parse.quote(路径)),
         data=json.dumps(体对象, ensure_ascii=False).encode("utf-8"),
         headers={"Content-Type": "application/json"}, method="POST",
     )
     状态, 应体 = 0, ""
     try:
-        with urllib.request.urlopen(请求对象, timeout=HTTP超时秒) as 造应答:
+        with 构建装配.request.urlopen(请求对象, timeout=HTTP超时秒) as 造应答:
             状态, 应体 = 造应答.status, 造应答.read().decode("utf-8")
-    except urllib.error.HTTPError as 错误:
+    except 构建装配.error.HTTPError as 错误:
         状态, 应体 = 错误.code, 错误.read().decode("utf-8", errors="replace")
     try:
         演示读数 = json.loads(应体)
@@ -64,7 +64,7 @@ def 搭暂存(网关件路径: Path) -> Path:
     声明["说明"] = (
         "热载入演示暂存副本（系统临时目录，仓内一字未改）：**支持库**那条 种类[].扩展落点 改指本次"
         "暂存下的**空扫描点**（启动时不存在）—— 扩展在启动后才丢进去；其余种类的目录改指不存在的"
-        "路径（本演示只演支持库那条路）。生成器：构建装配/演示/热载入.py"
+        "路径（本演示只演支持库那条路）。生成器：构建装配/运行演示/热载入.py"
     )
     声明["种类"] = [
         dict(扩展类别, 扩展落点="扫描点")
@@ -92,7 +92,7 @@ def 跑主链(壳起表=None) -> int:
     回执 = {
         "生成物": True,
         "说明": "热载入回执 —— 「起网关(空扫描点)→丢新扩展→不重启→装载→真调」一条链的逐步读数。"
-                "生成器：构建装配/演示/热载入.py（每次跑覆盖本件）。",
+                "生成器：构建装配/运行演示/热载入.py（每次跑覆盖本件）。",
         "判据来源": "项目文档/设计文档/扩展装载与开发标准.md §六（热载入已现场验证）",
         "层": {},
     }

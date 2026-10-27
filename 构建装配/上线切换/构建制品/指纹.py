@@ -2,8 +2,8 @@
 
 import hashlib
 
-from .常量 import 仓根, 底座目录, 底座根文件, 装配器入口
-from .命令 import 工具链版本
+from .装配输入常量 import 仓根, 底座目录, 底座根文件, 装配器入口
+from .子进程与指纹 import 工具链版本
 from .源文件 import 取相对路径, 走源文件, 文件指纹
 
 

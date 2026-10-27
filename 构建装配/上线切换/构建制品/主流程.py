@@ -5,8 +5,8 @@ import json
 import shutil
 from pathlib import Path
 
-from .命令 import 跑子进程, 构建平台, 提交哈希, 依赖指纹, 工具链版本
-from .常量 import 仓根, 制品落点, 扩展根声明, 底座目录, 底座根文件, 构建缓存, 源后缀, 预构建戳
+from .子进程与指纹 import 跑子进程, 构建平台, 提交哈希, 依赖指纹, 工具链版本
+from .装配输入常量 import 仓根, 制品落点, 扩展根声明, 底座目录, 底座根文件, 构建缓存, 源后缀, 预构建戳
 from .扩展 import 扫扩展, 建扩展产物, 取制品路径
 from .指纹 import 预构建指纹, 源指纹
 from .制品核验 import 制品内文件清单, 检查制品

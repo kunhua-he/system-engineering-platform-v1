@@ -7,7 +7,7 @@
 from __future__ import annotations
 
 from ...检查规则.结构边界.判据_老项目链 import 样本_老项目链面
-from ...基础定义.常量 import 取全仓区面, 检查名
+from ...基础定义.判据取值常量 import 取全仓区面, 检查名
 
 
 老项目链判据元数据 = {

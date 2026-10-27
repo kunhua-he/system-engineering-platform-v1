@@ -28,12 +28,12 @@ from ...集成管理.合主干有界跑 import 干净环境
 
 旧导出 = ("# -*- coding: utf-8 -*-\n"
         "\"\"\"门禁（旧骨架）：**没有** 跑并复跑超顶 —— 复现旧腿树缺件。\"\"\"\n"
-        "from .常量 import 硬顶毫秒\n"
+        "from .硬顶常量 import 硬顶毫秒\n"
         "\n"
         "__all__ = [\"硬顶毫秒\"]\n")
 新导出 = ("# -*- coding: utf-8 -*-\n"
         "\"\"\"门禁（现行）：导出 跑并复跑超顶。\"\"\"\n"
-        "from .常量 import 硬顶毫秒\n"
+        "from .硬顶常量 import 硬顶毫秒\n"
         "from .复跑 import 跑并复跑超顶, 是瞬时超顶\n"
         "\n"
         "__all__ = [\"硬顶毫秒\", \"跑并复跑超顶\", \"是瞬时超顶\"]\n")
@@ -76,7 +76,7 @@ def 搭空改夹具(临时根, 夹具参数):
     执行命令(["config", "user.name", "空改主干样本"])
     执行命令(["config", "user.email", "gate@example.invalid"])
     (仓根 / "构建装配/门禁").mkdir(parents=True)
-    (仓根 / "构建装配/门禁/常量.py").write_text("硬顶毫秒 = 5000\n", encoding="utf-8")
+    (仓根 / "构建装配/门禁/硬顶常量.py").write_text("硬顶毫秒 = 5000\n", encoding="utf-8")
     (仓根 / "构建装配/门禁/__init__.py").write_text(旧导出, encoding="utf-8")
     (仓根 / "构建装配/一键验证").mkdir(parents=True)
     (仓根 / "构建装配/一键验证/闸0.py").write_text("print('夹具闸0通过')\n", encoding="utf-8")

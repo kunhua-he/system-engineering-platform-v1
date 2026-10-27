@@ -5,10 +5,10 @@ from __future__ import annotations
 
 import re
 
-from ...基础定义 import 常量
+from ...基础定义 import 判据取值常量
 
 from ...判据编排.验证小工具 import 判不了, 违规
-from ...基础定义.常量 import 检查名, 行号引用_L前缀, 行号引用_第几行, 行号引用_路径, 行号引用后缀, 语料后缀, 语料路径片段
+from ...基础定义.判据取值常量 import 检查名, 行号引用_L前缀, 行号引用_第几行, 行号引用_路径, 行号引用后缀, 语料后缀, 语料路径片段
 
 
 

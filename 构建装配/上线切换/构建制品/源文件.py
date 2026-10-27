@@ -4,7 +4,7 @@ import hashlib
 import os
 from pathlib import Path
 
-from .常量 import 仓根, 跳过目录, 源后缀
+from .装配输入常量 import 仓根, 跳过目录, 源后缀
 
 
 def 走源文件(源根目录: Path):

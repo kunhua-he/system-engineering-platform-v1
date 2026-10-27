@@ -28,7 +28,7 @@ import sys
 from pathlib import Path
 
 from ...判据编排.验证小工具 import 判不了, 违规
-from ...基础定义.常量 import 仓根, 检查名
+from ...基础定义.判据取值常量 import 仓根, 检查名
 
 
 # 最多报几条（差名可能成百上千，全打出来会把读数淹没；另行列明总条数）。

@@ -17,7 +17,7 @@
 依据：`项目文档/决策记录/2026-09-27_命名规范.md` §四.2 · §八.11。
 """
 
-from ..基础定义 import 常量
+from ..基础定义 import 判据取值常量
 
 
 def 取查名():
@@ -28,7 +28,7 @@ def 取查名():
     """
     import sys as _sys
 
-    根目录 = str(常量.仓根 / "开发工具")
+    根目录 = str(判据取值常量.仓根 / "开发工具")
     if 根目录 not in _sys.path:
         _sys.path.insert(0, 根目录)
     import 代码地图.查名 as 查名

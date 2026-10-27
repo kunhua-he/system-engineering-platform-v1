@@ -8,7 +8,7 @@ import os
 import re
 
 from .剥字面量 import _剥注释与串, 条件编译测试区, 去字面量
-from ..基础定义.常量 import 导出名模式, 并发度
+from ..基础定义.判据取值常量 import 导出名模式, 并发度
 from .构造点 import _条件编译属性, _夹具挂载形, _属性窗口起
 
 

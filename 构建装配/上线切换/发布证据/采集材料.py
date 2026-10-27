@@ -13,7 +13,7 @@ import hashlib
 import json
 import subprocess
 
-from .常量 import 仓根, 冻结登记相对路径, 制品产物目录, 制品清单名, 依赖锁件相对路径
+from .证据落点常量 import 仓根, 冻结登记相对路径, 制品产物目录, 制品清单名, 依赖锁件相对路径
 
 
 def _整串哈希(行表: list) -> str:

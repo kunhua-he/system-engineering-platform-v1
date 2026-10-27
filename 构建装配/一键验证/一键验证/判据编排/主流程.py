@@ -6,9 +6,9 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-from ..基础定义 import 常量
+from ..基础定义 import 判据取值常量
 
-from ..基础定义.常量 import 契约目录名
+from ..基础定义.判据取值常量 import 契约目录名
 from .判据选择 import 解析选择
 from .打印 import 打印验证结果, 打印缺口
 from .承重证明 import 承重证明
@@ -37,7 +37,7 @@ def 解析只跑(词表: list) -> tuple:
 
 def 找仓根() -> Path:
     """仓根：本验证器在 构建装配/一键验证/ 下 ⇒ 由 `常量.仓根目录` 给出（上溯三级）。"""
-    return 常量.仓根
+    return 判据取值常量.仓根
 
 def 入口函数(命令行参数: list) -> int:
     仓根 = 找仓根()

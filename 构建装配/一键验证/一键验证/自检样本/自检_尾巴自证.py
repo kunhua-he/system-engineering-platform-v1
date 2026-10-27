@@ -13,7 +13,7 @@ import time
 from pathlib import Path
 
 from ..共享夹具.合成仓 import 造干净仓
-from ..基础定义.常量 import 起始时刻
+from ..基础定义.判据取值常量 import 起始时刻
 from ..反向验证.共享注入.注入 import 注入_常量重定义
 from ..判据编排.打印 import 打印验证结果
 from ..判据编排.验证 import 跑全量判据

@@ -9,7 +9,7 @@ from __future__ import annotations
 from ...检查规则.结构边界.判据_唯一物 import 样本_唯一物面 as _样本_唯一物面
 from ...检查规则.结构边界.判据_边界表达力 import 样本_边界表达力面 as _样本_边界表达力面
 from ...检查规则.规范文本.判据_命名件 import 样本_命名件面 as _样本_命名件面
-from ...基础定义.常量 import 取全仓区面, 检查名
+from ...基础定义.判据取值常量 import 取全仓区面, 检查名
 
 
 唯一物边界命名件判据元数据 = {

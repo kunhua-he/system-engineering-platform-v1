@@ -27,7 +27,7 @@ from __future__ import annotations
 import json
 
 from ...判据编排.验证小工具 import 判不了, 违规
-from ...基础定义.常量 import 检查名
+from ...基础定义.判据取值常量 import 检查名
 
 
 文档账本路径 = "项目文档/文档账本.json"

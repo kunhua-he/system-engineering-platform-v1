@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 from ...判据编排.验证小工具 import 层级标签, 是整数, 段归属标签, 违规
-from ...基础定义.常量 import 占用段键, 号段图路径, 契约目录名, 布局段键, 检查名
+from ...基础定义.判据取值常量 import 占用段键, 号段图路径, 契约目录名, 布局段键, 检查名
 
 
 def _规范段表(段表, 落点: str, 必填键, 输出缓冲: list, 哪一份: str) -> list:

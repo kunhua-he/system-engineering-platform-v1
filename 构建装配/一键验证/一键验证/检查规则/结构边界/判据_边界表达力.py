@@ -18,7 +18,7 @@ r"""判据 58：边界表达力 —— 长活原语可表达（内核零任务�
 from __future__ import annotations
 
 from ...判据编排.验证小工具 import 判不了, 违规
-from ...基础定义.常量 import Rust后缀, 检查名
+from ...基础定义.判据取值常量 import Rust后缀, 检查名
 
 
 # 内核一旦持一张任务注册表，至少命中其一（与 `测试验证/准入判据/准入判据/长活原语.py::任务表认定词`
