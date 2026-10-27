@@ -25,6 +25,7 @@
 免得两腿各跑一次 落库 就假冲突。
 """
 
+import json
 import multiprocessing
 import shutil
 import sqlite3
@@ -129,25 +130,35 @@ def 定列面(表名, 基列名表, 腿列名表, 主干列名表) -> tuple:
     return 列名表, None
 
 
-def 备集成表(库件, 表名集) -> list:
-    """集成树库缺表（基缺表 / 腿新增表）⇒ 按 `表定义.建表语句`（正式语句，唯一一份）建齐 ⇒ 缺过的表名。
+def 补集成树表结构(集成树, 库件) -> tuple:
+    """用**集成树里那份**表定义把库结构对齐到「主干 + 腿」⇒ (退出码, 补过列表, 说明)。
 
-    不补 DDL 就只能靠各表**自身**的写命令撞「no such table」⇒ 腿行整表静默漏掉（本批确认缺口）。
-    只在**真缺表**时执行；三库都有的正常路径一个字节不动（`create ... if not exists` 全幂等）。
+    为何不用本模块 import 的 `表定义`（实测踩到两次）：本模块跑在主仓，主仓那份是**主干**的；
+    腿新加的表、腿给老表新加的那一栏，只存在于**集成树**（主干 + 腿）里。拿主干的声明去建去补，
+    建不出腿的新表、补不出腿的新列 ⇒ 逐键重放当场 `no such column`。
+    原 `备集成表` 只建缺表、不补缺列，两种毛病同一个根（都在用主干的声明）—— 本函数一并收掉它：
+    **表结构真源永远是集成树里那份 `表定义`**。
     """
-    连接 = sqlite3.connect(str(库件))
+    脚本 = (
+        "import json, sqlite3, sys\n"
+        "sys.path.insert(0, %r)\n"
+        "import 表定义\n"
+        "连接 = sqlite3.connect(%r)\n"
+        "for 语句 in 表定义.建表语句:\n"
+        "    连接.execute(语句)\n"
+        "补过 = 表定义.补缺列(连接)\n"
+        "连接.commit(); 连接.close()\n"
+        "print(json.dumps(补过, ensure_ascii=False))\n"
+    ) % (str(Path(集成树) / "开发工具" / "信息核心"), str(库件))
+    退出码, 输出, _ = 跑有界命令([sys.executable, "-c", 脚本], 集成树, 超时秒数=60,
+                            只取标准输出=True)
+    if 退出码 != 0:
+        return 退出码, [], "集成树表结构对齐失败：%s" % 输出.strip()[-800:]
     try:
-        现有 = {数据行[0] for 数据行 in 连接.execute(
-            "select name from sqlite_master where type='table'")}
-        缺表 = sorted(set(表名集) - 现有)
-        if not 缺表:
-            return []
-        for 语句 in 表定义.建表语句:
-            连接.execute(语句)
-        连接.commit()
-        return 缺表
-    finally:
-        连接.close()
+        补过表 = [tuple(两件) for 两件 in json.loads(输出.strip().splitlines()[-1])]
+    except (ValueError, IndexError):
+        补过表 = []
+    return 0, 补过表, "按集成树里那份建表语句建齐缺表 + 幂等补缺列"
 
 
 def 合并三方库(基库, 腿库, 主干库, 集成树) -> tuple:
@@ -341,15 +352,12 @@ def 重放动作表(集成树, 动作表, 主干库) -> tuple:
     库件 = Path(集成树) / 表定义.库相对路径
     shutil.copyfile(主干库, 库件)
     行表 = ["集成树库先置为主干版本（消除 git 对二进制的自动取值），再按主键重放腿值"]
-    缺表 = 备集成表(库件, {动作["表"] for 动作 in 动作表})
-    # ★ 库置为主干版本 ⇒ 腿加的那一栏不在里面，而腿的写口按新列面写（实测 `no such column: 类别`）。
-    #   补栏只有一处实现（`表定义.补缺列` 读建表语句的列声明），重放前先补，再逐键重放。
-    补栏连接 = sqlite3.connect(str(库件))
-    try:
-        补过表 = 表定义.补缺列(补栏连接)
-        补栏连接.commit()
-    finally:
-        补栏连接.close()
+    # ★ 库置为主干版本 ⇒ 腿新加的表 / 新加的那一栏都不在里面，而腿的写口按新形状写。
+    #   结构对齐用集成树里那份表定义（见 `补集成树表结构` 件头），对齐完再逐键重放。
+    结构码, 补过表, 结构说明 = 补集成树表结构(集成树, 库件)
+    if 结构码 != 0:
+        return 结构码, 行表 + [结构说明]
+    行表.append("集成树库结构对齐：%s" % 结构说明)
     if 补过表:
         行表.append("集成树库老表补栏 %s ⇒ 按建表语句声明幂等补（腿只增列才走得通）"
                     % "·".join("%s.%s" % 两件 for 两件 in 补过表))
