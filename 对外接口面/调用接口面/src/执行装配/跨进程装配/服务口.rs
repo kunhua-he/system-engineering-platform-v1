@@ -62,6 +62,46 @@ impl 服务 {
     ///
     /// 取 `&self` + 内部锁：调用方（`造应答`）此时已持适配器**写锁**，本锁只护登记，
     /// 不进任何调用关键路径。
+    /// **启动即装载**：装配末尾调一次 —— 等价于外面立刻发
+    /// `POST /接口/生命周期 {"动作":"装载"}`。
+    ///
+    /// 为什么要有：模块 / 技能不在启动 `dlopen` 那条腿上（它们走运行期装载），
+    /// 没有这一步，每次起网关都得靠外部 curl 补一发；而「起来了就该能调」是部署方的合理预期。
+    /// 幂等：支持库已在的不动，只补模块 / 技能与新增件（与 `POST` 那条完全同一条路）。
+    ///
+    /// 回 `(装上, 已在, 剔除)` 三个数给装配侧打一行；明细仍走 `GET /接口/生命周期`。
+    pub fn 启动即装载(&self) -> (usize, usize, usize) {
+        let mut 互斥锁 = self.适配器.write().unwrap_or_else(|中毒| 中毒.into_inner());
+        #[cfg(unix)]
+        let 装载回执 = {
+            let mut 状态锁 = self.取跨进程状态();
+            crate::生命周期响应::装载(
+                std::sync::Arc::make_mut(&mut 互斥锁),
+                self.声明根.as_deref(),
+                self.后缀表文本.as_deref(),
+                self.缓存根目录.as_deref(),
+                状态锁.as_deref_mut(),
+            )
+        };
+        #[cfg(not(unix))]
+        let 装载回执 = crate::生命周期响应::装载(
+            std::sync::Arc::make_mut(&mut 互斥锁),
+            self.声明根.as_deref(),
+            self.后缀表文本.as_deref(),
+            self.缓存根目录.as_deref(),
+            None,
+        );
+        let 数据项 = 装载回执.取成员("数据");
+        let 数项 = |键名: &str| -> usize {
+            数据项
+                .and_then(|数据成员| 数据成员.取成员(键名))
+                .and_then(|回执项| 回执项.取数组())
+                .map(|项表| 项表.len())
+                .unwrap_or(0)
+        };
+        (数项("装上"), 数项("已在"), 数项("剔除"))
+    }
+
     pub(crate) fn 取跨进程状态(&self) -> MutexGuard<'_, Option<Box<启用状态>>> {
         self.跨进程.lock().unwrap_or_else(|中毒| 中毒.into_inner())
     }
