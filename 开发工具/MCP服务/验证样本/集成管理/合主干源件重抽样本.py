@@ -54,7 +54,7 @@ def _写台账(树根, 台账行表):
         台账连接.execute("create table if not exists 未完成 "
                    "(号 integer primary key, 缺什么 text, 落点 text, 验证命令 text)")
         台账连接.execute("delete from 未完成")
-        台账连接.executemany("insert or replace into 未完成 values (?,?,?,?)",
+        台账连接.executemany("insert or replace into 未完成(号, 缺什么, 落点, 验证命令) values (?,?,?,?)",
                       [tuple(数据行) for 数据行 in 台账行表])
         台账连接.commit()
     finally:

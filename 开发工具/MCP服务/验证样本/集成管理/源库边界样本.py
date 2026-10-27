@@ -16,16 +16,29 @@ def 验源库边界(仓根):
         for 库件 in 库文件表:
             with sqlite3.connect(库件) as 连接:
                 连接.execute(建表语句)
+        # ① 列**顺序**变了（集合相同、顺序不同）⇒ 逐列比对会错位 ⇒ 必须拒并（列面冲突）。
+        重排语句 = ("create table 未完成(号 integer primary key, 缺什么 text not null, "
+                "验证命令 text, 备注 text, 落点 text)")
         with sqlite3.connect(库文件表[1]) as 连接:
-            连接.execute("alter table 未完成 add column 备注 text")
+            连接.execute("drop table 未完成")
+            连接.execute(重排语句)
         动作表, 冲突表, 跳过表 = 重放.合并三方库(*库文件表, 临时根)
-        assert not 动作表 and len(冲突表) == 1 and 冲突表[0]["键"] == ("列面",)
+        assert not 动作表 and len(冲突表) == 1 and 冲突表[0]["键"] == ("列面",), 冲突表
+        # ② 腿**只在末尾追加一栏**（带默认值）⇒ 合法演进、按腿列面放行
+        #   （6125 给台账加「类别」栏正是这一形；一刀切拒并曾让任何加列改造都合不进主干）。
+        with sqlite3.connect(库文件表[1]) as 连接:
+            连接.execute("drop table 未完成")
+            连接.execute(建表语句)
+            连接.execute("alter table 未完成 add column 类别 text not null default '债务'")
+        动作表, 冲突表, 跳过表 = 重放.合并三方库(*库文件表, 临时根)
+        assert not 冲突表, 冲突表
         with sqlite3.connect(库文件表[0]) as 连接:
             连接.execute("drop table 未完成")
         with sqlite3.connect(库文件表[1]) as 连接:
             连接.execute("drop table 未完成")
             连接.execute(建表语句)
-            连接.execute("insert into 未完成 values(7,'腿新增','','验证内容')")
+            连接.execute("alter table 未完成 add column 类别 text not null default '债务'")
+            连接.execute("insert into 未完成(号, 缺什么, 落点, 验证命令) values(7,'腿新增','','验证内容')")
         动作表, 冲突表, 跳过表 = 重放.合并三方库(*库文件表, 临时根)
         assert len(动作表) == 1 and not 冲突表 and not 跳过表
         加载规约 = importlib.util.spec_from_file_location("台账写口样本", Path(仓根)/"开发工具/信息核心/记未完成.py")

@@ -77,7 +77,7 @@ def 造夹具仓根(临时根) -> Path:
     if not 库件.is_file():
         连接 = sqlite3.connect(str(库件))
         连接.execute("create table 未完成(号 integer primary key, 缺什么 text, 落点 text, 验证命令 text)")
-        连接.execute("insert into 未完成 values (1, '夹具台账行（样本自建，不代表真实债务）', "
+        连接.execute("insert into 未完成(号, 缺什么, 落点, 验证命令) values (1, '夹具台账行（样本自建，不代表真实债务）', "
                  "'开发工具/信息核心/信息核心.db', 'python3 构建装配/一键验证/闸0.py')")
         连接.commit()
         连接.close()
