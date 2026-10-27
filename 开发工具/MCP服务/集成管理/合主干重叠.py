@@ -95,11 +95,20 @@ def 重叠路径集(开工号, 连接=None) -> set:
 
 
 def 未合并集(集成树) -> set:
-    """集成树里**未合并**（索引带冲突暂存段）的件路径集。"""
-    退出码, 输出文本 = _跑(["git", "diff", "--name-only", "--diff-filter=U"], 集成树)
-    if 退出码 != 0:
+    """集成树里**未合并**（索引带冲突暂存段）的件路径集。
+
+    `-z` ⇒ NUL 分隔的机器可读路径流：路径可含空格 / 首尾空白 / 换行，逐行 `splitlines`+`strip`
+    会把它们削掉（判成另一件）。**标准错误单独取**，不并进路径流（Git 提示会被当成一件路径）——
+    这一处局部取真实标准输出，`_跑` 的合并返回语义保持不变。
+    """
+    import subprocess
+
+    回执 = subprocess.run(["git", "diff", "--name-only", "--diff-filter=U", "-z"],
+                       cwd=str(集成树), capture_output=True, text=True,
+                       env=干净环境(), timeout=5)
+    if 回执.returncode != 0:
         return set()
-    return {源码行.strip() for 源码行 in 输出文本.splitlines() if 源码行.strip()}
+    return {路径 for 路径 in (回执.stdout or "").split("\0") if 路径}
 
 
 def 取文本(集成树, 引用, 路径) -> str:
