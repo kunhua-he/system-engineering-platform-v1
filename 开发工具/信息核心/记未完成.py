@@ -12,6 +12,8 @@
 `条款` / `命名登记` 一致：**库即存本**（`表定义.py` 的 `源表` 那一段的原话），改动只走本命令。
 
 四栏与原先的 JSON 逐字对齐：`号` · `缺什么` · `落点` · `验证命令`（后两栏可空）。
+第五栏 `类别`（2026-10-27 · 6125）：`债务`（默认）或 `升级` —— 升级也是台账里的一行，
+只差这一栏，**不另开第二本账**。合法值住 `表定义.台账类别`，写口与读口 / 页面共读那一处。
 **做完即删**：一条债务修好了就把那一行删掉（`--删 --号 N`）—— 台账只留未完成的。
 
 精确重放可用 `--落点为空` / `--验证命令为空` 显式写 NULL；空串仍用对应文本参数传空串。
@@ -36,7 +38,8 @@ import 表定义  # noqa: E402
 import 记规则  # noqa: E402  （复用它的参数解析 —— 不许写第二套）
 
 用法文本 = ("用法：信息核心.py 记未完成 --号 <整数> --缺什么 <散文> [--落点 <件::符号>] "
-        "[--验证命令 <命令>] ｜ --删 --号 <整数> ｜ --列 [--号 <整数>]")
+        "[--验证命令 <命令>] [--类别 债务|升级] ｜ --删 --号 <整数> "
+        "｜ --列 [--号 <整数>] [--类别 债务|升级]")
 
 记账提醒 = ("★ 库变了 ⇒ 收口前记得 `v1_task` 功能=6 记账"
         "（`源件` = `开发工具/信息核心/信息核心.db`），否则释放的越界检测会拒")
@@ -56,7 +59,7 @@ def 记未完成(字段表: dict) -> int:
     """按 `号` 就地写一行 / 删一行 / 列出来 ⇒ 退出码。"""
     号原文 = (字段表.get("号") or "").strip()
     if "列" in 字段表:
-        return 列台账(号原文)
+        return 列台账(号原文, (字段表.get("类别") or "").strip())
     if not 号原文.isdigit():
         print(用法文本, file=sys.stderr)
         return 2
@@ -70,22 +73,31 @@ def 记未完成(字段表: dict) -> int:
         return 2
     落点 = _栏值(字段表, "落点")
     验证命令 = _栏值(字段表, "验证命令")
+    类别值 = _栏值(字段表, "类别")
+    if 类别值 is not None and 类别值 not in 表定义.台账类别:
+        print(f"拒：`--类别 {类别值}` 不在正式判词里（只许 {' / '.join(表定义.台账类别)}）"
+              f"—— 类别是唯一分档，不许自造。", file=sys.stderr)
+        return 2
     if any(栏名 in 字段表 and 栏名 + "为空" in 字段表 for 栏名 in ("落点", "验证命令")):
         print("拒：同一栏不可同时传文本与为空标记", file=sys.stderr)
         return 2
     连接 = sqlite3.connect(表定义.库路径(仓根), timeout=10)
     try:
         连接.execute("begin immediate")     # 读改写同一事务：并发两写不互相覆盖
-        已有 = 连接.execute("select 落点, 验证命令 from 未完成 where 号 = ?", (台账号,)).fetchone()
+        已有 = 连接.execute("select 落点, 验证命令, 类别 from 未完成 where 号 = ?",
+                           (台账号,)).fetchone()
         if 已有 is not None:
             if "落点" not in 字段表 and "落点为空" not in 字段表:
                 落点 = 已有[0]
             if "验证命令" not in 字段表 and "验证命令为空" not in 字段表:
                 验证命令 = 已有[1]
-        连接.execute("insert into 未完成(号, 缺什么, 落点, 验证命令) values(?,?,?,?) "
+            if 类别值 is None:                      # 更新时没给类别 ⇒ 保留原档，不静默改档
+                类别值 = 已有[2]
+        类别值 = 类别值 or 表定义.台账类别[0]        # 新行不给类别 ⇒ 默认第一档（债务）
+        连接.execute("insert into 未完成(号, 缺什么, 落点, 验证命令, 类别) values(?,?,?,?,?) "
                    "on conflict(号) do update set 缺什么 = excluded.缺什么, "
-                   "落点 = excluded.落点, 验证命令 = excluded.验证命令",
-                   (台账号, 缺什么, 落点, 验证命令))
+                   "落点 = excluded.落点, 验证命令 = excluded.验证命令, 类别 = excluded.类别",
+                   (台账号, 缺什么, 落点, 验证命令, 类别值))
         连接.commit()
     except sqlite3.Error as 错误:
         连接.rollback()
@@ -93,7 +105,7 @@ def 记未完成(字段表: dict) -> int:
         return 1
     finally:
         连接.close()
-    print(f"记未完成：{'改' if 已有 else '增'} 第 {台账号} 行 · {缺什么[:40]}")
+    print(f"记未完成：{'改' if 已有 else '增'} 第 {台账号} 行 · 〔{类别值}〕{缺什么[:40]}")
     print(记账提醒)
     return 0
 
@@ -121,8 +133,12 @@ def 删一行(台账号: int) -> int:
     return 0
 
 
-def 列台账(号原文: str) -> int:
-    """列台账（给了 `--号` 只列那一行）—— **只读**，不写库。"""
+def 列台账(号原文: str, 档位值: str = "") -> int:
+    """列台账（给了 `--号` 只列那一行、给了 `--类别` 只列那一档）—— **只读**，不写库。"""
+    if 档位值 and 档位值 not in 表定义.台账类别:
+        print(f"拒：`--类别 {档位值}` 不在正式判词里（只许 {' / '.join(表定义.台账类别)}）。",
+              file=sys.stderr)
+        return 2
     连接 = sqlite3.connect("file:%s?mode=ro" % 表定义.库路径(仓根), uri=True)
     try:
         if 号原文:
@@ -130,15 +146,19 @@ def 列台账(号原文: str) -> int:
                 print(用法文本, file=sys.stderr)
                 return 2
             行表 = 连接.execute(
-                "select 号, 缺什么, 落点, 验证命令 from 未完成 where 号 = ?",
+                "select 号, 类别, 缺什么, 落点, 验证命令 from 未完成 where 号 = ?",
                 (int(号原文),)).fetchall()
+        elif 档位值:
+            行表 = 连接.execute(
+                "select 号, 类别, 缺什么, 落点, 验证命令 from 未完成 where 类别 = ? "
+                "order by 号", (档位值,)).fetchall()
         else:
             行表 = 连接.execute(
-                "select 号, 缺什么, 落点, 验证命令 from 未完成 order by 号").fetchall()
+                "select 号, 类别, 缺什么, 落点, 验证命令 from 未完成 order by 号").fetchall()
     finally:
         连接.close()
-    for 台账号, 缺什么, 落点, 验证命令 in 行表:
-        print(f"[{台账号}] {缺什么[:90]}")
+    for 台账号, 类别值, 缺什么, 落点, 验证命令 in 行表:
+        print(f"[{台账号}] 〔{类别值}〕{缺什么[:90]}")
         if 落点:
             print(f"      落点：{落点}")
         if 验证命令:
