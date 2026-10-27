@@ -27,7 +27,7 @@ sys.path.insert(0, str(本目录.parents[3]))  # 仓根：取共享门禁
 
 from 构建装配.门禁 import 自门禁  # noqa: E402
 
-from 验收项 import 主流程  # noqa: E402
+from 验收必证项 import 主流程  # noqa: E402
 
 if __name__ == "__main__":
     # 本件是能跑完的入口 ⇒ 必须带壳自门禁（判据 ㉔）：一条命令跑了多久得有人量。

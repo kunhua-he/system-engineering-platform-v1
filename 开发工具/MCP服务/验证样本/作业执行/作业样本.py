@@ -62,7 +62,7 @@ def 作业样本(仓根, 工具表):
     样本表.append(("标准具名·放行按档跑自测（判据面进暂存才跑；不再硬跑一遍）",
              放行串.count("--自测") == 1
              and "git diff --cached --quiet" in 放行串
-             and "构建装配/一键验证 测试验证/案例" in 放行串
+             and "构建装配/一键验证 测试验证/测试案例" in 放行串
              and 放行串.count("闸0.py") == 1
              and 放行串.startswith("cargo check --workspace --all-targets --locked")
              and 放行串.count("-p v1-case-runner") == 1

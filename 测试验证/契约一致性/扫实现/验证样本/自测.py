@@ -2,7 +2,7 @@
 """自测 —— 正向样本 + 逐条反向样本 + 判据器自身机制的身份证。"""
 from __future__ import annotations
 
-from ..结果编排.常量 import 默认范围, 判据名表, 短名表, 空话表
+from ..结果编排.口径落点 import 默认范围, 判据名表, 短名表, 空话表
 from 构建装配.一键验证.一键验证.源码解析.剥字面量 import 去字面量
 from ..源码解析.夹具判定 import 建夹具集
 from ..源码解析.符号解析 import 建符号表

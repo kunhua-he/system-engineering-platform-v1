@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 
-from ..结果编排.常量 import 契约目录名, 扩展三类, 声明根标记
+from ..结果编排.口径落点 import 契约目录名, 扩展三类, 声明根标记
 
 def 找声明根(件表: dict) -> list:
     根目录 = []

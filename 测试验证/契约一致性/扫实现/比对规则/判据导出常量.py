@@ -2,7 +2,7 @@
 """判据导出常量 —— ③i 导出符号（名由声明给：扩展恰好 1 个 · 底座 0 个）· ③j 常量表同名再定义。"""
 from __future__ import annotations
 
-from ..结果编排.常量 import 判据名表, 底座实现落点, 扩展三类, 常量表相对路径
+from ..结果编排.口径落点 import 判据名表, 底座实现落点, 扩展三类, 常量表相对路径
 from ..源码解析.符号解析 import 解整数
 from .判据工具 import 记判据
 

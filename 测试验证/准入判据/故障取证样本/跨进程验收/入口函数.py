@@ -11,7 +11,7 @@ from pathlib import Path
 if str(本目录) not in sys.path:
     sys.path.insert(0, str(本目录))
 
-from 验收项 import 主流程  # noqa: E402
+from 验收必证项 import 主流程  # noqa: E402
 
 
 def 入口函数(命令行参数):
