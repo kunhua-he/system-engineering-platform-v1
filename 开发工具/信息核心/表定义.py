@@ -17,6 +17,7 @@
 """
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 库文件名 = "信息核心.db"
@@ -49,6 +50,53 @@ class 库读不动(Exception):
     为何住本件：库路径与建表语句的主人在这里，异常类型与库同住最自然；且它是**库读**这一类，
     与 `库路径` / `连规则库` 同一关注点。调用方（MCP 两件）改 `import 表定义` 后取它。
     """
+
+
+def _拆顶层(正文: str) -> list:
+    """按**顶层**逗号切分建表括号里的内容（括号里的逗号不切）⇒ 片段表。"""
+    片段表, 片段起点, 括号深度 = [], 0, 0
+    for 字符位置, 单字符 in enumerate(正文):
+        if 单字符 == "(":
+            括号深度 += 1
+        elif 单字符 == ")":
+            括号深度 -= 1
+        elif 单字符 == "," and 括号深度 == 0:
+            片段表.append(正文[片段起点:字符位置].strip())
+            片段起点 = 字符位置 + 1
+    尾部 = 正文[片段起点:].strip()
+    if 尾部:
+        片段表.append(尾部)
+    return 片段表
+
+
+def 补缺列(连接) -> list:
+    """按 `建表语句` 的列声明，给**已存在**的老表补上缺的列 ⇒ 补过的 `(表名, 列名)` 表。
+
+    为何要它（6125 加「类别」栏时踩到的）：`create table if not exists` 对已存在的表**一列都不加**。
+    任何「给既有表加一栏」的改造都会撞上它 —— 建库不补（老库永远缺栏），合主干重放也不补
+    （集成树库置为主干版本后按新列面写 ⇒ `no such column` 当场炸）。所以补栏**只此一处实现**：
+    列面真源就是建表语句本身，谁要先写新列谁先调它（建库 · 合主干重放都走这里）。
+
+    只补列、不改列、不删列；表不在 ⇒ 跳过（那是 `建表语句` 的事）。表级约束片段（primary key 等）不算列。
+    """
+    补过表 = []
+    for 语句 in 建表语句:
+        语句匹配 = re.fullmatch(r"create table if not exists (\w+)\((.*)\)", 语句.strip(), re.S)
+        if not 语句匹配:
+            continue
+        表名, 正文 = 语句匹配.group(1), 语句匹配.group(2)
+        现有列 = {列信息[1] for 列信息 in 连接.execute(f"pragma table_info({表名})")}
+        if not 现有列:
+            continue                    # 表还没建 ⇒ 不是补栏的事
+        for 片段 in _拆顶层(正文):
+            列名 = 片段.split()[0].strip('"')
+            if 列名.lower() in ("primary", "unique", "foreign", "check", "constraint", "key"):
+                continue                # 表级约束，不是列
+            if 列名 in 现有列:
+                continue
+            连接.execute(f"alter table {表名} add column {片段}")
+            补过表.append((表名, 列名))
+    return 补过表
 
 
 def 库路径(根目录) -> Path:
