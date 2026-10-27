@@ -47,7 +47,14 @@ def _建仓(场根):
     _跑git(仓根, "init", "-b", "主干")
     _跑git(仓根, "config", "user.name", "样本")
     _跑git(仓根, "config", "user.email", "fixture@example.invalid")
-    _跑git(仓根, "config", "core.quotePath", "false")
+    # 不在夹具里改仓配置（那行会掩盖路径读数：节点坏掉时夹具仍然绿）。改为**行为断言**：
+    # 本样本验的正是路径集合比对（④ 覆盖判定）⇒ 先证明中文+空格路径能按原字节读回。
+    中文样本件 = 仓根 / "中文 样本.txt"
+    中文样本件.write_text("旧内容\n", encoding="utf-8")
+    _, 中文路径表 = 仓操作.变更路径表(仓根)
+    assert "中文 样本.txt" in 中文路径表, (
+        "中文/含空格路径没按原字节读出（`-z` + 唯一解析节点的口径坏了）：%s" % 中文路径表)
+    中文样本件.unlink()
     (仓根 / "样本.txt").write_text("旧内容\\n", encoding="utf-8")
     _跑git(仓根, "add", "--", "样本.txt")
     _跑git(仓根, "commit", "-m", "基线")

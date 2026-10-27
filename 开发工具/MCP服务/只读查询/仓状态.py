@@ -19,6 +19,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))     # 开发工具/
 
 from 运行数据根 import 无位置, 子目录路径, 解析当前环境          # noqa: E402
+from 构建装配.门禁.git路径解析 import 解析状态零分隔                        # noqa: E402
 from ..施工管理.仓操作 import 找工作树, 禁终端提示环境, 跑命令              # noqa: E402
 from ..开工账本 import 库文件名, 子目录类别
 from .名册僵尸 import 读僵尸行                                    # noqa: E402                        # noqa: E402
@@ -55,6 +56,16 @@ def git环境(树根) -> dict:
             环境表["GIT_DIR"] = str(仓库元目录)
             环境表["GIT_WORK_TREE"] = str(树根)
     return 环境表
+
+def 跑git路径流(仓根, 参数表, 树根=None) -> tuple:
+    """跑一条**读路径**的 git 子命令（`-z`）⇒ `(退出码, 标准输出)`。**不走只读缓存**。
+
+    缓存层按「给人看」的合并形（标准错误 + 标准输出）存值；`-z` 路径流一旦掺进 Git 提示就
+    会把提示当成一件路径 ⇒ 这一路直接取标准输出。解析只经 `门禁.git路径解析`。
+    """
+    return 跑命令(["git"] + list(参数表), cwd=str(树根 or 仓根), 超时秒数=超时秒,
+               子进程环境=git环境(树根 or 仓根), 只取标准输出=True)
+
 
 def 跑git(仓根, 参数表, 树根=None, 超时=超时秒) -> tuple:
     """跑一条查询类 git 子命令 ⇒ `(退出码, 输出文本)`；强制 `core.quotePath=false` 防中文路径假阴性。
@@ -174,19 +185,19 @@ def 建操作处理(处理, 并入开工=False):
     return 操作处理
 
 def _三方(仓根, 树根) -> tuple:
-    """`git status --porcelain` ⇒ `(差异表, 错误)`（键：暂存 / 未暂存 / 未跟踪）。"""
-    退出码, 输出文本 = 跑git(仓根, ["status", "--porcelain=v1", "-uall"], 树根=树根)
+    """`git status --porcelain -z` ⇒ `(差异表, 错误)`（键：暂存 / 未暂存 / 未跟踪）。
+
+    `-z` + 唯一解析节点：中文 / 空格 / 引号 / 换行的件名按原字节给（旧口径会把一个件名切成
+    两件、或削掉首尾空白）。`仓状态` 是 agent 最常用的「先看看现场」入口，它读错时会与
+    `v1_shell git status` 互相矛盾，人就在两个读数之间反复怀疑工具。
+    """
+    退出码, 输出文本 = 跑git路径流(仓根, ["status", "--porcelain=v1", "-z", "-uall"], 树根=树根)
     if 退出码 != 0:
         return None, "git status 失败：%s" % 输出文本.strip()[-200:]
     差异 = {"暂存": [], "未暂存": [], "未跟踪": []}
-    for 源码行 in 输出文本.splitlines():
-        if len(源码行) < 4:
-            continue
-        标记 = 源码行[0]
-        标签 = 源码行[1]
-        路径 = 源码行[3:].strip().strip('"')
-        if " -> " in 路径:
-            路径 = 路径.split(" -> ")[-1].strip().strip('"')
+    for 状态码, 路径 in 解析状态零分隔(输出文本):
+        标记 = 状态码[:1]
+        标签 = 状态码[1:2]
         if 标记 == "?" or 标签 == "?":
             差异["未跟踪"].append(路径)
             continue
@@ -222,13 +233,13 @@ def _单树状态(仓根, 开工号, 记录条数) -> tuple:
         _列件表(行表, "未暂存", 差异["未暂存"], 记录条数)
         _列件表(行表, "未跟踪", 差异["未跟踪"], 记录条数)
     # 278：未解冲突 / 合并中途是「看着干净、实则卡着」的最常见形态 ⇒ 直接点名，不让人靠猜。
-    退出码, 输出文本 = 跑git(仓根, ["status", "--porcelain"], 树根=工作树)
+    退出码, 输出文本 = 跑git路径流(仓根, ["status", "--porcelain", "-z"], 树根=工作树)
     if 退出码 == 0:
-        冲突行 = [冲突项 for 冲突项 in 输出文本.splitlines()
-                if 冲突项[:2] in ("UU", "AA", "DD", "AU", "UA", "DU", "UD")]
-        if 冲突行:
+        冲突路径表 = [路径 for 状态码, 路径 in 解析状态零分隔(输出文本)
+                  if 状态码 in ("UU", "AA", "DD", "AU", "UA", "DU", "UD")]
+        if 冲突路径表:
             行表.append("★ 有未解冲突 %d 件 ⇒ 先解冲突再动：%s%s"
-                     % (len(冲突行), 冲突行[0][3:], " …" if len(冲突行) > 1 else ""))
+                     % (len(冲突路径表), 冲突路径表[0], " …" if len(冲突路径表) > 1 else ""))
     退出码, 输出文本 = 跑git(仓根, ["rev-parse", "-q", "--verify", "MERGE_HEAD"], 树根=工作树)
     if 退出码 == 0 and 输出文本.strip():
         行表.append("★ 正在合并中（MERGE_HEAD %s）⇒ 未提交前别当干净树用" % 输出文本.strip()[:8])

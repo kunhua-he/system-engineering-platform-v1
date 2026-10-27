@@ -7,7 +7,11 @@
 
 **口径（读数已定，不许再发明）**：
 
-    git ls-files --others --ignored --exclude-standard | grep '\\.md$' | grep -v '^构建环境/构建缓存/'
+    git ls-files --others --ignored --exclude-standard -z | tr '\\0' '\\n' | grep '\\.md$' | grep -v '^构建环境/构建缓存/'
+
+**必须带 `-z`**：`core.quotePath=false` 只关「非 ASCII 加引号」，含空格 / 引号 / 换行的路径仍会失真，
+`splitlines()` 还会把一个含换行的件名拆成两条；只有 NUL 分隔是路径安全形式（2026-10-27 实证：
+不带 `-z` 时中文路径读成八进制串 ⇒ 本条曾假绿）。
 
 **空即通过**。要排掉 `构建环境/构建缓存/`：那里只放自动生成或可由锁定依赖还原的第三方缓存，
 包括 rustdoc 字体 LICENSE 和 Cargo 原包说明，不能放项目编写的散文。
@@ -30,6 +34,8 @@ from __future__ import annotations
 import os
 import subprocess
 from pathlib import Path
+
+from 构建装配.门禁.git路径解析 import 解析零分隔
 
 from ...判据编排.验证小工具 import 判不了, 违规
 from ...基础定义.常量 import 检查名
@@ -78,7 +84,7 @@ def 忽略条目(仓根) -> tuple:
         return _忽略条目缓存[键名]
     try:
         判定汇总 = subprocess.run(
-            版本库命令(Path(键名), "ls-files", "--others", "--ignored", "--exclude-standard"),
+            版本库命令(Path(键名), "ls-files", "--others", "--ignored", "--exclude-standard", "-z"),
             capture_output=True, text=True, timeout=5, env=版本库环境(),
         )
     except (OSError, subprocess.SubprocessError) as 错误:
@@ -89,7 +95,7 @@ def 忽略条目(仓根) -> tuple:
         待处理值 = ([], f"git ls-files 退出码 {判定汇总.returncode}：{判定汇总.stderr.strip()[:200]}")
         _忽略条目缓存[键名] = 待处理值
         return 待处理值
-    待处理值 = ([源码行 for 源码行 in 判定汇总.stdout.splitlines() if 源码行], None)
+    待处理值 = (解析零分隔(判定汇总.stdout), None)
     _忽略条目缓存[键名] = 待处理值
     return 待处理值
 

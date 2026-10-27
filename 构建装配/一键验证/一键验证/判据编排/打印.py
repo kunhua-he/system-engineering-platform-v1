@@ -163,7 +163,8 @@ def 打印验证结果(判定汇总: dict, 输出流=None) -> None:
     ),
     (
         "㉓ 的读数依赖 `git`（非 git 仓 / git 不可用 ⇒ 未判）",
-        "判据 ㉓ 的读数命令是**定死的**（`git ls-files --others --ignored --exclude-standard`）——"
+        "判据 ㉓ 的读数命令是**定死的**（`git ls-files --others --ignored --exclude-standard -z`）——"
+        "必须带 `-z`：`quotePath=false` 不处理空格 / 引号 / 换行，只有 NUL 分隔是路径安全的；"
         "`.gitignore` 的语义不许自身重写一份（那是第二个事实源）。故：非 git 仓或 git 不可用时"
         "报**未判**（不是通过）；`--自测` 的合成仓自身 `git init`，好让这条判据在夹具上也有对象。"
         "另：`构建环境/构建缓存/` 是**按设计允许**的前缀（那里唯一命中的 `.md` 是 rustdoc 生成的"

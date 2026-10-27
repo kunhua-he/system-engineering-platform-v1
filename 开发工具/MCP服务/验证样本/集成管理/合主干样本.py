@@ -336,6 +336,8 @@ def _验定位同步锁(临时根):
         (树根/"构建装配/门禁/__init__.py").write_text("def 报告环境步(起始时刻,退出码,说明):return 退出码\n")
         # ★ `门禁预算.硬顶秒()` 要从夹具里那份常量读 ⇒ 夹具也得有它（**拷真件**，不写第二个数）。
         (树根/"构建装配/门禁/常量.py").write_text((模块根/"构建装配/门禁/常量.py").read_text())
+        # ★ Git 路径解析是唯一解析节点（债务 6124）⇒ 夹具也要有它（**拷真件**，不写第二套解析）。
+        shutil.copyfile(模块根/"构建装配/门禁/git路径解析.py", 树根/"构建装配/门禁/git路径解析.py")
         回执=subprocess.run([sys.executable,str(树根/"开发工具/MCP服务/合并主干.py"),"v1-999001","--查看现场"],cwd=临时根,capture_output=True,text=True,env={键名:值 for 键名,值 in os.environ.items() if 键名!="PYTHONPATH"},timeout=5)
         assert 回执.returncode==1 and "主仓 "+str(仓根) in 回执.stdout,(回执.stdout,回执.stderr)
     with open(仓根/".git/合主干.lock","a+") as 文件句柄:

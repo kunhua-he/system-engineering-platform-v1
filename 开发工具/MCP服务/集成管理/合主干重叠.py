@@ -44,6 +44,8 @@ def 去注释(源码行: str) -> str:
         游标 += 1
     return 源码行.strip()
 
+from 构建装配.门禁.git路径解析 import 解析零分隔
+
 from .合主干有界跑 import 干净环境
 
 重叠表名 = "认领重叠"
@@ -53,16 +55,19 @@ from .合主干有界跑 import 干净环境
 冲突结束标记 = ">>>>>>>"
 
 
-def _跑(命令表, 工作目录):
-    """一条 git 命令 ⇒ `(退出码, 合并输出)`。
+def _跑(命令表, 工作目录, 只取标准输出=False):
+    """一条 git 命令 ⇒ `(退出码, 输出)`；`只取标准输出=真` ⇒ 回执里**没有标准错误**。
 
     环境走 `合主干有界跑.干净环境`（**已剔 Git 定位变量**）⇒ 样本 / 真腿里都不污染真仓
     （`仓操作.跑命令` 的那一处净化由另一条腿在做；本件**不依赖它修好**）。
+    读 `-z` 路径流一律走 `只取标准输出=真`：Git 的提示拼进路径流就会被当成一件路径。
     """
     import subprocess
 
     回执 = subprocess.run(命令表, cwd=str(工作目录), capture_output=True, text=True,
                        env=干净环境(), timeout=5)
+    if 只取标准输出:
+        return 回执.returncode, (回执.stdout or "")
     return 回执.returncode, (回执.stdout or "") + (回执.stderr or "")
 
 
@@ -97,18 +102,15 @@ def 重叠路径集(开工号, 连接=None) -> set:
 def 未合并集(集成树) -> set:
     """集成树里**未合并**（索引带冲突暂存段）的件路径集。
 
-    `-z` ⇒ NUL 分隔的机器可读路径流：路径可含空格 / 首尾空白 / 换行，逐行 `splitlines`+`strip`
-    会把它们削掉（判成另一件）。**标准错误单独取**，不并进路径流（Git 提示会被当成一件路径）——
-    这一处局部取真实标准输出，`_跑` 的合并返回语义保持不变。
+    `-z` ⇒ NUL 分隔的机器可读路径流：路径可含空格 / 引号 / 换行，逐行 `splitlines` 会把一个
+    件名拆成两条（判成两件）。标准错误不进路径流（Git 提示会被当成一件路径）⇒ 走
+    `_跑(…, 只取标准输出=真)`；解析只经 `门禁.git路径解析` 这一处。
     """
-    import subprocess
-
-    回执 = subprocess.run(["git", "diff", "--name-only", "--diff-filter=U", "-z"],
-                       cwd=str(集成树), capture_output=True, text=True,
-                       env=干净环境(), timeout=5)
-    if 回执.returncode != 0:
+    退出码, 标准输出文本 = _跑(["git", "diff", "--name-only", "--diff-filter=U", "-z"],
+                            集成树, 只取标准输出=True)
+    if 退出码 != 0:
         return set()
-    return {路径 for 路径 in (回执.stdout or "").split("\0") if 路径}
+    return set(解析零分隔(标准输出文本))
 
 
 def 取文本(集成树, 引用, 路径) -> str:
