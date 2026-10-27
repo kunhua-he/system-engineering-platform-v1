@@ -7,11 +7,11 @@ import re
 import tempfile
 from pathlib import Path
 
-from ..基础定义 import 常量
+from ..基础定义 import 判据取值常量
 
 from ..共享夹具.合成仓 import 造干净仓
 from ..判据编排.验证小工具 import 取判据明细
-from ..基础定义.常量 import 前端逻辑模式, 检查名
+from ..基础定义.判据取值常量 import 前端逻辑模式, 检查名
 from ..检查规则.结构边界.判据_拓扑 import 前端命中
 from ..源码解析.测试件 import 生产区文本
 from ..判据编排.验证 import 跑全量判据
@@ -58,7 +58,7 @@ def 自检_前端语义判据() -> list:
     词袋 = re.compile(r"JSON\.parse|JSON\.stringify|校验|解析|生成|validate|parse\(")
 
     def 命中(源文本, 模式=None):
-        return [匹配结果.group(0) for 匹配结果 in (模式 or 常量.前端逻辑模式).finditer(生产区文本(源文本))]
+        return [匹配结果.group(0) for 匹配结果 in (模式 or 判据取值常量.前端逻辑模式).finditer(生产区文本(源文本))]
 
     断言(
         "反向样本：真 `JSON.parse` ⇒ 新模式报（解析 = 对内容作出判断）",
@@ -205,13 +205,13 @@ def 自检_前端语义判据() -> list:
             造干净仓(临根)
             if 注入文 is not None:
                 (临根 / 注入件).write_text(注入文, encoding="utf-8")
-            原模式 = 常量.前端逻辑模式
+            原模式 = 判据取值常量.前端逻辑模式
             try:
                 if 关判据:
-                    常量.前端逻辑模式 = re.compile(r"(?!)")  # 永不匹配 = 判据关掉
+                    判据取值常量.前端逻辑模式 = re.compile(r"(?!)")  # 永不匹配 = 判据关掉
                 return 跑全量判据(临根, 两遍=False)
             finally:
-                常量.前端逻辑模式 = 原模式
+                判据取值常量.前端逻辑模式 = 原模式
 
     def 读数(判定汇总):
         return [f"{前端明细项['位置']} ｜ {前端明细项['缺什么'][:70]}" for 前端明细项 in 取前端明细(判定汇总)]
@@ -280,13 +280,13 @@ def 自检_前端内联脚本() -> list:
             造干净仓(临根)
             if html文 is not None:
                 (临根 / 注入件).write_text(html文, encoding="utf-8")
-            原模式 = 常量.前端逻辑模式
+            原模式 = 判据取值常量.前端逻辑模式
             try:
                 if 关判据:
-                    常量.前端逻辑模式 = re.compile(r"(?!)")  # 永不匹配 = 判据关掉
+                    判据取值常量.前端逻辑模式 = re.compile(r"(?!)")  # 永不匹配 = 判据关掉
                 return 跑全量判据(临根, 两遍=False)
             finally:
-                常量.前端逻辑模式 = 原模式
+                判据取值常量.前端逻辑模式 = 原模式
 
     开启结果 = 跑自检(反向文)
     关闭结果 = 跑自检(反向文, 关判据=True)

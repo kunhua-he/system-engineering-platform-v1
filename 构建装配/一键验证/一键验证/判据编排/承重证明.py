@@ -8,7 +8,7 @@ import sys
 import time
 from pathlib import Path
 
-from ..基础定义 import 常量
+from ..基础定义 import 判据取值常量
 
 
 def 承重证明(源仓根: Path) -> int:
@@ -30,7 +30,7 @@ def 承重证明(源仓根: Path) -> int:
       （实测：一个进程里跑完 A 再跑 C，C 的读数变成 13774 ms）。故每例一个进程，
       读数才是「一条正常命令」的量级。
     """
-    本件路径 = str(常量.入口文件)
+    本件路径 = str(判据取值常量.入口文件)
 
     def 跑一例(注入慢毫秒: int, 提速: bool):
         代码 = (
@@ -39,7 +39,7 @@ def 承重证明(源仓根: Path) -> int:
             "m = importlib.util.module_from_spec(spec)\n"
             "sys.modules['yv'] = m\n"
             "spec.loader.exec_module(m)\n"
-            "import 一键验证.基础定义.常量 as _状态\n"
+            "import 一键验证.基础定义.判据取值常量 as _状态\n"
             f"_状态.提速开关 = {提速!r}\n"
             f"if {注入慢毫秒}:\n"
             f"    time.sleep({注入慢毫秒} / 1000)\n"

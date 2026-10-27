@@ -8,7 +8,7 @@ from pathlib import Path
 from ...源码解析.Rust文本 import 漏传上下文调用
 from ...判据编排.判据元数据 import 判据元数据
 from ...判据编排.验证小工具 import 判不了, 违规
-from ...基础定义.常量 import 检查名, 检查名待落序号
+from ...基础定义.判据取值常量 import 检查名, 检查名待落序号
 
 
 # 本验证器自身的源码件（判据 ⑭-⑤ 按**位置**读它：合成仓里没有本件）。

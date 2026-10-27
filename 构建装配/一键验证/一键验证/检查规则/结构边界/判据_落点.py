@@ -36,7 +36,7 @@ from pathlib import Path
 
 from ...判据编排.判据元数据 import 判据元数据
 from ...判据编排.验证小工具 import 判不了, 违规
-from ...基础定义.常量 import 仓根, 检查名
+from ...基础定义.判据取值常量 import 仓根, 检查名
 from ...源码解析.冻结形状 import 抽符号声明文本
 
 

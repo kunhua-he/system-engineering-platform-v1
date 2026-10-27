@@ -12,8 +12,8 @@ import os
 import struct
 from pathlib import Path
 
-from .命令 import 跑子进程
-from .常量 import 仓根, 构建缓存
+from .子进程与指纹 import 跑子进程
+from .装配输入常量 import 仓根, 构建缓存
 from .输出 import 打印文本
 from .产物回执 import 记扩展产物回执, 取扩展产物回执
 
@@ -90,7 +90,7 @@ def 扩展产物(扩展: dict) -> Path:
     Cargo直接接收cdylib目标，统一决定全部依赖的链接形态。
     不把crate-type放在参数分隔符后，不扫描缓存或人工指定某一份rlib。
 
-    **本函数 = 建 + 找**（公开行为逐字不变：`构建装配/演示/装配.py` 转调的就是它）。
+    **本函数 = 建 + 找**（公开行为逐字不变：`构建装配/运行演示/装配.py` 转调的就是它）。
     命令本体（装配档）**不许**用它 —— 它含构建段，会把命令顶上五秒硬顶；
     装配档用 `找扩展产物`，二进制由环境步 `--预构建` 负责。
     """

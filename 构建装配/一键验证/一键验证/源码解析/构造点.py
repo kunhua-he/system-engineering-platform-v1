@@ -9,7 +9,7 @@ import sys
 from pathlib import Path
 
 from .剥字面量 import 条件编译测试区, 去字面量
-from ..基础定义.常量 import 硬顶毫秒
+from ..基础定义.判据取值常量 import 硬顶毫秒
 
 
 构造模式 = re.compile(r"平台信息\s*\{")

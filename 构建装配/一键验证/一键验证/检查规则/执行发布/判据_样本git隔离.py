@@ -24,7 +24,7 @@ import os
 from pathlib import Path
 
 from ...判据编排.验证小工具 import 判不了, 违规, 取相对路径
-from ...基础定义.常量 import 仓根, 检查名, 跳过目录, 临时目录前缀
+from ...基础定义.判据取值常量 import 仓根, 检查名, 跳过目录, 临时目录前缀
 
 # 运行口：`subprocess` 上会起子进程的调用名
 运行口名表 = ("run", "Popen", "check_call", "check_output")

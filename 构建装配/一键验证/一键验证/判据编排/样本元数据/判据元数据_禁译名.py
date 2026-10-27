@@ -6,7 +6,7 @@
 from __future__ import annotations
 
 from ...检查规则.规范文本.判据_禁译名 import 样本_禁译名面 as _样本_禁译名面, 禁译名基线路径
-from ...基础定义.常量 import 取全仓区面, 检查名
+from ...基础定义.判据取值常量 import 取全仓区面, 检查名
 
 禁译名判据元数据 = {
     # ㊹ 零字面禁译名：扫描面 = 逐字节全树（含未跟踪件；排除 只读参考/ 构建环境/ .git/ .codegraph/）；

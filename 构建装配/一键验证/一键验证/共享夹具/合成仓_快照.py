@@ -88,7 +88,7 @@ def _按老路建(仓根: Path) -> None:
         路径.parent.mkdir(parents=True, exist_ok=True)
         路径.write_text(件内容, encoding="utf-8")
     # 干净夹具须由正式生成器补齐快照；反向注入在造仓后发生，漂移仍会报红。
-    from 构建装配.形态装配.扩展指纹.核心 import 处理扩展指纹
+    from 构建装配.形态装配.扩展指纹.快照生成 import 处理扩展指纹
     if 处理扩展指纹(仓根, False):
         raise RuntimeError("合成仓扩展指纹生成失败")
     建夹具规则库(仓根, 件表)

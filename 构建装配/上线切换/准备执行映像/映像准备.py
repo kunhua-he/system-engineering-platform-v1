@@ -5,7 +5,7 @@ import selectors
 import signal
 import subprocess
 import time
-from 构建装配.门禁.常量 import 效率目标毫秒
+from 构建装配.门禁.硬顶常量 import 效率目标毫秒
 
 def 准备执行映像(仓根,代码缓存根,日志路径):
     仓根=Path(仓根).resolve();代码缓存根=Path(代码缓存根).resolve();日志路径=Path(日志路径).resolve()

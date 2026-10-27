@@ -41,7 +41,7 @@ from __future__ import annotations
 import re
 
 from ...判据编排.验证小工具 import 判不了, 违规
-from ...基础定义.常量 import 代码后缀, 检查名
+from ...基础定义.判据取值常量 import 代码后缀, 检查名
 from ...源码解析.测试件 import 并行取生产区文本
 from ...判据编排.判据基线 import 读运行数据基线, 库相对路径
 

@@ -44,7 +44,7 @@ from io import StringIO
 from pathlib import Path
 
 from ...判据编排.验证小工具 import 判不了, 违规
-from ...基础定义.常量 import 仓根, 检查名
+from ...基础定义.判据取值常量 import 仓根, 检查名
 
 夹具相对路径 = "测试验证/老项目样本/样本接入模块/能力定义.json"
 翻译器相对路径 = "开发工具/老项目接入/老项目模块翻译.py"

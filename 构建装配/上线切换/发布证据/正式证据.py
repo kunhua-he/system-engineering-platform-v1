@@ -12,7 +12,7 @@
 import hashlib
 import json
 
-from .常量 import 证据落点, 四类材料
+from .证据落点常量 import 证据落点, 四类材料
 from .采集材料 import 采集
 
 

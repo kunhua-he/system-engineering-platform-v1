@@ -26,7 +26,7 @@ from pathlib import Path
 
 from ...判据编排.验证小工具 import 判不了, 违规
 from ...判据编排.判据基线 import 库相对路径
-from ...基础定义.常量 import 检查名
+from ...基础定义.判据取值常量 import 检查名
 
 
 # 唯一物**条数上限**（「清单只许减」的那把尺）：加第 14 个必须走「入核五问」并单独裁决 ⇒

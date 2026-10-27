@@ -6,11 +6,11 @@ from __future__ import annotations
 import tempfile
 from pathlib import Path
 
-from ..基础定义 import 常量
+from ..基础定义 import 判据取值常量
 
 from ..共享夹具.合成仓 import 造干净仓
 from ..判据编排.验证小工具 import 取判据明细
-from ..基础定义.常量 import 检查名
+from ..基础定义.判据取值常量 import 检查名
 from ..反向验证.共享注入.注入 import 注入_临时件落源码树
 from ..判据编排.验证 import 跑全量判据
 
@@ -52,12 +52,12 @@ def 自检_临时件排除承重() -> list:
         临时仓根 = Path(临时目录) / "仓"
         造干净仓(临时仓根)
         注入_临时件落源码树(临时仓根)
-        原前缀 = 常量.临时目录前缀
+        原前缀 = 判据取值常量.临时目录前缀
         try:
-            常量.临时目录前缀 = "\x00关掉排除"
+            判据取值常量.临时目录前缀 = "\x00关掉排除"
             关闭结果 = 跑全量判据(临时仓根, 两遍=False)
         finally:
-            常量.临时目录前缀 = 原前缀
+            判据取值常量.临时目录前缀 = 原前缀
     输出缓冲.append(
         (
             "承重证明（关/开对照）：关掉排除 + 同一注入 ⇒ ⑬ / ⑮ 报（排除真的在挡假红）",

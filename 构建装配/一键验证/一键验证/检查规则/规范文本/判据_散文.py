@@ -38,7 +38,7 @@ from pathlib import Path
 from 构建装配.门禁.git路径解析 import 解析零分隔
 
 from ...判据编排.验证小工具 import 判不了, 违规
-from ...基础定义.常量 import 检查名
+from ...基础定义.判据取值常量 import 检查名
 
 
 # 子进程不许继承的 Git 定位变量（会把 git 带到别的树 / 别的 index 上）—— 同 `开发工具/MCP服务/作业执行/shell.py`

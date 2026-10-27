@@ -1,1 +1,1 @@
-from .核心 import 入口函数
+from .锁文件生成 import 入口函数

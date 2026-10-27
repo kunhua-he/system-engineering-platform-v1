@@ -2,7 +2,7 @@
 import argparse
 import json
 import sys
-from .核心 import 准备执行映像
+from .映像准备 import 准备执行映像
 
 def 入口函数(参数表):
     解析器=argparse.ArgumentParser(description='用生产启动入口准备宿主只读执行映像；模块进程仍按需启动。')

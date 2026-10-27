@@ -5,7 +5,7 @@ import subprocess
 
 from 构建装配.门禁.git路径解析 import 解析状态零分隔
 
-from .常量 import 仓根, 回执相对路径
+from .装配输入常量 import 仓根, 回执相对路径
 
 
 def 跑子进程(命令, **附加):

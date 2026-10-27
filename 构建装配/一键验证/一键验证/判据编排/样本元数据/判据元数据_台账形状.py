@@ -7,7 +7,7 @@
 from __future__ import annotations
 
 from ...检查规则.契约编号.判据_台账形状 import 样本_台账面
-from ...基础定义.常量 import 取全仓区面, 检查名
+from ...基础定义.判据取值常量 import 取全仓区面, 检查名
 
 
 台账形状判据元数据 = {

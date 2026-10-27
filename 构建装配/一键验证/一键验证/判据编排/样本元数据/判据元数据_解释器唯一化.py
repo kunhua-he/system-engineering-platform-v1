@@ -7,7 +7,7 @@
 from __future__ import annotations
 
 from ...检查规则.执行发布.判据_解释器唯一化 import 样本_解释器面
-from ...基础定义.常量 import 取全仓区面, 检查名
+from ...基础定义.判据取值常量 import 取全仓区面, 检查名
 
 
 解释器唯一化判据元数据 = {

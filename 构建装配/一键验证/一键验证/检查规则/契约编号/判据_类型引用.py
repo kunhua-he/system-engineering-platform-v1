@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 from ...判据编排.验证小工具 import 是整数, 违规
-from ...基础定义.常量 import 号段图路径, 契约目录名, 检查名
+from ...基础定义.判据取值常量 import 号段图路径, 契约目录名, 检查名
 
 
 def 检查5_参数类型都在类型表里(上层读数: dict) -> list:
