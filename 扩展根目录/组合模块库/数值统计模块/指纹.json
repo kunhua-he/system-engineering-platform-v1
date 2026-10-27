@@ -5,14 +5,14 @@
   "生成命令": "$V1_PY 构建装配/形态装配/扩展指纹.py",
   "范围": "声明、Rust源码、Cargo清单与锁文件、程序文本、模块及技能制品；不含机器局部支持库制品、说明散文、缓存、指纹本身。",
   "指纹": {
-    "包声明.json": "1b85d3387594adf130679e2b4071e3a3953bc62969d8187724fbaf1e38006b5c",
+    "包声明.json": "f631671f537cab8ba770fe8a207d76554e7665555e3949743499a3ba72932ea3",
     "数值统计模块.模块制品": "141f1e8d2b24237d63425c45afa26e422c7775d4ad99c3065949748e48dce1b7",
-    "流程/列表回传.程序文本": "0d8940275622fd7e72e195b7497316d048111c9bac4e5d8ca76d9df6cf4313fa",
-    "流程/求和.程序文本": "0317b77fad8dfeccc93093580a0581cdef144be11e3f5ddbd41d44ca61ee52be",
-    "流程/求和列表.程序文本": "5de84772afd1c2a17e223d1b3568bad985dcf73a5b4ba4b5cb0b2f5dbdd8af9c",
     "能力声明/7950.json": "fab43f99b7576e632dc96372d11524de2762ecec9b5fc4a94655ece6ad28d323",
     "能力声明/7951.json": "165b0c503219abda8c2a6070d0d7cd6ce537fe91aa9e648447d6fb60550f3ff8",
-    "能力声明/7960.json": "eea07d7f685839209703d0d7af2b1ae01a72d506e469b552ba8161ced9d63684",
+    "能力声明/7960.json": "5d8a4369e482330d1e121fcc87fd3c2f8ed23bfd5321b01afccdb2283641a3cc",
+    "调用流程/列表回传.程序文本": "0d8940275622fd7e72e195b7497316d048111c9bac4e5d8ca76d9df6cf4313fa",
+    "调用流程/求和.程序文本": "0317b77fad8dfeccc93093580a0581cdef144be11e3f5ddbd41d44ca61ee52be",
+    "调用流程/求和列表.程序文本": "5de84772afd1c2a17e223d1b3568bad985dcf73a5b4ba4b5cb0b2f5dbdd8af9c",
     "错误码表/1001.json": "25a96ca49007d758c1f6b6f4d5a109c6cb0d6a6f43c3f91fbbd37dfab594bb09",
     "错误码表/1100.json": "83f34eb69b5c7243b018609045b47851e00a2f1bf822bf50ee3a6523623bb7ea"
   }

@@ -1,32 +1,32 @@
 """复杂扩展HTTP实证；只创建自有临时网关、数据库和缓存，不读取业务库。"""
 import base64
-import concurrent.futures
+import 扩展根目录.原子支持库.SQLite支持库.验收材料.扩展根目录.futures
 import json
 from pathlib import Path
 import socket
 import sqlite3
 import subprocess
 import time
-import urllib.error
-import urllib.parse
-import urllib.request
+import 扩展根目录.原子支持库.SQLite支持库.验收材料.扩展根目录.error
+import 扩展根目录.原子支持库.SQLite支持库.验收材料.扩展根目录.parse
+import 扩展根目录.原子支持库.SQLite支持库.验收材料.扩展根目录.request
 
 
 def 执行HTTP验收(仓根, 缓存根):
     仓根 = Path(仓根).resolve()
     缓存根 = Path(缓存根).resolve()
     缓存根.mkdir(parents=True, exist_ok=True)
-    连接器 = urllib.request.build_opener(urllib.request.ProxyHandler({}))
+    连接器 = 扩展根目录.request.build_opener(扩展根目录.request.ProxyHandler({}))
     实例表 = []
     检查项 = []
     完整回执 = []
 
     def 请求(网关实例, 路径, 请求体=None):
-        请求对象 = urllib.request.Request('http://127.0.0.1:%s%s' % (网关实例['端口'], urllib.parse.quote(路径, safe='/')), data=None if 请求体 is None else json.dumps(请求体, ensure_ascii=False).encode(), headers={'Content-Type': 'application/json'})
+        请求对象 = 扩展根目录.request.Request('http://127.0.0.1:%s%s' % (网关实例['端口'], 扩展根目录.parse.quote(路径, safe='/')), data=None if 请求体 is None else json.dumps(请求体, ensure_ascii=False).encode(), headers={'Content-Type': 'application/json'})
         try:
             with 连接器.open(请求对象, timeout=5) as 响应:
                 状态码, 正文 = 响应.status, json.loads(响应.read())
-        except urllib.error.HTTPError as 失败响应:
+        except 扩展根目录.error.HTTPError as 失败响应:
             with 失败响应:
                 状态码, 正文 = 失败响应.code, json.loads(失败响应.read())
         完整回执.append({'端口': 网关实例['端口'], '路径': 路径, '请求': 请求体, 'HTTP状态': 状态码, '返回': 正文})
@@ -130,7 +130,7 @@ def 执行HTTP验收(仓根, 缓存根):
         查询(源库网关, 'WITH RECURSIVE 序列(编号) AS (VALUES(1) UNION ALL SELECT 编号+1 FROM 序列 WHERE 编号<100000000) SELECT sum(编号) FROM 序列', 错误=5104); 检查项.append('引擎计算预算有界中断')
         对照网关 = 起实例(2)
         执行事务(对照网关, ['CREATE TABLE 实证(编号 INTEGER)', 'INSERT INTO 实证 VALUES(99)'])
-        with concurrent.futures.ThreadPoolExecutor(max_workers=8) as 线程池:
+        with 扩展根目录.futures.ThreadPoolExecutor(max_workers=8) as 线程池:
             返回表 = list(线程池.map(lambda 序号: 解值(查询(源库网关 if 序号 % 2 == 0 else 对照网关, 'SELECT 编号 FROM 实证')['值'])[0]['行列表'], range(16)))
         断言(返回表 == [[[1]] if 序号 % 2 == 0 else [[99]] for 序号 in range(16)], '双实例8线程16请求不串数据')
         for 网关实例 in 实例表:
