@@ -66,7 +66,7 @@ fn 去行注释(源文本: &str) -> String {
 const 生产源: [(&str, &str); 5] = [
     ("lib.rs", include_str!("../lib.rs")),
     ("契约读取.rs", include_str!("../扩展装载/契约读取.rs")),
-    ("小写出.rs", include_str!("../协议传值/小写出.rs")),
+    ("接口描述写出.rs", include_str!("../协议传值/接口描述写出.rs")),
     ("接口描述.rs", include_str!("../扩展装载/接口描述.rs")),
     ("边界面.rs", include_str!("../边界接缝/边界面.rs")),
 ];

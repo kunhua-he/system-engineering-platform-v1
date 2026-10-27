@@ -11,7 +11,7 @@
 
 use std::collections::HashMap;
 
-use crate::形状::{实例错误, 实例句柄};
+use crate::实例句柄形状::{实例错误, 实例句柄};
 
 /// 一条实例记录：令牌 + 是否已释放。
 ///

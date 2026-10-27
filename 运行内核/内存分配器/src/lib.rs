@@ -22,8 +22,8 @@
 #![allow(uncommon_codepoints)]
 #![allow(non_snake_case)]
 
-#[path = "形状.rs"]
-mod 形状;
+#[path = "分配错误形状.rs"]
+mod 分配错误形状;
 #[path = "分配.rs"]
 mod 分配;
 
@@ -44,4 +44,4 @@ mod 测试;
 pub use v1_contract::声明数据::单次分配上限;
 
 pub use 分配::分配器;
-pub use 形状::{分配错误, 释放错误};
+pub use 分配错误形状::{分配错误, 释放错误};

@@ -119,7 +119,7 @@ pub struct 模块依赖表达 {
 ///
 /// **只读，不判**（判在 [`判模块依赖`]）：失败一律给一句可读原因（与 `取模块接口说明` 同形）。
 pub fn 取模块依赖表达(模块目录: &Path) -> Result<模块依赖表达, String> {
-    let 声明件 = 模块目录.join(crate::常量::扩展声明件);
+    let 声明件 = 模块目录.join(crate::契约级常量::扩展声明件);
     let 声明文本 =
         fs::read_to_string(&声明件).map_err(|错误| format!("读不到 {}：{错误}", 声明件.display()))?;
     let 声明值 = crate::协议解析::解析协议值(&声明文本)
@@ -347,7 +347,7 @@ mod 模块制品测试 {
         let 模块目录 = std::env::temp_dir().join(format!("v1_模块依赖测试_{名字}"));
         let _ = fs::remove_dir_all(&模块目录);
         fs::create_dir_all(&模块目录).expect("建临时模块目录");
-        fs::write(模块目录.join(crate::常量::扩展声明件), 声明文本).expect("写包声明");
+        fs::write(模块目录.join(crate::契约级常量::扩展声明件), 声明文本).expect("写包声明");
         模块目录
     }
 

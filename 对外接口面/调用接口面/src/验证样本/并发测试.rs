@@ -22,7 +22,7 @@ use std::net::TcpStream;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::{Duration, Instant};
 
-use crate::常量::监听地址;
+use crate::契约级常量::监听地址;
 use crate::测试夹具::{
     发到端口, 发请求, 取请求, 交POST请求, 取逻辑值, 第一个能力号, 源文本, 无符号值, 取成员数组, 起服务,
     解析应答,

@@ -18,8 +18,8 @@ mod 线上逻辑值;
 mod 分发;
 #[path = "响应.rs"]
 mod 响应;
-#[path = "常量.rs"]
-mod 常量;
+#[path = "契约级常量.rs"]
+mod 契约级常量;
 #[path = "协议报文/槽编码.rs"]
 mod 槽编码;
 #[path = "网关.rs"]

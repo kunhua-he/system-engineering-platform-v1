@@ -6,7 +6,7 @@ use core::sync::atomic::{AtomicI32, AtomicU32, AtomicU64, AtomicU8, Ordering};
 
 use v1_contract::{能力号, 操作号, 资源号};
 
-use crate::形状::{留痕, 调用类};
+use crate::留痕记录形状::{留痕, 调用类};
 
 /// 「没有」的哨兵：写入序号从 0 起，`u64::MAX` 永不作为真实序号。
 const 无序号: u64 = u64::MAX;
