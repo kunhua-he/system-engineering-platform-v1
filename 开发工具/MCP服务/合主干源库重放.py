@@ -118,7 +118,7 @@ def 定列面(表名, 基列名表, 腿列名表, 主干列名表) -> tuple:
     #   放宽的**只有这一种**：基 / 主干两侧的列面必须逐列等于腿列面的前缀；顺序不同、改名、
     #   少列照样进冲突表交人裁 —— 那才是真会错位的形状。
     前缀相容 = bool(腿列名表) and all(
-        列面 and tuple(列面) == tuple(腿列名表[:len(列面)]) for 列面 in (基列名表, 主干列名表))
+        tuple(列面) == tuple(腿列名表[:len(列面)]) for 列面 in (基列名表, 主干列名表) if 列面)
     if 前缀相容:
         return list(腿列名表), None
     不一致 = [别名 for 别名, 列面 in (("基", 基列名表), ("腿", 腿列名表), ("主干", 主干列名表))
@@ -142,22 +142,30 @@ def 补集成树表结构(集成树, 库件) -> tuple:
     脚本 = (
         "import json, sqlite3, sys\n"
         "sys.path.insert(0, %r)\n"
-        "import 表定义\n"
+        "try:\n"
+        "    import 表定义\n"
+        "except Exception as 错:\n"
+        "    print(json.dumps({'补过': [], '降级': '集成树里没有可用的表定义（夹具 / 半树）：%%s' %% 错},\n"
+        "                     ensure_ascii=False))\n"
+        "    raise SystemExit(0)\n"
         "连接 = sqlite3.connect(%r)\n"
         "for 语句 in 表定义.建表语句:\n"
         "    连接.execute(语句)\n"
         "补过 = 表定义.补缺列(连接)\n"
         "连接.commit(); 连接.close()\n"
-        "print(json.dumps(补过, ensure_ascii=False))\n"
+        "print(json.dumps({'补过': 补过, '降级': ''}, ensure_ascii=False))\n"
     ) % (str(Path(集成树) / "开发工具" / "信息核心"), str(库件))
     退出码, 输出, _ = 跑有界命令([sys.executable, "-c", 脚本], 集成树, 超时秒数=60,
                             只取标准输出=True)
     if 退出码 != 0:
         return 退出码, [], "集成树表结构对齐失败：%s" % 输出.strip()[-800:]
     try:
-        补过表 = [tuple(两件) for 两件 in json.loads(输出.strip().splitlines()[-1])]
+        回执 = json.loads(输出.strip().splitlines()[-1])
     except (ValueError, IndexError):
-        补过表 = []
+        return 0, [], "集成树表结构对齐：回执读不出（按原样继续）"
+    if 回执.get("降级"):
+        return 0, [], "跳过结构对齐 —— %s" % 回执["降级"]
+    补过表 = [tuple(两件) for 两件 in 回执.get("补过") or []]
     return 0, 补过表, "按集成树里那份建表语句建齐缺表 + 幂等补缺列"
 
 

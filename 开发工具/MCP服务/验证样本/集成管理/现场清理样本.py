@@ -67,7 +67,7 @@ from ...集成管理.合主干现场清理 import 未解决代码冲突, 清现�
     "    if '删' in 参值:\n"
     "        连接.execute('delete from 未完成 where 号 = ?', (int(参值['号']),))\n"
     "    else:\n"
-    "        连接.execute('insert or replace into 未完成 values(?,?,?,?)',\n"
+    "        连接.execute('insert or replace into 未完成(号, 缺什么, 落点, 验证命令) values(?,?,?,?)',\n"
     "                   (int(参值['号']), 参值.get('缺什么', ''), 参值.get('落点') or None,\n"
     "                    参值.get('验证命令') or None))\n"
     "    连接.commit()\n"

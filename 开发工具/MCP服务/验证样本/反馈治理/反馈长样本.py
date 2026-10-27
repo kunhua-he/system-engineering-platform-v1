@@ -138,7 +138,7 @@ def 清树接缝样本(仓根, 接缝号) -> list:
         try:
             连接.execute("create table if not exists 未完成"
                      "(号 integer primary key, 缺什么 text not null, 落点 text, 验证命令 text)")
-            连接.execute("insert or replace into 未完成 values(?,?,?,?)",
+            连接.execute("insert or replace into 未完成(号, 缺什么, 落点, 验证命令) values(?,?,?,?)",
                     (311, "接缝验收现存", "", ""))
             连接.commit()
         finally:

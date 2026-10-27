@@ -52,7 +52,7 @@ def 造夹具(根目录: Path) -> tuple:
         连接.execute("insert into 开工 (开工号, 工作内容, 状态) values (?, ?, ?)",
                  (夹具开工号, "夹具腿工作内容", "进行中"))
         连接.execute("create table if not exists 未完成(号 integer primary key, 缺什么 text not null, 落点 text, 验证命令 text)")
-        连接.execute("insert or replace into 未完成 values(?,?,?,?)",
+        连接.execute("insert or replace into 未完成(号, 缺什么, 落点, 验证命令) values(?,?,?,?)",
                  (台账号, "夹具缺什么", "夹具落点", "夹具验证"))
         连接.execute("insert into 反馈来源 (来源号, 开工号, 来源标识, 内容指纹, 报告路径, "
                  "读取状态, 提取条数, 判词条数, 审完时刻, 登记时刻) "

@@ -77,7 +77,7 @@ def _建样本仓(样本根: Path) -> Path:
     "    if '删' in 键值:\n"
     "        连接.execute('delete from 未完成 where 号 = ?', (int(键值.get('号') or 0),))\n"
     "    else:\n"
-    "        连接.execute('insert or replace into 未完成 values(?,?,?,?)',\n"
+    "        连接.execute('insert or replace into 未完成(号, 缺什么, 落点, 验证命令) values(?,?,?,?)',\n"
     "                   (int(键值.get('号') or 0), 键值.get('缺什么',''), 键值.get('落点') or None,\n"
     "                    键值.get('验证命令') or None))\n"
     "else:\n"

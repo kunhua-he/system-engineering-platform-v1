@@ -83,7 +83,7 @@ from 开发工具.并行执行 import 并行执行  # noqa: E402
     "    if '删' in 参值:\n"
     "        连接.execute('delete from 未完成 where 号 = ?', (int(参值['号']),))\n"
     "    else:\n"
-    "        连接.execute('insert or replace into 未完成 values(?,?,?,?)',\n"
+    "        连接.execute('insert or replace into 未完成(号, 缺什么, 落点, 验证命令) values(?,?,?,?)',\n"
     "                   (int(参值['号']), 参值.get('缺什么', ''), (参值.get('落点') if '落点' in 参值 else None),\n"
     "                    (参值.get('验证命令') if '验证命令' in 参值 else None)))\n"
     "    连接.commit()\n"
@@ -390,7 +390,7 @@ def _建三态夹具(临时根, 名称):
         连接.execute("create table 规则 (编号 integer primary key, 类 text, 名 text, 内容 text, 依据 text)")
         连接.execute("insert into 规则 values (1,'样本','语义','基值','')")
         连接.execute("create table 未完成 (号 integer primary key, 缺什么 text, 落点 text, 验证命令 text)")
-        连接.execute("insert into 未完成 values (7,'基缺','基落点','基验证')")
+        连接.execute("insert into 未完成(号, 缺什么, 落点, 验证命令) values (7,'基缺','基落点','基验证')")
         连接.execute("create table 命名登记 (名字 text primary key, 语义 text, 模式 text, 来源 text, 状态 text, 出现次数 integer, 创建时间 text)")
         连接.execute("insert into 命名登记 values ('样本名','基语义','对象+说明','新定义','合格',0,'')")
     跑样本仓命令(仓根, "add", ".")

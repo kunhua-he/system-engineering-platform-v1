@@ -30,7 +30,7 @@ def 建上下文夹具(树根):
         连接.execute("create table 命名登记(名字 text primary key,语义 text,模式 text,来源 text,状态 text,出现次数 integer,创建时间 text)")
         连接.execute("insert into 条款 values(?,?,?,?,?)", ("README.md", 0, "宪法", "旧镜像主题", "宪法"))
         连接.execute("create table 未完成(号 integer primary key, 缺什么 text not null, 落点 text, 验证命令 text)")
-        连接.execute("insert into 未完成 values(?,?,?,?)", (307, "活源主题缺口", "落点", "验证"))
+        连接.execute("insert into 未完成(号, 缺什么, 落点, 验证命令) values(?,?,?,?)", (307, "活源主题缺口", "落点", "验证"))
         连接.execute("insert into 条款 values(?,?,?,?,?)", ("临时.md", 0, "草案", "临时主题正文", "临时文档"))
         连接.executemany("insert into 条款 values(?,?,?,?,?)", [("项目文档/设计哲学.md", 序号值, "哲学", "主题" * 2000 if 序号值 == 4 else "核心唯一物", "设计原则") for 序号值 in range(12)])
         连接.execute("insert into 规则 values(?,?,?,?,?)", ("规则-1", "命名口径", "规则主题", "中文命名", "规范"))

@@ -107,7 +107,7 @@ def 搭空改夹具(临时根, 夹具参数):
         台账连接 = sqlite3.connect(str(台账库件))
         台账连接.execute("create table if not exists 未完成 "
                     "(号 integer primary key, 缺什么 text, 落点 text, 验证命令 text)")
-        台账连接.execute("insert or replace into 未完成 values (311, ?, '', '')",
+        台账连接.execute("insert or replace into 未完成(号, 缺什么, 落点, 验证命令) values (311, ?, '', '')",
                     ("点名 %s" % 开工号,))
         台账连接.commit()
         台账连接.close()

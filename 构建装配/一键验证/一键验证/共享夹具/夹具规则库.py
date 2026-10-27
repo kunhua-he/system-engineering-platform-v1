@@ -144,8 +144,8 @@ def 建夹具规则库(临根: Path, 件表: dict) -> Path:
         #   判据 66 在夹具上当场未判（元判据 ⑭ 不过）。
         连接.executemany("insert or replace into 规则 values(?,?,?,?,?)", 夹具权威地图清单)
         # ★ 判据 65 的**真源**：台账一行（同上 —— 没有它，形状判据在夹具上当场未判）。
-        连接.execute("insert or replace into 未完成 values(?,?,?,?)", 夹具台账行)
-        连接.execute("insert or replace into 未完成 values(?,?,?,?)", 夹具台账行_前缀入口)
+        连接.execute("insert or replace into 未完成(号, 缺什么, 落点, 验证命令) values(?,?,?,?)", 夹具台账行)
+        连接.execute("insert or replace into 未完成(号, 缺什么, 落点, 验证命令) values(?,?,?,?)", 夹具台账行_前缀入口)
         # ★ 2026-10-08（v1-100686 实测 · 自校抳出来的真缺陷）：三张表的 `创建时间` 默认是
         #   `datetime('now', 'localtime')` ⇒ **每次建库都把当时的墙钟写进去** ⇒ 同一份夹具
         #   建出来的库**字节不同**（主干旧码实测：120 次建库出 **3 种不同 .db sha**；60 次出 2 种）。
