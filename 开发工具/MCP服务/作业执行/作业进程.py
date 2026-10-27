@@ -26,7 +26,7 @@ import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))     # 开发工具/
-from .shell import 输出上限  # noqa: E402
+from .命令执行 import 输出上限  # noqa: E402
 from ..作业账本 import 终态集, 读行  # noqa: E402
 
 收尾秒 = 2                  # 杀组后等组消失的上限；TERM 一次 + KILL 一次 ⇒ 最坏 4 秒 < 5 秒

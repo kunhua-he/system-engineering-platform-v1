@@ -24,7 +24,7 @@
 **git 定位**（2026-10-07）：目标树若为 **bare 布局**（`core.bare = true`）⇒
 `git -C <仓根> ls-files` 退 128「must be run in a work tree」。故**显式**给 `--git-dir` /
 `--work-tree`（`.git` 是目录时），并剔除继承的 Git 定位变量；不改全局 Git 配置、不改
-`core.bare`。`.git` 是文件（工作树）⇒ 退 `-C`（同 `开发工具/MCP服务/作业执行/shell.py` 口径）。
+`core.bare`。`.git` 是文件（工作树）⇒ 退 `-C`（同 `开发工具/MCP服务/作业执行/命令执行.py` 口径）。
 
 **非 git 仓**（读不出被忽略面）⇒ 报**判不了**（未判），不是通过 —— 空集不算通过。
 故正向样本的合成仓自身 `git init`（见 `合成仓.py`），这样本条在夹具上也有对象。
@@ -41,14 +41,14 @@ from ...判据编排.验证小工具 import 判不了, 违规
 from ...基础定义.判据取值常量 import 检查名
 
 
-# 子进程不许继承的 Git 定位变量（会把 git 带到别的树 / 别的 index 上）—— 同 `开发工具/MCP服务/作业执行/shell.py`
+# 子进程不许继承的 Git 定位变量（会把 git 带到别的树 / 别的 index 上）—— 同 `开发工具/MCP服务/作业执行/命令执行.py`
 继承定位变量 = ("GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE", "GIT_OBJECT_DIRECTORY",
               "GIT_COMMON_DIR", "GIT_ALTERNATE_OBJECT_DIRECTORIES")
 
 
 def 版本库命令(仓根: Path, *子命令: str) -> list:
     """git 命令**显式定位**这条仓：`.git` 是目录（含 bare 主目录）⇒ 给 `--git-dir` / `--work-tree`；
-    否则（工作树 `.git` 是文件）⇒ 退 `-C`。与 `开发工具/MCP服务/作业执行/shell.py` 同一份口径。
+    否则（工作树 `.git` 是文件）⇒ 退 `-C`。与 `开发工具/MCP服务/作业执行/命令执行.py` 同一份口径。
     """
     仓库元目录 = 仓根 / ".git"
     if 仓库元目录.is_dir():

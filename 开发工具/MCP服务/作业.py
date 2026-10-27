@@ -28,7 +28,7 @@ import uuid
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))     # 开发工具/
-from .作业执行.shell import _取工作树, _执行环境, _收流, _关日志夹, 输出上限, 日志上限, 开工号形状  # noqa: E402
+from .作业执行.命令执行 import _取工作树, _执行环境, _收流, _关日志夹, 输出上限, 日志上限, 开工号形状  # noqa: E402
 from .施工管理.仓操作 import 禁终端提示环境, 跑命令  # noqa: E402
 from .作业账本 import (  # noqa: E402
     可抢态集, 工作日志后缀, 时刻串, 日志后缀, 日志路径, 状态_取消中, 状态_启动中, 状态_失败,

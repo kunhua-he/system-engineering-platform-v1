@@ -352,14 +352,14 @@ def 行数预警(工作树: Path, 最终态表: dict) -> list:
     工具根 = Path(__file__).resolve().parents[3]
     if str(工具根 / "开发工具") not in _sys.path:
         _sys.path.insert(0, str(工具根 / "开发工具"))
-    from 查文件行数 import 核心
+    from 查文件行数 import 行数判据
     预警行表 = []
     for 路径 in sorted(最终态表):
         全文 = 最终态表[路径]
-        if 全文 is None or not 核心.是源码(路径):
+        if 全文 is None or not 行数判据.是源码(路径):
             continue
         行数 = len(全文.splitlines())
-        上限 = 核心.行数上限
+        上限 = 行数判据.行数上限
         if 行数 > 上限:
             预警行表.append("  `%s`：最终态 %d 行 > %d ⇒ 闸 0 会红；把增量落**新件**，别顶这一件"
                       % (路径, 行数, 上限))

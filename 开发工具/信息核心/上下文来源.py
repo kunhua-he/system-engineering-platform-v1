@@ -7,7 +7,7 @@ import sqlite3
 from contextlib import contextmanager
 from pathlib import Path
 from .表定义 import 库路径, 派生库路径
-from .建库.条款 import 拆节
+from .建库流程.条款 import 拆节
 
 默认文档表 = ("项目文档/设计哲学.md", "项目文档/哲学.md", "项目文档/开发规范/开发规范.md")
 文档账本件 = "项目文档/文档账本.json"

@@ -32,7 +32,7 @@ def 跑脚本(脚本路径: str, 开工号: str, 操作名: str, 参数表: dict
 
     脚本从环境拿输入：`V1_操作` · `V1_开工ID` · `V1_参数`（JSON）；工作目录 = 目标树（开工号定工作树）。
     """
-    from ..作业执行.shell import 派发 as 终端派
+    from ..作业执行.命令执行 import 派发 as 终端派
     命令 = "V1_操作=%s V1_开工ID=%s V1_参数=%s sh %s" % (
         shlex.quote(操作名), shlex.quote(开工号),
         shlex.quote(json.dumps(参数表, ensure_ascii=False)), shlex.quote(脚本路径))
