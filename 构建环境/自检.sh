@@ -28,7 +28,7 @@ if [ "$PINNED" = "$ACTUAL" ]; then echo "① Rust 工具链  $ACTUAL == 钉的 $
 else echo "① Rust 工具链  实际 $ACTUAL != 钉的 $PINNED  ✗"; exit 1; fi
 
 MEMBERS=0
-for d in 契约声明 运行内核/*/ 跨语言适配/*/ 对外接口面/*/ 测试验证/案例/*/; do
+for d in 契约声明 运行内核/*/ 跨语言适配/*/ 对外接口面/*/ 测试验证/测试案例/*/; do
   [ -f "$d/Cargo.toml" ] && MEMBERS=$((MEMBERS+1))
 done
 LOCKED=0
@@ -63,7 +63,7 @@ echo "③ Rust 静态检查  扩展工作区 --all-targets  通过  ✓  （墙�
 # ★ 本件只做**编译面**，不跑 `cargo test`：`cargo test --workspace --locked` 现在**不自洽** ——
 #   ① 有几条用例转调 `构建环境/构建缓存/debug/v1-case-runner`，得先
 #      `cargo build -p v1-case-runner` 把那个二进制编出来；
-#   ② `案例清单_有条数且坏回执为零` 读**真仓根**的 `测试验证/案例/运行回执.jsonl`，
+#   ② `案例清单_有条数且坏回执为零` 读**真仓根**的 `测试验证/测试案例/运行回执.jsonl`，
 #      而该件被 gitignore ⇒ **空树首跑必红**。
 #   最小口径：要跑测试就先 `cargo build -p v1-case-runner`、再跑一次案例生成回执，然后 `cargo test`。
 #   本件不替它兜底（那样会把测试面变成假绿）。

@@ -23,7 +23,7 @@ import tempfile
 import time
 from pathlib import Path
 
-from . import 世界
+from . import 判读输入
 
 考题相对路径 = "扩展根目录/原子支持库/编译器支持库/src/测试用例/长活原语考题.rs"
 缓存目录相对 = "构建环境/构建缓存/长活原语考题"
@@ -45,9 +45,9 @@ from . import 世界
 
 
 def 找仓根() -> Path:
-    """仓根的**唯一实现**在 `世界.py`（2026-09-30 收口：本件原先自带一份「契约声明 且
+    """仓根的**唯一实现**在 `判读输入.py`（2026-09-30 收口：本件原先自带一份「契约声明 且
     扩展装载」的**硬写串**搜索）。本模块各口按 `Path` 收 ⇒ 只把它的 `str` 转成 `Path`。"""
-    return Path(世界.找仓根())
+    return Path(判读输入.找仓根())
 
 
 def 考题路径(根目录: Path) -> Path:

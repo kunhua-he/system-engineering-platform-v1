@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import re
 
-from ..结果编排.常量 import 生成物相对路径, 契约源相对路径, 契约源目录
+from ..结果编排.口径落点 import 生成物相对路径, 契约源相对路径, 契约源目录
 from ..结果编排.扫实现小工具 import 找配对界符
 from .声明侧 import 找声明根
 from 构建装配.一键验证.一键验证.源码解析.剥字面量 import 去字面量

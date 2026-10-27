@@ -7,8 +7,8 @@ import re
 import subprocess
 import sys
 
-from .登记 import 有意不判
-from .世界 import 判读世界, 读JSON件
+from .不判清单 import 有意不判
+from .判读输入 import 判读世界, 读JSON件
 
 
 def 判有意不判_依据锚点齐(测试世界: 判读世界, 编号: str):

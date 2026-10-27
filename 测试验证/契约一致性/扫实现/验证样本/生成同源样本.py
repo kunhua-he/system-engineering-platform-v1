@@ -1,6 +1,6 @@
 from ..源码解析.符号解析 import 建符号表, 解符号
 from ..比对规则.判据类型标签 import 比类型标签
-from ..结果编排.常量 import 判据名表
+from ..结果编排.口径落点 import 判据名表
 from .样本 import 造样本
 from 构建装配.形态装配.生成声明.生成编排.路径形状 import 声明根
 from 构建装配.形态装配.生成声明.声明渲染.渲染常量推导 import 渲染常量表, 渲染号段推导

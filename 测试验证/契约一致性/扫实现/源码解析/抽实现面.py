@@ -10,7 +10,7 @@ from 构建装配.一键验证.一键验证.源码解析.剥字面量 import 去
 from .夹具判定 import 生产区文本
 from .符号解析 import 解符号
 from ..比对规则.判据工具 import _取编号
-from ..结果编排.常量 import 逐条断言模式, 契约源目录
+from ..结果编排.口径落点 import 逐条断言模式, 契约源目录
 from .抽取件 import (
     抽模块常量,
     抽构造器,

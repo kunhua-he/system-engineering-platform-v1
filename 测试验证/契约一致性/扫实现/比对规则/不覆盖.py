@@ -16,7 +16,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from ..结果编排.常量 import 判据名表, 必备件相对路径, 实现件文件名
+from ..结果编排.口径落点 import 判据名表, 必备件相对路径, 实现件文件名
 from .判据工具 import 记判据
 
 # 元判据名：登记表自洽这条检查自身的名字（它不在 `判据名表` 里 —— 它是判据面的自检，

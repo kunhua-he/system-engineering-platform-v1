@@ -58,7 +58,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from 准入判据.报告 import 跑单条判据, 扫一遍, 打印报告, 打印清单  # noqa: E402
 from 准入判据.样本 import 跑自测  # noqa: E402
-from 准入判据.世界 import 判读世界, 找仓根  # noqa: E402
+from 测试验证.准入判据.准入判据.判读输入 import 判读世界, 找仓根  # noqa: E402
 
 
 def 入口函数(命令行参数) -> int:

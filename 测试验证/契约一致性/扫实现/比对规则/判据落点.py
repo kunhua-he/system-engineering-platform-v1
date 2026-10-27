@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 
-from ..结果编排.常量 import 判据名表, 处数基线相对路径, 落点_命令表项数, 落点_函数表项数, 落点_参数个数已核条数, 接缝符号
+from ..结果编排.口径落点 import 判据名表, 处数基线相对路径, 落点_命令表项数, 落点_函数表项数, 落点_参数个数已核条数, 接缝符号
 from .判据工具 import _落点, 记判据
 
 

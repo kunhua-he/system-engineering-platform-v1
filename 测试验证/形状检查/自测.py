@@ -17,8 +17,8 @@ import sys
 import tempfile
 from pathlib import Path
 
-from .常量 import 关键值判据, 期望结果文件名, 判定_违反
-from .形状 import 查一份案例
+from .形状键名 import 关键值判据, 期望结果文件名, 判定_违反
+from .形状判定 import 查一份案例
 
 
 def 跑自测() -> int:

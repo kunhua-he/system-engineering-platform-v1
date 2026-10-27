@@ -2,7 +2,7 @@
 """组装 —— 一条判据一条记录：样本状态声明 + 三元判定装配。"""
 from __future__ import annotations
 
-from .常量 import 判据名表
+from .口径落点 import 判据名表
 from ..比对规则.判据工具 import 记判据
 
 

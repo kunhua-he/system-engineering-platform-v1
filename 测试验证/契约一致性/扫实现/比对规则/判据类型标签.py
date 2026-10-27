@@ -2,7 +2,7 @@
 """判据类型标签 —— ③e：实现里用到的每个类型标签都要在 类型声明/ 里登记。"""
 from __future__ import annotations
 
-from ..结果编排.常量 import 判据名表
+from ..结果编排.口径落点 import 判据名表
 from ..源码解析.符号解析 import 解符号
 from .判据工具 import 记判据, _本表
 
