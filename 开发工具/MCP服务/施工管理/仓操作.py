@@ -22,6 +22,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))     # 开发工具/
+from 构建装配.门禁.git路径解析 import 解析工作树零分隔, 解析状态零分隔, 解析零分隔  # noqa: E402
 from 代码地图 import 文件指纹  # noqa: E402  —— 指纹只此一份（sha256 前 16 位）
 
 超时秒 = 5                     # 查询/写盘这类要判顶的；建树与建索引是**环境步**，不设超时
@@ -41,10 +42,13 @@ Git重定向键 = ("GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE", "GIT_OBJECT_DIR
             "GIT_ALTERNATE_OBJECT_DIRECTORIES", "GIT_COMMON_DIR", "GIT_PREFIX")
 
 
-def 跑命令(命令表: list, cwd, 超时秒数=超时秒, 输入文本=None, 子进程环境=None) -> tuple:
+def 跑命令(命令表: list, cwd, 超时秒数=超时秒, 输入文本=None, 子进程环境=None,
+        只取标准输出=False) -> tuple:
     """跑一条命令 ⇒ `(退出码, 合并输出)`。超时给 `-1`（**不许当成通过**）。
 
     `超时秒数=None` ⇒ **不设超时**（环境步：建工作树 · 建索引 —— 一趟就是它自身的长度）。
+    `只取标准输出=真` ⇒ 回执里**没有标准错误**（读 `-z` 路径流必须走它：Git 的提示拼进
+    路径流就会被当成一件路径）。
     `输入文本` 给了就从 stdin 喂进去（`git commit -F -` 用 —— 免得为一条提交信息落临时件）。
     `子进程环境` 给的键**并进**当前环境（不是替换）。git 的 push/commit 必须带 `GIT_TERMINAL_PROMPT=0`：
     不设超时 + 远端要认证 ⇒ git 会**等着人敲密码**，那是一个没有上限的挂起。
@@ -59,6 +63,8 @@ def 跑命令(命令表: list, cwd, 超时秒数=超时秒, 输入文本=None, �
         return -1, "超时（%s 秒）—— 先查是哪一段慢" % 超时秒数
     except OSError as 起不来的原因:
         return -2, "起不了：%r" % (起不来的原因,)
+    if 只取标准输出:
+        return 回执.returncode, (回执.stdout or "")
     return 回执.returncode, (回执.stdout or "") + (回执.stderr or "")
 
 
@@ -142,6 +148,27 @@ def 支线在吗(仓根, 开工号: str) -> bool:
     return 退出码 == 0 and bool(输出文本.strip())
 
 
+def 工作树记录(仓根) -> tuple:
+    """`git worktree list --porcelain -z` ⇒ `(退出码, 记录表)`。**本件唯一**工作树读法。
+
+    `-z` 下路径按原字节给：含空格 / 引号 / 换行的树路径不失真（旧的 `splitlines()` 会把一条
+    记录拆成两条）；解析只经 `门禁.git路径解析`，别处不许再切字符串。
+    """
+    退出码, 输出文本 = 跑命令(["git", "worktree", "list", "--porcelain", "-z"], cwd=仓根,
+                         只取标准输出=True)
+    if 退出码 != 0:
+        return 退出码, []
+    return 0, 解析工作树零分隔(输出文本)
+
+
+def 主工作树(仓根) -> tuple:
+    """`worktree list` 的**第一条**记录（= 主工作树）⇒ `(退出码, Path 或 说明)`。"""
+    退出码, 记录表 = 工作树记录(仓根)
+    if 退出码 != 0 or not 记录表:
+        return 1, "无法确定主工作树（`worktree list` 读不出）"
+    return 0, Path(记录表[0]["worktree"])
+
+
 def 找工作树(仓根, 开工号: str):
     """**问 git** 这条开工的工作树在哪 ⇒ `Path` 或 `None`。
 
@@ -149,16 +176,13 @@ def 找工作树(仓根, 开工号: str):
     `开发工具/并行工作树.sh` —— 在本件再写一份就是**第二来源**（判据 ㉕ 当场红，实测撞过）。
     git 知道每条工作树在哪，问它最准。
     """
-    退出码, 输出文本 = 跑命令(["git", "worktree", "list", "--porcelain"], cwd=仓根)
+    退出码, 记录表 = 工作树记录(仓根)
     if 退出码 != 0:
         return None
     目标分支 = "refs/heads/" + 分支名(开工号)
-    当前路径 = None
-    for 源码行 in 输出文本.splitlines():
-        if 源码行.startswith("worktree "):
-            当前路径 = 源码行[len("worktree "):].strip()
-        elif 源码行.strip() == "branch " + 目标分支 and 当前路径:
-            return Path(当前路径)
+    for 工作树项 in 记录表:
+        if 工作树项.get("branch") == 目标分支 and 工作树项.get("worktree"):
+            return Path(工作树项["worktree"])
     return None
 
 
@@ -230,10 +254,9 @@ def 检查清树安全(仓根, 开工号: str, 工作树) -> tuple:
         退出码, 输出文本 = 跑命令(["git", "status", "--porcelain", "-uall"], cwd=工作树)
         if 退出码 != 0 or 输出文本.strip():
             return 1, "工作树有未提交改动或状态读不出 ⇒ 拒绝清理，保留树与支线：\n%s" % 输出文本[-400:]
-    退出码, 输出文本 = 跑命令(["git", "worktree", "list", "--porcelain"], cwd=仓根)
-    if 退出码 != 0 or not 输出文本.startswith("worktree "):
+    退出码, 主树路径 = 主工作树(仓根)
+    if 退出码 != 0:
         return 1, "无法确定主工作树 ⇒ 拒绝清理"
-    主树路径 = Path(输出文本.splitlines()[0][len("worktree "):])
     if 主树路径.resolve() == Path(工作树).resolve():
         return 1, "目标是主工作树 ⇒ 拒绝清理"
     退出码, 主树提交 = 跑只读git(仓根, ["rev-parse", "HEAD"], 树根=主树路径)
@@ -280,10 +303,9 @@ def 取代腿退场(仓根, 开工号: str, 取代提交: str) -> tuple:
     支线 = 分支名(开工号)
     if not 支线在吗(仓根, 开工号):
         return 2, "支线 `%s` 不存在 ⇒ 无物可退场（树与支线都不在时不必走本口）" % 支线
-    退出码, 输出文本 = 跑命令(["git", "worktree", "list", "--porcelain"], cwd=仓根)
-    if 退出码 != 0 or not 输出文本.startswith("worktree "):
+    退出码, 主树路径 = 主工作树(仓根)
+    if 退出码 != 0:
         return 2, "无法确定主工作树 ⇒ 拒绝退场"
-    主树路径 = Path(输出文本.splitlines()[0][len("worktree "):])
     退出码, 主树提交 = 跑命令(["git", "rev-parse", "HEAD"], cwd=主树路径)
     if 退出码 != 0:
         return 2, "无法读取主工作树提交 ⇒ 拒绝退场"
@@ -308,18 +330,22 @@ def 取代腿退场(仓根, 开工号: str, 取代提交: str) -> tuple:
     if 取代提交.strip() == 分叉点:
         return 2, ("`取代提交` 就是支线分叉点本身（%s）⇒ 它没在分叉之后承接任何东西，拒绝退场"
                   % 分叉点[:12])
-    退出码, 支线路径 = 跑命令(["git", "diff", "--name-only", 分叉点, 支线], cwd=仓根)
+    # 两侧都按 `-z` 原字节读：中文 / 空格 / 含换行的路径若一侧转义一侧不转义，④ 会误判
+    # （假红拒退场，或极端情况下放过未覆盖件）—— 这是唯一挡住「凭声明删腿」的机械判据。
+    退出码, 支线路径 = 跑命令(["git", "diff", "--name-only", "-z", 分叉点, 支线], cwd=仓根,
+                          只取标准输出=True)
     if 退出码 != 0:
         return 2, "读不出支线改动路径 ⇒ 拒绝退场"
-    退出码, 取代路径 = 跑命令(["git", "show", "--name-only", "--format=", 取代提交], cwd=仓根)
+    退出码, 取代路径 = 跑命令(["git", "show", "--name-only", "--format=", "-z", 取代提交],
+                          cwd=仓根, 只取标准输出=True)
     if 退出码 != 0:
         return 2, "读不出取代提交的改动路径 ⇒ 拒绝退场"
-    支线集 = {行文本.strip() for 行文本 in 支线路径.splitlines() if 行文本.strip()}
-    取代集 = {行文本.strip() for 行文本 in 取代路径.splitlines() if 行文本.strip()}
-    未覆盖 = sorted(支线集 - 取代集)
-    if 未覆盖:
+    支线路径集 = set(解析零分隔(支线路径))
+    取代路径集 = set(解析零分隔(取代路径))
+    未覆盖集 = sorted(支线路径集 - 取代路径集)
+    if 未覆盖集:
         return 2, ("取代提交 %s 没覆盖这些路径 ⇒ 拒绝退场（可能有独有成果）：%s"
-                  % (取代提交[:12], " · ".join(未覆盖[:8])))
+                  % (取代提交[:12], " · ".join(未覆盖集[:8])))
     工作树 = 找工作树(仓根, 开工号)
     if 工作树 is not None and Path(工作树).is_dir():
         退出码, 状态文本 = 跑命令(["git", "status", "--porcelain", "-uall"], cwd=工作树)
@@ -330,7 +356,7 @@ def 取代腿退场(仓根, 开工号: str, 取代提交: str) -> tuple:
            "  ① 支线 %s 非主树祖先 ✓" % 支线,
            "  ② 取代提交 %s 是主干祖先 ✓" % 取代提交[:12],
            "  ③ 它在分叉点 %s 之后 ✓" % 分叉点[:12],
-           "  ④ 支线改动 %d 条路径全被取代提交覆盖 ✓" % len(支线集),
+           "  ④ 支线改动 %d 条路径全被取代提交覆盖 ✓" % len(支线路径集),
            "  ⑤ 工作树净 ✓",
            "  清树：%s" % 说明]
     return 退出码, "\n".join(行表)
@@ -408,19 +434,14 @@ def 读盘指纹(工作树: Path, 相对路径表: list) -> tuple:
 
 
 def 变更路径表(工作树) -> tuple:
-    """`git status --porcelain` ⇒ `(退出码, 变过的路径表 或 说明)`。**一处解析**：`释放` 的
-    越界检测与 `生成物记账` 的产出识别共用它 —— 不各写一份「什么算脏」。
+    """`git status --porcelain -z -uall` ⇒ `(退出码, 变过的路径表 或 说明)`。**一处解析**：`释放` 的
+    越界检测、`生成物记账` 的产出识别、`放行结果` 的树指纹共用它 —— 不各写一份「什么算脏」。
+
+    返回形状 `(退出码, 路径表 | 说明)` 一字不变（3 个调用方不连环改）；改名项回**新名**
+    （= 旧口径 `split(' -> ')[-1]`）。`-z` + 唯一解析节点 ⇒ 中文 / 空格 / 引号 / 换行都按原字节。
     """
-    退出码, 输出文本 = 跑命令(["git", "status", "--porcelain", "-uall"], cwd=工作树)
+    退出码, 输出文本 = 跑命令(["git", "status", "--porcelain", "-z", "-uall"], cwd=工作树,
+                         只取标准输出=True)
     if 退出码 != 0:
         return 退出码, "git status 失败（查不清盘上动了什么）：\n%s" % 输出文本.strip()[-400:]
-    路径表 = []
-    for 源码行 in 输出文本.splitlines():
-        if not 源码行.strip():
-            continue
-        路径 = 源码行[3:].strip().strip('"')
-        if " -> " in 路径:
-            路径 = 路径.split(" -> ")[-1].strip().strip('"')
-        if 路径:
-            路径表.append(路径)
-    return 0, 路径表
+    return 0, [路径 for _, 路径 in 解析状态零分隔(输出文本)]

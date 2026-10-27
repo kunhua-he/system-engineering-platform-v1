@@ -8,7 +8,8 @@
 import ast
 import re
 
-from .仓状态 import 参数错, 取开工号, 收尾, 跑git
+from 构建装配.门禁.git路径解析 import 解析零分隔
+from .仓状态 import 参数错, 取开工号, 收尾, 跑git路径流
 from .跨树 import _定位, _定位当前树, _件文, _头行, 取记录条数
 
 符号上限 = 12
@@ -68,16 +69,18 @@ def 列件头(仓根, 参数表) -> tuple:
         定位, 错误 = _定位当前树(仓根)
     if 错误:
         return 1, 错误
-    命令 = (["ls-tree", "-r", "--name-only", 定位["引用"]] if 定位["引用"]
-          else ["ls-files", "--cached", "--others", "--exclude-standard"])
-    退出码, 输出文本 = 跑git(仓根, 命令, 树根=定位["树根"])
+    命令 = (["ls-tree", "-r", "--name-only", "-z", 定位["引用"]] if 定位["引用"]
+          else ["ls-files", "--cached", "--others", "--exclude-standard", "-z"])
+    退出码, 输出文本 = 跑git路径流(仓根, 命令, 树根=定位["树根"])
     if 退出码 != 0:
         return 1, "\n".join(_头行(定位) + ["列件失败：%s" % 输出文本.strip()[-200:]])
     # `路径前缀` = **前缀**（不是 git pathspec 的精确路径）：`ls-files`/`ls-tree` 对无通配路径按**精确**匹配
     # （`.../件头读数` 命中 0 件），且 `ls-tree` 不吃 `:(glob)` magic ⇒ 列全名后在 Python 侧按前缀筛
     # （两种树同一口径）
-    名表 = [源码行 for 源码行 in 输出文本.splitlines()
-          if 源码行.strip().endswith((".py", ".rs")) and 源码行.strip().startswith(路径前缀)]
+    # 先按 `-z` 原字节拆成路径（中文 / 空格 / 引号 / 换行都不失真），再按后缀与前缀筛 ——
+    # 顺序不能反：对整段文本 `splitlines()` 会把一个含换行的件名拆成两条。
+    名表 = [路径 for 路径 in 解析零分隔(输出文本)
+          if 路径.endswith((".py", ".rs")) and 路径.startswith(路径前缀)]
     行表 = _头行(定位)
     行表.append("源码件 %d 个（.py/.rs；%s）· 符号上限 %d"
              % (len(名表), "引用树" if 定位["引用"] else "工作树（含未跟踪）", 符号上限))

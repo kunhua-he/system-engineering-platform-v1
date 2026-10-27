@@ -3,6 +3,8 @@
 import hashlib
 import subprocess
 
+from 构建装配.门禁.git路径解析 import 解析状态零分隔
+
 from .常量 import 仓根, 回执相对路径
 
 
@@ -37,10 +39,9 @@ def 依赖指纹() -> str:
 
 def 提交哈希() -> tuple:
     运行结果 = 跑子进程(["git", "rev-parse", "--short=12", "HEAD"], cwd=仓根).stdout.strip()
-    脏行 = [
-        源码行
-        for 源码行 in 跑子进程(["git", "status", "--porcelain"], cwd=仓根).stdout.splitlines()
-        if 源码行.strip() and 源码行[3:].strip().strip('"') != 回执相对路径
-    ]
+    # 全仓最后一处「既不带 `-z`、也不走共享解析」的 status 读法：只比一条 ASCII 相对路径时
+    # 眼下不会误判，但留着就是回潮入口 ⇒ 一并改成 `-z` + 唯一解析节点。
+    标准输出 = 跑子进程(["git", "status", "--porcelain", "-z"], cwd=仓根).stdout
+    脏行 = [路径 for _, 路径 in 解析状态零分隔(标准输出) if 路径 != 回执相对路径]
     是否脏 = bool(脏行)
     return 运行结果, 是否脏

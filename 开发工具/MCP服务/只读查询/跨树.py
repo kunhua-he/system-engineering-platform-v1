@@ -18,9 +18,10 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))     # 开发工具/
 
+from 构建装配.门禁.git路径解析 import 解析零分隔, 解析名状态零分隔, 解析状态零分隔  # noqa: E402
 from ..施工管理.仓操作 import 找工作树                                       # noqa: E402
 from .仓状态 import (参数错, 取开工号, 取记录条数, 拒未知, 收尾, 主干引用,  # noqa: E402
-                 相对主干位次, 跑git, 建操作处理, 声明键集)
+                 相对主干位次, 跑git, 跑git路径流, 建操作处理, 声明键集)
 
 上限行 = 200
 上限字节 = 400000
@@ -156,14 +157,6 @@ def _件文(仓根, 定位, 路径) -> tuple:
         raise 参数错("`路径` 经符号链接逃出本树（%s ⇒ %s）⇒ 拒读" % (路径, 真路径))
     return 件路径.read_text(encoding="utf-8", errors="replace")[:上限字节], ""
 
-def _路径(源码行, 偏移量) -> str:
-    """从 `git status --porcelain`（偏移量=3）或 `git diff --name-status`（偏移量=1）的一行里取路径。"""
-    段表 = 源码行.split(None, 1)
-    if len(段表) < 2:
-        return ""
-    路径 = 段表[1].strip().strip('"')
-    return 路径.split(" -> ")[-1].strip().strip('"') if " -> " in 路径 else 路径
-
 def _按区(行表, 名表) -> None:
     区表 = {}
     for 路径 in 名表:
@@ -298,14 +291,14 @@ def 列文件(仓根, 参数表) -> tuple:
     if 错误:
         return 1, 错误
     范围 = ["--", 路径前缀] if 路径前缀 else []
-    命令 = (["ls-tree", "-r", "--name-only", 定位["引用"]] if 定位["引用"]
-          else ["ls-files", "--cached", "--others", "--exclude-standard"])
-    退出码, 输出文本 = 跑git(仓根, 命令 + 范围, 树根=定位["树根"])
+    命令 = (["ls-tree", "-r", "--name-only", "-z", 定位["引用"]] if 定位["引用"]
+          else ["ls-files", "--cached", "--others", "--exclude-standard", "-z"])
+    退出码, 输出文本 = 跑git路径流(仓根, 命令 + 范围, 树根=定位["树根"])
     if 退出码 != 0:
         return 1, "\n".join(_头行(定位) + ["列文件失败：%s" % 输出文本.strip()[-200:]])
-    名表 = [源码行 for 源码行 in 输出文本.splitlines() if 源码行.strip()]
+    名表 = 解析零分隔(输出文本)
     行表 = _头行(定位)
-    行表.append("件数 %d（%s · 强制 core.quotePath=false 防中文路径假阴性）"
+    行表.append("件数 %d（%s · `-z` NUL 分隔 · 唯一解析节点）"
              % (len(名表), "引用树" if 定位["引用"] else "工作树（含未跟踪）"))
     for 源码行 in 名表[:记录条数]:
         行表.append("  %s" % 源码行)
@@ -368,12 +361,10 @@ def 差集(仓根, 参数表) -> tuple:
     范围 = str(参数表.get("范围") or "").strip()
     行表 = ["【开工 %s 的工作树】%s" % (开工号, 工作树),
            "相对主干：%s" % 相对主干位次(仓根, "HEAD", 树根=工作树)]
-    退出码, 输出文本 = 跑git(仓根, ["diff", "--name-status", "主干...HEAD"], 树根=工作树)
-    差异 = [源码行 for 源码行 in 输出文本.splitlines() if 源码行.strip()] if 退出码 == 0 else []
-    路径表 = [_路径(源码行, 1) for 源码行 in 差异]
-    退出码, 输出文本 = 跑git(仓根, ["status", "--porcelain=v1", "-uall"], 树根=工作树)
-    变更表 = [源码行 for 源码行 in 输出文本.splitlines() if 源码行.strip()] if 退出码 == 0 else []
-    名表 = [_路径(源码行, 3) for 源码行 in 变更表]
+    退出码, 输出文本 = 跑git路径流(仓根, ["diff", "--name-status", "-z", "主干...HEAD"], 树根=工作树)
+    路径表 = [路径 for _, 路径 in 解析名状态零分隔(输出文本)] if 退出码 == 0 else []
+    退出码, 输出文本 = 跑git路径流(仓根, ["status", "--porcelain=v1", "-z", "-uall"], 树根=工作树)
+    名表 = [路径 for _, 路径 in 解析状态零分隔(输出文本)] if 退出码 == 0 else []
     if 范围:
         路径表 = [路径 for 路径 in 路径表 if 路径.startswith(范围)]
         名表 = [路径 for 路径 in 名表 if 路径.startswith(范围)]

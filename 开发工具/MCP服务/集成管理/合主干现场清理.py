@@ -12,27 +12,30 @@
 
 from pathlib import Path
 
+from 构建装配.门禁.git路径解析 import 解析零分隔
+
 from .合主干有界跑 import 跑有界命令
 from . import 合主干集成树 as 集成
 
 库相对路径 = "开发工具/信息核心/信息核心.db"
 
 
-def _跑(命令表, 工作目录):
-    return 跑有界命令(命令表, 工作目录=工作目录, 超时秒数=5, 保留日志=True)
+def _跑(命令表, 工作目录, 只取标准输出=False):
+    return 跑有界命令(命令表, 工作目录=工作目录, 超时秒数=5, 保留日志=True,
+                  只取标准输出=只取标准输出)
 
 
 def 未解决代码冲突(集成路径) -> tuple:
     """集成树里未合并的**非源库**件（源库由正式重放处置）⇒ (退出码, 件表 或 说明)。
 
-    `-c core.quotePath=false` 关掉中文路径的引号 —— 不然源库路径被 git 加引号，逐字比对落空。
+    `-z` 是唯一路径安全的读法（空格 / 引号 / 换行都不失真），解析只经 `门禁.git路径解析`；
+    **与 `集成接管.未合并件` 同一答案**（同一现场两种读法 = 迟早漂）。
     """
     退出码, 输出文本, 日志路径 = _跑(
-        ["git", "-c", "core.quotePath=false", "diff", "--name-only", "--diff-filter=U"], 集成路径)
+        ["git", "diff", "--name-only", "--diff-filter=U", "-z"], 集成路径, 只取标准输出=True)
     if 退出码 != 0:
         return 1, "读不出未合并件 · 日志 %s\n%s" % (日志路径, 输出文本[:400])
-    件表 = [数据行.strip() for 数据行 in 输出文本.splitlines()
-           if 数据行.strip() and 数据行.strip() != 库相对路径]
+    件表 = [路径 for 路径 in 解析零分隔(输出文本) if 路径 != 库相对路径]
     return 0, 件表
 
 

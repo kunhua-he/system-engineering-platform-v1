@@ -67,7 +67,14 @@ def _跑释放夹具(临时根, 名称):
     执行命令(["git", "init", "-b", "主干"])
     执行命令(["git", "config", "user.name", "释放样本"])
     执行命令(["git", "config", "user.email", "release@example.invalid"])
-    执行命令(["git", "config", "core.quotePath", "false"])
+    # 不在夹具里改仓配置（`core.quotePath=false` 那行会掩盖「路径读数到底修好没有」：节点坏掉时
+    # 夹具仍然绿）。改为**行为断言**：往夹具仓放一份中文+空格的件，用正式读口读回原字节名。
+    中文样本件 = 仓根 / "中文 样本.txt"
+    中文样本件.write_text("旧内容\n", encoding="utf-8")
+    _, 中文路径表 = 仓操作.变更路径表(仓根)
+    assert "中文 样本.txt" in 中文路径表, (
+        "中文/含空格路径没按原字节读出（`-z` + 唯一解析节点的口径坏了）：%s" % 中文路径表)
+    中文样本件.unlink()
     (仓根 / "样本.txt").write_text("旧内容\n", encoding="utf-8")
     件路径 = 仓根 / "构建装配/一键验证/闸0.py"
     件路径.parent.mkdir(parents=True)

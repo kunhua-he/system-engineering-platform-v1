@@ -13,12 +13,15 @@ import sys
 import tempfile
 from pathlib import Path
 
+from 构建装配.门禁.git路径解析 import 解析工作树零分隔, 解析状态零分隔, 解析零分隔
+
 from .合主干有界跑 import 跑有界命令
 from . import 合主干门禁 as 门禁
 
 
-def _跑(命令表, 工作目录, 超时秒数=None, 输入文本=None):
-    return 跑有界命令(命令表, 工作目录=工作目录, 超时秒数=超时秒数, 输入文本=输入文本, 保留日志=True)
+def _跑(命令表, 工作目录, 超时秒数=None, 输入文本=None, 只取标准输出=False):
+    return 跑有界命令(命令表, 工作目录=工作目录, 超时秒数=超时秒数, 输入文本=输入文本,
+                  保留日志=True, 只取标准输出=只取标准输出)
 
 
 def 定位主仓(候选目录):
@@ -43,15 +46,14 @@ def 定位主仓(候选目录):
 
 
 def 找集成树(仓根, 开工号):
-    退出码, 输出文本, _ = _跑(["git", "worktree", "list", "--porcelain"], 仓根, 超时秒数=5)
+    退出码, 输出文本, _ = _跑(["git", "worktree", "list", "--porcelain", "-z"], 仓根,
+                           超时秒数=5, 只取标准输出=True)
     if 退出码 != 0:
         return None
-    当前路径 = None
-    for 数据行 in 输出文本.splitlines():
-        if 数据行.startswith("worktree "):
-            当前路径 = Path(数据行[9:]).resolve()
-        elif 数据行 == "branch refs/heads/集成/" + 开工号:
-            return 当前路径
+    目标分支 = "refs/heads/集成/" + 开工号
+    for 工作树项 in 解析工作树零分隔(输出文本):
+        if 工作树项.get("branch") == 目标分支 and 工作树项.get("worktree"):
+            return Path(工作树项["worktree"]).resolve()
     return None
 
 
@@ -165,21 +167,14 @@ def 无非源库脏件(树根) -> tuple:
 
     源库是**二进制派生件**（`建库` 可重抽）⇒ 不算成果。旧口径「任何脏件都算成果」会把
     「零提交腿留下的重抽源库」当成果 ⇒ 拒清 ⇒ 现场永远清不掉（债务 529）。
-    `-c core.quotePath=false` 关中文路径引号 —— 不然源库路径被 git 加引号、逐字比对落空。
+    `-z` 是**唯一路径安全形式**（空格 / 引号 / 换行都不失真）；`-c core.quotePath=false` 只是
+    非 `-z` 输出的兼容兜底，不再承担读路径的职责。解析只经 `门禁.git路径解析`。
     """
     退出码, 输出文本, 日志路径 = _跑(
-        ["git", "-c", "core.quotePath=false", "status", "--porcelain", "-uall"], 树根, 超时秒数=5)
+        ["git", "status", "--porcelain", "-z", "-uall"], 树根, 超时秒数=5, 只取标准输出=True)
     if 退出码 != 0:
         return 1, "读不出现场状态 · 日志 %s" % 日志路径
-    余留表 = []
-    for 数据行 in 输出文本.splitlines():
-        if len(数据行) < 4:
-            continue
-        路径 = 数据行[3:]
-        if " -> " in 路径:
-            路径 = 路径.split(" -> ", 1)[1]
-        if 路径.strip() and 路径.strip() != 库相对路径:
-            余留表.append(路径.strip())
+    余留表 = [路径 for _, 路径 in 解析状态零分隔(输出文本) if 路径 != 库相对路径]
     if 余留表:
         return 1, "现场仍有非源库未提交/未跟踪成果 ⇒ 拒清理：%s" % " · ".join(余留表[:10])
     return 0, "现场除源库外无未提交/未跟踪成果"
@@ -205,8 +200,10 @@ def 建集成树(仓根, 开工号) -> tuple:
 def 合腿(集成树, 腿分支) -> tuple:
     """在集成树里合腿 ⇒ (退出码, 说明, 冲突文件表)。--no-ff 保证造合并提交（不走 ff）。"""
     退出码, 输出文本, 日志路径 = _跑(["git", "merge", "--no-commit", "--no-ff", 腿分支], 工作目录=集成树, 超时秒数=None)
-    _, 命令输出, _ = _跑(["git", "diff", "--name-only", "--diff-filter=U"], 工作目录=集成树)
-    冲突表 = [数据行.strip() for 数据行 in 命令输出.splitlines() if 数据行.strip()]
+    # 合腿冲突表是整条合并工序的分叉点（接管 / 重叠 / 清场全按它走）⇒ 必须按 `-z` 原字节读。
+    _, 命令输出, _ = _跑(["git", "diff", "--name-only", "--diff-filter=U", "-z"],
+                       工作目录=集成树, 只取标准输出=True)
+    冲突表 = 解析零分隔(命令输出)
     if 冲突表:
         return 0, "合腿有冲突 · 原始退出码 %d · 是否超时 %s · 日志 %s\n%s" % (退出码, 退出码 == -1, 日志路径, 输出文本[:1500]), 冲突表
     if 退出码 != 0:

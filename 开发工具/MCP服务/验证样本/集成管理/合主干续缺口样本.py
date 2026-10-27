@@ -13,6 +13,7 @@ import tempfile
 from pathlib import Path
 from unittest import mock
 
+from 构建装配.门禁.git路径解析 import 解析零分隔
 from ...集成管理 import 合主干编排 as 编排, 合主干集成树 as 集成, 集成接管
 from ... import 开工账本
 from ...集成管理 import 合主干腿树门禁 as 腿树门禁
@@ -135,7 +136,8 @@ def _暂存非冲突样本(临时根) -> list:
     开工账本.连账本 = lambda: _开账(账本件)
     try:
         退出码, 行表 = 集成接管.暂存接管成果(主目录, 集成树)
-        暂存表 = _跑git(集成树, "diff", "--cached", "--name-only").split()
+        # 夹具取路径也走 `-z` + 唯一解析节点（旧写法对中文名读到的是转义串 ⇒ 这条断言会假红）。
+        暂存表 = 解析零分隔(_跑git(集成树, "diff", "--cached", "--name-only", "-z"))
     finally:
         开工账本.连账本 = 旧连
     return [("B 暂存接管成果 收非冲突件：退出码 %d（期望 0）· 暂存区 = %s（期望含 样本.txt 与 补充.txt）"
