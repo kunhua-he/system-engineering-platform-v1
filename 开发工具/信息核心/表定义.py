@@ -157,6 +157,9 @@ def 连规则库(根目录):
 #   `命名例外` · `命名族` · `命名词性` 从 `表定义.py` 的字面量搬进库表（活代码不再持有规则）；
 #   `命名模式`（§七 的 17 条形状正则）**整条废除** —— 它是「形状对就算有定义」的老规则，
 #   华哥 2026-09-29：「之前的老规则，全部移除掉」。
+# 台账「类别」的**唯一判词**（升级与债务同一张表，见 6125）：写口 / 读口 / 页面都读这一处，不许各拼一套。
+台账类别 = ("债务", "升级")
+
 源表 = ("规则", "条款", "未完成", "命名例外",
        # ★ 2026-10-05：命名新体系两表（核心字典 · 已登记）的源表 —— 库是它们的唯一存本。
        # ★ 2026-10-07：`命名出现` **移出源表**（搬进下面的 `派生表`）—— 它是纯派生明细
@@ -225,7 +228,10 @@ def 连规则库(根目录):
     # 库是唯一落点；`查看.py` 的 `/条款` 页就是原来那些 md 的读入口。
     "create table if not exists 条款(文档路径 text not null, 序号 integer not null, 标题 text, 正文 text not null, 权威档 text, primary key(文档路径, 序号))",
     "create index if not exists 条款标题 on 条款(标题)",
-    "create table if not exists 未完成(号 integer primary key, 缺什么 text not null, 落点 text, 验证命令 text)",
+    # ★ 2026-10-27（6125 · 审计 G1）：`未完成` 是**唯一台账**，债务与升级只差一栏 `类别`。
+    #   为什么不分表：分表就是第二套账本 —— 查询 / 承接 / 关闭 / 清理会各走一套（G1 的原病）。
+    #   老库加列走 `建库.补台账类别列`（幂等 ALTER），`create table if not exists` 不会给老表加列。
+    "create table if not exists 未完成(号 integer primary key, 缺什么 text not null, 落点 text, 验证命令 text, 类别 text not null default '债务')",
     # 语言 / 协议 / 工具强加的名（不在命名管辖内）—— 名字 + 说明（**为什么不归命名纪律管**）。
     "create table if not exists 命名例外(名字 TEXT PRIMARY KEY, 说明 TEXT)",
     # 判据 ⑲ 的**存量清单**（三类：超行数 / 入口超行数 / 入口有实现）。

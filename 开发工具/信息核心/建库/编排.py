@@ -70,6 +70,20 @@ def 清孤儿表(连接, 许表集: set) -> list:
     return 孤儿
 
 
+def 补台账类别列(连接) -> bool:
+    """老库的 `未完成` 表补上「类别」列 ⇒ 这次有没有补。
+
+    为何要它（6125 · 审计 G1）：`建表语句` 只有 `create table if not exists` —— 对**已经存在**的表
+    一列都不加。这张表在 2026-10-27 之前就建好了，光改建表语句，老库永远没有这一栏，升级与债务就还是
+    一笔糊涂账。迁移做成**幂等**：先 `pragma table_info`，缺列才 `alter table`，已有列不重复动。
+    """
+    列名集 = {列信息[1] for 列信息 in 连接.execute("pragma table_info(未完成)")}
+    if "类别" in 列名集:
+        return False
+    连接.execute("alter table 未完成 add column 类别 text not null default '债务'")
+    return True
+
+
 def 建源库(指定根: Path = None, 打读数: bool = False) -> dict:
     """建**规则库**（源表，受版本控制）⇒ 计数表。只重抽源表，不碰派生缓存。
 
@@ -86,6 +100,7 @@ def 建源库(指定根: Path = None, 打读数: bool = False) -> dict:
     规则连接 = sqlite3.connect(规则库)
     for 语句 in 表定义.建表语句:
         规则连接.execute(语句)
+    补台账类别列(规则连接)          # 老库补栏（幂等）；新库建表时已带这一栏，这里直接跳过
     规则连接.execute("insert or replace into 元 values(?,?)", ("生成物声明", 表定义.生成物声明))
     规则连接.execute("delete from 元 where 键 <> '生成物声明'")  # `元` 只留它；旧键是孤儿，见 表定义.py
     规则孤儿 = 清孤儿表(规则连接, set(表定义.源表) | {"元"})
