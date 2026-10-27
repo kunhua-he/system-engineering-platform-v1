@@ -80,7 +80,7 @@ fn 能力声明编号表(模块目录: &Path) -> Result<Vec<u32>, String> {
 
 /// 模块目录 → `包声明.json` 的 `实现版本`（主 · 次 · 构建）。
 fn 模块实现版本(模块目录: &Path) -> Result<(u32, u32, u32), String> {
-    let 声明件 = 模块目录.join(crate::常量::扩展声明件);
+    let 声明件 = 模块目录.join(crate::契约级常量::扩展声明件);
     let 声明文本 =
         fs::read_to_string(&声明件).map_err(|错误| format!("读不到 {}：{错误}", 声明件.display()))?;
     let 声明值 = crate::协议解析::解析协议值(&声明文本)

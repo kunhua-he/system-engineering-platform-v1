@@ -49,6 +49,7 @@ pub use v1_contract::声明数据::单次分配上限;
 pub use v1_contract::声明数据::分配对齐;
 pub use v1_contract::声明数据::整数字节宽度;
 pub use v1_contract::声明数据::留痕容量;
+pub use v1_contract::声明数据::磁盘预算;
 pub use v1_contract::声明数据::未定数常量;
 
 pub use v1_contract::声明数据::{号段类宽度, 号段类个数, 通知号段, 资源号段};

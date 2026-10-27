@@ -7,7 +7,7 @@ use std::collections::{HashMap, HashSet};
 
 use v1_contract::声明数据::{分配对齐, 单次分配上限};
 
-use crate::形状::{分配错误, 释放错误};
+use crate::分配错误形状::{分配错误, 释放错误};
 
 /// 单一跨边界分配器。
 ///

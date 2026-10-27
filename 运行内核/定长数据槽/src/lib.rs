@@ -20,14 +20,14 @@
 pub use v1_contract::{槽标志, 数据槽};
 pub use v1_contract::声明数据::整数字节宽度;
 
-pub use 常量::内联值域宽度;
+pub use 槽宽常量::内联值域宽度;
 pub use 错误::槽错误;
 pub use 判定::判定相容;
 pub use 整数模块::{放入整数, 取出整数};
 pub use 字节集::{放入字节, 取出字节};
 
-#[path = "定长数据槽/常量.rs"]
-mod 常量;
+#[path = "定长数据槽/槽宽常量.rs"]
+mod 槽宽常量;
 #[path = "定长数据槽/错误.rs"]
 mod 错误;
 #[path = "定长数据槽/判定.rs"]

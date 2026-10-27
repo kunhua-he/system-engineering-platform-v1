@@ -23,7 +23,7 @@ fn 取族路径(声明: &协议值) -> Result<Vec<String>, String> {
 }
 
 pub fn 读取索引(工具根: &Path, 请求: &索引请求) -> Result<协议值, String> {
-    let 根声明 = 读JSON件(&工具根.join(crate::常量::扩展根声明))?;
+    let 根声明 = 读JSON件(&工具根.join(crate::契约级常量::扩展根声明))?;
     if 文本字段(&根声明,"路径基准")? != "工作目录" { return Err("索引只认工作目录基准".to_owned()); }
     let 种类表 = 根声明.取成员("种类").and_then(协议值::取数组).ok_or("扩展根缺种类表")?;
     if 请求.路径.is_empty() && let Some(待选编号) = 请求.编号 {

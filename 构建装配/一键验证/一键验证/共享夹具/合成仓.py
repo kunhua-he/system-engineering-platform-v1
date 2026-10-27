@@ -255,7 +255,7 @@ def 干净合成仓() -> dict:
             "pub fn 调度() -> u64 { let 起始时刻 = Instant::now(); let _ = 起始时刻; 单项超时毫秒 }\n"
         ),
         "运行内核/调用留痕/Cargo.toml": '[package]\nname = "v1-trace"\nversion = "0.1.0"\n',
-        "运行内核/调用留痕/src/形状.rs": (
+        "运行内核/调用留痕/src/留痕记录形状.rs": (
             "pub struct 留痕条 { pub 耗时微秒: u64 }\n"
         ),
         "跨语言适配/适配器实现/Cargo.toml": '[package]\nname = "v1-adapter"\nversion = "0.1.0"\n',

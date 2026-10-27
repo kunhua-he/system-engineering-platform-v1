@@ -48,10 +48,10 @@
 //! 硬约束：零第三方依赖 · 标识符中文 · 形状只用定宽整数（无 `usize`/`isize`）·
 //! [`留痕缓冲::追加一条`] **不 panic、不返回 `Result`** · 三条 `const _` 判据在 `cargo check` 即判。
 
-pub use 形状::{留痕, 调用类};
+pub use 留痕记录形状::{留痕, 调用类};
 
-#[path = "形状.rs"]
-mod 形状;
+#[path = "留痕记录形状.rs"]
+mod 留痕记录形状;
 #[path = "缓冲.rs"]
 mod 缓冲;
 #[path = "指纹.rs"]
