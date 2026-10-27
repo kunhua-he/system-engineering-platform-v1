@@ -8,7 +8,7 @@
 """
 from pathlib import Path
 
-from .shell import 开工号形状
+from .命令执行 import 开工号形状
 from ..作业账本 import 连账本, 列作业
 
 

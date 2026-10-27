@@ -30,7 +30,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))  # 仓根：取共享门禁
 from 构建装配.门禁 import 自门禁  # noqa: E402
 
-from 查文件行数 import 核心
+from 查文件行数 import 行数判据
 
 
 def 入口函数(argv=None):
@@ -39,8 +39,8 @@ def 入口函数(argv=None):
     解析器.add_argument("--自测", action="store_true", help="反向样本自测")
     命令行参数 = 解析器.parse_args(argv)
     if 命令行参数.自测:
-        return 核心.跑自测()
-    return 核心.跑一遍(命令行参数.仓根 or os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        return 行数判据.跑自测()
+    return 行数判据.跑一遍(命令行参数.仓根 or os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
 if __name__ == "__main__":
@@ -48,6 +48,6 @@ if __name__ == "__main__":
         自门禁(
             起始时刻, 入口函数(), 尾巴余量毫秒=200,
             修法="本命令扫全仓行数 —— 树长大它自身会超顶。修法是分片（照 "
-                 "开发工具/取证/声明记录区反解.py 的 `--分片 i/n`）或按 mtime 缓存，别砍扫描面。",
+                 "开发工具/易语言取证/声明记录区反解.py 的 `--分片 i/n`）或按 mtime 缓存，别砍扫描面。",
         )
     )

@@ -17,7 +17,7 @@
 
 **为什么合成一个入口**：`开发规范.md` §六 定「入口 ≤120 行 · 零实现」。三个件各自带
 `__main__` 就各自算一个入口，而它们的实现在同目录的模块里 ⇒ 三个件全红。合成一个壳之后，
-`建库.py` · `查看.py` · `验证.py` 退回**普通模块**（上限 400 行），壳只做参数路由。
+`建库.py` · `只读查看服务.py` · `验证.py` 退回**普通模块**（上限 400 行），壳只做参数路由。
 """
 import sys
 import time
@@ -29,14 +29,14 @@ sys.path.insert(0, str(仓根))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import 表定义  # noqa: E402
-import 建库  # noqa: E402
+import 建库流程  # noqa: E402
 import 命名字典登记  # noqa: E402
 import 冻结基线  # noqa: E402
 import 记规则  # noqa: E402
 import 记条款  # noqa: E402
 import 记未完成  # noqa: E402
 import 落库  # noqa: E402
-import 查看  # noqa: E402
+import 只读查看服务  # noqa: E402
 import 验证  # noqa: E402
 
 用法文本 = """信息核心 —— 建库 / 查看 / 验证 / 命名字典登记 / 冻结基线 / 落库
@@ -61,15 +61,15 @@ import 验证  # noqa: E402
 def 入口函数(命令行参数: list) -> int:
     子命令, 余参数 = (命令行参数[0], 命令行参数[1:]) if 命令行参数 else ("", [])
     if 子命令 == "建库":
-        return 建库.入口函数(余参数)
+        return 建库流程.入口函数(余参数)
     if 子命令 == "建源库":
-        建库.建源库(打读数="--读数" in 余参数)
+        建库流程.建源库(打读数="--读数" in 余参数)
         return 0
     if 子命令 == "建派生库":
-        建库.建派生库(打读数="--读数" in 余参数)
+        建库流程.建派生库(打读数="--读数" in 余参数)
         return 0
     if 子命令 == "核源库":
-        退出码, 行表 = 建库.核源库()
+        退出码, 行表 = 建库流程.核源库()
         print("\n".join(行表))
         return 退出码
     if 子命令 in ("命名字典登记", "登记"):
@@ -90,7 +90,7 @@ def 入口函数(命令行参数: list) -> int:
         监听端口 = 表定义.默认端口
         if "--端口" in 余参数:
             监听端口 = int(余参数[余参数.index("--端口") + 1])
-        查看.起页面(监听端口)  # 永不返回
+        只读查看服务.起页面(监听端口)  # 永不返回
         return 0
     print(用法文本, file=sys.stderr)
     return 2

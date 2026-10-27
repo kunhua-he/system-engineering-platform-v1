@@ -4,7 +4,7 @@ import os
 import re
 import time
 from pathlib import Path
-from ..作业执行.shell import _取工作树
+from ..作业执行.命令执行 import _取工作树
 
 工具名 = "v1_search"
 工具说明 = ("有界只读搜索；`关键词` 收一个词或一张词表（1..8，多词一次搜，按词分组回执）；"
