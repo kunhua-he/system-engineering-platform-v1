@@ -24,7 +24,7 @@ def 注入_契约声明扩展名进名表(临根: Path) -> str:
     """
     登记件 = 临根 / "契约声明" / "冻结登记.json"
     配置表 = json.loads(登记件.read_text(encoding="utf-8"))
-    配置表["旁路"][0]["旁路走哪"] = "样例：落点 `扩展根目录/组合模块库/样例模块/src/lib.rs`"
+    配置表["冻结例外"][0]["例外怎么走"] = "样例：落点 `扩展根目录/组合模块库/样例模块/src/lib.rs`"
     登记件.write_text(json.dumps(配置表, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     路径 = 临根 / _样本件
     路径.parent.mkdir(parents=True, exist_ok=True)
