@@ -214,7 +214,7 @@ fn 跨源写请求_外站来源一律拒且不落件() {
     let 造应答 = 发请求(
         &服务,
         &外站请求(
-            "/接口/运维/程序文本",
+            "/接口/运维/文件",
             "Host: attacker.example\r\nOrigin: https://attacker.example\r\n\
              Sec-Fetch-Site: cross-site\r\nContent-Type: text/plain",
             &写作,
