@@ -158,6 +158,75 @@ pub fn 追加一行(路径: &Path, 源码行: &str) -> Result<(), String> {
         .map_err(|错误| format!("写不进 {}：{错误}", 路径.display()))
 }
 
+/// 回执里最多留最近多少次运行（一次运行 = 同一次跑案例写下的那一组行）。
+pub const 回执运行上限: usize = 500;
+
+/// 从一行回执里取一个**字串字段**的值（回执的形状由 [`回执::写成一行`] 固定，故按锚串取即可）。
+fn 取字串字段(源码行: &str, 字段名: &str) -> Option<String> {
+    let 锚文本 = format!("\"{字段名}\":\"");
+    let 锚位 = 源码行.find(&锚文本)?;
+    let 余文 = &源码行[锚位 + 锚文本.len()..];
+    let 尾位 = 余文.find('"')?;
+    Some(余文[..尾位].to_owned())
+}
+
+/// 一行的「运行键」＝ `提交哈希|跑的时间`：一次运行里每个案例各写一行，键相同。
+///
+/// 取不到这两个字段（坏行）⇒ `None` —— 坏行**自成一组**，不与任何运行混在一起，
+/// 免得它跟着某一组一起被删或一起被留。
+fn 取运行键(源码行: &str) -> Option<String> {
+    let 提交值 = 取字串字段(源码行, "提交哈希")?;
+    let 时刻值 = 取字串字段(源码行, "跑的时间")?;
+    Some(format!("{提交值}|{时刻值}"))
+}
+
+/// 收敛回执：**只留最近 [`回执运行上限`] 次运行** ⇒ 删掉的行数（0 = 没到界、一个字节都没动）。
+///
+/// # 为什么按「运行」整组留，不按行数截
+///
+/// 两个读方要的都是**完整的一次运行**：门禁读 `tail -n 1`（最新那次运行的最后一行，见
+/// `测试验证/测试案例/装门禁.sh`）；网关的 `POST /接口/运维/案例` 读「这次新落的那几行」。
+/// 按行数截断会把某次运行切成前后两截 —— 界是收敛了，读数却是错的。
+///
+/// # 写回是原子替换
+///
+/// 同目录先写 `<件名>.收敛中` 再 `rename` 到位：半行、半份都不能留在原路径上 ——
+/// 下一次 [`追加一行`] 会接在坏行后面，`坏回执行数` 就不再为零。
+pub fn 收敛回执(路径: &Path) -> Result<usize, String> {
+    let Ok(原文文本) = std::fs::read_to_string(路径) else {
+        // 回执件不在 = 从没跑过案例 ⇒ 没有要收敛的东西（不是错误，也不建空件）。
+        return Ok(0);
+    };
+    let 行表: Vec<&str> = 原文文本
+        .lines()
+        .filter(|源码行| !源码行.trim().is_empty())
+        .collect();
+    // 组起点表：每个元素 = 该组第一行在 `行表` 里的下标。
+    let mut 组起点表: Vec<usize> = Vec::new();
+    let mut 上一组键: Option<String> = None;
+    for (行号, 源码行) in 行表.iter().enumerate() {
+        let 本组键 = 取运行键(源码行).unwrap_or_else(|| format!("坏行{行号}"));
+        if 上一组键.as_deref() != Some(本组键.as_str()) {
+            组起点表.push(行号);
+            上一组键 = Some(本组键);
+        }
+    }
+    if 组起点表.len() <= 回执运行上限 {
+        return Ok(0);
+    }
+    let 保留起点 = 组起点表[组起点表.len() - 回执运行上限];
+    let mut 新文本 = 行表[保留起点..].join("\n");
+    新文本.push('\n');
+    let 临时路径 = 路径.with_extension("jsonl.收敛中");
+    std::fs::write(&临时路径, 新文本.as_bytes())
+        .map_err(|错误| format!("写不进收敛临时件 {}：{错误}", 临时路径.display()))?;
+    std::fs::rename(&临时路径, 路径).map_err(|错误| {
+        let _ = std::fs::remove_file(&临时路径);
+        format!("换不进 {}：{错误}", 路径.display())
+    })?;
+    Ok(保留起点)
+}
+
 /// `git rev-parse HEAD` 的**完整**值。取不到就报错——**不许拿一个空串或短哈希顶上**。
 pub fn 提交哈希(仓根: &Path) -> Result<String, String> {
     let 文本缓冲 = Command::new("git")
@@ -295,5 +364,72 @@ mod 测试 {
         assert_eq!(解析值.取成员("案例名").and_then(|成员值| 成员值.取字符串()), Some("首项\"次项"));
         assert_eq!(解析值.取成员("死在哪一层").and_then(|成员值| 成员值.取字符串()), Some("内核"));
         assert!(matches!(解析值.取成员("步骤").and_then(|成员值| 成员值.取数组()).map(<[crate::最小JSON::JSON值]>::len), Some(1)));
+    }
+
+    /// 造「一次运行的一行」假回执：字段形状与 [`回执::写成一行`] 一致，够收敛判据用。
+    fn 一次运行的一行(序号: u32) -> String {
+        format!(
+            "{{\"提交哈希\":\"{:040x}\",\"工作区是否干净\":true,\"案例名\":\"样本案例\",\
+             \"结果\":\"通过\",\"跑的时间\":\"2026-01-01T00:00:00Z\",\"说明\":\"样本\",\"步骤\":[]}}",
+            序号
+        )
+    }
+
+    /// 反证（回执组 · 按份）：1200 次运行（每次一行）⇒ 只留最近 [`回执运行上限`] 次运行的行。
+    #[test]
+    fn 收敛回执_千二百次运行只留五百次() {
+        let 样本根 = std::env::temp_dir().join(format!("v1-回执收敛-按份-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&样本根);
+        std::fs::create_dir_all(&样本根).expect("建样本目录");
+        let 回执路径 = 样本根.join("运行回执.jsonl");
+        let 全文本: String = (0..1200u32).map(|序号| 一次运行的一行(序号) + "\n").collect();
+        std::fs::write(&回执路径, 全文本.as_bytes()).expect("写样本回执");
+        let 删掉行数 = 收敛回执(&回执路径).expect("收敛回执");
+        let 收敛后 = std::fs::read_to_string(&回执路径).expect("读回收敛后的回执");
+        let 剩行表: Vec<&str> = 收敛后.lines().filter(|源码行| !源码行.trim().is_empty()).collect();
+        assert_eq!(删掉行数, 700, "1200 次运行 - 上限 500 次 = 该删 700 行");
+        assert_eq!(剩行表.len(), 500, "只留最近 500 次运行");
+        assert_eq!(剩行表[0], 一次运行的一行(700), "留下的必须是最新那 500 次（第 700 次起）");
+        assert_eq!(剩行表[499], 一次运行的一行(1199), "最后一行必须是最新那次运行");
+        let _ = std::fs::remove_dir_all(&样本根);
+    }
+
+    /// 反证（回执组 · 按龄）：刚好到上限 ⇒ 一个字节都不动（不许顺手「规范化」把旧行重排）。
+    #[test]
+    fn 收敛回执_未到界一个字节都不动() {
+        let 样本根 = std::env::temp_dir().join(format!("v1-回执收敛-按龄-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&样本根);
+        std::fs::create_dir_all(&样本根).expect("建样本目录");
+        let 回执路径 = 样本根.join("运行回执.jsonl");
+        let 原文本: String = (0..回执运行上限 as u32)
+            .map(|序号| 一次运行的一行(序号) + "\n")
+            .collect();
+        std::fs::write(&回执路径, 原文本.as_bytes()).expect("写样本回执");
+        let 删掉行数 = 收敛回执(&回执路径).expect("收敛回执");
+        let 现文本 = std::fs::read_to_string(&回执路径).expect("读回回执");
+        assert_eq!(删掉行数, 0, "刚好到上限 ⇒ 一行都不该删");
+        assert_eq!(现文本, 原文本, "没到界 ⇒ 文件必须逐字节不变");
+        let _ = std::fs::remove_dir_all(&样本根);
+    }
+
+    /// 反证（回执组 · 坏行）：坏行自成一组 —— 它该被当成「最旧的那几组」删掉，不跟运行混。
+    #[test]
+    fn 收敛回执_坏行自成一组() {
+        let 样本根 = std::env::temp_dir().join(format!("v1-回执收敛-坏行-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&样本根);
+        std::fs::create_dir_all(&样本根).expect("建样本目录");
+        let 回执路径 = 样本根.join("运行回执.jsonl");
+        // 坏行放在**最旧**那一端：它们各自成一组，于是「按最旧优先删到上限」删掉的正是它们。
+        let 全文本: String = "坏行样例上\n坏行样例中\n坏行样例下\n".to_owned()
+            + &(0..回执运行上限 as u32)
+                .map(|序号| 一次运行的一行(序号) + "\n")
+                .collect::<String>();
+        std::fs::write(&回执路径, 全文本.as_bytes()).expect("写样本回执");
+        let 删掉行数 = 收敛回执(&回执路径).expect("收敛回执");
+        let 收敛后 = std::fs::read_to_string(&回执路径).expect("读回收敛后的回执");
+        assert_eq!(删掉行数, 3, "三行坏行各自成组、合计三组 ⇒ 只删这三行");
+        assert!(!收敛后.contains("坏行样例"), "坏行该被删干净");
+        assert_eq!(收敛后.lines().filter(|源码行| !源码行.trim().is_empty()).count(), 500);
+        let _ = std::fs::remove_dir_all(&样本根);
     }
 }
