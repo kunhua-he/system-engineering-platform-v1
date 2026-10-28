@@ -30,6 +30,10 @@ if [ -z "$ROOT" ] || [ ! -f "$ROOT/rust-toolchain.toml" ]; then
   return 1 2>/dev/null || exit 1
 fi
 
+# ★ SDKROOT 必须显式导出：cc-rs 编 ring 的 C 段时靠它加 `-isysroot`；缺它时
+#   `-mmacosx-version-min=27.0 + --target=arm64-apple-macosx` 的编译会报
+#   `fatal error: TargetConditionals.h file not found`（新腿首次预构建必撞，2026-10-28 实测）。
+export SDKROOT="${SDKROOT:-$(xcrun --show-sdk-path 2>/dev/null)}"
 export CARGO_TARGET_DIR="$ROOT/构建环境/构建缓存"
 export RUSTUP_TOOLCHAIN="$(sed -n 's/^channel *= *"\(.*\)"/\1/p' "$ROOT/rust-toolchain.toml")"
 export CARGO_NET_OFFLINE=true
