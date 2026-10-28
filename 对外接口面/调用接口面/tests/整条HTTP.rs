@@ -272,7 +272,7 @@ mod 整条HTTP {
     ///
     /// 只看通知端点数空不空是旧判据的射程；本用例看的是**路由真收回了**：
     /// 卸载前 `POST /接口/调用` 调 `合成编号` ⇒ `成功: true`；
-    /// `POST /接口/生命周期 {动作:卸载}` ⇒ `派发结果: 成功` 且 `已装载声明数` 减一；
+    /// `POST /接口/运维/生命周期 {动作:卸载}` ⇒ `派发结果: 成功` 且 `已装载声明数` 减一；
     /// 卸载后再调同一号 ⇒ **不再是 `成功: true`**（返回槽里是错误码 1「提供者未载入」）。
     ///
     /// 重载路（同一身份可重装）在 Rust 面真跑：本仓的 `v1-adapter` 里
@@ -304,7 +304,7 @@ mod 整条HTTP {
         let (状态, 卸载结果) = 发请求(
             &服务,
             &format!(
-                "POST /接口/生命周期 HTTP/1.1\r\nHost: 127.0.0.1\r\nContent-Type: application/json\r\nContent-Length: {}\r\n\r\n{卸载请求体}",
+                "POST /接口/运维/生命周期 HTTP/1.1\r\nHost: 127.0.0.1\r\nContent-Type: application/json\r\nContent-Length: {}\r\n\r\n{卸载请求体}",
                 卸载请求体.len()
             ),
         );
@@ -347,7 +347,7 @@ mod 整条HTTP {
         let (状态, 应答体) = 发请求(
             &服务,
             &format!(
-                "POST /接口/生命周期 HTTP/1.1\r\nHost: 127.0.0.1\r\nContent-Type: application/json\r\nContent-Length: {}\r\n\r\n{卸载请求体}",
+                "POST /接口/运维/生命周期 HTTP/1.1\r\nHost: 127.0.0.1\r\nContent-Type: application/json\r\nContent-Length: {}\r\n\r\n{卸载请求体}",
                 卸载请求体.len()
             ),
         );
