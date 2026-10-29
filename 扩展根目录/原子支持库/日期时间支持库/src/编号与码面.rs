@@ -3,6 +3,8 @@ pub mod 能力号 {
     pub const 规范化日期: u32 = 2301;
     pub const 格式化日期: u32 = 2302;
     pub const 按格式解析: u32 = 2303;
+    pub const 取当前时间: u32 = 2304;
+    pub const 计算间隔: u32 = 2305;
 }
 pub mod 错误码 {
     pub const 参数不合法: u32 = 2301;
