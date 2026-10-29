@@ -300,6 +300,35 @@ fn 深合并值(基础值: &mut serde_json::Value, 覆盖值: &serde_json::Value
     *基础值 = 覆盖值.clone();
 }
 
+
+fn 转YAML值(候选值: &serde_json::Value) -> serde_yaml_ng::Value {
+    match 候选值 {
+        serde_json::Value::Null => serde_yaml_ng::Value::Null,
+        serde_json::Value::Bool(逻辑值) => serde_yaml_ng::Value::Bool(*逻辑值),
+        serde_json::Value::Number(数值项) => {
+            if let Some(整数项) = 数值项.as_i64() {
+                serde_yaml_ng::Value::Number(整数项.into())
+            } else if let Some(无符号项) = 数值项.as_u64() {
+                serde_yaml_ng::Value::Number(无符号项.into())
+            } else if let Some(浮点项) = 数值项.as_f64() {
+                serde_yaml_ng::Value::Number(浮点项.into())
+            } else {
+                serde_yaml_ng::Value::String(数值项.to_string())
+            }
+        }
+        serde_json::Value::String(文本项) => serde_yaml_ng::Value::String(文本项.clone()),
+        serde_json::Value::Array(列表项) => {
+            serde_yaml_ng::Value::Sequence(列表项.iter().map(转YAML值).collect())
+        }
+        serde_json::Value::Object(对象项) => serde_yaml_ng::Value::Mapping(
+            对象项
+                .iter()
+                .map(|(键名, 值项)| (serde_yaml_ng::Value::String(键名.clone()), 转YAML值(值项)))
+                .collect(),
+        ),
+    }
+}
+
 pub fn 执行文本操作(编号: u32, 文本参数表: &[&str]) -> Result<(u32, Vec<u8>), u32> {
     if 编号 == 能力号::反序列化CSV {
         if 文本参数表[1].chars().count() != 1 {
@@ -339,7 +368,7 @@ pub fn 执行文本操作(编号: u32, 文本参数表: &[&str]) -> Result<(u32,
             return Err(错误码::JSON资源受限);
         }
         let 解析值 = 解析文本(文本参数表[0])?;
-        let YAML文本 = serde_yaml_ng::to_string(&解析值).map_err(|_| 错误码::JSON参数不合法)?;
+        let YAML文本 = serde_yaml_ng::to_string(&转YAML值(&解析值)).map_err(|_| 错误码::JSON参数不合法)?;
         if YAML文本.len() > 65536 {
             return Err(错误码::JSON资源受限);
         }
