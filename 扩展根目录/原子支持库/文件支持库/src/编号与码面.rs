@@ -21,6 +21,7 @@ pub mod 能力号 {
     pub const 删除空目录: u32 = 3110;
     pub const 读取受控头部: u32 = 3111;
     pub const 读取受控全件: u32 = 3112;
+    pub const 受控原子写入: u32 = 3113;
 
 }
 
