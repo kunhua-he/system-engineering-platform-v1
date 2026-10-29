@@ -9,4 +9,5 @@ path = "src/lib.rs"
 v1-contract = { path = "../../../契约声明" }
 serde_json = { version = "=1.0.154", features = ["arbitrary_precision", "raw_value"] }
 sha2 = "=0.11.1"
+serde_yaml_ng = "=0.10.0"
 [workspace]

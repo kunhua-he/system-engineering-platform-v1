@@ -326,6 +326,25 @@ pub fn 执行文本操作(编号: u32, 文本参数表: &[&str]) -> Result<(u32,
         深合并值(&mut 基础值, &覆盖值);
         return Ok((4, 基础值.to_string().into_bytes()));
     }
+    if 编号 == 能力号::解析YAML {
+        if 文本参数表[0].len() > 65536 {
+            return Err(错误码::JSON资源受限);
+        }
+        let 解析值: serde_json::Value =
+            serde_yaml_ng::from_str(文本参数表[0]).map_err(|_| 错误码::JSON参数不合法)?;
+        return Ok((4, 解析值.to_string().into_bytes()));
+    }
+    if 编号 == 能力号::序列化YAML {
+        if 文本参数表[0].len() > 65536 {
+            return Err(错误码::JSON资源受限);
+        }
+        let 解析值 = 解析文本(文本参数表[0])?;
+        let YAML文本 = serde_yaml_ng::to_string(&解析值).map_err(|_| 错误码::JSON参数不合法)?;
+        if YAML文本.len() > 65536 {
+            return Err(错误码::JSON资源受限);
+        }
+        return Ok((4, YAML文本.into_bytes()));
+    }
     let 解析值 = 解析文本(文本参数表[0])?;
     if 编号 == 能力号::提取摘要 {
         let (类型名称, 成员数量) = match &解析值 {
