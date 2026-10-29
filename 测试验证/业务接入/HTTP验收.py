@@ -391,6 +391,11 @@ try:
     assert 回读结果['段数'] == 2 and 回读结果['表数'] == 1, 回读结果
     assert 回读结果['段落'][0]['样式'] == 'Heading1' and 回读结果['段落'][0]['文本'] == '一级标题', 回读结果
     assert 回读结果['表格'][0] == [['格一', '格二'], ['格三', '格四']], 回读结果
+    import zipfile as 归档模块
+    with 归档模块.ZipFile(DOCX路径) as 归档:
+        条目集 = set(归档.namelist())
+    assert 条目集 == {'[Content_Types].xml', '_rels/.rels', 'word/document.xml',
+                      'word/_rels/document.xml.rels', 'word/styles.xml'}, 条目集
     调用(6112, ['/private/tmp/不存在的示例.docx'], [4], True)
     with open('/private/tmp/坏包示例.docx', 'wb') as 坏包:
         坏包.write(b'not a zip at all' * 20)
