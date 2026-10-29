@@ -2,6 +2,7 @@ use crate::命令声明面::{函数表项数, 命令表内位, 造命令表};
 use crate::编号与码面::{能力号, 错误码};
 use v1_contract::{执行函数, 数据槽, 类型标签};
 unsafe fn 处理调用(编号: u32, 参数个数: u32, 参数表: *const 数据槽) -> Result<数据槽, u32> {
+    if 编号>=能力号::提交网络请求{return unsafe{crate::异步请求接口::处理异步(编号,参数个数,参数表)};}
     if 参数表.is_null() || 参数个数 != 造命令表()[命令表内位(编号)].参数个数 { return Err(错误码::参数不合法); }
     let 参数槽 = unsafe { std::slice::from_raw_parts(参数表, 参数个数 as usize) };
     let mut 字节参数表 = Vec::new();
@@ -27,12 +28,22 @@ pub unsafe extern "C-unwind" fn 获取文本入口(返回槽: *mut 数据槽, �
 pub unsafe extern "C-unwind" fn 提交JSON文本入口(返回槽: *mut 数据槽, 参数个数: u32, 参数表: *const 数据槽) { unsafe { 写调用(能力号::提交JSON文本, 返回槽, 参数个数, 参数表); } }
 pub unsafe extern "C-unwind" fn 获取字节入口(返回槽: *mut 数据槽, 参数个数: u32, 参数表: *const 数据槽) { unsafe { 写调用(能力号::获取字节, 返回槽, 参数个数, 参数表); } }
 pub unsafe extern "C-unwind" fn 下载文件入口(返回槽: *mut 数据槽, 参数个数: u32, 参数表: *const 数据槽) { unsafe { 写调用(能力号::下载文件, 返回槽, 参数个数, 参数表); } }
+pub unsafe extern "C-unwind" fn 提交网络请求入口(返回槽:*mut 数据槽,参数个数:u32,参数表:*const 数据槽){unsafe{写调用(能力号::提交网络请求,返回槽,参数个数,参数表);}}
+pub unsafe extern "C-unwind" fn 读取网络任务入口(返回槽:*mut 数据槽,参数个数:u32,参数表:*const 数据槽){unsafe{写调用(能力号::读取网络任务,返回槽,参数个数,参数表);}}
+pub unsafe extern "C-unwind" fn 取消网络任务入口(返回槽:*mut 数据槽,参数个数:u32,参数表:*const 数据槽){unsafe{写调用(能力号::取消网络任务,返回槽,参数个数,参数表);}}
+pub unsafe extern "C-unwind" fn 释放网络任务入口(返回槽:*mut 数据槽,参数个数:u32,参数表:*const 数据槽){unsafe{写调用(能力号::释放网络任务,返回槽,参数个数,参数表);}}
+pub unsafe extern "C-unwind" fn 构建查询串入口(返回槽:*mut 数据槽,参数个数:u32,参数表:*const 数据槽){unsafe{写调用(能力号::构建查询串,返回槽,参数个数,参数表);}}
 pub const fn 造函数表() -> [执行函数; 函数表项数] {
     let mut 本表 = [获取文本入口 as 执行函数; 函数表项数];
 本表[命令表内位(能力号::获取文本)] = 获取文本入口;
 本表[命令表内位(能力号::提交JSON文本)] = 提交JSON文本入口;
 本表[命令表内位(能力号::获取字节)] = 获取字节入口;
 本表[命令表内位(能力号::下载文件)] = 下载文件入口;
+本表[命令表内位(能力号::提交网络请求)]=提交网络请求入口;
+本表[命令表内位(能力号::读取网络任务)]=读取网络任务入口;
+本表[命令表内位(能力号::取消网络任务)]=取消网络任务入口;
+本表[命令表内位(能力号::释放网络任务)]=释放网络任务入口;
+本表[命令表内位(能力号::构建查询串)]=构建查询串入口;
 本表
 }
 pub(crate) const 执行函数表: [执行函数; 函数表项数] = 造函数表();

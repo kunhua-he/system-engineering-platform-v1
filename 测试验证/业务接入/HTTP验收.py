@@ -1,6 +1,8 @@
 """当前施工制品的正式 HTTP 定向验收，不代替合主干后复验。"""
 import base64
 import concurrent.futures
+import http.server
+import threading
 import json
 import pathlib
 import socket
@@ -117,10 +119,84 @@ try:
     for 令牌,预期 in [(10.0,True),(0.0,False)]:
         返回=调用(6101,[10,2.0,令牌,100.0,100.0,1],[1,2,2,2,2,1]);assert 返回['值'][0]['值']['放行']['值']==int(预期)
     调用(6101,[0,2.0,0.0,100.0,101.0,1],[1,2,2,2,2,1],True)
+    def 字典项(映射):
+        return {字段名: (dict(类型标签=3, 值=int(字段值)) if type(字段值) is bool
+                         else dict(类型标签=1, 值=字段值) if type(字段值) is int
+                         else dict(类型标签=2, 值=float(字段值)) if type(字段值) is float
+                         else dict(类型标签=4, 值=字段值)) for 字段名, 字段值 in 映射.items()}
+    assert 请求('接口/能力/2405')[1]['契约']['返回类型'] == 7
+    assert 请求('接口/能力/2406')[1]['契约']['返回类型'] == 103
+    assert 请求('接口/能力/2409')[1]['契约']['返回类型'] == 4
+    class 慢网页(http.server.BaseHTTPRequestHandler):
+        def do_GET(self):
+            time.sleep(1.2)
+            正文 = '中文慢响应'.encode()
+            self.send_response(200)
+            self.send_header('Content-Length', str(len(正文)))
+            self.end_headers()
+            self.wfile.write(正文)
+        def log_message(self, *位置参数):
+            pass
+    样本服务 = http.server.ThreadingHTTPServer(('127.0.0.1', 0), 慢网页)
+    服务线程 = threading.Thread(target=样本服务.serve_forever, daemon=True)
+    服务线程.start()
+    慢地址 = f'http://127.0.0.1:{样本服务.server_port}/慢'
+    def 等任务(句柄):
+        for _ in range(400):
+            读回结果 = 调用(2406, [句柄], [7])['值'][0]['值']
+            if 读回结果['已完成']['值'] == 1:
+                assert 读回结果['资源在途']['值'] == 0
+                return 读回结果
+            time.sleep(0.02)
+        raise AssertionError(('任务未在时限内完成', 句柄))
+    try:
+        assert 调用(2409, [字典项({'中文键': '中文值', '数': 2})], [101])['值'][0]['值'] == urllib.parse.urlencode({'中文键': '中文值', '数': 2})
+        assert 调用(2409, [字典项({})], [101])['值'][0]['值'] == ''
+        拒绝=调用(2409, [{'嵌套': dict(类型标签=101, 值={})}], [101], True)
+        assert 拒绝.get('错误', {}).get('码') == 2401, 拒绝
+        句柄 = 调用(2405, [字典项({'地址': 慢地址, '允许回环': True, '超时秒': 3.0})], [101])['值'][0]['值']
+        assert type(句柄) is int and 句柄 > 0
+        成功结果 = 等任务(句柄)
+        assert 成功结果['状态码']['值'] == 200, 成功结果
+        assert 成功结果['响应文本']['值'] == '中文慢响应', 成功结果
+        assert 成功结果['错误信息']['值'] == '', 成功结果
+        assert 调用(2408, [句柄], [7])['值'][0]['值'] == 1
+        调用(2406, [句柄], [7], True)
+        调用(2406, [0], [7], True)
+        取消句柄 = 调用(2405, [字典项({'地址': 慢地址, '允许回环': True, '超时秒': 5.0})], [101])['值'][0]['值']
+        调用(2407, [取消句柄], [7])
+        取消结果 = 等任务(取消句柄)
+        assert 取消结果.get('错误码', {}).get('值') in (2409, 2412), 取消结果
+        assert 调用(2408, [取消句柄], [7])['值'][0]['值'] == 1
+        私网句柄 = 调用(2405, [字典项({'地址': 'http://192.0.2.1/私网', '超时秒': 2.0})], [101])['值'][0]['值']
+        私网结果 = 等任务(私网句柄)
+        assert 私网结果['错误码']['值'] == 2410, 私网结果
+        调用(2408, [私网句柄], [7])
+        循环句柄 = 调用(2405, [字典项({'地址': 慢地址, '允许回环': True, '仅校验': True, '超时秒': 2.0})], [101])['值'][0]['值']
+        assert 等任务(循环句柄)['地址']['值'] == urllib.parse.quote(慢地址, safe=':/')
+        调用(2408, [循环句柄], [7])
+        for 错参 in [{'地址': 慢地址, '允许回环': True, '超时秒': 0.0},
+                     {'地址': 慢地址, '允许回环': True, '超时秒': 61.0},
+                     {'地址': 慢地址, '允许回环': True, '代理': 'http://127.0.0.1:4780'},
+                     {'地址': 慢地址, '允许回环': True, 'SSL验证': False},
+                     {'地址': 慢地址, '允许回环': True, '跟随重定向': True},
+                     {'地址': 慢地址, '允许回环': True, '未登记字段': '值'},
+                     {'地址': 'file:///etc/passwd'},
+                     {'地址': 'http://user:口令@127.0.0.1/凭据'}, ]:
+            拒绝参 = 调用(2405, [字典项(错参)], [101], True)
+            assert 拒绝参['错误']['码'] == 2401, (错参, 拒绝参)
+        上限拒绝 = 调用(2405, [字典项({'地址': 慢地址, '允许回环': True, '最大字节数': 4194305})], [101], True)
+        assert 上限拒绝['错误']['码'] == 2403
+        调用(2406, [-1], [1], True)
+    finally:
+        样本服务.shutdown()
+        样本服务.server_close()
+        服务线程.join(3)
+        assert not 服务线程.is_alive()
     def 并发样本(序号):
         返回=调用(3111,[str(样本根),'中文文本.txt',65537+序号],[4,4,1]);assert base64.b64decode(返回['值'][0]['值'])==大字节[:65537+序号]
     with concurrent.futures.ThreadPoolExecutor(max_workers=8) as 线程池:list(线程池.map(并发样本,range(24)))
-    print('首链真实HTTP通过：受控头部与整读50MiB/原子覆盖并发/限流/越界/链接/错型/8路24次并发；请求数',len(回执),flush=True)
+    print('首链真实HTTP通过：受控头部与整读50MiB/原子覆盖并发/限流/越界/链接/错型/网络任务慢响应与取消释放/8路24次并发；请求数',len(回执),flush=True)
 finally:
     进程.terminate()
     try:进程.wait(3)
