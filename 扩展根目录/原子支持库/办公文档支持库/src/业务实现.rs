@@ -1,3 +1,5 @@
+use std::io::{Read, Write};
+
 use crate::编号与码面::{能力号, 错误码};
 
 const 最大公式长度: usize = 4096;
@@ -22,6 +24,15 @@ pub fn 执行文本操作(编号: u32, 参数表: &[&str]) -> Result<(u32, Vec<u
         }
         let 块列表 = 切分块(源文本);
         return Ok((4, 组装块JSON(&块列表).into_bytes()));
+    }
+    if 编号 == 能力号::解析DOCX {
+        let 文件路径 = 取第几项文本(参数表, 0)?;
+        return Ok((4, 解析DOCX文档(文件路径)?.into_bytes()));
+    }
+    if 编号 == 能力号::生成DOCX {
+        let 内容文本 = 取第几项文本(参数表, 0)?;
+        let 输出路径 = 取第几项文本(参数表, 1)?;
+        return Ok((4, 生成DOCX文档(内容文本, 输出路径)?.into_bytes()));
     }
     Err(错误码::参数不合法)
 }
@@ -395,4 +406,193 @@ fn 转义文本(输入文本: &str) -> String {
         }
     }
     输出
+}
+
+// ── DOCX：解析与生成（zip 容器 + 手工 XML 抽取）────────────────
+
+const 文档条目标识: &str = "word/document.xml";
+
+fn 解压文档正文(文件路径: &str) -> Result<String, u32> {
+    let 字节流 = std::fs::read(文件路径).map_err(|_| 错误码::内容不合法)?;
+    let mut 压缩包 = zip::ZipArchive::new(std::io::Cursor::new(字节流))
+        .map_err(|_| 错误码::内容不合法)?;
+    let mut 条目 = 压缩包.by_name(文档条目标识).map_err(|_| 错误码::内容不合法)?;
+    let mut 文档正文 = String::new();
+    条目.read_to_string(&mut 文档正文).map_err(|_| 错误码::内容不合法)?;
+    Ok(文档正文)
+}
+
+fn 解析DOCX文档(文件路径: &str) -> Result<String, u32> {
+    let 文档正文 = 解压文档正文(文件路径)?;
+    let mut 段落表: Vec<(String, String)> = Vec::new();
+    let mut 表格表: Vec<Vec<Vec<String>>> = Vec::new();
+    let mut 余下正文 = 文档正文;
+    while let Some(表起点) = 余下正文.find("<w:tbl>") {
+        let 表内余段 = 余下正文[表起点..].to_string();
+        let Some(表止距) = 表内余段.find("</w:tbl>") else { break };
+        let 表终点 = 表起点 + 表止距 + "</w:tbl>".len();
+        let 表段文本 = 余下正文[表起点..表终点].to_string();
+        表格表.push(解析表格(&表段文本));
+        余下正文 = format!("{}{}", &余下正文[..表起点], &余下正文[表终点..]);
+    }
+    for 段落段 in 余下正文.split("</w:p>") {
+        let 段落拼文 = 拼合段文(段落段);
+        let 段落式名 = 取段落式名(段落段);
+        if 段落拼文.is_empty() && 段落式名.is_empty() {
+            continue;
+        }
+        段落表.push((段落式名, 段落拼文));
+    }
+    let mut 段落片段集: Vec<String> = Vec::new();
+    for (段落式名, 段落拼文) in &段落表 {
+        let mut 字段集: Vec<String> = Vec::new();
+        if !段落式名.is_empty() {
+            字段集.push(format!("\"样式\":\"{}\"", 转义文本(段落式名)));
+        }
+        字段集.push(format!("\"文本\":\"{}\"", 转义文本(段落拼文)));
+        段落片段集.push(format!("{{{}}}", 字段集.join(",")));
+    }
+    let mut 表格片段集: Vec<String> = Vec::new();
+    for 单表 in &表格表 {
+        let mut 行片段集: Vec<String> = Vec::new();
+        for 单行 in 单表 {
+            let 格片段集: Vec<String> = 单行
+                .iter()
+                .map(|格内拼文| format!("\"{}\"", 转义文本(格内拼文)))
+                .collect();
+            行片段集.push(format!("[{}]", 格片段集.join(",")));
+        }
+        表格片段集.push(format!("[{}]", 行片段集.join(",")));
+    }
+    Ok(format!(
+        "{{\"段落\":[{}],\"表格\":[{}],\"段数\":{},\"表数\":{}}}",
+        段落片段集.join(","),
+        表格片段集.join(","),
+        段落表.len(),
+        表格表.len()
+    ))
+}
+
+fn 解析表格(表段文本: &str) -> Vec<Vec<String>> {
+    let mut 行表集: Vec<Vec<String>> = Vec::new();
+    for 行段 in 表段文本.split("</w:tr>") {
+        if !行段.contains("<w:tc") {
+            continue;
+        }
+        let mut 格表集: Vec<String> = Vec::new();
+        for 格段 in 行段.split("</w:tc>") {
+            if !格段.contains("<w:tc") {
+                continue;
+            }
+            格表集.push(拼合段文(格段));
+        }
+        if !格表集.is_empty() {
+            行表集.push(格表集);
+        }
+    }
+    行表集
+}
+
+fn 取段落式名(段落段: &str) -> String {
+    let Some(式起点) = 段落段.find("<w:pStyle") else { return String::new() };
+    let 式余段 = &段落段[式起点..];
+    let Some(值起点) = 式余段.find("w:val=\"") else { return String::new() };
+    let 值余段 = &式余段[值起点 + 7..];
+    match 值余段.find('"') {
+        Some(值止距) => 值余段[..值止距].to_string(),
+        None => String::new(),
+    }
+}
+
+fn 拼合段文(段落段: &str) -> String {
+    let mut 拼文累积 = String::new();
+    let mut 游标位 = 0usize;
+    while let Some(标签距) = 段落段[游标位..].find("<w:t") {
+        let 标签起点 = 游标位 + 标签距;
+        let 标签后位 = 标签起点 + "<w:t".len();
+        let 紧随字 = 段落段[标签后位..].chars().next();
+        if 紧随字 != Some('>') && 紧随字 != Some(' ') {
+            游标位 = 标签后位;
+            continue;
+        }
+        let Some(头止距) = 段落段[标签起点..].find('>') else { break };
+        let 内容起点 = 标签起点 + 头止距 + 1;
+        let Some(尾距) = 段落段[内容起点..].find("</w:t>") else { break };
+        拼文累积.push_str(&反转义(&段落段[内容起点..内容起点 + 尾距]));
+        游标位 = 内容起点 + 尾距 + "</w:t>".len();
+    }
+    拼文累积
+}
+
+fn 反转义(输入文本: &str) -> String {
+    输入文本
+        .replace("&lt;", "<")
+        .replace("&gt;", ">")
+        .replace("&quot;", "\"")
+        .replace("&apos;", "'")
+        .replace("&amp;", "&")
+}
+
+fn 生成DOCX文档(内容文本: &str, 输出路径: &str) -> Result<String, u32> {
+    let 内容值: serde_json::Value =
+        serde_json::from_str(内容文本).map_err(|_| 错误码::参数不合法)?;
+    let mut 正文片段 = String::new();
+    if let Some(段表值) = 内容值.get("段落").and_then(|条目值| 条目值.as_array()) {
+        for 单段 in 段表值 {
+            let 段落拼文 = 单段.get("文本").and_then(|条目值| 条目值.as_str()).unwrap_or("");
+            let 段落式名 = 单段.get("样式").and_then(|条目值| 条目值.as_str()).unwrap_or("");
+            正文片段.push_str(&段落XML(段落拼文, 段落式名));
+        }
+    }
+    if let Some(表表值) = 内容值.get("表格").and_then(|条目值| 条目值.as_array()) {
+        for 单表 in 表表值 {
+            let Some(行表值) = 单表.as_array() else { continue };
+            正文片段.push_str("<w:tbl>");
+            for 单行 in 行表值 {
+                let Some(格表值) = 单行.as_array() else { continue };
+                正文片段.push_str("<w:tr>");
+                for 单格 in 格表值 {
+                    let 格内拼文 = 单格.as_str().unwrap_or("");
+                    正文片段.push_str("<w:tc><w:p><w:r><w:t xml:space=\"preserve\">");
+                    正文片段.push_str(&转义文本(格内拼文));
+                    正文片段.push_str("</w:t></w:r></w:p></w:tc>");
+                }
+                正文片段.push_str("</w:tr>");
+            }
+            正文片段.push_str("</w:tbl>");
+        }
+    }
+    let 文档XML = format!(
+        "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?><w:document xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\"><w:body>{}<w:sectPr/></w:body></w:document>",
+        正文片段
+    );
+    let 类型XML = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?><Types xmlns=\"http://schemas.openxmlformats.org/package/2006/content-types\"><Default Extension=\"rels\" ContentType=\"application/vnd.openxmlformats-package.relationships+xml\"/><Default Extension=\"xml\" ContentType=\"application/xml\"/><Override PartName=\"/word/document.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml\"/></Types>";
+    let 关系XML = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?><Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\"><Relationship Id=\"rId1\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument\" Target=\"word/document.xml\"/></Relationships>";
+    let 源文件 = std::fs::File::create(输出路径).map_err(|_| 错误码::写出失败)?;
+    let mut 压缩包 = zip::ZipWriter::new(源文件);
+    let 打包参数 = zip::write::SimpleFileOptions::default();
+    for (条目名, 条目内容) in [
+        ("[Content_Types].xml", 类型XML),
+        ("_rels/.rels", 关系XML),
+        (文档条目标识, 文档XML.as_str()),
+    ] {
+        压缩包.start_file(条目名, 打包参数).map_err(|_| 错误码::写出失败)?;
+        压缩包.write_all(条目内容.as_bytes()).map_err(|_| 错误码::写出失败)?;
+    }
+    压缩包.finish().map_err(|_| 错误码::写出失败)?;
+    let 字节数 = std::fs::metadata(输出路径).map(|元数据项| 元数据项.len()).unwrap_or(0);
+    Ok(format!("{{\"输出路径\":\"{}\",\"字节数\":{}}}", 转义文本(输出路径), 字节数))
+}
+
+fn 段落XML(段落拼文: &str, 段落式名: &str) -> String {
+    let 式片段 = if 段落式名.is_empty() {
+        String::new()
+    } else {
+        format!("<w:pPr><w:pStyle w:val=\"{}\"/></w:pPr>", 转义文本(段落式名))
+    };
+    format!(
+        "<w:p>{}<w:r><w:t xml:space=\"preserve\">{}</w:t></w:r></w:p>",
+        式片段,
+        转义文本(段落拼文)
+    )
 }
