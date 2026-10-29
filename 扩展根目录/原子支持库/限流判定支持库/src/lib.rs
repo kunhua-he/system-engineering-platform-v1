@@ -5,7 +5,12 @@
 mod 令牌判定面;
 #[path = "声明接口面.rs"]
 mod 声明接口面;
+#[path = "登录判定面.rs"]
+mod 登录判定面;
 pub use 声明接口面::取平台信息;
 #[cfg(test)]
 #[path = "令牌判定样本.rs"]
 mod 令牌判定样本;
+#[cfg(test)]
+#[path = "登录判定样本.rs"]
+mod 登录判定样本;
