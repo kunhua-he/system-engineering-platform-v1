@@ -5,19 +5,22 @@
   "生成命令": "$V1_PY 构建装配/形态装配/扩展指纹.py",
   "范围": "声明、Rust源码、Cargo清单与锁文件、程序文本、模块及技能制品；不含机器局部支持库制品、说明散文、缓存、指纹本身。",
   "指纹": {
-    "Cargo.lock": "5bdc3fa8c66fe035d74de436cf9c2fd75bd499004fdcd2e5b7783a724b34f54c",
-    "Cargo.toml": "b1fd326e12dfb18acfc1eea4821f9efb311385e28d647133083b80f08b02ebdc",
+    "Cargo.lock": "29d89a22eb38b40b21cec02ef9946ad64e2487c13081fac7ba5f0eafebb617e3",
+    "Cargo.toml": "ccb04f6524c5eba4bc4d87a7775eaf1110cb18b4ca6adef6dca7c0a3f5186034",
     "src/lib.rs": "783b8ca443e0d37009566e019c3ea988b2bee79a63e26a8671641975562333fc",
-    "src/业务实现.rs": "63144fe3f60153a02e6cfd37ed3418fa66483fd09fecf8ffffcb0a9ee6cbad38",
-    "src/命令声明面.rs": "1efc214bf1b5da98297ee286f4baa458a3202fd4da016cabb19ce45c3ac7dae5",
-    "src/执行函数面.rs": "211ac2f773af5f4b4d98154bfa0430e88a69668f09c74f6e5bc3bb042b63fe0b",
-    "src/编号与码面.rs": "9d0f3556e79ec2d405b9fb7d5d10d65b4e44704bafa784524e871190a32e96c3",
-    "src/静态声明.rs": "566fa59176f3c5ac4eb9861cb4b3e877040e5b69bb39cb1c9912c20014101a67",
-    "包声明.json": "d19501c7667133709fc7652e65222322bed7a9fdf62451b05b0ef363739dc6e3",
-    "能力声明/6110.json": "853459b40c84fbcee6ad063705a577d0e65f7afa6dbff1dc0873ef2c12ff1a56",
-    "能力声明/6111.json": "06b24faa6d6a0b7ccf5f70ae4386a678669e94036d784a3f9c598b06c82ff478",
+    "src/业务实现.rs": "daa0cae27fcc3083aaf8f4cc0ace6ae3d6783ce82198746edb8ee1aca329cdbc",
+    "src/命令声明面.rs": "8888ca42d6c4a151578d00f5d186c2e039b40e3ceda9a8b5f6c39fda721d8e8f",
+    "src/执行函数面.rs": "93dadaaafeba80cc4b6d8fd32c057aa565c254b85cc0ba95966b446ddce3861c",
+    "src/编号与码面.rs": "e4689ac731187611b0123d87dee1f8667792567f959fd76f8ce4050c219f6c4f",
+    "src/静态声明.rs": "eda752e1a5ab031bd53c6cacaca4f4538c1efb9186ec15cc92a660b1070ea60d",
+    "包声明.json": "947ae5ebf20aac6dedf09f74f1d41617377845d638157fa37522300ab41468ee",
+    "能力声明/6110.json": "60852acd34b651b5f6fca7671b9898ecfa712daed73dd14efedf483d712aeef2",
+    "能力声明/6111.json": "44b7f74076c0b22e74aab5c1d0e4bc6543245746fd319c6e280c18e772bcd27f",
+    "能力声明/6112.json": "265c6f159466f0e51bc5e29db75e1bf54db075c6c908d1d85c33eb442089c1bd",
+    "能力声明/6113.json": "5e3529d74ea43e60561d12166e1adfb09a19c86b5b0083200a8994a9ef128454",
     "错误码表/6101.json": "e727f7c3ca5debe157907bd808903dc9a0182f495e67ed0ff1183650724db284",
     "错误码表/6102.json": "2e93e0987bd128d7fecc626428ff87bddc032e63a92145645fd5d21c1cb98675",
-    "错误码表/6103.json": "340531e8c230f3f4020be0f594d1ba631e54590efb08b5da3e9e811a0c2ebf89"
+    "错误码表/6103.json": "340531e8c230f3f4020be0f594d1ba631e54590efb08b5da3e9e811a0c2ebf89",
+    "错误码表/6104.json": "f51005a340e7693ccc77f591ca683b1c278bed0c71855294076006c4c2b8d97a"
   }
 }

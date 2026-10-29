@@ -2,11 +2,14 @@ use v1_contract::错误码信息;
 pub mod 能力号 {
     pub const 求值公式: u32 = 6110;
     pub const 解析标记块: u32 = 6111;
+    pub const 解析DOCX: u32 = 6112;
+    pub const 生成DOCX: u32 = 6113;
 }
 pub mod 错误码 {
     pub const 参数不合法: u32 = 6101;
     pub const 计算失败: u32 = 6102;
     pub const 内容不合法: u32 = 6103;
+    pub const 写出失败: u32 = 6104;
 }
 pub const fn 码项(
     错误码值: u32,
@@ -28,7 +31,7 @@ pub const fn 码项(
     }
 }
 
-pub const 错误码信息表: [错误码信息; 3] = [
+pub const 错误码信息表: [错误码信息; 4] = [
     码项(
         错误码::参数不合法,
         "参数不合法\0".as_bytes(),
@@ -53,7 +56,15 @@ pub const 错误码信息表: [错误码信息; 3] = [
         0,
         0,
     ),
+    码项(
+        错误码::写出失败,
+        "写出失败\0".as_bytes(),
+        "目标路径不可写或写盘中断\0".as_bytes(),
+        1,
+        0,
+        0,
+    ),
 ];
 pub const fn 错误码信息表段() -> v1_contract::表段<错误码信息> {
-    v1_contract::表段::构造(错误码信息表.as_ptr(), 3)
+    v1_contract::表段::构造(错误码信息表.as_ptr(), 4)
 }

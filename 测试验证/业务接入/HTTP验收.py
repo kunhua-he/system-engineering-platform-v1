@@ -381,6 +381,21 @@ try:
     assert 块表结果['块'][3]['语言'] == 'python', 块表结果
     assert 块表结果['块'][3]['文本'] == 'print(1)', 块表结果
     assert 调用(6111, ['未闭合围栏\n```\n代码一行\n'], [4])['值'][0]['值'].count('代码块') == 1
+    assert 请求('接口/能力/6112')[1]['契约']['返回类型'] == 4
+    DOCX路径 = '/private/tmp/验收示例.docx'
+    内容JSON = json.dumps({'段落': [{'文本': '一级标题', '样式': 'Heading1'}, {'文本': '正文第一段'}],
+                           '表格': [[['格一', '格二'], ['格三', '格四']]]}, ensure_ascii=False)
+    生成结果 = json.loads(调用(6113, [内容JSON, DOCX路径], [4, 4])['值'][0]['值'])
+    assert 生成结果['字节数'] > 0 and 生成结果['输出路径'] == DOCX路径, 生成结果
+    回读结果 = json.loads(调用(6112, [DOCX路径], [4])['值'][0]['值'])
+    assert 回读结果['段数'] == 2 and 回读结果['表数'] == 1, 回读结果
+    assert 回读结果['段落'][0]['样式'] == 'Heading1' and 回读结果['段落'][0]['文本'] == '一级标题', 回读结果
+    assert 回读结果['表格'][0] == [['格一', '格二'], ['格三', '格四']], 回读结果
+    调用(6112, ['/private/tmp/不存在的示例.docx'], [4], True)
+    with open('/private/tmp/坏包示例.docx', 'wb') as 坏包:
+        坏包.write(b'not a zip at all' * 20)
+    调用(6112, ['/private/tmp/坏包示例.docx'], [4], True)
+    调用(6113, ['不是JSON', '/private/tmp/坏内容示例.docx'], [4, 4], True)
     def 解包槽(槽值):
         while isinstance(槽值, dict) and set(槽值) <= {'类型标签', '值'}:
             槽值 = 槽值['值']
