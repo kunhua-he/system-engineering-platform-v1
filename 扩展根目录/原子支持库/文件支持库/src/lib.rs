@@ -25,6 +25,11 @@ mod 文件操作桥;
 mod 业务实现;
 #[path = "静态声明.rs"]
 mod 静态声明;
+#[cfg(unix)]
+#[path = "受控路径面.rs"]
+mod 受控路径面;
+#[path = "受控写入面.rs"]
+mod 受控写入面;
 #[path = "受控读取面.rs"]
 mod 受控读取面;
 #[cfg(test)]
