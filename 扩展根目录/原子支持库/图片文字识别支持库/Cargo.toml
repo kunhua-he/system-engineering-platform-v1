@@ -1,0 +1,12 @@
+[package]
+name = "v1-vision-ocr"
+description = "图片文字识别支持库：macOS原生Vision中英文图片OCR"
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+[lib]
+name = "v1_vision_ocr"
+path = "src/lib.rs"
+[dependencies]
+v1-contract = { path = "../../../契约声明" }
+[workspace]
