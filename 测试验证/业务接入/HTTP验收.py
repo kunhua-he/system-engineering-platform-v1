@@ -4,6 +4,7 @@ import concurrent.futures
 import json
 import pathlib
 import socket
+import shutil
 import sys
 import subprocess
 import time
@@ -26,7 +27,12 @@ def 请求(路径,载荷=None):
         with 连接.open(请求对象,timeout=5) as 响应: 状态,响应正文=响应.status,json.load(响应)
     except urllib.error.HTTPError as 错误:
         状态,响应正文=错误.code,json.load(错误)
-    回执.append(dict(路径=路径,载荷=载荷,状态=状态,返回=响应正文))
+    记录返回 = 响应正文
+    if 载荷 is not None and 载荷.get('编号') == 3112:
+        记录返回 = dict(成功=响应正文.get('成功'), 错误=响应正文.get('错误'),
+                        返回类型=响应正文.get('值', [{}])[0].get('类型标签'),
+                        编码字符数=len(响应正文.get('值', [{}])[0].get('值', '')) if 响应正文.get('成功') else 0)
+    回执.append(dict(路径=路径,载荷=载荷,状态=状态,返回=记录返回))
     return 状态,响应正文
 
 def 调用(编号,值,类型,失败=False):
@@ -61,6 +67,18 @@ try:
         调用(3111,[str(样本根),路径,100],[4,4,1],True)
     调用(3111,[str(样本根),'中文文本.txt',1048577],[4,4,1],True)
     调用(3111,[str(样本根),'中文文本.txt',1.0],[4,4,2],True)
+    assert 请求('接口/能力/3112')[1]['契约']['返回类型'] == 5
+    for 请求字节数 in [0, 65537, 5242881, 52428800]:
+        整件内容 = b'V' * 请求字节数
+        (样本根/'整件样本.bin').write_bytes(整件内容)
+        返回 = 调用(3112, [str(样本根), '整件样本.bin', 请求字节数], [4,4,1])
+        assert base64.b64decode(返回['值'][0]['值']) == 整件内容
+    调用(3112, [str(样本根), '整件样本.bin', 52428799], [4,4,1], True)
+    for 请求字节数 in [-1, 52428801]:
+        调用(3112, [str(样本根), '整件样本.bin', 请求字节数], [4,4,1], True)
+    for 整件路径 in ['../越界', '/绝对路径', '不存在文本.txt', '.', '目录链接/中文文本.txt', '文件链接']:
+        调用(3112, [str(样本根), 整件路径, 52428800], [4,4,1], True)
+    调用(3112, [str(样本根), '整件样本.bin', 1.0], [4,4,2], True)
     for 失败次数,锁定 in [(0,0),(4,0),(5,1),(6,1)]:
         返回=调用(6102,[失败次数,5],[1,1]);assert 返回['值'][0]['值']==锁定
     调用(6102,[-1,5],[1,1],True)
@@ -71,7 +89,7 @@ try:
     def 并发样本(序号):
         返回=调用(3111,[str(样本根),'中文文本.txt',65537+序号],[4,4,1]);assert base64.b64decode(返回['值'][0]['值'])==大字节[:65537+序号]
     with concurrent.futures.ThreadPoolExecutor(max_workers=8) as 线程池:list(线程池.map(并发样本,range(24)))
-    print('首链真实HTTP通过：受控读取/限流/越界/链接/错型/8路24次并发；请求数',len(回执),flush=True)
+    print('首链真实HTTP通过：受控头部与整读50MiB/限流/越界/链接/错型/8路24次并发；请求数',len(回执),flush=True)
 finally:
     进程.terminate()
     try:进程.wait(3)
@@ -79,3 +97,4 @@ finally:
     日志.close()
     (缓存/'真实回执.json').write_text(json.dumps(回执,ensure_ascii=False,indent=2))
     assert 进程.poll() is not None
+    if (缓存/'样本文件').exists(): shutil.rmtree(缓存/'样本文件')
