@@ -19,6 +19,8 @@ struct 网络任务条目 {
 }
 #[derive(Default)]
 struct 网络任务总表 {任务条目表:HashMap<u64,网络任务条目>,停止接收:bool}
+/// 完成后结果可读窗口；与平台十秒硬顶同口径，过期即回收。
+const 结果保留时长:Duration=Duration::from_secs(10);
 static 网络任务存储:OnceLock<Mutex<网络任务总表>>=OnceLock::new();
 fn 任务表锁()->Result<std::sync::MutexGuard<'static,网络任务总表>,u32>{网络任务存储.get_or_init(Default::default).lock().map_err(|_|错误码::资源受限)}
 
@@ -29,7 +31,7 @@ impl 网络任务总表 {
         }
         self.任务条目表.retain(|_,任务条目|{
             let 线程已退=任务条目.工作线程.as_ref().is_some_and(JoinHandle::is_finished);
-            let 结果已过期=任务条目.完成时刻.is_some_and(|完成时刻|完成时刻.elapsed()>=Duration::from_secs(60));
+            let 结果已过期=任务条目.完成时刻.is_some_and(|完成时刻|完成时刻.elapsed()>=结果保留时长);
             if 线程已退 && (任务条目.丢弃结果||结果已过期){
                 if let Some(工作线程)=任务条目.工作线程.take(){let _=工作线程.join();}
                 false

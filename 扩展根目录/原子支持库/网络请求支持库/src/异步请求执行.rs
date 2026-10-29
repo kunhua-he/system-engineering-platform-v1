@@ -38,8 +38,8 @@ impl 网络请求说明 {
         if 参数映射.keys().any(|字段名| !合法字段.contains(&字段名.as_str())) { return Err(错误码::参数不合法); }
         let 请求地址 = URL地址::parse(参数映射.get("地址").and_then(Value::as_str).ok_or(错误码::参数不合法)?).map_err(|_|错误码::参数不合法)?;
         if !["http","https"].contains(&请求地址.scheme()) || 请求地址.host_str().is_none() || !请求地址.username().is_empty() || 请求地址.password().is_some() || 请求地址.fragment().is_some() { return Err(错误码::参数不合法); }
-        let 超时秒数 = 参数映射.get("超时秒").map(|取值|取值.as_f64().ok_or(错误码::参数不合法)).transpose()?.unwrap_or(10.0);
-        if !超时秒数.is_finite() || 超时秒数<=0.0 || 超时秒数>60.0 { return Err(错误码::参数不合法); }
+        let 超时秒数 = 参数映射.get("超时秒").map(|取值|取值.as_f64().ok_or(错误码::参数不合法)).transpose()?.unwrap_or(5.0);
+        if !超时秒数.is_finite() || 超时秒数<=0.0 || 超时秒数>5.0 { return Err(错误码::参数不合法); }
         let 响应上限 = 参数映射.get("最大字节数").map(|取值|取值.as_u64().ok_or(错误码::参数不合法)).transpose()?.unwrap_or(2*1024*1024);
         if 响应上限==0 || 响应上限>4*1024*1024 { return Err(错误码::资源受限); }
         let 取逻辑值 = |字段名: &str, 默认值: bool| -> Result<bool,u32> { 参数映射.get(字段名).map(|取值|取值.as_bool().ok_or(错误码::参数不合法)).transpose().map(|取值|取值.unwrap_or(默认值)) };
