@@ -10,6 +10,9 @@ pub mod 能力号 {
     pub const 按字段排序: u32 = 5208;
     pub const 列表添加: u32 = 5209;
     pub const 列表移除: u32 = 5210;
+    pub const 展平字典: u32 = 5211;
+    pub const 展平结构条目: u32 = 5212;
+    pub const 规范化条目指纹: u32 = 5213;
 }
 pub mod 错误码 {
     pub const JSON参数不合法: u32 = 5201;

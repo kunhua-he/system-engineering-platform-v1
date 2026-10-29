@@ -112,6 +112,113 @@ fn 取比较键<'a>(条目: &'a serde_json::Value, 字段名: &str, 直接匹配
     }
 }
 
+
+fn 标量文本(候选值: &serde_json::Value) -> String {
+    match 候选值 {
+        serde_json::Value::String(内文) => 内文.clone(),
+        serde_json::Value::Null => String::new(),
+        serde_json::Value::Bool(逻辑值) => {
+            if *逻辑值 {
+                "真".to_owned()
+            } else {
+                "假".to_owned()
+            }
+        }
+        其他值 => 其他值.to_string(),
+    }
+}
+
+fn 拼接路径(路径前缀: &str, 分隔符: &str, 末段: &str) -> String {
+    if 路径前缀.is_empty() {
+        末段.to_owned()
+    } else {
+        format!("{路径前缀}{分隔符}{末段}")
+    }
+}
+
+fn 展平字典递归(
+    候选值: &serde_json::Value,
+    路径前缀: &str,
+    分隔符: &str,
+    剩余深度: usize,
+    收录: &mut serde_json::Map<String, serde_json::Value>,
+) {
+    match 候选值 {
+        serde_json::Value::Object(成员表) if 剩余深度 > 1 => {
+            for (字段名, 字段值) in 成员表 {
+                展平字典递归(字段值, &拼接路径(路径前缀, 分隔符, 字段名), 分隔符, 剩余深度 - 1, 收录);
+            }
+        }
+        其他值 => {
+            收录.insert(路径前缀.to_owned(), 其他值.clone());
+        }
+    }
+}
+
+struct 展平上下文<'a> {
+    分隔符: &'a str,
+    索引格式: &'a str,
+    超深标记: &'a str,
+    根路径: &'a str,
+    最大条目数: usize,
+    条目表: Vec<serde_json::Value>,
+    已截断: bool,
+}
+
+fn 渲染索引(格式: &str, 序号: usize) -> String {
+    格式.replace("{索引}", &序号.to_string())
+}
+
+fn 展平条目递归(候选值: &serde_json::Value, 路径: &str, 剩余深度: usize, 上下文: &mut 展平上下文<'_>) {
+    if 上下文.条目表.len() >= 上下文.最大条目数 {
+        上下文.已截断 = true;
+        return;
+    }
+    match 候选值 {
+        serde_json::Value::Object(成员表) if 剩余深度 > 0 => {
+            if 成员表.is_empty() {
+                上下文.条目表.push(serde_json::json!({
+                    "路径": if 路径.is_empty() { 上下文.根路径 } else { 路径 },
+                    "值": serde_json::Value::Object(成员表.clone()),
+                    "超深": false,
+                }));
+                return;
+            }
+            for (字段名, 字段值) in 成员表 {
+                展平条目递归(字段值, &拼接路径(路径, 上下文.分隔符, 字段名), 剩余深度 - 1, 上下文);
+            }
+        }
+        serde_json::Value::Array(列表值) if 剩余深度 > 0 => {
+            if 列表值.is_empty() {
+                上下文.条目表.push(serde_json::json!({
+                    "路径": if 路径.is_empty() { 上下文.根路径 } else { 路径 },
+                    "值": serde_json::Value::Array(Vec::new()),
+                    "超深": false,
+                }));
+                return;
+            }
+            for (序号, 元素值) in 列表值.iter().enumerate() {
+                let 索引段 = 渲染索引(上下文.索引格式, 序号);
+                展平条目递归(元素值, &拼接路径(路径, 上下文.分隔符, &索引段), 剩余深度 - 1, 上下文);
+            }
+        }
+        serde_json::Value::Object(_) | serde_json::Value::Array(_) => {
+            上下文.条目表.push(serde_json::json!({
+                "路径": if 路径.is_empty() { 上下文.根路径 } else { 路径 },
+                "值": 上下文.超深标记,
+                "超深": true,
+            }));
+        }
+        标量值 => {
+            上下文.条目表.push(serde_json::json!({
+                "路径": if 路径.is_empty() { 上下文.根路径 } else { 路径 },
+                "值": 标量值.clone(),
+                "超深": false,
+            }));
+        }
+    }
+}
+
 pub fn 执行文本操作(编号: u32, 文本参数表: &[&str]) -> Result<(u32, Vec<u8>), u32> {
     let 解析值 = 解析文本(文本参数表[0])?;
     if 编号 == 能力号::提取摘要 {
@@ -222,6 +329,103 @@ pub fn 执行文本操作(编号: u32, 文本参数表: &[&str]) -> Result<(u32,
                 列表值.remove(命中位置);
             }
             serde_json::Value::Array(列表值).to_string()
+        }
+        能力号::展平字典 => {
+            let 数据值 = 解析文本(文本参数表[0])?;
+            let 分隔符 = 文本参数表[1];
+            let 保留扁平键 = 取逻辑文本(文本参数表[2])?;
+            let 最大深度: usize = 文本参数表[3]
+                .trim()
+                .parse()
+                .map_err(|_| 错误码::JSON参数不合法)?;
+            if 最大深度 == 0 || 最大深度 > 64 {
+                return Err(错误码::JSON参数不合法);
+            }
+            let mut 收录 = serde_json::Map::new();
+            match &数据值 {
+                serde_json::Value::Object(成员表) => {
+                    for (字段名, 字段值) in 成员表 {
+                        let 是标量 = !字段值.is_object();
+                        if 是标量 && !保留扁平键 {
+                            continue;
+                        }
+                        展平字典递归(字段值, 字段名, 分隔符, 最大深度, &mut 收录);
+                    }
+                }
+                其他值 => {
+                    if 保留扁平键 {
+                        收录.insert(String::new(), 其他值.clone());
+                    }
+                }
+            }
+            serde_json::Value::Object(收录).to_string()
+        }
+        能力号::展平结构条目 => {
+            let 数据值 = 解析文本(文本参数表[0])?;
+            let 最大深度: usize = 文本参数表[3]
+                .trim()
+                .parse()
+                .map_err(|_| 错误码::JSON参数不合法)?;
+            let 最大条目数: usize = 文本参数表[4]
+                .trim()
+                .parse()
+                .map_err(|_| 错误码::JSON参数不合法)?;
+            if 最大深度 == 0 || 最大深度 > 64 || 最大条目数 == 0 || 最大条目数 > 100_000 {
+                return Err(错误码::JSON参数不合法);
+            }
+            let mut 上下文 = 展平上下文 {
+                分隔符: 文本参数表[1],
+                索引格式: 文本参数表[2],
+                超深标记: 文本参数表[5],
+                根路径: 文本参数表[6],
+                最大条目数,
+                条目表: Vec::new(),
+                已截断: false,
+            };
+            展平条目递归(&数据值, "", 最大深度, &mut 上下文);
+            serde_json::json!({
+                "条目列表": 上下文.条目表,
+                "总条目数": 上下文.条目表.len(),
+                "已截断": 上下文.已截断,
+            })
+            .to_string()
+        }
+        能力号::规范化条目指纹 => {
+            let 条目表 = 取列表(文本参数表[0])?;
+            let 字段顺序: Vec<String> = match 解析文本(文本参数表[1])? {
+                serde_json::Value::Array(字段值表) => 字段值表
+                    .iter()
+                    .map(|字段值| 字段值.as_str().unwrap_or_default().to_owned())
+                    .collect(),
+                _ => return Err(错误码::JSON类型不符),
+            };
+            if 字段顺序.is_empty() || 字段顺序.len() > 64 {
+                return Err(错误码::JSON参数不合法);
+            }
+            let 条目分隔符 = 文本参数表[2];
+            let 字段分隔符 = 文本参数表[3];
+            let mut 行表: Vec<String> = Vec::with_capacity(条目表.len());
+            for 条目项 in &条目表 {
+                let mut 字段表: Vec<String> = Vec::with_capacity(字段顺序.len());
+                for 字段名 in &字段顺序 {
+                    let 字段值 = 条目项.get(字段名).unwrap_or(&serde_json::Value::Null);
+                    字段表.push(标量文本(字段值));
+                }
+                行表.push(字段表.join(字段分隔符));
+            }
+            let 规范化文本 = 行表.join(条目分隔符);
+            if 规范化文本.len() > 65536 {
+                return Err(错误码::JSON资源受限);
+            }
+            use sha2 as 摘要算法;
+            use sha2::Digest as 摘要接口;
+            let mut 摘要器 = 摘要算法::Sha256::new();
+            摘要接口::update(&mut 摘要器, 规范化文本.as_bytes());
+            let 十六进制 = 摘要接口::finalize(摘要器)
+                .iter()
+                .map(|字节| format!("{字节:02x}"))
+                .collect::<String>();
+            serde_json::json!({ "指纹": 十六进制 }).to_string()
         }
         _ => return Err(错误码::JSON参数不合法),
     };
