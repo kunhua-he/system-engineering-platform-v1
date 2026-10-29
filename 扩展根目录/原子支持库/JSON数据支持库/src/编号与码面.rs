@@ -15,6 +15,8 @@ pub mod 能力号 {
     pub const 规范化条目指纹: u32 = 5213;
     pub const 反序列化CSV: u32 = 5214;
     pub const 深合并: u32 = 5215;
+    pub const 解析YAML: u32 = 5216;
+    pub const 序列化YAML: u32 = 5217;
 }
 pub mod 错误码 {
     pub const JSON参数不合法: u32 = 5201;
