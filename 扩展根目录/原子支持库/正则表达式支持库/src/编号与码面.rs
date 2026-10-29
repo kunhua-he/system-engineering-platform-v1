@@ -3,6 +3,7 @@ pub mod 能力号 {
     pub const 提取匹配: u32 = 4401;
     pub const 字面替换: u32 = 4402;
     pub const 分割文本: u32 = 4403;
+    pub const 解析区间: u32 = 4404;
 }
 pub mod 错误码 {
     pub const 正则参数不合法: u32 = 4401;
