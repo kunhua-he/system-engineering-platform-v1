@@ -4,6 +4,12 @@ pub mod 能力号 {
     pub const 按指针取值: u32 = 5202;
     pub const 按指针取文本: u32 = 5203;
     pub const 提取摘要: u32 = 5204;
+    pub const 按字段查找: u32 = 5205;
+    pub const 过滤: u32 = 5206;
+    pub const 映射转换: u32 = 5207;
+    pub const 按字段排序: u32 = 5208;
+    pub const 列表添加: u32 = 5209;
+    pub const 列表移除: u32 = 5210;
 }
 pub mod 错误码 {
     pub const JSON参数不合法: u32 = 5201;
