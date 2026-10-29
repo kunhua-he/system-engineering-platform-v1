@@ -19,6 +19,7 @@ pub mod 能力号 {
     pub const 复制文件: u32 = 3108;
     pub const 删除文件: u32 = 3109;
     pub const 删除空目录: u32 = 3110;
+    pub const 读取受控头部: u32 = 3111;
 
 }
 
