@@ -24,6 +24,7 @@ unsafe fn 写调用(编号: u32, 返回槽: *mut 数据槽, 参数个数: u32, �
     unsafe { *返回槽 = 处理调用(编号, 参数个数, 参数表).unwrap_or_else(|失败码| 数据槽::内联槽(类型标签::构造(u32::MAX), 失败码 as u64, 4)); }
 }
 pub unsafe extern "C-unwind" fn 读取文本入口(返回槽: *mut 数据槽, 参数个数: u32, 参数表: *const 数据槽) { unsafe { 写调用(能力号::读取文本, 返回槽, 参数个数, 参数表); } }
+pub unsafe extern "C-unwind" fn 读取环境文件入口(返回槽: *mut 数据槽, 参数个数: u32, 参数表: *const 数据槽) { unsafe { 写调用(能力号::读取环境文件, 返回槽, 参数个数, 参数表); } }
 pub unsafe extern "C-unwind" fn 读取字节入口(返回槽: *mut 数据槽, 参数个数: u32, 参数表: *const 数据槽) { unsafe { 写调用(能力号::读取字节, 返回槽, 参数个数, 参数表); } }
 pub unsafe extern "C-unwind" fn 新建文本入口(返回槽: *mut 数据槽, 参数个数: u32, 参数表: *const 数据槽) { unsafe { 写调用(能力号::新建文本, 返回槽, 参数个数, 参数表); } }
 pub unsafe extern "C-unwind" fn 新建字节入口(返回槽: *mut 数据槽, 参数个数: u32, 参数表: *const 数据槽) { unsafe { 写调用(能力号::新建字节, 返回槽, 参数个数, 参数表); } }
