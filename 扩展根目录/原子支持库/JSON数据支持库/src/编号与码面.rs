@@ -13,6 +13,8 @@ pub mod 能力号 {
     pub const 展平字典: u32 = 5211;
     pub const 展平结构条目: u32 = 5212;
     pub const 规范化条目指纹: u32 = 5213;
+    pub const 反序列化CSV: u32 = 5214;
+    pub const 深合并: u32 = 5215;
 }
 pub mod 错误码 {
     pub const JSON参数不合法: u32 = 5201;
