@@ -26,7 +26,124 @@ fn 装列表(文本列表: Vec<String>) -> Result<(u32, Vec<u8>), u32> {
         编码复合值载荷(100, &元素表).map_err(|_| 错误码::正则资源受限)?,
     ))
 }
+
+fn 解析单段(段文本: &str) -> Result<Option<(i64, i64)>, u32> {
+    let 去空白 = 段文本.trim();
+    if 去空白.is_empty() {
+        return Ok(None);
+    }
+    let 取数 = |片段: &str| -> Result<i64, u32> {
+        let 页码值: i64 = 片段
+            .trim()
+            .parse()
+            .map_err(|_| 错误码::正则参数不合法)?;
+        if !(1..=1_000_000).contains(&页码值) {
+            return Err(错误码::正则参数不合法);
+        }
+        Ok(页码值)
+    };
+    if let Some((左段, 右段)) = 去空白.split_once('-') {
+        return Ok(Some((取数(左段)?, 取数(右段)?)));
+    }
+    if let Some((左段, 右段)) = 去空白.split_once('~') {
+        return Ok(Some((取数(左段)?, 取数(右段)?)));
+    }
+    let 单值 = 取数(去空白)?;
+    Ok(Some((单值, 单值)))
+}
+
+fn 装区间结果(
+    是否有效值: bool,
+    起始值: i64,
+    结束值: i64,
+    数值表: Vec<i64>,
+) -> Result<(u32, Vec<u8>), u32> {
+    let 列表元素 = 数值表
+        .into_iter()
+        .map(|页码值| 复合元素 {
+            名称: String::new(),
+            值: 复合值::整数值(页码值),
+        })
+        .collect::<Vec<_>>();
+    let 元素表 = vec![
+        复合元素 {
+            名称: "是否有效".into(),
+            值: 复合值::逻辑型(是否有效值),
+        },
+        复合元素 {
+            名称: "起始".into(),
+            值: 复合值::整数值(起始值),
+        },
+        复合元素 {
+            名称: "结束".into(),
+            值: 复合值::整数值(结束值),
+        },
+        复合元素 {
+            名称: "数值列表".into(),
+            值: 复合值::复合 {
+                标签: 100,
+                元素表: 列表元素,
+            },
+        },
+    ];
+    Ok((
+        103,
+        编码复合值载荷(103, &元素表).map_err(|_| 错误码::正则资源受限)?,
+    ))
+}
+
+fn 解析区间操作(文本参数表: &[&str]) -> Result<(u32, Vec<u8>), u32> {
+    let 区间文本 = 文本参数表[0].trim();
+    let 模式文本 = 文本参数表[1].trim();
+    if 区间文本.len() > 1024 {
+        return Err(错误码::正则资源受限);
+    }
+    let 是范围模式 = match 模式文本 {
+        "范围" => true,
+        "集合" => false,
+        _ => return Err(错误码::正则参数不合法),
+    };
+    if 区间文本.is_empty() {
+        return 装区间结果(false, 0, 0, Vec::new());
+    }
+    if 是范围模式 {
+        if 区间文本.split(',').count() != 1 {
+            return Err(错误码::正则参数不合法);
+        }
+        return match 解析单段(区间文本)? {
+            Some((起值, 止值)) if 起值 <= 止值 => 装区间结果(true, 起值, 止值, Vec::new()),
+            _ => 装区间结果(false, 0, 0, Vec::new()),
+        };
+    }
+    let mut 数值表: Vec<i64> = Vec::new();
+    let mut 有效标记 = false;
+    for 段文本 in 区间文本.split(',') {
+        let 段结果 = match 解析单段(段文本)? {
+            Some(段值) => 段值,
+            None => continue,
+        };
+        let (起值, 止值) = 段结果;
+        if 起值 > 止值 {
+            continue;
+        }
+        if (止值 - 起值) as usize + 数值表.len() > 10_000 {
+            return Err(错误码::正则资源受限);
+        }
+        有效标记 = true;
+        for 页码值 in 起值..=止值 {
+            if !数值表.contains(&页码值) {
+                数值表.push(页码值);
+            }
+        }
+    }
+    数值表.sort_unstable();
+    装区间结果(有效标记, 0, 0, 数值表)
+}
+
 pub fn 执行文本操作(编号: u32, 文本参数表: &[&str]) -> Result<(u32, Vec<u8>), u32> {
+    if 编号 == 能力号::解析区间 {
+        return 解析区间操作(文本参数表);
+    }
     let 匹配器 = 编译模式(文本参数表[0])?;
     let 原文 = 文本参数表[1];
     if 原文.len() > 65536 {
