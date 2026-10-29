@@ -1,0 +1,29 @@
+{
+  "算法": "sha256",
+  "生成器": "构建装配/形态装配/扩展指纹.py",
+  "生成物声明": "生成物，禁手改。生成器：构建装配/形态装配/扩展指纹.py",
+  "生成命令": "$V1_PY 构建装配/形态装配/扩展指纹.py",
+  "范围": "声明、Rust源码、Cargo清单与锁文件、程序文本、模块及技能制品；不含机器局部支持库制品、说明散文、缓存、指纹本身。",
+  "指纹": {
+    "Cargo.lock": "e0ca249c8041034e5d2d358863a0bda36ddc0f6b9e7b051e21600df3cbb4d252",
+    "Cargo.toml": "2e241e8893ca924382a380c8a51d13c14f4eed4d4905dd1f161f1e049212d68c",
+    "src/lib.rs": "756e620109cd581177f20e589587db967856e7044c69c7327e9b619fe4538ff2",
+    "src/业务实现.rs": "be56a372e695601c99bb43e9f89615d5599f224342e38f58fe247790d61d550a",
+    "src/命令声明面.rs": "6da3c37e1b0dd227471ef0d2cdca0be01b7f1ea4439c585c202e2a373cd2bf8c",
+    "src/执行函数面.rs": "1397c590458e06f7b6c131f4f336e603a65e37d1944aa1c77340d76dd765d21d",
+    "src/编号与码面.rs": "d5a358ca0be8ca391315415205ed8d9f52b0e5258cc6ade9258bec893abb6997",
+    "src/进程任务管理.rs": "38d9153917bfc2e1320cfa27bbfadd1836c2dacc9c364dad37fd99d75ff1a1e7",
+    "src/静态声明.rs": "21c33b932dc1c87404937ff4814b21b9566fe8abeeef8c0c68daef007f8cc23a",
+    "包声明.json": "bb840a1d0a56e1939a9843213fa79a0b6e575207fbd475e127c5efede7c79964",
+    "能力声明/2601.json": "61beaa7ff15c959b423cfff3101506ef830384cc073856216cd74b5801ba9b1e",
+    "能力声明/2602.json": "a4e1b017c5e4f417670cdc879abaf85b47ad0425493b930386b348e6dc07e66f",
+    "能力声明/2603.json": "0583830e4192e9504a189f85f2e7e595f9d0420984c28494888db2db163060b0",
+    "能力声明/2604.json": "b94b3a3ca399b89ac844a5cb5e9ffdfd1609f4c3ccb17d615c38775ee0af2a46",
+    "错误码表/2601.json": "5cdaa79bb567105b90fd8606b5f0c1b58d4279c420f88364ca39efc3849f2077",
+    "错误码表/2602.json": "7cb48798447828d9a5f2882999e36d5d36506661b79f507744a799851b90079c",
+    "错误码表/2603.json": "4efc71984ee6584fef1803d6f273190689b9a9698afbc896b999fe13645c2ebe",
+    "错误码表/2604.json": "b8a0b1a6119df4bed11ffda086307e4a7a1d618bc63db2002dd1ad693c9d099e",
+    "错误码表/2605.json": "ecc676aafa44d29fb6375bdff39c57fc094c810013a3bd330fa9204a6825d955",
+    "错误码表/2606.json": "538e68fbf9a8b09abe281a4a5ddfa5fadef9895c247aa487ecd25d0b584e4b28"
+  }
+}
