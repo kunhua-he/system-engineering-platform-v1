@@ -1,0 +1,13 @@
+[workspace]
+
+[package]
+name = "v1-office-doc"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+name = "v1_office_doc"
+path = "src/lib.rs"
+
+[dependencies]
+v1-contract = { path = "../../../契约声明" }
