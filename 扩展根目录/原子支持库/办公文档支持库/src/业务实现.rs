@@ -54,6 +54,11 @@ pub fn 执行文本操作(编号: u32, 参数表: &[&str]) -> Result<(u32, Vec<u
         let 输出路径 = 取第几项文本(参数表, 1)?;
         return Ok((4, 生成DOCX文档(内容文本, 输出路径)?.into_bytes()));
     }
+    if 编号 == 能力号::生成PPTX {
+        let 演示内容 = 取第几项文本(参数表, 0)?;
+        let 输出路径 = 取第几项文本(参数表, 1)?;
+        return Ok((4, 生成PPTX文档(演示内容, 输出路径)?.into_bytes()));
+    }
     if 编号 == 能力号::解析PPTX {
         let 文件路径 = 取第几项文本(参数表, 0)?;
         return Ok((4, 解析PPTX文档(文件路径)?.into_bytes()));
@@ -454,6 +459,34 @@ fn 解压文档正文(文件路径: &str) -> Result<String, u32> {
     条目值.take(最大文档尺寸 + 1).read_to_string(&mut 文档正文).map_err(|_| 错误码::内容不合法)?;
     if 文档正文.len() as u64 > 最大文档尺寸 { return Err(错误码::内容不合法); }
     Ok(文档正文)
+}
+
+fn 生成PPTX文档(演示内容: &str, 输出路径: &str) -> Result<String, u32> {
+    if 演示内容.len() > 4 * 1024 * 1024 {
+        return Err(错误码::内容超限);
+    }
+    let 内容值: serde_json::Value =
+        serde_json::from_str(演示内容).map_err(|_| 错误码::参数不合法)?;
+    let 页值表 = 内容值.get("幻灯片").and_then(|值项| 值项.as_array()).ok_or(错误码::参数不合法)?;
+    let 页宽磅 = 内容值.get("页宽磅").and_then(|值项| 值项.as_f64());
+    let 页高磅 = 内容值.get("页高磅").and_then(|值项| 值项.as_f64());
+    let mut 页表 = Vec::with_capacity(页值表.len());
+    for 页值 in 页值表 {
+        let 标题 = 页值.get("标题").and_then(|值项| 值项.as_str()).unwrap_or("").to_string();
+        let mut 文本块 = Vec::new();
+        if let Some(块值表) = 页值.get("文本块").and_then(|值项| 值项.as_array()) {
+            for 块值 in 块值表 {
+                let 文本 = 块值.as_str().ok_or(错误码::参数不合法)?.to_string();
+                文本块.push(文本);
+            }
+        }
+        页表.push(crate::演示文稿生成::幻灯片输入 { 标题, 文本块 });
+    }
+    let 字节数 = crate::演示文稿生成::生成演示文稿(页宽磅, 页高磅, &页表, 输出路径)?;
+    Ok(format!(
+        "{{\"输出路径\":\"{}\",\"字节数\":{},\"幻灯片数\":{}}}",
+        转义文本(输出路径), 字节数, 页表.len()
+    ))
 }
 
 fn 解析PPTX文档(文件路径: &str) -> Result<String, u32> {

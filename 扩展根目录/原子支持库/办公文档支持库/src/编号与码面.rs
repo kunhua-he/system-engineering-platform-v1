@@ -11,6 +11,7 @@ pub mod 能力号 {
     pub const 转换文本文件: u32 = 6118;
     pub const 检查页面结构: u32 = 6119;
     pub const 解析PPTX: u32 = 6120;
+    pub const 生成PPTX: u32 = 6121;
 }
 pub mod 错误码 {
     pub const 参数不合法: u32 = 6101;

@@ -98,6 +98,7 @@ pub unsafe extern "C-unwind" fn 转换办公文件入口(返回槽: *mut 数据�
 pub unsafe extern "C-unwind" fn 转换文本文件入口(返回槽: *mut 数据槽, 参数个数: u32, 参数表: *const 数据槽) { unsafe { 写调用(能力号::转换文本文件, 返回槽, 参数个数, 参数表); } }
 pub unsafe extern "C-unwind" fn 检查页面结构入口(返回槽: *mut 数据槽, 参数个数: u32, 参数表: *const 数据槽) { unsafe { 写调用(能力号::检查页面结构, 返回槽, 参数个数, 参数表); } }
 pub unsafe extern "C-unwind" fn 解析PPTX入口(返回槽: *mut 数据槽, 参数个数: u32, 参数表: *const 数据槽) { unsafe { 写调用(能力号::解析PPTX, 返回槽, 参数个数, 参数表); } }
+pub unsafe extern "C-unwind" fn 生成PPTX入口(返回槽: *mut 数据槽, 参数个数: u32, 参数表: *const 数据槽) { unsafe { 写调用(能力号::生成PPTX, 返回槽, 参数个数, 参数表); } }
 pub const fn 造函数表() -> [执行函数; 函数表项数] {
     let mut 本表 = [求值公式入口 as 执行函数; 函数表项数];
     本表[命令表内位(能力号::求值公式)] = 求值公式入口;
@@ -111,6 +112,7 @@ pub const fn 造函数表() -> [执行函数; 函数表项数] {
     本表[命令表内位(能力号::转换文本文件)] = 转换文本文件入口;
     本表[命令表内位(能力号::检查页面结构)] = 检查页面结构入口;
     本表[命令表内位(能力号::解析PPTX)] = 解析PPTX入口;
+    本表[命令表内位(能力号::生成PPTX)] = 生成PPTX入口;
     本表
 }
 pub(crate) const 执行函数表: [执行函数; 函数表项数] = 造函数表();
