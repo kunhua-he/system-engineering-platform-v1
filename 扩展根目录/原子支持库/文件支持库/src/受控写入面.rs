@@ -3,7 +3,7 @@ use crate::错误码;
 use v1_contract::{数据槽, 类型标签};
 #[cfg(unix)]
 pub(crate) fn 原子写入文本(受控根目录: &str, 相对路径: &str, 文本内容: &str) -> Result<i64, u32> {
-    if 文本内容.len() > 131072 { return Err(错误码::资源受限); }
+    if 文本内容.len() > 4_194_304 { return Err(错误码::资源受限); }
     std::str::from_utf8(文本内容.as_bytes()).map_err(|_| 错误码::内容不合法)?;
     原子写入字节(受控根目录, 相对路径, 文本内容.as_bytes())
 }
@@ -14,7 +14,7 @@ pub(crate) fn 原子写入字节(受控根目录: &str, 相对路径: &str, 内�
     use std::io::{ErrorKind, Write};
     use std::sync::atomic::{AtomicU64, Ordering};
     static 暂存序号: AtomicU64 = AtomicU64::new(0);
-    if 内容字节.len() > 131072 { return Err(错误码::资源受限); }
+    if 内容字节.len() > 4_194_304 { return Err(错误码::资源受限); }
     let (父目录, 目标名称) = 打开受控父目录(受控根目录, 相对路径, true)?;
     let 目标权限 = match 相对打开(&父目录, &目标名称, 0) {
         Ok(现有文件) => {
@@ -57,7 +57,7 @@ unsafe fn 执行写入(参数个数: u32, 参数表: *const 数据槽) -> Result
     let 内容槽 = &参数槽表[2];
     if 内容槽.类型标签.取号值() != 4 || !内容槽.是否引用()
         || (内容槽.槽值 == 0 && 内容槽.槽字节长度 != 0) { return Err(错误码::参数不合法); }
-    if 内容槽.槽字节长度 > 131072 { return Err(错误码::资源受限); }
+    if 内容槽.槽字节长度 > 4_194_304 { return Err(错误码::资源受限); }
     let 内容字节 = if 内容槽.槽字节长度 == 0 { &[][..] } else {
         unsafe { std::slice::from_raw_parts(内容槽.槽值 as *const u8, 内容槽.槽字节长度 as usize) }
     };
@@ -74,7 +74,7 @@ unsafe fn 执行写入字节(参数个数: u32, 参数表: *const 数据槽) -> 
     let 内容槽 = &参数槽表[2];
     if 内容槽.类型标签.取号值() != 5 || !内容槽.是否引用()
         || (内容槽.槽值 == 0 && 内容槽.槽字节长度 != 0) { return Err(错误码::参数不合法); }
-    if 内容槽.槽字节长度 > 131072 { return Err(错误码::资源受限); }
+    if 内容槽.槽字节长度 > 4_194_304 { return Err(错误码::资源受限); }
     let 载荷字节 = if 内容槽.槽字节长度 == 0 { &[][..] } else {
         unsafe { std::slice::from_raw_parts(内容槽.槽值 as *const u8, 内容槽.槽字节长度 as usize) }
     };

@@ -59,7 +59,7 @@ fn 测试原子覆盖与失败保留旧件() {
     std::fs::set_permissions(&目标文件, std::fs::Permissions::from_mode(0o640)).unwrap();
     assert_eq!(原子写入文本(样本根.to_str().unwrap(), "目录层/中文文本.txt", "替换"), Ok(6));
     assert_eq!(std::fs::metadata(&目标文件).unwrap().permissions().mode() & 0o777, 0o640);
-    assert!(原子写入文本(样本根.to_str().unwrap(), "目录层/中文文本.txt", &"X".repeat(131073)).is_err());
+    assert!(原子写入文本(样本根.to_str().unwrap(), "目录层/中文文本.txt", &"X".repeat(4_194_305)).is_err());
     assert_eq!(std::fs::read_to_string(&目标文件).unwrap(), "替换");
     assert!(原子写入文本(样本根.to_str().unwrap(), "../越界文件", "内容").is_err());
     std::os::unix::fs::symlink(&目标文件, 样本根.join("文件链接")).unwrap();
