@@ -4,6 +4,8 @@ pub mod 能力号 {
     pub const 解析标记块: u32 = 6111;
     pub const 解析DOCX: u32 = 6112;
     pub const 生成DOCX: u32 = 6113;
+    pub const 解析XLSX: u32 = 6114;
+    pub const 生成XLSX: u32 = 6115;
 }
 pub mod 错误码 {
     pub const 参数不合法: u32 = 6101;

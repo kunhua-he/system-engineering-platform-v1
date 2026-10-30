@@ -54,11 +54,18 @@ try:
     else:raise RuntimeError('网关准备超时')
     装载=请求('接口/运维/生命周期',{'动作':'装载'})
     assert 装载[0]==200,装载
+    if '--仅办公表格' in sys.argv[2:]:
+        from 表格类型验收 import 执行表格验收
+        执行表格验收(缓存, 请求, 调用)
+        print('办公表格定向HTTP通过；请求数', len(回执), flush=True)
+        raise SystemExit(0)
     if '--仅办公文档' in sys.argv[2:]:
         from 文档有序块验收 import 执行文档验收
         执行文档验收(缓存, 请求, 调用)
         print('办公文档定向HTTP通过；请求数', len(回执), flush=True)
         raise SystemExit(0)
+    from 表格类型验收 import 执行表格验收
+    执行表格验收(缓存, 请求, 调用)
     assert 请求('接口/能力/3111')[1]['契约']['返回类型']==5
     assert 请求('接口/能力/6101')[1]['契约']['返回类型']==103
     样本根=缓存/'样本文件';样本根.mkdir(exist_ok=True)

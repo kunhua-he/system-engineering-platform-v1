@@ -50,12 +50,11 @@ pub struct 运行汇总 {
 
 /// 入口：跑完整个案例库，返回进程退出码。**本函数是入口，零实现（只做路由与打印）。**
 pub fn 跑案例入口() -> i32 {
-    let 程序根 = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    let 案例根 = 程序根.parent().map_or_else(|| 程序根.clone(), Path::to_path_buf);
-    let 仓根 = 案例根
-        .ancestors()
-        .nth(2)
-        .map_or_else(|| 案例根.clone(), Path::to_path_buf);
+    let 仓根 = match crate::运行定位::定位当前仓根() {
+        Ok(运行根) => 运行根,
+        Err(错误) => { eprintln!("工具错误（不写回执）：{错误}"); return 2; }
+    };
+    let 案例根 = 仓根.join("测试验证/测试案例");
     let 回执路 = 案例根.join(回执件::案例回执件);
     match 跑案例(&仓根, &案例根, &回执路) {
         Ok(汇总值) => {

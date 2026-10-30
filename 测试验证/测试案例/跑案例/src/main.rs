@@ -44,6 +44,9 @@ mod 判定;
 #[path = "跑案例.rs"]
 mod 跑案例;
 
+#[path = "运行定位.rs"]
+mod 运行定位;
+
 fn main() {
     std::process::exit(跑案例::跑案例入口());
 }

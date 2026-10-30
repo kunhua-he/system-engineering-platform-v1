@@ -47,18 +47,6 @@
 use v1_adapter::平台信息;
 use v1_adapter::工作进程::装载支持库;
 
-/// 仓根 —— 编译期由 `CARGO_MANIFEST_DIR` 定（`<仓根>/测试验证/测试案例/跑案例` ⇒ 向上三级）。
-///
-/// 为什么不在运行期找：找仓根就是「认盘上目录」的第二条腿；`CARGO_MANIFEST_DIR` 是编译期事实，
-/// 与 `案例件` 认案例目录同一条纪律。
-fn 仓根() -> std::path::PathBuf {
-    std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-        .ancestors()
-        .nth(3)
-        .expect("跑案例 比仓根还浅？`CARGO_MANIFEST_DIR` 布局变了")
-        .to_path_buf()
-}
-
 /// 取被验扩展的声明。
 ///
 /// 返回的引用终生有效（契约：静态常量指针）。**调用方不得释放、不得修改。**
@@ -132,7 +120,7 @@ fn 按制品装载(扩展名: &str) -> Result<&'static 平台信息, String> {
     std::fs::create_dir_all(&缓存根)
         .map_err(|错误| format!("建装载缓存目录 {} 失败：{错误}", 缓存根.display()))?;
     装载支持库(
-        &仓根().join(format!("扩展根目录/原子支持库/{扩展名}/{扩展名}.支持库制品")),
+        &crate::运行定位::定位当前仓根()?.join(format!("扩展根目录/原子支持库/{扩展名}/{扩展名}.支持库制品")),
         &缓存根,
     )
     .map_err(|错误| {
