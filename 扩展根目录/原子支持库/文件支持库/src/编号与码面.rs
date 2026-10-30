@@ -27,6 +27,7 @@ pub mod 能力号 {
     pub const 查找祖先目录: u32 = 3116;
     pub const 取路径元信息: u32 = 3117;
     pub const 清理暂存残留: u32 = 3118;
+    pub const 扫描类属性: u32 = 3119;
 
 }
 
