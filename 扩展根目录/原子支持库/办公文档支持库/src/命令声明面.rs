@@ -74,7 +74,7 @@ pub const 参数表_解析DOCX: [参数信息; 1] = [参数信息 {
 pub const 参数表_生成DOCX: [参数信息; 2] = [
     参数信息 {
         名称: "内容文本\0".as_bytes().as_ptr(),
-        说明: "JSON：{段落:[{文本,样式?}],表格:[[[单元格]]]}\0".as_bytes().as_ptr(),
+        说明: "JSON：{块列表:[{类型,文本?,层级?,表格数据?}]}\0".as_bytes().as_ptr(),
         类型标签: v1_contract::类型标签::构造(4),
         状态位: 0,
         默认值: 数据槽::空槽(),
@@ -126,7 +126,7 @@ pub const fn 造命令表() -> [命令信息; 命令表项数] {
     本表[命令表内位(能力号::解析DOCX)] = 命令项(
         能力号::解析DOCX,
         "解析DOCX\0".as_bytes(),
-        "读 word/document.xml，抽段落样式与文字、表格单元格，返回 JSON 文本\0".as_bytes(),
+        "按正文顺序返回标题、段落、表格有序块JSON文本\0".as_bytes(),
         v1_contract::类型标签::构造(4),
         1,
         参数表_解析DOCX.as_ptr(),
@@ -135,7 +135,7 @@ pub const fn 造命令表() -> [命令信息; 命令表项数] {
     本表[命令表内位(能力号::生成DOCX)] = 命令项(
         能力号::生成DOCX,
         "生成DOCX\0".as_bytes(),
-        "按段落/表格 JSON 生成最小可打开的 .docx（含 [Content_Types]/_rels/document）\0".as_bytes(),
+        "按有序块JSON生成DOCX，保持标题、段落与表格顺序\0".as_bytes(),
         v1_contract::类型标签::构造(4),
         2,
         参数表_生成DOCX.as_ptr(),
