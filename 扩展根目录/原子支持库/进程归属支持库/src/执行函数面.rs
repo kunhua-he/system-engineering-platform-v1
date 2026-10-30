@@ -40,10 +40,20 @@ unsafe fn 处理调用(
         return Err(错误码::归属参数不合法);
     }
     let 参数槽 = unsafe { std::slice::from_raw_parts(参数表, 参数个数 as usize) };
-    let 进程表 = unsafe { 读文本槽(&参数槽[0]) }?;
-    let 归属登记 = unsafe { 读文本槽(&参数槽[1]) }?;
-    let 保护参数 = unsafe { 读文本槽(&参数槽[2]) }?;
-    let 返回字节 = crate::业务实现::执行判定进程归属(&进程表, &归属登记, &保护参数)?.into_bytes();
+    let 返回文本 = match 编号 {
+        能力号::判定进程归属 => {
+            let 进程表 = unsafe { 读文本槽(&参数槽[0]) }?;
+            let 归属登记 = unsafe { 读文本槽(&参数槽[1]) }?;
+            let 保护参数 = unsafe { 读文本槽(&参数槽[2]) }?;
+            crate::业务实现::执行判定进程归属(&进程表, &归属登记, &保护参数)?
+        }
+        能力号::读取进程表 => {
+            let 筛选参数 = unsafe { 读文本槽(&参数槽[0]) }?;
+            crate::业务实现::执行读取进程表(&筛选参数)?
+        }
+        _ => return Err(错误码::归属参数不合法),
+    };
+    let 返回字节 = 返回文本.into_bytes();
     let 返回长度 = 返回字节.len() as u64;
     let 返回指针 = Box::into_raw(返回字节.into_boxed_slice()) as *const u8;
     Ok(数据槽::指针(
@@ -78,9 +88,20 @@ pub unsafe extern "C-unwind" fn 判定进程归属入口(
     }
 }
 
+pub unsafe extern "C-unwind" fn 读取进程表入口(
+    返回槽: *mut 数据槽,
+    参数个数: u32,
+    参数表: *const 数据槽,
+) {
+    unsafe {
+        写调用(能力号::读取进程表, 返回槽, 参数个数, 参数表);
+    }
+}
+
 pub const fn 造函数表() -> [执行函数; 函数表项数] {
     let mut 本表 = [判定进程归属入口 as 执行函数; 函数表项数];
     本表[命令表内位(能力号::判定进程归属)] = 判定进程归属入口;
+    本表[命令表内位(能力号::读取进程表)] = 读取进程表入口;
     本表
 }
 pub(crate) const 执行函数表: [执行函数; 函数表项数] = 造函数表();
