@@ -4,6 +4,7 @@ pub mod 能力号 {
     pub const 渲染页面: u32 = 6602;
     pub const 提取内嵌图: u32 = 6603;
     pub const 校验文件: u32 = 6604;
+    pub const 提取文本: u32 = 6605;
 }
 pub mod 错误码 {
     pub const 参数不合法: u32 = 6601;

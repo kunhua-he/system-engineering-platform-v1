@@ -64,6 +64,35 @@ switch 子命令 {
 case "页数":
     exit(autoreleasepool { 输出(["页数": 总页数, "加密": 文档.isEncrypted, "可打开": true]) })
 
+// 文本：第三参 = 页序号（"all" 或 0 起的整数）⇒ 逐页取 PDFKit 的 string。
+// 加密文档 PDFKit 取不到正文是正常的：如实报空串 + 加密标记，不猜不编。
+case "文本":
+    guard 参数.count >= 4 else { exit(2) }
+    let 页参数 = 参数[3]
+    var 页序表: [Int] = []
+    if 页参数 == "all" {
+        页序表 = Array(0..<总页数)
+    } else {
+        guard let 单页 = Int(页参数), 单页 >= 0 else { exit(2) }
+        guard 单页 < 总页数 else { exit(5) }
+        页序表 = [单页]
+    }
+    if 页序表.count > 2000 { exit(4) }
+    var 页结果表: [[String: Any]] = []
+    var 总字符数 = 0
+    var 输出字节预算 = 0
+    for 序 in 页序表 {
+        let 正文 = 文档.page(at: 序)?.string ?? ""
+        总字符数 += 正文.count
+        输出字节预算 += 正文.utf8.count
+        if 输出字节预算 > 80 * 1024 * 1024 { exit(4) }
+        页结果表.append(["页序号": 序, "字符数": 正文.count, "文本": 正文])
+    }
+    exit(autoreleasepool {
+        输出(["页数": 总页数, "加密": 文档.isEncrypted, "取页数": 页结果表.count,
+              "总字符数": 总字符数, "页文本": 页结果表])
+    })
+
 case "校验":
     var 版本 = "未知"
     if let 首页 = 文档.page(at: 0)?.pageRef?.dictionary {

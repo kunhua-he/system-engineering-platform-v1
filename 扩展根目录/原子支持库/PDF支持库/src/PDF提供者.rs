@@ -124,3 +124,12 @@ pub(crate) fn 提取内嵌图(文件路径: &str, 页序号: &str) -> Result<Str
 pub(crate) fn 校验文件(文件路径: &str) -> Result<String, u32> {
     执行("校验", &[校验路径(文件路径)?])
 }
+
+pub(crate) fn 提取文本(文件路径: &str, 页参数: &str) -> Result<String, u32> {
+    let 源路径 = 校验路径(文件路径)?;
+    let 页值 = 页参数.trim();
+    if 页值.is_empty() || (页值 != "all" && 页值.parse::<u32>().is_err()) {
+        return Err(错误码::参数不合法);
+    }
+    执行("文本", &[源路径, 页值])
+}
