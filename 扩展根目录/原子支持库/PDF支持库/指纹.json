@@ -7,7 +7,7 @@
   "指纹": {
     "Cargo.lock": "fb2a4db440e6e159d510b99651e547cc1de94ef621ac014ce82eb20327a05a94",
     "Cargo.toml": "eb05be02c66bfeefdac0caa4cc46b2b33962134ec9b4298ddafcab655b2042d5",
-    "src/PDF提供者.rs": "de0fd2759a4cb16cf52269fbec80a48f5bcda2cc7efd880bcd092b0b73599e52",
+    "src/PDF提供者.rs": "f8622c1d40387c6c15f22e84b105102d8fa2523c8e44f5870568e2bd9449d9cc",
     "src/lib.rs": "6dadc19a30520c0e5a86c3e42f7905392f869fcbec89f04b7b5ad8a913150aed",
     "src/命令声明面.rs": "ba1b75ecb4618326a442a599f91bca0666ec36fbb50d55e7e5c7ce4526d0ff7b",
     "src/执行函数面.rs": "3b302d3d23b96f7b0db41cd114ccaf493496c4d3ac76adbea38a94d0490fc79a",

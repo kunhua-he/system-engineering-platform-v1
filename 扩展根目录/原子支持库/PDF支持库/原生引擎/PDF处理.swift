@@ -52,7 +52,12 @@ guard 参数.count >= 3 else { exit(2) }
 let 子命令 = 参数[1]
 let 路径 = 参数[2]
 guard 路径.hasPrefix("/") else { exit(2) }
-guard let 文档 = 打开文档(路径) else { exit(3) }
+// 先认文件头：非 PDF 属「格式不支持」（换格式），与「读不到文件」（查路径/权限）
+// 是两种完全不同的处置 ⇒ 分成两个退出码，别让调用方按同一个码乱猜。
+guard let 文件字节 = try? Data(contentsOf: URL(fileURLWithPath: 路径)),
+      FileManager.default.fileExists(atPath: 路径) else { exit(3) }
+guard 文件字节.prefix(5) == Data("%PDF-".utf8) else { exit(8) }
+guard let 文档 = 打开文档(路径) else { exit(6) }
 let 总页数 = 页数_(文档)
 
 switch 子命令 {
@@ -191,8 +196,9 @@ case "提取":
     if 收集.超限 { exit(4) }
     let 总字节 = 收集.图像.reduce(0) { $0 + (($1["base64"] as? String)?.utf8.count ?? 0) }
     if 总字节 > 80 * 1024 * 1024 { exit(4) }
-    var 结果字典: [String: Any] = ["页序号": 页序号, "内嵌图数量": 收集.图像.count, "图像列表": 收集.图像]
-    if !收集.跳过.isEmpty { 结果字典["未提取"] = 收集.跳过 }
+    // `未提取` 恒在（空表也返回）：契约字段不随数据有无而消失，调用方不必判键存在性。
+    let 结果字典: [String: Any] = ["页序号": 页序号, "内嵌图数量": 收集.图像.count,
+                                  "图像列表": 收集.图像, "未提取": 收集.跳过]
     exit(autoreleasepool { 输出(结果字典) })
 
 default:
