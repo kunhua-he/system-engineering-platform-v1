@@ -41,10 +41,20 @@ def 仅文档变更(树根):
     if os.environ.get("V1_FULL_GATE") == "1":
         return False
     try:
-        路径清单 = set()
-        for 参数表 in [("diff", "--name-only", "--no-renames", "-z", "HEAD"),
-                     ("ls-files", "--others", "--exclude-standard", "-z")]:
-            路径清单.update(路径字节.decode("utf-8") for 路径字节 in 取Git字节(树根,*参数表).split(b"\0") if 路径字节)
+        暂存路径集 = set(取Git字节(树根, "diff", "--cached", "--name-only", "--no-renames", "-z", "HEAD").split(b"\0")) - {b""}
+        磁盘路径集 = set(取Git字节(树根, "diff", "--name-only", "--no-renames", "-z").split(b"\0")) - {b""}
+        # 同一路径的待提交内容与受检磁盘内容不一致，不把二者净差相抵后放行。
+        if 暂存路径集 & 磁盘路径集:
+            return False
+        未跟踪集 = set(取Git字节(树根, "ls-files", "--others", "--exclude-standard", "-z").split(b"\0")) - {b""}
+        路径清单 = {路径字节.decode("utf-8") for 路径字节 in 暂存路径集 | 磁盘路径集 | 未跟踪集}
+        for 索引条目 in 取Git字节(树根, "ls-files", "--stage", "-z").split(b"\0"):
+            if not 索引条目:
+                continue
+            索引头, 索引路径 = 索引条目.split(b"\t", 1)
+            文件模式, 对象哈希, 冲突阶段 = 索引头.split(b" ")
+            if 索引路径.decode("utf-8") in 路径清单 and (文件模式 != b"100644" or 冲突阶段 != b"0"):
+                return False
         if not 路径清单:
             return False
         for 路径文本 in 路径清单:
