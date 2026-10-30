@@ -175,7 +175,9 @@ fn 解析单页(xml文本: &str, 序号: usize) -> Result<幻灯片内容, u32> 
                     当前块类型.clear();
                     当前块字号 = 0;
                     块缓冲.clear();
-                } else if 是演示 && (名.as_ref() == "rPr" || 名.as_ref() == "defRPr") && 在块内 {
+                } else if 是绘图 && (名.as_ref() == "rPr" || 名.as_ref() == "defRPr") && 在块内 {
+                    // 字号挂在绘图命名空间（`a:rPr` / `a:defRPr`）上，不是 `p:` —— 早先按演示命名空间判，
+                    // 条件恒假，字号永远是 0（实测某课件每块都有 sz="1000" 却全取 0）。
                     // 字号挂在 run 属性上：块内取最大值，用来判断这块是不是标题
                     for 属性结果 in 标签值.attributes() {
                         let 属性项 = 属性结果.map_err(|_| 错误码::内容不合法)?;
