@@ -28,7 +28,11 @@ unsafe fn 处理调用(
         };
         文本参数表.push(std::str::from_utf8(文本字节).map_err(|_| 错误码::参数不合法)?);
     }
-    let (返回标签, 返回字节) = crate::业务实现::执行文本操作(编号, &文本参数表)?;
+    let (返回标签, 返回字节) = match 编号 {
+        能力号::解析XLSX => (4, crate::表格读取::解析表格(文本参数表[0])?.into_bytes()),
+        能力号::生成XLSX => (4, crate::表格写出::生成表格(文本参数表[0], 文本参数表[1])?.into_bytes()),
+        _ => crate::业务实现::执行文本操作(编号, &文本参数表)?,
+    };
     let 返回长度 = 返回字节.len() as u64;
     let 返回指针 = Box::into_raw(返回字节.into_boxed_slice()) as *const u8;
     Ok(数据槽::指针(
@@ -87,12 +91,16 @@ pub unsafe extern "C-unwind" fn 生成DOCX入口(
         写调用(能力号::生成DOCX, 返回槽, 参数个数, 参数表);
     }
 }
+pub unsafe extern "C-unwind" fn 解析XLSX入口(返回槽: *mut 数据槽, 参数个数: u32, 参数表: *const 数据槽) { unsafe { 写调用(能力号::解析XLSX, 返回槽, 参数个数, 参数表); } }
+pub unsafe extern "C-unwind" fn 生成XLSX入口(返回槽: *mut 数据槽, 参数个数: u32, 参数表: *const 数据槽) { unsafe { 写调用(能力号::生成XLSX, 返回槽, 参数个数, 参数表); } }
 pub const fn 造函数表() -> [执行函数; 函数表项数] {
     let mut 本表 = [求值公式入口 as 执行函数; 函数表项数];
     本表[命令表内位(能力号::求值公式)] = 求值公式入口;
     本表[命令表内位(能力号::解析标记块)] = 解析标记块入口;
     本表[命令表内位(能力号::解析DOCX)] = 解析DOCX入口;
     本表[命令表内位(能力号::生成DOCX)] = 生成DOCX入口;
+    本表[命令表内位(能力号::解析XLSX)] = 解析XLSX入口;
+    本表[命令表内位(能力号::生成XLSX)] = 生成XLSX入口;
     本表
 }
 pub(crate) const 执行函数表: [执行函数; 函数表项数] = 造函数表();

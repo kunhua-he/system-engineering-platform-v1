@@ -2,9 +2,9 @@ use v1_contract::{参数信息, 命令信息, 数据槽, 表段};
 
 use crate::编号与码面::能力号;
 
-pub const 命令表项数: usize = 4;
-pub const 函数表项数: usize = 4;
-pub const 参数个数已核条数: usize = 4;
+pub const 命令表项数: usize = 6;
+pub const 函数表项数: usize = 6;
+pub const 参数个数已核条数: usize = 6;
 pub const 命令表首号: u32 = 能力号::求值公式;
 
 pub const fn 命令表内位(编号: u32) -> usize {
@@ -87,6 +87,15 @@ pub const 参数表_生成DOCX: [参数信息; 2] = [
         默认值: 数据槽::空槽(),
     },
 ];
+pub const 参数表_解析XLSX: [参数信息; 1] = [参数信息 {
+    名称: "XLSX文件路径\0".as_bytes().as_ptr(),
+    说明: "本机可读的XLSX绝对路径，文件与解压量受限\0".as_bytes().as_ptr(),
+    类型标签: v1_contract::类型标签::构造(4), 状态位: 0, 默认值: 数据槽::空槽(),
+}];
+pub const 参数表_生成XLSX: [参数信息; 2] = [
+    参数信息 { 名称: "内容文本\0".as_bytes().as_ptr(), 说明: "JSON工作表列表，每表含表名、可选列与行矩阵\0".as_bytes().as_ptr(), 类型标签: v1_contract::类型标签::构造(4), 状态位: 0, 默认值: 数据槽::空槽() },
+    参数信息 { 名称: "输出路径\0".as_bytes().as_ptr(), 说明: "XLSX输出绝对路径\0".as_bytes().as_ptr(), 类型标签: v1_contract::类型标签::构造(4), 状态位: 0, 默认值: 数据槽::空槽() },
+];
 pub const 可抛错误码_办公文档: [u32; 4] = [6101, 6102, 6103, 6104];
 pub const 空位种子: 命令信息 = 命令信息 {
     名称: "空位种子\0".as_bytes().as_ptr(),
@@ -141,6 +150,8 @@ pub const fn 造命令表() -> [命令信息; 命令表项数] {
         参数表_生成DOCX.as_ptr(),
         表段::构造(可抛错误码_办公文档.as_ptr(), 4),
     );
+    本表[命令表内位(能力号::解析XLSX)] = 命令项(能力号::解析XLSX, "解析XLSX\0".as_bytes(), "按文件表序读取类型化矩阵、保留稀疏位置与公式文本，不提取图片样式\0".as_bytes(), v1_contract::类型标签::构造(4), 1, 参数表_解析XLSX.as_ptr(), 表段::构造(可抛错误码_办公文档.as_ptr(), 4));
+    本表[命令表内位(能力号::生成XLSX)] = 命令项(能力号::生成XLSX, "生成XLSX\0".as_bytes(), "由类型化矩阵生成多表XLSX；显式公式不计算，普通等号文本不当公式\0".as_bytes(), v1_contract::类型标签::构造(4), 2, 参数表_生成XLSX.as_ptr(), 表段::构造(可抛错误码_办公文档.as_ptr(), 4));
     本表
 }
 const _: () = {
@@ -150,5 +161,7 @@ const _: () = {
     assert!(项表[命令表内位(能力号::解析标记块)].参数个数 as usize == 参数表_解析标记块.len());
     assert!(项表[命令表内位(能力号::解析DOCX)].参数个数 as usize == 参数表_解析DOCX.len());
     assert!(项表[命令表内位(能力号::生成DOCX)].参数个数 as usize == 参数表_生成DOCX.len());
+    assert!(项表[命令表内位(能力号::解析XLSX)].参数个数 as usize == 参数表_解析XLSX.len());
+    assert!(项表[命令表内位(能力号::生成XLSX)].参数个数 as usize == 参数表_生成XLSX.len());
     assert!(参数个数已核条数 == 项表.len());
 };

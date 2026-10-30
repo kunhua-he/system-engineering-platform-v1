@@ -2,7 +2,7 @@
 
 [package]
 name = "v1-office-doc"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2024"
 
 [lib]
@@ -15,3 +15,6 @@ serde_json = "=1.0.154"
 zip = "=9.0.5"
 
 quick-xml = "=0.42.0"
+
+calamine = {version = "=0.37.0", features = ["chrono"]}
+rust_xlsxwriter = "=0.102.0"
