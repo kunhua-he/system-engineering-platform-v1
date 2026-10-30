@@ -93,6 +93,9 @@ pub unsafe extern "C-unwind" fn 生成DOCX入口(
 }
 pub unsafe extern "C-unwind" fn 解析XLSX入口(返回槽: *mut 数据槽, 参数个数: u32, 参数表: *const 数据槽) { unsafe { 写调用(能力号::解析XLSX, 返回槽, 参数个数, 参数表); } }
 pub unsafe extern "C-unwind" fn 生成XLSX入口(返回槽: *mut 数据槽, 参数个数: u32, 参数表: *const 数据槽) { unsafe { 写调用(能力号::生成XLSX, 返回槽, 参数个数, 参数表); } }
+pub unsafe extern "C-unwind" fn 检查转换提供者入口(返回槽: *mut 数据槽, 参数个数: u32, 参数表: *const 数据槽) { unsafe { 写调用(能力号::检查转换提供者, 返回槽, 参数个数, 参数表); } }
+pub unsafe extern "C-unwind" fn 转换办公文件入口(返回槽: *mut 数据槽, 参数个数: u32, 参数表: *const 数据槽) { unsafe { 写调用(能力号::转换办公文件, 返回槽, 参数个数, 参数表); } }
+pub unsafe extern "C-unwind" fn 转换文本文件入口(返回槽: *mut 数据槽, 参数个数: u32, 参数表: *const 数据槽) { unsafe { 写调用(能力号::转换文本文件, 返回槽, 参数个数, 参数表); } }
 pub const fn 造函数表() -> [执行函数; 函数表项数] {
     let mut 本表 = [求值公式入口 as 执行函数; 函数表项数];
     本表[命令表内位(能力号::求值公式)] = 求值公式入口;
@@ -101,6 +104,9 @@ pub const fn 造函数表() -> [执行函数; 函数表项数] {
     本表[命令表内位(能力号::生成DOCX)] = 生成DOCX入口;
     本表[命令表内位(能力号::解析XLSX)] = 解析XLSX入口;
     本表[命令表内位(能力号::生成XLSX)] = 生成XLSX入口;
+    本表[命令表内位(能力号::检查转换提供者)] = 检查转换提供者入口;
+    本表[命令表内位(能力号::转换办公文件)] = 转换办公文件入口;
+    本表[命令表内位(能力号::转换文本文件)] = 转换文本文件入口;
     本表
 }
 pub(crate) const 执行函数表: [执行函数; 函数表项数] = 造函数表();

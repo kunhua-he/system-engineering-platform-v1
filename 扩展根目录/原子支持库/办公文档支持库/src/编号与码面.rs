@@ -6,12 +6,17 @@ pub mod 能力号 {
     pub const 生成DOCX: u32 = 6113;
     pub const 解析XLSX: u32 = 6114;
     pub const 生成XLSX: u32 = 6115;
+    pub const 检查转换提供者: u32 = 6116;
+    pub const 转换办公文件: u32 = 6117;
+    pub const 转换文本文件: u32 = 6118;
 }
 pub mod 错误码 {
     pub const 参数不合法: u32 = 6101;
     pub const 计算失败: u32 = 6102;
     pub const 内容不合法: u32 = 6103;
     pub const 写出失败: u32 = 6104;
+    pub const 转换失败: u32 = 6105;
+    pub const 转换器不可用: u32 = 6106;
 }
 pub const fn 码项(
     错误码值: u32,
@@ -33,7 +38,7 @@ pub const fn 码项(
     }
 }
 
-pub const 错误码信息表: [错误码信息; 4] = [
+pub const 错误码信息表: [错误码信息; 6] = [
     码项(
         错误码::参数不合法,
         "参数不合法\0".as_bytes(),
@@ -66,7 +71,23 @@ pub const 错误码信息表: [错误码信息; 4] = [
         0,
         0,
     ),
+    码项(
+        错误码::转换失败,
+        "转换失败\0".as_bytes(),
+        "外部转换器返回非零、未产出目标文件或产出为空；附退出码与末尾输出\0".as_bytes(),
+        1,
+        0,
+        0,
+    ),
+    码项(
+        错误码::转换器不可用,
+        "转换器不可用\0".as_bytes(),
+        "LibreOffice 或 textutil 未找到；先调 6116 检查提供者\0".as_bytes(),
+        0,
+        0,
+        1,
+    ),
 ];
 pub const fn 错误码信息表段() -> v1_contract::表段<错误码信息> {
-    v1_contract::表段::构造(错误码信息表.as_ptr(), 4)
+    v1_contract::表段::构造(错误码信息表.as_ptr(), 6)
 }

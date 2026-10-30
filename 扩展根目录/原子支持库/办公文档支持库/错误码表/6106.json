@@ -1,0 +1,9 @@
+{
+  "码": 6106,
+  "名称": "转换器不可用",
+  "说明": "LibreOffice 或 textutil 未找到；先调 6116 检查提供者并安装或设置 LIBREOFFICE_BIN。",
+  "段位": 3,
+  "可重试": false,
+  "可自愈": false,
+  "需人工": true
+}
