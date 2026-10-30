@@ -38,9 +38,12 @@ with tempfile.TemporaryDirectory(prefix='文档链路真验收-') as 临时目�
     (目标根/'构建环境/python').symlink_to(解释器.parent.parent)
     with (目标根/'.git/info/exclude').open('a') as 输出句柄:
         输出句柄.write('\n/构建环境/python\n')
-    for 参数表 in [['git','config','user.name','文档验证'],['git','config','user.email','verify@example.invalid'],['git','add',*接线清单],['git','commit','-qm','冻结验收工具基线']]:
+    for 参数表 in [['git','config','user.name','文档验证'],['git','config','user.email','verify@example.invalid'],['git','add',*接线清单],['git','commit','--allow-empty','-qm','冻结验收工具基线']]:
         运行命令(参数表,目标根,环境表)
-    运行命令([str(解释器),'开发工具/代码地图.py','建'],目标根,环境表)
+    # 新克隆索引作为独立环境准备，按正式回执给出的原索引器入口建齐；门禁仍实跑。
+    索引器路径=shutil.which('codegraph',path=环境表.get('PATH'))
+    assert 索引器路径, '缺少正式codegraph索引器'
+    运行命令([索引器路径,'init',str(目标根)],目标根,环境表)
     with (目标根/'README.md').open('a') as 输出句柄:输出句柄.write('\n文档分流验证。\n')
     运行命令(['git','add','README.md'],目标根,环境表)
     assert not list((目标根/'扩展根目录').rglob('*.支持库制品'))
