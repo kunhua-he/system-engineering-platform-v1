@@ -9,6 +9,7 @@ pub mod 能力号 {
     pub const 检查转换提供者: u32 = 6116;
     pub const 转换办公文件: u32 = 6117;
     pub const 转换文本文件: u32 = 6118;
+    pub const 检查页面结构: u32 = 6119;
 }
 pub mod 错误码 {
     pub const 参数不合法: u32 = 6101;
