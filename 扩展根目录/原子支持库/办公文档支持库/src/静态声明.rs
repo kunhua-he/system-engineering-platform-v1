@@ -11,7 +11,7 @@ const 底座说明: &[u8] = "办公文档纯计算与容器读写：公式求值
 const 底座实现版本: v1_contract::版本三元组 = v1_contract::版本三元组::构造(0, 3, 0);
 const 底座要求宿主版本: v1_contract::版本要求 = v1_contract::版本要求::构造(1, 0);
 const 底座要求内核版本: v1_contract::版本要求 = v1_contract::版本要求::构造(1, 0);
-const 底座能力号段: [v1_contract::号段; 1] = [v1_contract::号段::构造(6110, 6119)];
+const 底座能力号段: [v1_contract::号段; 1] = [v1_contract::号段::构造(6110, 6199)];
 const 底座错误段位表: [u32; 1] = [2];
 
 const fn 底座能力号段表段() -> 表段<v1_contract::号段> {
