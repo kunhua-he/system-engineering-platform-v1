@@ -12,7 +12,7 @@ use std::time::{Duration, Instant};
 
 static 转换锁: Mutex<()> = Mutex::new(());
 const 输出字节上限: u64 = 67_108_864;
-const 默认超时秒: u64 = 180;
+const 默认超时秒: u64 = 5;
 
 fn 找转换器(候选表: &[&str]) -> Option<PathBuf> {
     for 候选路径 in 候选表 {
@@ -93,7 +93,7 @@ fn 解析超时(超时秒: &str) -> Result<u64, u32> {
         return Ok(默认超时秒);
     }
     let 超时值 = 超时文本.parse::<u64>().map_err(|_| 错误码::参数不合法)?;
-    if !(5..=600).contains(&超时值) {
+    if !(1..=默认超时秒).contains(&超时值) {
         return Err(错误码::参数不合法);
     }
     Ok(超时值)

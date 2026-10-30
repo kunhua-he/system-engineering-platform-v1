@@ -1,0 +1,33 @@
+{
+  "算法": "sha256",
+  "生成器": "构建装配/形态装配/扩展指纹.py",
+  "生成物声明": "生成物，禁手改。生成器：构建装配/形态装配/扩展指纹.py",
+  "生成命令": "$V1_PY 构建装配/形态装配/扩展指纹.py",
+  "范围": "声明、Rust源码、Cargo清单与锁文件、程序文本、模块及技能制品；不含机器局部支持库制品、说明散文、缓存、指纹本身。",
+  "指纹": {
+    "Cargo.lock": "151a95495efd540e717f45b9a7e5a2689138ae96eea9926d0d6e7009a5ed8e36",
+    "Cargo.toml": "d6d1a80cdef48e9acbe42fb2e13d162ab0bb0c17df4bcce4825a366de1a34a7f",
+    "src/lib.rs": "d8ad1468c584efa2a75253087ef731237a9c396a9097f81b3808540557c282f6",
+    "src/命令声明面.rs": "45d54657d5658d859382de5c9305a0eab0ef65db4f0c46743b429e32222ed66c",
+    "src/图像处理.rs": "ab0976314e17bfe4eb6de8c7a64cb110ce31f8a725a9817ef7cf55efd551caee",
+    "src/执行函数面.rs": "72e1bc620546a2db8af0ef491c566a0f6df7dca9bd375a4f7597726b09053175",
+    "src/编号与码面.rs": "c94bfa1fb3831b5d2ed531eafb71fb4510843c8090aeb95a2a19ad1554b8d829",
+    "src/静态声明.rs": "2fbe6406f74c631252bdfb2f0a45939000b5c535ea6bb5af5e67dc72e3b6de3a",
+    "包声明.json": "f7cae3c3fb597c8e8c1e410aaee83a14fbce2b8dbd46187ef5e17c6d86fcd89c",
+    "能力声明/6401.json": "9a5ee738eaee5ab882ed02cd9379ba7d68a8345e444a4f9598a4688027350a02",
+    "能力声明/6402.json": "3c131c2a8100d4f1cc3ac3c71900101e0658058f94667c61de06d81f581f0e81",
+    "能力声明/6403.json": "4206b41a3002f240d02e7c87e6dce21cae3d75c153ec43b156105ca21bf979bc",
+    "能力声明/6404.json": "8f44701376d3e1ba8a84f72d1d8e9c491dcd6396a0c71329b66984a91e22b4fe",
+    "能力声明/6405.json": "7273680034f8ff419ce3d9702f7b925aa2199da24fdb9c360fd318365ce7e0b4",
+    "能力声明/6406.json": "16e14b170ceded0a91644dbf17d21e9ced5229b24394ce220fafa613c8177f93",
+    "能力声明/6407.json": "e6530f0e16e05986a67c788217a0d8d7ed8d46f1da55f06f203aaf7d395ecfae",
+    "能力声明/6408.json": "efe1b1362a66ba937b1e4e95fe57ac75f694f957def824eb116236ac6c1dfa87",
+    "能力声明/6409.json": "9be87d295be96ab82361320c48b5c0f4b8083257df49ec9143f75f6f4aa78a8d",
+    "能力声明/6410.json": "2610799eddeb0f924503b4f4b3db87a629b4d91dec6389a01a6550b7a5818bca",
+    "错误码表/6401.json": "aaf81b15621321a1af4d9dbaf54dba4bfe3c393610ea1a645426cfcf3d4808ec",
+    "错误码表/6402.json": "b16b6a795dcf088e51ff777786ac39f644ab33f6539a930036b3c5f7850d445c",
+    "错误码表/6403.json": "67a06f81927b06d78c6aaeed6ff912c8c6408f74e8eedce78935de2fb92619f7",
+    "错误码表/6404.json": "424a96b356f1dd6fbd6051fe23a721ff330a10a2e3bda022d9f2ae6c28c62461",
+    "错误码表/6405.json": "e79f517c30ef352f9d55a7dd15449566e48503d15f449baab6ecf71b2af6dbc6"
+  }
+}
