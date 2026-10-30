@@ -16,4 +16,5 @@ mod 静态声明;
 #[path = "表格边界.rs"] mod 表格边界;
 #[path = "表格读取.rs"] mod 表格读取;
 #[path = "表格写出.rs"] mod 表格写出;
+#[path = "页面结构.rs"] mod 页面结构;
 pub use 静态声明::{取平台信息, 扩展声明};
