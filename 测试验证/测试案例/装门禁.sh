@@ -226,6 +226,16 @@ if ! hook_fresh; then
   exit 1
 fi
 
+# 文档与作业入口共用判档；非文档仍执行下方原完整链，失败不回退。
+"$PY" 开发工具/MCP服务/文档放行.py --判档
+DOC_CODE=$?
+if [ "$DOC_CODE" -eq 0 ]; then
+  "$PY" 开发工具/MCP服务/文档放行.py
+  exit $?
+elif [ "$DOC_CODE" -ne 99 ]; then
+  exit "$DOC_CODE"
+fi
+
 # ── 分段耗时：全闸原先只有总数、没有分段读数（每次问「为什么这么慢」都要手工量一遍）──
 # 壳自量。`tick` 用 $PY（同解释器口径，已在脚本头部解析）；段边界 = 闸0 / 判据自测 / 全案例。
 tick() { "$PY" -c 'import time;print(int(time.monotonic()*1000))'; }

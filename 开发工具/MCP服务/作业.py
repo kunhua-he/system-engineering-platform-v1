@@ -57,7 +57,9 @@ from .作业执行.作业进程 import _补齐小输出, _开日志夹, 杀组, 
     # ★ 债务 563：链首加「全工作区可编译」——原先只有闸 0（工具层）+ 自测 + 案例，
     #   纯编译错（引用不存在的关联函数）能一路全绿进主干，手工跑 cargo check 才暴露。
     #   放这里而不放闸 0：冷树下 check 约几十秒，闸 0 是热路（每条腿每道提交都跑）。
-    "放行": ("cargo check --workspace --all-targets --locked"
+    "放行": ('"$V1_PY" 开发工具/MCP服务/文档放行.py; DOC_CODE=$?; '
+           'if [ "$DOC_CODE" -eq 99 ]; then '
+           "cargo check --workspace --all-targets --locked"
            " && \"$V1_PY\" 构建装配/一键验证/闸0.py"
            " && { git diff --cached --quiet -- 构建装配/一键验证 测试验证/测试案例"
            " || \"$V1_PY\" 构建装配/一键验证/一键验证.py --自测; }"
@@ -65,6 +67,7 @@ from .作业执行.作业进程 import _补齐小输出, _开日志夹, 杀组, 
            # ★ 债务 573：链尾按**树内容指纹**记一笔「放行全绿」——`释放` 的跑验证命中就复用，
            #   不再把闸 0 重跑一遍（同一树内容 ⇒ 同一批读数）。`-B` 免落 __pycache__。
            " && \"$V1_PY\" -B -c \"import sys;sys.path.insert(0,'开发工具');from MCP服务.验证管理.放行结果 import 记放行;记放行('.') \""
+           ' ; else exit "$DOC_CODE"; fi'
            ),
 }
 
