@@ -7,11 +7,11 @@ const 底座声明格式号: v1_contract::格式号 = v1_contract::格式号::�
 const 底座目标字宽: u16 = 64;
 const 底座标识串: &[u8] = b"4616d87e15a65e168da72b3a9c95d542\0";
 const 底座名称: &[u8] = "网址解析支持库\0".as_bytes();
-const 底座说明: &[u8] = "按URL Standard解析与相对地址合并，不发起网络请求。查询参数输出字符串键值对数组JSON文本，保留重复键及顺序；表单查询语义中加号解为空格，与URI组件解码区分。\0".as_bytes();
+const 底座说明: &[u8] = "按URL Standard解析与相对地址合并，不发起网络请求。查询参数输出字符串键值对数组JSON文本，保留重复键及顺序；表单查询语义中加号解为空格，与URI组件解码区分。外部标识按来源类型提取，边界判定手写实现，不依赖正则前瞻。\0".as_bytes();
 const 底座实现版本: v1_contract::版本三元组 = v1_contract::版本三元组::构造(0, 1, 0);
 const 底座要求宿主版本: v1_contract::版本要求 = v1_contract::版本要求::构造(1, 0);
 const 底座要求内核版本: v1_contract::版本要求 = v1_contract::版本要求::构造(1, 0);
-const 底座能力号段: [v1_contract::号段; 1] = [v1_contract::号段::构造(4201, 4203)];
+const 底座能力号段: [v1_contract::号段; 1] = [v1_contract::号段::构造(4201, 4204)];
 const 底座错误段位表: [u32; 1] = [4];
 
 const fn 底座能力号段表段() -> 表段<v1_contract::号段> {
