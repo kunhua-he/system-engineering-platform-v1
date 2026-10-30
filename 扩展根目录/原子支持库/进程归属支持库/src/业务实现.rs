@@ -97,3 +97,72 @@ pub fn 执行判定进程归属(
     });
     serde_json::to_string(&载荷).map_err(|_| 错误码::归属内容不合法)
 }
+
+fn 解析进程行(行: &str) -> Option<(u32, u32, String)> {
+    let 首段 = 行.trim_start();
+    let (首列文本, 剩余文本) = 首段.split_once(|字: char| 字.is_whitespace())?;
+    let 剩余文本 = 剩余文本.trim_start();
+    let (次列文本, 剩余行文) = 剩余文本.split_once(|字: char| 字.is_whitespace())?;
+    let pid = 首列文本.parse::<u32>().ok()?;
+    let 父pid = 次列文本.parse::<u32>().ok()?;
+    Some((pid, 父pid, 剩余行文.trim().to_owned()))
+}
+
+/// 6402：只读系统进程表。不做归属判定、不杀进程、不碰 launchctl。
+/// 用系统 ps 读表与进程执行支持库同一条路（它也是 Command 调系统工具），
+/// 不另用 FFI 调 proc_listpids —— 那要额外 link libproc，跨平台性更差。
+pub(crate) fn 执行读取进程表(筛选参数: &str) -> Result<String, u32> {
+    let 筛选 = if 筛选参数.trim().is_empty() {
+        serde_json::json!({})
+    } else {
+        serde_json::from_str::<Value>(筛选参数).map_err(|_| 错误码::归属参数不合法)?
+    };
+    if !筛选.is_object() {
+        return Err(错误码::归属参数不合法);
+    }
+    let 可执行名 = 筛选.get("可执行名").and_then(Value::as_str).unwrap_or("");
+    let 命令行含 = 筛选.get("命令行含").and_then(Value::as_str).unwrap_or("");
+    let 输出 = std::process::Command::new("/bin/ps")
+        .args(["-axo", "pid=,ppid=,command="])
+        .output()
+        .map_err(|_| 错误码::进程表读取失败)?;
+    if !输出.status.success() {
+        return Err(错误码::进程表读取失败);
+    }
+    let 原始输出 = String::from_utf8_lossy(&输出.stdout);
+    let mut 进程列表 = Vec::new();
+    let mut 进程总数 = 0usize;
+    for 行 in 原始输出.lines() {
+        if 行.trim().is_empty() {
+            continue;
+        }
+        进程总数 += 1;
+        if 进程总数 > 进程数上限 {
+            return Err(错误码::归属资源受限);
+        }
+        let Some((pid, 父pid, 命令行)) = 解析进程行(行) else {
+            continue;
+        };
+        if !可执行名.is_empty() {
+            let 程序 = 命令行.split_whitespace().next().unwrap_or("");
+            let 基名 = 程序.rsplit('/').next().unwrap_or(程序);
+            if 基名 != 可执行名 {
+                continue;
+            }
+        }
+        if !命令行含.is_empty() && !命令行.contains(命令行含) {
+            continue;
+        }
+        进程列表.push(serde_json::json!({
+            "pid": pid,
+            "父pid": 父pid,
+            "命令行": 命令行,
+        }));
+    }
+    Ok(serde_json::json!({
+        "进程总数": 进程总数,
+        "筛选命中": 进程列表.len(),
+        "进程": 进程列表,
+    })
+    .to_string())
+}
