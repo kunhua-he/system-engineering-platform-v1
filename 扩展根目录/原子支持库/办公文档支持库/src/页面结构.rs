@@ -341,11 +341,10 @@ fn 提取页标题(页正文: &str) -> Result<(String, String, Vec<String>), u32
                 }
                 节点深度 = 节点深度.checked_sub(1).ok_or(错误码::内容不合法)?;
             }
-            文档事件::Text(文本节点) => {
-                if 文本层级 != 0 {
-                    形状文字.push_str(&文本节点.xml_content(文档版本));
-                }
+            文档事件::Text(文本节点) if 文本层级 != 0 => {
+                形状文字.push_str(&文本节点.xml_content(文档版本));
             }
+            文档事件::Text(_) => {}
             文档事件::CData(文本节点) if 文本层级 != 0 => {
                 形状文字.push_str(&文本节点.xml_content(文档版本));
             }

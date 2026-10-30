@@ -54,6 +54,10 @@ pub fn 执行文本操作(编号: u32, 参数表: &[&str]) -> Result<(u32, Vec<u
         let 输出路径 = 取第几项文本(参数表, 1)?;
         return Ok((4, 生成DOCX文档(内容文本, 输出路径)?.into_bytes()));
     }
+    if 编号 == 能力号::解析PPTX {
+        let 文件路径 = 取第几项文本(参数表, 0)?;
+        return Ok((4, 解析PPTX文档(文件路径)?.into_bytes()));
+    }
     if 编号 == 能力号::检查页面结构 {
         let 文件路径 = 取第几项文本(参数表, 0)?;
         return Ok((4, crate::页面结构::检查页面结构(文件路径)?.into_bytes()));
@@ -450,6 +454,39 @@ fn 解压文档正文(文件路径: &str) -> Result<String, u32> {
     条目值.take(最大文档尺寸 + 1).read_to_string(&mut 文档正文).map_err(|_| 错误码::内容不合法)?;
     if 文档正文.len() as u64 > 最大文档尺寸 { return Err(错误码::内容不合法); }
     Ok(文档正文)
+}
+
+fn 解析PPTX文档(文件路径: &str) -> Result<String, u32> {
+    if !文件路径.starts_with('/') {
+        return Err(错误码::参数不合法);
+    }
+    let 元数据项 = std::fs::metadata(文件路径).map_err(|_| 错误码::参数不合法)?;
+    if !元数据项.is_file() {
+        return Err(错误码::参数不合法);
+    }
+    if 元数据项.len() > 64 * 1024 * 1024 {
+        return Err(错误码::内容超限);
+    }
+    let 字节 = std::fs::read(文件路径).map_err(|_| 错误码::内容不合法)?;
+    let 文稿 = crate::演示文稿解析::解析演示文稿(&字节)?;
+    // EMU → 磅：1 磅 = 12700 EMU（WPS/PowerPoint 页尺寸都按这个换算）
+    let 页宽磅 = (文稿.页宽 as f64 / 12700.0 * 100.0).round() / 100.0;
+    let 页高磅 = (文稿.页高 as f64 / 12700.0 * 100.0).round() / 100.0;
+    let mut 页表 = Vec::with_capacity(文稿.幻灯片.len());
+    for 页 in &文稿.幻灯片 {
+        let 块JSON: Vec<String> = 页.文本块.iter()
+            .map(|块| format!("{{\"文本\":\"{}\",\"类型\":\"{}\",\"字号\":{}}}",
+                              转义文本(&块.文本), 转义文本(&块.类型), 块.字号))
+            .collect();
+        页表.push(format!(
+            "{{\"序号\":{},\"标题\":\"{}\",\"文本块\":[{}],\"块数\":{}}}",
+            页.序号, 转义文本(&页.标题), 块JSON.join(","), 页.文本块.len()
+        ));
+    }
+    Ok(format!(
+        "{{\"幻灯片数\":{},\"页宽EMU\":{},\"页高EMU\":{},\"页宽磅\":{},\"页高磅\":{},\"幻灯片\":[{}]}}",
+        文稿.幻灯片数, 文稿.页宽, 文稿.页高, 页宽磅, 页高磅, 页表.join(",")
+    ))
 }
 
 fn 解析DOCX文档(文件路径: &str) -> Result<String, u32> {

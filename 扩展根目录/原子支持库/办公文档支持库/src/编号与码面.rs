@@ -10,6 +10,7 @@ pub mod 能力号 {
     pub const 转换办公文件: u32 = 6117;
     pub const 转换文本文件: u32 = 6118;
     pub const 检查页面结构: u32 = 6119;
+    pub const 解析PPTX: u32 = 6120;
 }
 pub mod 错误码 {
     pub const 参数不合法: u32 = 6101;
@@ -18,6 +19,7 @@ pub mod 错误码 {
     pub const 写出失败: u32 = 6104;
     pub const 转换失败: u32 = 6105;
     pub const 转换器不可用: u32 = 6106;
+    pub const 内容超限: u32 = 6107;
 }
 pub const fn 码项(
     错误码值: u32,
@@ -39,7 +41,8 @@ pub const fn 码项(
     }
 }
 
-pub const 错误码信息表: [错误码信息; 6] = [
+pub const 错误码信息表: [错误码信息; 7] = [
+
     码项(
         错误码::参数不合法,
         "参数不合法\0".as_bytes(),
@@ -87,8 +90,15 @@ pub const 错误码信息表: [错误码信息; 6] = [
         0,
         0,
         1,
+    ),    码项(
+        错误码::内容超限,
+        "内容超限\0".as_bytes(),
+        "文件、页数、块数或文本字节超过声明的上限，不截断伪成功。\0".as_bytes(),
+        0,
+        0,
+        0,
     ),
 ];
 pub const fn 错误码信息表段() -> v1_contract::表段<错误码信息> {
-    v1_contract::表段::构造(错误码信息表.as_ptr(), 6)
+    v1_contract::表段::构造(错误码信息表.as_ptr(), 7)
 }
