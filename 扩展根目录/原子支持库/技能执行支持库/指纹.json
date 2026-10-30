@@ -1,0 +1,31 @@
+{
+  "算法": "sha256",
+  "生成器": "构建装配/形态装配/扩展指纹.py",
+  "生成物声明": "生成物，禁手改。生成器：构建装配/形态装配/扩展指纹.py",
+  "生成命令": "$V1_PY 构建装配/形态装配/扩展指纹.py",
+  "范围": "声明、Rust源码、Cargo清单与锁文件、程序文本、模块及技能制品；不含机器局部支持库制品、说明散文、缓存、指纹本身。",
+  "指纹": {
+    "Cargo.lock": "11bcd1f64c0e7ae8fc42c009e243deabfd24b8632ecf40c15bb979d31d64e9b1",
+    "Cargo.toml": "bc0eb38c9015b50200f0285e6e22c6c8990a8c282514fe35ba2a9ae551677baa",
+    "src/lib.rs": "60dfe115e4ed83c377cb728bb834e220dfd7ec7e86283972d205e49e68463502",
+    "src/业务实现.rs": "338c76a8044d88cc3d682ef622d21fcc184ef512b678ce1674c61dad52c9f4c9",
+    "src/命令声明面.rs": "60add1b6ed9be386dcde77e02282c8d520d9480a937a5c8b73be5a9fc8a6511b",
+    "src/执行函数面.rs": "1385fa2eb8b9b8d826dd11a5799285758e4319e003923a2d86f2204b651e9674",
+    "src/执行计划.rs": "8459a25a8d73da378b0b9e2618294387598c7d5c396b4c7b709fd684fcd87547",
+    "src/技能校验.rs": "bffc6d9a2b4b2df8fddd6bf020913b120483bbf0367ad932c9f0f84036582057",
+    "src/编号与码面.rs": "5073d9bd7321de03d529e0477e3cd94929f0ec0ef70d9b87dd5af69df724cbe1",
+    "src/静态声明.rs": "1390332914c0fd96747eed2bb46b9f35dd61f8f07e5e928e2a458ffbf2e30e73",
+    "包声明.json": "9814ccdb105ec9935035b326115c74f727e2c84ff63da5be91b10a362c4d74ab",
+    "能力声明/8301.json": "02c3de0937cf56a9b66213d7498dc00b59ac033ab6bd1b5107424f2a37b25e29",
+    "错误码表/8301.json": "e114458e3a46ee5c5ec4c80bd111f266c17bb5cc9ed442cba8cb26ed6d3bba34",
+    "错误码表/8302.json": "7cebb31ffbc3a7c75e5de9abdf7d1067889f15fc4b2117f9ab370815aad65a93",
+    "错误码表/8303.json": "b98823e1c7d6856be136e0db6e13ecb8cea733a0a3a57f7eff838b74c267ccb0",
+    "错误码表/8304.json": "84b823d70f2bb4023aa35a52a18eb8e96d4e203d38d931b828a470b882d3fe31",
+    "错误码表/8305.json": "9859667c079f101d5f8e1fa7467dc6d04100919b936a36e8bda717e25215034e",
+    "错误码表/8306.json": "c8e05cdf7c48b761e3bfa78ba47b6daa45aee6b4e8f242d8eb13202a5391581a",
+    "错误码表/8307.json": "73dd97b6dd76eb220bec22858ab266c58d3ca5a3a64235c06447df3140518536",
+    "错误码表/8308.json": "73d208f70d83755d41b694cf17659d6992942f84826f4d6a1eb4c710fbf3e352",
+    "错误码表/8309.json": "21ffa93be4cf837af4dddf3100f8bbea3c4f7cea8019c63ea65569349b2dacfb",
+    "错误码表/8310.json": "f28e6fc7fb570d0d5cd6f510bbe94689de60c16db0525081b5807ad0d1da1541"
+  }
+}

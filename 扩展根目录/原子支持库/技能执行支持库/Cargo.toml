@@ -1,0 +1,14 @@
+[workspace]
+
+[package]
+name = "v1-skill-exec"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+name = "v1_skill_exec"
+path = "src/lib.rs"
+
+[dependencies]
+v1-contract = { path = "../../../契约声明" }
+serde_json = "=1.0.154"
