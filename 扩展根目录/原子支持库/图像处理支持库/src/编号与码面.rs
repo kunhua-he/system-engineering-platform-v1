@@ -11,6 +11,7 @@ pub mod 能力号 {
     pub const 计算图像哈希组: u32 = 6508;
     pub const 转置修正: u32 = 6509;
     pub const 透明背景合成: u32 = 6510;
+    pub const 判定画面起伏: u32 = 6511;
 }
 
 pub mod 错误码 {
