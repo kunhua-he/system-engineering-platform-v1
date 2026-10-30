@@ -260,7 +260,8 @@ mod 格式转换验证样本 {
     #[test]
     fn 超时零取默认() {
         assert_eq!(解析超时("0").unwrap(), 默认超时秒);
-        assert!(解析超时("4").is_err());
+        assert_eq!(解析超时("4").unwrap(), 4);
+        assert!(解析超时("6").is_err());
         assert_eq!(解析超时("5").unwrap(), 5);
     }
 
@@ -304,7 +305,7 @@ mod 格式转换验证样本 {
         std::fs::write(&源文件, "内容").unwrap();
         let 源文本 = 源文件.to_string_lossy().to_string();
         let 目录文本 = 样本根.to_string_lossy().to_string();
-        assert_eq!(转换文本实现(&源文本, "txt", "3", &目录文本).unwrap_err(), 错误码::参数不合法);
+        assert_eq!(转换文本实现(&源文本, "txt", "6", &目录文本).unwrap_err(), 错误码::参数不合法);
         assert_eq!(转换文本实现(&源文本, "txt", "601", &目录文本).unwrap_err(), 错误码::参数不合法);
         assert_eq!(转换文本实现(&源文本, "txt", "很久", &目录文本).unwrap_err(), 错误码::参数不合法);
         let _ = std::fs::remove_dir_all(&样本根);
