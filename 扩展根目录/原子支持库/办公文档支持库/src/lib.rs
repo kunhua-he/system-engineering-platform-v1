@@ -1,6 +1,8 @@
 #![allow(non_snake_case)]
 #[path = "命令声明面.rs"]
 mod 命令声明面;
+#[path = "文档解析.rs"]
+mod 文档解析;
 #[path = "业务实现.rs"]
 mod 业务实现;
 #[path = "执行函数面.rs"]

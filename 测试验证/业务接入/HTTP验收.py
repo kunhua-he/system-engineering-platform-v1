@@ -54,6 +54,11 @@ try:
     else:raise RuntimeError('网关准备超时')
     装载=请求('接口/运维/生命周期',{'动作':'装载'})
     assert 装载[0]==200,装载
+    if '--仅办公文档' in sys.argv[2:]:
+        from 文档有序块验收 import 执行文档验收
+        执行文档验收(缓存, 请求, 调用)
+        print('办公文档定向HTTP通过；请求数', len(回执), flush=True)
+        raise SystemExit(0)
     assert 请求('接口/能力/3111')[1]['契约']['返回类型']==5
     assert 请求('接口/能力/6101')[1]['契约']['返回类型']==103
     样本根=缓存/'样本文件';样本根.mkdir(exist_ok=True)
@@ -381,26 +386,8 @@ try:
     assert 块表结果['块'][3]['语言'] == 'python', 块表结果
     assert 块表结果['块'][3]['文本'] == 'print(1)', 块表结果
     assert 调用(6111, ['未闭合围栏\n```\n代码一行\n'], [4])['值'][0]['值'].count('代码块') == 1
-    assert 请求('接口/能力/6112')[1]['契约']['返回类型'] == 4
-    DOCX路径 = '/private/tmp/验收示例.docx'
-    内容JSON = json.dumps({'段落': [{'文本': '一级标题', '样式': 'Heading1'}, {'文本': '正文第一段'}],
-                           '表格': [[['格一', '格二'], ['格三', '格四']]]}, ensure_ascii=False)
-    生成结果 = json.loads(调用(6113, [内容JSON, DOCX路径], [4, 4])['值'][0]['值'])
-    assert 生成结果['字节数'] > 0 and 生成结果['输出路径'] == DOCX路径, 生成结果
-    回读结果 = json.loads(调用(6112, [DOCX路径], [4])['值'][0]['值'])
-    assert 回读结果['段数'] == 2 and 回读结果['表数'] == 1, 回读结果
-    assert 回读结果['段落'][0]['样式'] == 'Heading1' and 回读结果['段落'][0]['文本'] == '一级标题', 回读结果
-    assert 回读结果['表格'][0] == [['格一', '格二'], ['格三', '格四']], 回读结果
-    import zipfile as 归档模块
-    with 归档模块.ZipFile(DOCX路径) as 归档:
-        条目集 = set(归档.namelist())
-    assert 条目集 == {'[Content_Types].xml', '_rels/.rels', 'word/document.xml',
-                      'word/_rels/document.xml.rels', 'word/styles.xml'}, 条目集
-    调用(6112, ['/private/tmp/不存在的示例.docx'], [4], True)
-    with open('/private/tmp/坏包示例.docx', 'wb') as 坏包:
-        坏包.write(b'not a zip at all' * 20)
-    调用(6112, ['/private/tmp/坏包示例.docx'], [4], True)
-    调用(6113, ['不是JSON', '/private/tmp/坏内容示例.docx'], [4, 4], True)
+    from 文档有序块验收 import 执行文档验收
+    执行文档验收(缓存, 请求, 调用)
     def 解包槽(槽值):
         while isinstance(槽值, dict) and set(槽值) <= {'类型标签', '值'}:
             槽值 = 槽值['值']
