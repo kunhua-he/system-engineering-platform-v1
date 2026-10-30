@@ -1,0 +1,9 @@
+{
+  "码": 7005,
+  "名称": "协议不符",
+  "说明": "WebSocket 握手返回非 101、Accept 校验不通过，或 HTTP 响应不具备 Content-Length。",
+  "段位": 7,
+  "可重试": false,
+  "可自愈": false,
+  "需人工": false
+}
