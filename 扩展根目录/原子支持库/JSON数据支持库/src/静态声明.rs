@@ -7,11 +7,11 @@ const 底座声明格式号: v1_contract::格式号 = v1_contract::格式号::�
 const 底座目标字宽: u16 = 64;
 const 底座标识串: &[u8] = b"416a02b29b134cdba36149429a4c6a52\0";
 const 底座名称: &[u8] = "JSON数据支持库\0".as_bytes();
-const 底座说明: &[u8] = "JSON文本规范化、RFC6901指针取值、取文本与固定字段摘要；输入65536字节、深度64、指针4096字节。\0".as_bytes();
-const 底座实现版本: v1_contract::版本三元组 = v1_contract::版本三元组::构造(0, 1, 0);
+const 底座说明: &[u8] = "JSON文本规范化、RFC6901指针取值、取文本与固定字段摘要；输入65536字节、深度64、指针4096字节。新增5218裁剪响应、5219压缩描述字段、5220提取带前缀JSON，三件输入至4194304字节。\0".as_bytes();
+const 底座实现版本: v1_contract::版本三元组 = v1_contract::版本三元组::构造(0, 2, 0);
 const 底座要求宿主版本: v1_contract::版本要求 = v1_contract::版本要求::构造(1, 0);
 const 底座要求内核版本: v1_contract::版本要求 = v1_contract::版本要求::构造(1, 0);
-const 底座能力号段: [v1_contract::号段; 1] = [v1_contract::号段::构造(5201, 5217)];
+const 底座能力号段: [v1_contract::号段; 1] = [v1_contract::号段::构造(5201, 5220)];
 const 底座错误段位表: [u32; 1] = [5];
 
 const fn 底座能力号段表段() -> 表段<v1_contract::号段> {
