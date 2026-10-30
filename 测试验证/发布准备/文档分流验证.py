@@ -63,6 +63,37 @@ with tempfile.TemporaryDirectory(prefix='文档分流验证-') as 临时目录:
     assert not 分流模块.仅文档变更(运行根);验证计数+=1
     with sqlite3.connect(库文件) as 数据库连接:
         数据库连接.execute("UPDATE 命名登记 SET 语义='原语义'")
+    # 三面不一致不能用HEAD到磁盘的净差集藏掉暂存内容。
+    执行命令(运行根,'restore','--source=HEAD','--staged','--worktree','开发工具/信息核心/信息核心.db')
+    (运行根/'功能实现.py').write_text('实现编号=2\n')
+    执行命令(运行根,'add','功能实现.py')
+    (运行根/'功能实现.py').write_text('实现编号=1\n')
+    assert not 分流模块.仅文档变更(运行根), '索引源码被磁盘净差集隐藏';验证计数+=1
+    执行命令(运行根,'restore','--source=HEAD','--staged','--worktree','功能实现.py')
+    (运行根/'README.md').write_text('暂存正文\n')
+    执行命令(运行根,'add','README.md')
+    (运行根/'README.md').write_text('磁盘正文\n')
+    assert not 分流模块.仅文档变更(运行根), '验收正文与待提交正文不同';验证计数+=1
+    执行命令(运行根,'add','README.md')
+    assert 分流模块.仅文档变更(运行根);验证计数+=1
+    with sqlite3.connect(库文件) as 数据库连接:
+        数据库连接.execute("UPDATE 规则 SET 规则值='暂存改变规则'")
+    执行命令(运行根,'add','开发工具/信息核心/信息核心.db')
+    with sqlite3.connect(库文件) as 数据库连接:
+        数据库连接.execute("UPDATE 规则 SET 规则值='冻结'")
+    assert not 分流模块.仅文档变更(运行根), '暂存规则被磁盘正文掩盖';验证计数+=1
+    执行命令(运行根,'restore','--source=HEAD','--staged','--worktree','开发工具/信息核心/信息核心.db')
+    (运行根/'README.md').unlink()
+    (运行根/'README.md').symlink_to('/dev/null')
+    执行命令(运行根,'add','README.md')
+    (运行根/'README.md').unlink()
+    (运行根/'README.md').write_text('普通磁盘正文\n')
+    assert not 分流模块.仅文档变更(运行根), '暂存链接类型被磁盘普通文件掩盖';验证计数+=1
+    执行命令(运行根,'restore','--source=HEAD','--staged','--worktree','README.md')
+    执行命令(运行根,'update-index','--chmod=+x','README.md')
+    assert not 分流模块.仅文档变更(运行根), '暂存执行模式被磁盘普通模式掩盖';验证计数+=1
+    执行命令(运行根,'restore','--source=HEAD','--staged','--worktree','README.md')
+    (运行根/'README.md').write_text('文档改动\n')
     原值=os.environ.get('V1_FULL_GATE')
     os.environ['V1_FULL_GATE']='1'
     assert not 分流模块.仅文档变更(运行根);验证计数+=1
