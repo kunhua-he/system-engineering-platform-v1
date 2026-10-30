@@ -3,6 +3,8 @@
 mod 命令声明面;
 #[path = "业务实现.rs"]
 mod 业务实现;
+#[path = "响应塑形实现.rs"]
+mod 响应塑形实现;
 #[path = "JSON树解析.rs"]
 mod JSON树解析;
 #[path = "执行函数面.rs"]

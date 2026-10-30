@@ -17,6 +17,9 @@ pub mod 能力号 {
     pub const 深合并: u32 = 5215;
     pub const 解析YAML: u32 = 5216;
     pub const 序列化YAML: u32 = 5217;
+    pub const 裁剪响应: u32 = 5218;
+    pub const 压缩描述字段: u32 = 5219;
+    pub const 提取带前缀JSON: u32 = 5220;
 }
 pub mod 错误码 {
     pub const JSON参数不合法: u32 = 5201;

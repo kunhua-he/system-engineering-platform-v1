@@ -1,7 +1,7 @@
 use crate::编号与码面::{能力号, 错误码};
 use v1_contract::复合值载荷::{复合值, 复合元素, 编码复合值载荷};
-fn 解析文本(原文: &str) -> Result<serde_json::Value, u32> {
-    if 原文.len() > 65536 {
+pub(crate) fn 解析文本上限(原文: &str, 上限: usize) -> Result<serde_json::Value, u32> {
+    if 原文.len() > 上限 {
         return Err(错误码::JSON资源受限);
     }
     let (mut 深度, mut 字符串内, mut 转义中) = (0usize, false, false);
@@ -29,6 +29,9 @@ fn 解析文本(原文: &str) -> Result<serde_json::Value, u32> {
         }
     }
     crate::JSON树解析::解析JSON树(原文).map_err(|_| 错误码::JSON参数不合法)
+}
+fn 解析文本(原文: &str) -> Result<serde_json::Value, u32> {
+    解析文本上限(原文, 65536)
 }
 fn 指针取值<'载荷生命期>(
     解析值: &'载荷生命期 serde_json::Value,
@@ -330,6 +333,15 @@ fn 转YAML值(候选值: &serde_json::Value) -> serde_yaml_ng::Value {
 }
 
 pub fn 执行文本操作(编号: u32, 文本参数表: &[&str]) -> Result<(u32, Vec<u8>), u32> {
+    if 编号 == 能力号::裁剪响应 {
+        return crate::响应塑形实现::执行裁剪响应(文本参数表);
+    }
+    if 编号 == 能力号::压缩描述字段 {
+        return crate::响应塑形实现::执行压缩描述字段(文本参数表);
+    }
+    if 编号 == 能力号::提取带前缀JSON {
+        return crate::响应塑形实现::执行提取带前缀JSON(文本参数表);
+    }
     if 编号 == 能力号::反序列化CSV {
         if 文本参数表[1].chars().count() != 1 {
             return Err(错误码::JSON参数不合法);
