@@ -64,7 +64,12 @@ def 作业样本(仓根, 工具表):
              and "git diff --cached --quiet" in 放行串
              and "构建装配/一键验证 测试验证/测试案例" in 放行串
              and 放行串.count("闸0.py") == 1
-             and 放行串.startswith("cargo check --workspace --all-targets --locked")
+             and "cargo check --workspace --all-targets --locked" in 放行串
+             # ★ 2026-10-31：文档放行（DOC_CODE=99 门）加到了放行串最前 ⇒ 原先的「以 cargo 开头」
+             #   断言过期。改判**顺序**：cargo check → 闸0 → 自测 → 案例，四段的相对次序不变。
+             and 放行串.index("cargo check --workspace --all-targets --locked")
+             < 放行串.index("闸0.py") < 放行串.index("--自检" if "--自检" in 放行串 else "--自测")
+             < 放行串.index("-p v1-case-runner")
              and 放行串.count("-p v1-case-runner") == 1
              and "记放行" in 放行串))
     return 样本表 + 异步短样本(仓根, 工具表) + 账本列样本(仓根)

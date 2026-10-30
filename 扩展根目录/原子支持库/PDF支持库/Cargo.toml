@@ -1,0 +1,12 @@
+[package]
+name = "v1-pdf"
+description = "PDF支持库：macOS原生PDFKit页数与加密检测、整页渲染、内嵌图提取、结构校验"
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+[lib]
+name = "v1_pdf"
+path = "src/lib.rs"
+[dependencies]
+v1-contract = { path = "../../../契约声明" }
+[workspace]
