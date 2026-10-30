@@ -1,24 +1,24 @@
 use v1_contract::错误码信息;
 
 pub mod 能力号 {
-    pub const 分析图像文件: u32 = 6401;
-    pub const 识别图像格式: u32 = 6402;
-    pub const 生成占位图: u32 = 6403;
-    pub const 缩放图像: u32 = 6404;
-    pub const 转置图像: u32 = 6405;
-    pub const 合成图像: u32 = 6406;
-    pub const 重编码图像: u32 = 6407;
-    pub const 计算图像哈希组: u32 = 6408;
-    pub const 转置修正: u32 = 6409;
-    pub const 透明背景合成: u32 = 6410;
+    pub const 分析图像文件: u32 = 6501;
+    pub const 识别图像格式: u32 = 6502;
+    pub const 生成占位图: u32 = 6503;
+    pub const 缩放图像: u32 = 6504;
+    pub const 转置图像: u32 = 6505;
+    pub const 合成图像: u32 = 6506;
+    pub const 重编码图像: u32 = 6507;
+    pub const 计算图像哈希组: u32 = 6508;
+    pub const 转置修正: u32 = 6509;
+    pub const 透明背景合成: u32 = 6510;
 }
 
 pub mod 错误码 {
-    pub const 参数不合法: u32 = 6401;
-    pub const 解码失败: u32 = 6402;
-    pub const 写出失败: u32 = 6403;
-    pub const 格式不支持: u32 = 6404;
-    pub const 尺寸超限: u32 = 6405;
+    pub const 参数不合法: u32 = 6501;
+    pub const 解码失败: u32 = 6502;
+    pub const 写出失败: u32 = 6503;
+    pub const 格式不支持: u32 = 6504;
+    pub const 尺寸超限: u32 = 6505;
 }
 
 pub const fn 码项(
