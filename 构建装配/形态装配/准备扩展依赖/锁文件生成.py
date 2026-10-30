@@ -1,6 +1,10 @@
 """仅生成显式指定支持库的Cargo.lock；不编译、不联网、不改其他扩展。"""
+import sys
 import subprocess
 from pathlib import Path
+仓根=Path(__file__).resolve().parents[3]
+if str(仓根) not in sys.path:
+    sys.path.insert(0, str(仓根))
 from 构建装配.形态装配.生成模块制品.编译模块 import 编译环境
 
 
