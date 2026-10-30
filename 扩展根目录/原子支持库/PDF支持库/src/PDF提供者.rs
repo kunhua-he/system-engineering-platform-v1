@@ -5,7 +5,7 @@ use std::time::{Duration, Instant};
 
 use crate::错误码;
 
-const 等待上限毫秒: u64 = 30_000;
+const 等待上限毫秒: u64 = 5_000;
 const 输出上限字节: usize = 88_000_000;
 
 fn 引擎路径() -> Result<std::path::PathBuf, u32> {
