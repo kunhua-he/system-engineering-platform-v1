@@ -3,11 +3,13 @@ pub mod 能力号 {
     pub const 规范化网址: u32 = 4201;
     pub const 合并相对网址: u32 = 4202;
     pub const 取查询参数JSON: u32 = 4203;
+    pub const 提取外部标识: u32 = 4204;
 }
 pub mod 错误码 {
     pub const 参数不合法: u32 = 4201;
     pub const 内容不合法: u32 = 4202;
     pub const 资源受限: u32 = 4203;
+    pub const 标识无法识别: u32 = 4205;
 }
 pub const fn 码项(
     错误码: u32,
@@ -29,7 +31,7 @@ pub const fn 码项(
     }
 }
 
-pub const 错误码信息表: [错误码信息; 3] = [
+pub const 错误码信息表: [错误码信息; 4] = [
     码项(
         错误码::参数不合法,
         "参数不合法\0".as_bytes(),
@@ -54,7 +56,15 @@ pub const 错误码信息表: [错误码信息; 3] = [
         0,
         0,
     ),
+    码项(
+        错误码::标识无法识别,
+        "标识无法识别\0".as_bytes(),
+        "标识无法识别:youtube 需 11 位且后继断开；arxiv 需 新式 数字.数字 或 旧式 分类/7位数字。\0".as_bytes(),
+        0,
+        0,
+        0,
+    ),
 ];
 pub const fn 错误码信息表段() -> v1_contract::表段<错误码信息> {
-    v1_contract::表段::构造(错误码信息表.as_ptr(), 3)
+    v1_contract::表段::构造(错误码信息表.as_ptr(), 4)
 }
