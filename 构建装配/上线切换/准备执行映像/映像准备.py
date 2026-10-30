@@ -7,13 +7,16 @@ import subprocess
 import time
 from 构建装配.门禁.硬顶常量 import 效率目标毫秒
 
-def 准备执行映像(仓根,代码缓存根,日志路径):
+def 准备执行映像(仓根,代码缓存根,日志路径,制品根目录=None):
     仓根=Path(仓根).resolve();代码缓存根=Path(代码缓存根).resolve();日志路径=Path(日志路径).resolve()
     日志路径.parent.mkdir(parents=True,exist_ok=True)
-    命令表=[str(仓根/'构建环境/构建缓存/release/examples/启动网关'),'--声明根','扩展装载/扩展根声明.json','--后缀表','扩展装载/后缀表.json','--缓存根',str(代码缓存根),'--端口','0','--工具根','.']
+    制品根目录=Path(制品根目录).resolve() if 制品根目录 is not None else None
+    网关路径=制品根目录/'网关' if 制品根目录 is not None else 仓根/'构建环境/构建缓存/release/examples/启动网关'
+    声明根路径=制品根目录/'扩展根声明.json' if 制品根目录 is not None else 仓根/'扩展装载/扩展根声明.json'
+    命令表=[str(网关路径),'--声明根',str(声明根路径),'--后缀表',str(仓根/'扩展装载/后缀表.json'),'--缓存根',str(代码缓存根),'--端口','0','--工具根',str(仓根)]
     起始时刻=time.monotonic();预算秒=效率目标毫秒/1000;截止时刻=起始时刻+预算秒
     日志字节=bytearray();已就绪=False
-    进程=subprocess.Popen(命令表,cwd=仓根,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,start_new_session=True)
+    进程=subprocess.Popen(命令表,cwd=制品根目录 or 仓根,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,start_new_session=True)
     try:
         with selectors.DefaultSelector() as 选择器,open(日志路径,'wb') as 日志文件:
             选择器.register(进程.stdout,selectors.EVENT_READ)

@@ -16,6 +16,7 @@ from .落点环境常量 import 仓根, 停等秒, 运行根, 健康超时秒
 from .指针 import 读指针, 写指针
 from .上线制品 import 制品目录
 from .输出 import 打印文本
+from 构建装配.上线切换.准备执行映像 import 准备执行映像
 
 
 def 进程活着(pid: int) -> bool:
@@ -24,6 +25,14 @@ def 进程活着(pid: int) -> bool:
         return True
     except OSError:
         return False
+
+
+def 准备实例映像(标识: str) -> dict:
+    """发布准备使用目标制品；与正式启动共用同一内容寻址缓存。"""
+    return 准备执行映像(
+        仓根, 运行根 / "执行映像", 运行根 / "日志" / "{}-映像准备.log".format(标识),
+        制品根目录=制品目录(标识),
+    )
 
 
 def 起实例(标识: str, 监听端口: int) -> dict:
@@ -42,6 +51,7 @@ def 起实例(标识: str, 监听端口: int) -> dict:
             str(制品落点目录 / "网关"),
             "--声明根", "扩展根声明.json",
             "--端口", str(监听端口),
+            "--缓存根", str(运行根 / "执行映像"),
             "--静态根", str(仓根 / "前端呈现" / "网页应用"),
             "--工具根", str(仓根),
             # ★ 后缀表（候选资格的唯一权威）：制品目录里**没有** `扩展装载/`（制品不自含部署
@@ -59,7 +69,10 @@ def 起实例(标识: str, 监听端口: int) -> dict:
     实际 = 等端口(日志, 进程)
     if 实际 is None:
         进程.kill()
+        进程.wait()
+        输出流.close()
         raise SystemExit("实例没起来（日志 {}）：\n{}".format(日志, 日志.read_text(encoding="utf-8")))
+    输出流.close()
     实例台账 = {"制品标识": 标识, "pid": 进程.pid, "端口": 实际, "日志": str(日志), "制品落点": str(制品落点目录)}
     写指针("已装载/{}".format(标识), 实例台账)
     return 实例台账
