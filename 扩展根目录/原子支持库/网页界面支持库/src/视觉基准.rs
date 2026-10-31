@@ -102,6 +102,7 @@ body.hs-desk-body{margin:0;overflow:hidden}
 .hs-dock-dot{position:absolute;bottom:-6px;width:4px;height:4px;border-radius:50%;background:rgba(20,20,22,.55)}
 .hs-dock-sep{width:1px;height:38px;margin:0 4px;background:rgba(0,0,0,.14)}
 /* ===== 启动器 ===== */
+.hs-launchpad[hidden]{display:none}
 .hs-launchpad{position:fixed;inset:0;z-index:var(--z-launchpad);display:flex;align-items:center;justify-content:center;padding:28px 20px;background:rgba(20,22,26,.42);backdrop-filter:blur(10px) saturate(120%);-webkit-backdrop-filter:blur(10px) saturate(120%)}
 .hs-launchpad-panel{width:min(var(--desktop-launchpad-panel-max-width),92vw);max-height:min(var(--desktop-launchpad-panel-max-height),84vh);overflow:auto;padding:16px 18px 20px;border-radius:var(--desktop-radius-launchpad);background:rgba(246,246,248,.86);box-shadow:var(--desktop-shadow-popover);backdrop-filter:var(--desktop-launchpad-filter);-webkit-backdrop-filter:var(--desktop-launchpad-filter);color:var(--desktop-ink)}
 .hs-launchpad-title{margin:0 0 10px;font:600 20px/1.3 var(--desktop-font-body);letter-spacing:.5px}
