@@ -17,6 +17,8 @@ mod 业务实现;
 mod 受控修复面;
 #[path = "受控写入面.rs"]
 mod 受控写入面;
+#[path = "受控提交面.rs"]
+mod 受控提交面;
 #[cfg(test)]
 #[path = "受控读取样本.rs"]
 mod 受控读取样本;
