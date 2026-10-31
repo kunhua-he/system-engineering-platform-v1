@@ -1,10 +1,14 @@
 #![allow(non_snake_case)]
 #[path = "业务实现.rs"]
 mod 业务实现;
+#[path = "交互脚本.rs"]
+mod 交互脚本;
 #[path = "命令声明面.rs"]
 mod 命令声明面;
 #[path = "执行函数面.rs"]
 mod 执行函数面;
+#[path = "桌面部件.rs"]
+mod 桌面部件;
 #[path = "编号与码面.rs"]
 mod 编号与码面;
 #[path = "视觉基准.rs"]

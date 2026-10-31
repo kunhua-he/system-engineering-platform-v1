@@ -8,6 +8,14 @@ pub mod 能力号 {
     pub const 渲染桌面外壳: u32 = 4915;
     pub const 渲染输入控件: u32 = 4916;
     pub const 渲染按钮: u32 = 4917;
+    pub const 渲染登录页: u32 = 4918;
+    pub const 渲染桌面菜单栏: u32 = 4919;
+    pub const 渲染桌面图标区: u32 = 4920;
+    pub const 渲染桌面图标坞: u32 = 4921;
+    pub const 渲染窗口: u32 = 4922;
+    pub const 渲染桌面交互脚本: u32 = 4923;
+    pub const 渲染完整桌面: u32 = 4924;
+    pub const 渲染启动器: u32 = 4925;
 }
 pub mod 错误码 {
     pub const 参数不合法: u32 = 4921;
