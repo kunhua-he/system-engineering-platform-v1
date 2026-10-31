@@ -11,8 +11,20 @@
 #![allow(uncommon_codepoints)]
 #![allow(non_snake_case)]
 
-#[path = "编号与码面.rs"]
-mod 编号与码面;
+#[path = "业务实现.rs"]
+mod 业务实现;
+#[path = "受控修复面.rs"]
+mod 受控修复面;
+#[path = "受控写入面.rs"]
+mod 受控写入面;
+#[cfg(test)]
+#[path = "受控读取样本.rs"]
+mod 受控读取样本;
+#[path = "受控读取面.rs"]
+mod 受控读取面;
+#[cfg(unix)]
+#[path = "受控路径面.rs"]
+mod 受控路径面;
 #[path = "命令声明面.rs"]
 mod 命令声明面;
 #[path = "执行函数面.rs"]
@@ -21,22 +33,10 @@ mod 执行函数面;
 mod 摘要面;
 #[path = "文件操作桥.rs"]
 mod 文件操作桥;
-#[path = "业务实现.rs"]
-mod 业务实现;
-#[path = "受控修复面.rs"]
-mod 受控修复面;
+#[path = "编号与码面.rs"]
+mod 编号与码面;
 #[path = "静态声明.rs"]
 mod 静态声明;
-#[cfg(unix)]
-#[path = "受控路径面.rs"]
-mod 受控路径面;
-#[path = "受控写入面.rs"]
-mod 受控写入面;
-#[path = "受控读取面.rs"]
-mod 受控读取面;
-#[cfg(test)]
-#[path = "受控读取样本.rs"]
-mod 受控读取样本;
 
 // 公开面再导出：能力号 · 错误码 · 接缝与验证面取用口。
 pub use 编号与码面::{能力号, 错误码};
