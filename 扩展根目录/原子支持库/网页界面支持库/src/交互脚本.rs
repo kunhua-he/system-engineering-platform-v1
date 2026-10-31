@@ -146,7 +146,9 @@ const 脚本模板: &str = r#"<script>
     }
   }
   全部('[data-menu]').forEach(function(菜单){
-    if(菜单.getAttribute('data-menu') === '启动器'){ 菜单.addEventListener('click', 打开启动器); }
+    var 菜单键 = 菜单.getAttribute('data-menu') || '';
+    if(菜单键 === '启动器'){ 菜单.addEventListener('click', 打开启动器); }
+    else if(菜单键.charAt(0) === '/'){ 菜单.addEventListener('click', function(){ location.href = 菜单键; }); }
   });
   时钟();
   setInterval(时钟, 30000);
