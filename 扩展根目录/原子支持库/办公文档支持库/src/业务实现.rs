@@ -1,5 +1,4 @@
 use std::io::{Read, Write};
-use quick_xml::escape::escape as 转义XML;
 
 use crate::编号与码面::{能力号, 错误码};
 
@@ -523,13 +522,17 @@ fn 解析PPTX文档(文件路径: &str) -> Result<String, u32> {
 }
 
 fn 解析DOCX文档(文件路径: &str) -> Result<String, u32> {
-    crate::文档解析::解析正文(&解压文档正文(文件路径)?)
+    let 正文JSON = crate::文档合并解析::解析增强正文(&解压文档正文(文件路径)?)?;
+    let mut 解析结果: serde_json::Value = serde_json::from_str(&正文JSON).map_err(|_| 错误码::内容不合法)?;
+    let 图片清单 = crate::办公资源::枚举图片资源(文件路径, "word/media/")?;
+    解析结果["资源列表"] = crate::办公资源::组装资源JSON(&图片清单);
+    Ok(解析结果.to_string())
 }
 
 fn 生成DOCX文档(内容文本: &str, 输出路径: &str) -> Result<String, u32> {
     let 内容值: serde_json::Value =
         serde_json::from_str(内容文本).map_err(|_| 错误码::参数不合法)?;
-    let 正文片段 = 构造正文XML(&内容值)?;
+    let 正文片段 = crate::文档部件::构造正文XML(&内容值)?;
     let 文档XML = format!(
         "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?><w:document xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\"><w:body>{}<w:sectPr/></w:body></w:document>",
         正文片段
@@ -537,89 +540,26 @@ fn 生成DOCX文档(内容文本: &str, 输出路径: &str) -> Result<String, u3
     let 类型XML = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?><Types xmlns=\"http://schemas.openxmlformats.org/package/2006/content-types\"><Default Extension=\"rels\" ContentType=\"application/vnd.openxmlformats-package.relationships+xml\"/><Default Extension=\"xml\" ContentType=\"application/xml\"/><Override PartName=\"/word/document.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml\"/><Override PartName=\"/word/styles.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml\"/></Types>";
     let 关系XML = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?><Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\"><Relationship Id=\"rId1\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument\" Target=\"word/document.xml\"/></Relationships>";
     let 文档关系XML = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?><Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\"><Relationship Id=\"rId1\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles\" Target=\"styles.xml\"/></Relationships>";
-    let 样式XML = 构造样式XML();
-    let 源文件 = std::fs::File::create(输出路径).map_err(|_| 错误码::写出失败)?;
-    let mut 压缩包 = zip::ZipWriter::new(源文件);
-    let 打包参数 = zip::write::SimpleFileOptions::default();
-    for (条目名, 条目内容) in [
-        ("[Content_Types].xml", 类型XML),
-        ("_rels/.rels", 关系XML),
-        ("word/_rels/document.xml.rels", 文档关系XML),
-        ("word/styles.xml", 样式XML.as_str()),
-        (文档条目标识, 文档XML.as_str()),
-    ] {
-        压缩包.start_file(条目名, 打包参数).map_err(|_| 错误码::写出失败)?;
-        压缩包.write_all(条目内容.as_bytes()).map_err(|_| 错误码::写出失败)?;
+    let 样式XML = crate::文档部件::构造样式XML();
+    let mut 缓冲流 = std::io::Cursor::new(Vec::new());
+    {
+        let mut 压缩包 = zip::ZipWriter::new(&mut 缓冲流);
+        let 打包参数 = zip::write::SimpleFileOptions::default();
+        for (条目名, 条目内容) in [
+            ("[Content_Types].xml", 类型XML),
+            ("_rels/.rels", 关系XML),
+            ("word/_rels/document.xml.rels", 文档关系XML),
+            ("word/styles.xml", 样式XML.as_str()),
+            (文档条目标识, 文档XML.as_str()),
+        ] {
+            压缩包.start_file(条目名, 打包参数).map_err(|_| 错误码::写出失败)?;
+            压缩包.write_all(条目内容.as_bytes()).map_err(|_| 错误码::写出失败)?;
+        }
+        压缩包.finish().map_err(|_| 错误码::写出失败)?;
     }
-    压缩包.finish().map_err(|_| 错误码::写出失败)?;
-    let 字节数 = std::fs::metadata(输出路径).map(|元数据项| 元数据项.len()).unwrap_or(0);
+    let 打包字节 = 缓冲流.into_inner();
+    crate::办公资源::原子写出(输出路径, &打包字节)?;
+    let 字节数 = 打包字节.len();
     Ok(format!("{{\"输出路径\":\"{}\",\"字节数\":{}}}", 转义文本(输出路径), 字节数))
 }
 
-fn 段落XML(段落拼文: &str, 段落式名: &str) -> String {
-    let 式片段 = if 段落式名.is_empty() {
-        String::new()
-    } else {
-        format!("<w:pPr><w:pStyle w:val=\"{}\"/></w:pPr>", 转义XML(段落式名))
-    };
-    format!(
-        "<w:p>{}<w:r><w:t xml:space=\"preserve\">{}</w:t></w:r></w:p>",
-        式片段,
-        转义XML(段落拼文)
-    )
-}
-
-fn 构造正文XML(内容值: &serde_json::Value) -> Result<String, u32> {
-    if 内容值.get("段落").is_some() || 内容值.get("表格").is_some() { return Err(错误码::参数不合法); }
-    let 块表值 = 内容值.get("块列表").and_then(|条目值| 条目值.as_array()).ok_or(错误码::参数不合法)?;
-    let mut 正文片段 = String::new();
-    for 单个块 in 块表值 {
-        let 块类型 = 单个块.get("类型").and_then(|条目值| 条目值.as_str()).ok_or(错误码::参数不合法)?;
-        match 块类型 {
-            "段落" | "标题" => {
-                let 段落拼文 = 单个块.get("文本").and_then(|条目值| 条目值.as_str()).ok_or(错误码::参数不合法)?;
-                let 段落式名 = if 块类型 == "标题" {
-                    let 层级值 = match 单个块.get("层级") {
-                        Some(条目值) => 条目值.as_u64().ok_or(错误码::参数不合法)?,
-                        None => 1,
-                    };
-                    if !(1..=6).contains(&层级值) { return Err(错误码::参数不合法); }
-                    format!("Heading{}", 层级值)
-                } else { "Normal".to_string() };
-                正文片段.push_str(&段落XML(段落拼文, &段落式名));
-            }
-            "表格" => {
-                let 行表值 = 单个块.get("表格数据").and_then(|条目值| 条目值.as_array()).ok_or(错误码::参数不合法)?;
-                if 行表值.is_empty() { return Err(错误码::参数不合法); }
-                let 最大列数 = 行表值.iter().filter_map(|单行| 单行.as_array()).map(|格表值| 格表值.len()).max().unwrap_or(0);
-                正文片段.push_str("<w:tbl><w:tblPr><w:tblW w:w=\"0\" w:type=\"auto\"/></w:tblPr><w:tblGrid>");
-                for _ in 0..最大列数 { 正文片段.push_str("<w:gridCol w:w=\"2400\"/>"); }
-                正文片段.push_str("</w:tblGrid>");
-                for 单行 in 行表值 {
-                    let 格表值 = 单行.as_array().ok_or(错误码::参数不合法)?;
-                    if 格表值.is_empty() { return Err(错误码::参数不合法); }
-                    正文片段.push_str("<w:tr>");
-                    for 单格 in 格表值 {
-                        let 格内拼文 = 单格.as_str().ok_or(错误码::参数不合法)?;
-                        正文片段.push_str("<w:tc>");
-                        正文片段.push_str(&段落XML(格内拼文, "Normal"));
-                        正文片段.push_str("</w:tc>");
-                    }
-                    正文片段.push_str("</w:tr>");
-                }
-                正文片段.push_str("</w:tbl>");
-            }
-            _ => return Err(错误码::参数不合法),
-        }
-    }
-    Ok(正文片段)
-}
-
-fn 构造样式XML() -> String {
-    let mut 样式正文 = String::from(r#"<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Times New Roman" w:eastAsia="宋体" w:hAnsi="Times New Roman"/><w:sz w:val="21"/><w:szCs w:val="21"/></w:rPr></w:rPrDefault></w:docDefaults><w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/><w:qFormat/></w:style>"#);
-    for (层级位置, 字号值) in [36, 32, 28, 26, 24, 22].iter().enumerate() {
-        样式正文.push_str(&format!(r#"<w:style w:type="paragraph" w:styleId="Heading{}"><w:name w:val="heading {}"/><w:basedOn w:val="Normal"/><w:qFormat/><w:pPr><w:outlineLvl w:val="{}"/></w:pPr><w:rPr><w:b/><w:sz w:val="{}"/><w:szCs w:val="{}"/></w:rPr></w:style>"#, 层级位置 + 1, 层级位置 + 1, 层级位置, 字号值, 字号值));
-    }
-    样式正文.push_str("</w:styles>");
-    样式正文
-}

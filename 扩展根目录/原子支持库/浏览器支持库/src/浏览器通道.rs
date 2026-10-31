@@ -25,30 +25,30 @@ fn 取摘要值(输入: &[u8]) -> [u8; 20] {
         for 序 in 16..80 {
             字[序] = (字[序 - 3] ^ 字[序 - 8] ^ 字[序 - 14] ^ 字[序 - 16]).rotate_left(1);
         }
-        let (mut 甲, mut 乙, mut 丙, mut 丁, mut 戊) = (状态[0], 状态[1], 状态[2], 状态[3], 状态[4]);
+        let (mut 工作寄存器左端, mut 工作寄存器左中, mut 工作寄存器中心, mut 工作寄存器右中, mut 工作寄存器右端) = (状态[0], 状态[1], 状态[2], 状态[3], 状态[4]);
         for (序, 当前字) in 字.iter().enumerate() {
             let (函数值, 常量值) = match 序 {
-                0..=19 => ((乙 & 丙) | ((!乙) & 丁), 0x5A827999u32),
-                20..=39 => (乙 ^ 丙 ^ 丁, 0x6ED9EBA1),
-                40..=59 => ((乙 & 丙) | (乙 & 丁) | (丙 & 丁), 0x8F1BBCDC),
-                _ => (乙 ^ 丙 ^ 丁, 0xCA62C1D6),
+                0..=19 => ((工作寄存器左中 & 工作寄存器中心) | ((!工作寄存器左中) & 工作寄存器右中), 0x5A827999u32),
+                20..=39 => (工作寄存器左中 ^ 工作寄存器中心 ^ 工作寄存器右中, 0x6ED9EBA1),
+                40..=59 => ((工作寄存器左中 & 工作寄存器中心) | (工作寄存器左中 & 工作寄存器右中) | (工作寄存器中心 & 工作寄存器右中), 0x8F1BBCDC),
+                _ => (工作寄存器左中 ^ 工作寄存器中心 ^ 工作寄存器右中, 0xCA62C1D6),
             };
-            let 临时 = 甲.rotate_left(5)
+            let 临时 = 工作寄存器左端.rotate_left(5)
                 .wrapping_add(函数值)
-                .wrapping_add(戊)
+                .wrapping_add(工作寄存器右端)
                 .wrapping_add(常量值)
                 .wrapping_add(*当前字);
-            戊 = 丁;
-            丁 = 丙;
-            丙 = 乙.rotate_left(30);
-            乙 = 甲;
-            甲 = 临时;
+            工作寄存器右端 = 工作寄存器右中;
+            工作寄存器右中 = 工作寄存器中心;
+            工作寄存器中心 = 工作寄存器左中.rotate_left(30);
+            工作寄存器左中 = 工作寄存器左端;
+            工作寄存器左端 = 临时;
         }
-        状态[0] = 状态[0].wrapping_add(甲);
-        状态[1] = 状态[1].wrapping_add(乙);
-        状态[2] = 状态[2].wrapping_add(丙);
-        状态[3] = 状态[3].wrapping_add(丁);
-        状态[4] = 状态[4].wrapping_add(戊);
+        状态[0] = 状态[0].wrapping_add(工作寄存器左端);
+        状态[1] = 状态[1].wrapping_add(工作寄存器左中);
+        状态[2] = 状态[2].wrapping_add(工作寄存器中心);
+        状态[3] = 状态[3].wrapping_add(工作寄存器右中);
+        状态[4] = 状态[4].wrapping_add(工作寄存器右端);
     }
     let mut 输出 = [0u8; 20];
     for 序 in 0..5 {
@@ -61,10 +61,10 @@ fn 取编码文本(输入: &[u8]) -> String {
     const 表: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
     let mut 结果 = String::new();
     for 组 in 输入.chunks(3) {
-        let 甲 = 组[0] as u32;
-        let 乙 = *组.get(1).unwrap_or(&0) as u32;
-        let 丙 = *组.get(2).unwrap_or(&0) as u32;
-        let 合 = (甲 << 16) | (乙 << 8) | 丙;
+        let 组左字节 = 组[0] as u32;
+        let 组中字节 = *组.get(1).unwrap_or(&0) as u32;
+        let 组右字节 = *组.get(2).unwrap_or(&0) as u32;
+        let 合 = (组左字节 << 16) | (组中字节 << 8) | 组右字节;
         结果.push(表[(合 >> 18) as usize & 63] as char);
         结果.push(表[(合 >> 12) as usize & 63] as char);
         结果.push(if 组.len() > 1 { 表[(合 >> 6) as usize & 63] as char } else { '=' });
@@ -94,12 +94,12 @@ fn 取随机密钥() -> String {
 /// 发一次最小 HTTP 请求，返回响应体（只处理 CDP 用到的 GET / PUT）。
 ///
 /// **不能 read_to_end**：Chrome 的调试口默认 keep-alive，读到 EOF 要等到超时
-/// （实测卡满 15 秒还把请求判成连接失败）。按 Content-Length 精确读。
+/// （实测卡满 10 秒还把请求判成连接失败）。按 Content-Length 精确读。
 pub(crate) fn 请求调试口(端口: u16, 方法: &str, 路径: &str) -> Result<String, u32> {
     let 地址 = format!("127.0.0.1:{}", 端口);
     let mut 连接 = TcpStream::connect(&地址).map_err(|_| 错误码::连接失败)?;
     连接
-        .set_read_timeout(Some(std::time::Duration::from_secs(15)))
+        .set_read_timeout(Some(std::time::Duration::from_secs(10)))
         .ok();
     let 报文 = format!(
         "{} {} HTTP/1.1\r\nHost: {}\r\nConnection: close\r\nAccept: application/json\r\n\r\n",
@@ -148,7 +148,7 @@ impl 调试连接 {
     pub(crate) fn 建连(端口: u16, 路径: &str) -> Result<Self, u32> {
         let 地址 = format!("127.0.0.1:{}", 端口);
         let mut 连接 = TcpStream::connect(&地址).map_err(|_| 错误码::连接失败)?;
-        连接.set_read_timeout(Some(std::time::Duration::from_secs(60))).ok();
+        连接.set_read_timeout(Some(std::time::Duration::from_secs(10))).ok();
         let 密钥 = 取随机密钥();
         let 期望接受 = 取编码文本(&取摘要值(format!("{}258EAFA5-E914-47DA-95CA-C5AB0DC85B11", 密钥).as_bytes()));
         let 报文 = format!(
