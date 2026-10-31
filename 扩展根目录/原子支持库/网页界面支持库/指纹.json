@@ -10,7 +10,7 @@
     "src/lib.rs": "c6f117413d26187db0fe760d2359cdf71052fab02b08ef6554d8b8748cdf8eb9",
     "src/业务实现.rs": "81ea78de6f663cd9e565468e63e8fd3369c841926bc3e4be96668af84a41a82a",
     "src/交互脚本.rs": "24fa1c1bccb9def424f4ba19f9cd13cb6c03e5cc99d844c02714ade627f6710d",
-    "src/命令声明面.rs": "39806e820d47f1ddac55fe2f95ba50a5417dbefe010c6e23560fcae10b6bf762",
+    "src/命令声明面.rs": "b7a7735994c3d026259cdc55301c1896fe0faf3c9e1a72502155e4baa7b609ad",
     "src/执行函数面.rs": "dc83ab7514624badae6053ef5c8748e2a53189a13ae8d54be3f5a58f99cf85e3",
     "src/桌面部件.rs": "a28771ce1284e99780d604611d5a76b068981377a0b5ae7cdce2d8f76826633c",
     "src/编号与码面.rs": "b7d05272130b52de66c0492222f83edf3ba038f707879e5fdf4c520138affff5",
