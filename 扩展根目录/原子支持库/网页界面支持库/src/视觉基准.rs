@@ -75,9 +75,9 @@ body.hs-desk-body{margin:0;overflow:hidden}
 .hs-menubar-clock{padding:0 6px 0 8px;font-variant-numeric:tabular-nums}
 .hs-menubar-badge{display:inline-block;min-width:16px;height:16px;margin-left:4px;padding:0 4px;border-radius:var(--desktop-radius-chip);background:#ff3b30;color:#fff;font:600 10px/16px var(--desktop-font-body);text-align:center}
 .hs-icon-layer{position:absolute;left:0;right:0;top:var(--desktop-menu-bar-height);bottom:var(--desktop-work-bottom-inset);z-index:1;pointer-events:none}
-.hs-icon-group{position:absolute;padding:8px 4px;pointer-events:auto}
+.hs-icon-group{position:absolute;width:100px;padding:8px 4px;pointer-events:auto}
 .hs-icon-group-title{padding:0 6px 6px;font:600 11px/1.3 var(--desktop-font-caption);letter-spacing:.6px;color:rgba(255,255,255,.62)}
-.hs-icon-grid{display:flex;flex-wrap:wrap;align-content:flex-start;gap:3px}
+.hs-icon-grid{display:flex;flex-direction:column;align-items:flex-start;gap:3px}
 .hs-icon{display:flex;flex-direction:column;align-items:center;gap:3px;width:92px;padding:8px 4px;border-radius:12px;cursor:default;user-select:none;pointer-events:auto}
 .hs-icon:hover{background:rgba(255,255,255,.14)}
 .hs-icon.is-selected{background:var(--desktop-icon-selected-bg);box-shadow:inset 0 0 0 1px var(--desktop-icon-selected-border)}

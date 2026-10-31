@@ -201,7 +201,7 @@ pub(crate) fn 渲染桌面图标区(参数表: &[&[u8]]) -> Result<(u32, Vec<u8>
             return Err(错误码::资源受限);
         }
         图标层文本.push_str("<div class=\"hs-icon-group\" style=\"left:");
-        图标层文本.push_str(&(16 + 分组序 as i64 * 112).to_string());
+        图标层文本.push_str(&(16 + 分组序 as i64 * 104).to_string());
         图标层文本.push_str("px;top:16px\">");
         if !分类名称文本.is_empty() {
             图标层文本.push_str("<div class=\"hs-icon-group-title\">");
@@ -378,6 +378,22 @@ pub(crate) fn 渲染完整桌面(参数表: &[&[u8]]) -> Result<(u32, Vec<u8>), 
     页面主体文本.push_str("</div>");
     // 图标坞
     页面主体文本.push_str(&拼装坞片段(坞条目表, 运行中键表));
+    // 启动器（默认隐藏，F4 或菜单「启动器」打开）
+    let 启动器条目表 = 桌面配置
+        .get("启动器条目表")
+        .and_then(|条目值| 条目值.as_array())
+        .map(|条目表| 条目表.to_vec())
+        .unwrap_or_default();
+    if !启动器条目表.is_empty() {
+        let 启动器配置 = serde_json::json!({
+            "搜索占位文本": 取对象文本(&桌面配置, "启动器搜索占位文本"),
+            "应用条目表": 启动器条目表,
+        });
+        页面主体文本.push_str(&拼装启动器片段(
+            &取对象文本(&桌面配置, "启动器面板标题"),
+            &启动器配置.to_string(),
+        )?);
+    }
     // 交互脚本
     页面主体文本.push_str(&crate::交互脚本::脚本文本(&桌面配置));
     页面主体文本.push_str("</div>");
@@ -385,6 +401,13 @@ pub(crate) fn 渲染完整桌面(参数表: &[&[u8]]) -> Result<(u32, Vec<u8>), 
         4,
         拼装整页外壳(&应用名称文本, " class=\"hs-desk-body\"", &页面主体文本),
     ))
+}
+
+fn 拼装启动器片段(
+    面板标题文本: &str, 启动器配置原文: &str
+) -> Result<String, u32> {
+    let 字节 = 渲染启动器(&[面板标题文本.as_bytes(), 启动器配置原文.as_bytes()])?.1;
+    Ok(String::from_utf8(字节).unwrap_or_default())
 }
 
 fn 拼装图标区片段(图标分组原文: &str, 选中键文本: &str) -> Result<String, u32> {
