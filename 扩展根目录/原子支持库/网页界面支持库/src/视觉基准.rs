@@ -87,7 +87,7 @@ body.hs-desk-body{margin:0;overflow:hidden}
 .hs-win{position:absolute;display:flex;flex-direction:column;min-width:320px;min-height:180px;border-radius:var(--desktop-radius-window);background:var(--desktop-material-window);color:var(--desktop-ink);box-shadow:var(--desktop-shadow-window-inactive);overflow:hidden;backdrop-filter:var(--desktop-menu-filter);-webkit-backdrop-filter:var(--desktop-menu-filter)}
 .hs-win.is-active{box-shadow:var(--desktop-shadow-window)}
 .hs-win.is-minimized{display:none}
-.hs-win-bar{display:flex;align-items:center;gap:8px;height:38px;padding:0 14px;background:rgba(236,236,238,.96);border-bottom:.5px solid rgba(0,0,0,.08)}
+.hs-win-bar{display:flex;align-items:center;gap:8px;height:39px;padding:0 14px;background:rgba(236,236,238,.96);border-bottom:.5px solid rgba(0,0,0,.08)}
 .hs-win-dots{display:flex;align-items:center;gap:8px}
 .hs-win-dot{width:12px;height:12px;padding:0;border:none;border-radius:50%;font-size:0;cursor:pointer}
 .hs-win-dot.is-close{background:#ff5f57}
