@@ -108,6 +108,8 @@ body.hs-desk-body{margin:0;overflow:hidden}
 .hs-launchpad-title{margin:0 0 10px;font:600 20px/1.3 var(--desktop-font-body);letter-spacing:.5px}
 .hs-launchpad-search{width:100%;height:32px;padding:0 11px;margin-bottom:16px;border:1px solid rgba(0,0,0,.12);border-radius:10px;background:rgba(255,255,255,.72);font:var(--desktop-font-body);color:var(--desktop-ink)}
 .hs-launchpad-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:18px 10px}
+.hs-launchpad-group{margin:0 0 16px}
+.hs-launchpad-group-title{margin:0 0 8px;padding-left:2px;font:600 12px/1.3 -apple-system,BlinkMacSystemFont,'SF Pro Text','PingFang SC',sans-serif;color:rgba(60,60,67,.62);letter-spacing:.4px}
 .hs-launchpad-item{display:flex;flex-direction:column;align-items:center;gap:8px;padding:8px 4px 4px;border-radius:14px;cursor:default}
 .hs-launchpad-item:hover{background:rgba(0,0,0,.06)}
 .hs-launchpad-glyph{display:flex;align-items:center;justify-content:center;width:64px;height:64px;border-radius:14px;background:rgba(255,255,255,.72);box-shadow:var(--hs-shadow-1);font-size:34px;line-height:1}
