@@ -5,8 +5,8 @@
   "生成命令": "$V1_PY 构建装配/形态装配/扩展指纹.py",
   "范围": "声明、Rust源码、Cargo清单与锁文件、程序文本、模块及技能制品；不含机器局部支持库制品、说明散文、缓存、指纹本身。",
   "指纹": {
-    "Cargo.lock": "ce346927229e83496b0a5cd16e6e18605276453f1011c719d38d99330db27556",
-    "Cargo.toml": "db171fb84daf7ddddc7ebf7b3af7986b6dc7383e273a5122287ae25719f228c9",
+    "Cargo.lock": "1ab3a302b936ac8a2a65a0096b2437c24e5ba9c1e02ac37fdd3914c64fc02d7e",
+    "Cargo.toml": "8a42a03ce1afee407ed2b1fa87007e8e1c65293ea1b13c43b182de31231922ac",
     "src/lib.rs": "22a07e907774595ea646151b2e255d95e48faa94f33f9f02e6137ac4f846f450",
     "src/业务实现.rs": "f090ee1c95bc19f978e52d7d94b4e287a5704c526855f33d0277dc307fef3c6d",
     "src/办公资源.rs": "d10b49409c325526fa5acaa9594c7af10ed96d7d0a028784b1568d681c8ed989",
