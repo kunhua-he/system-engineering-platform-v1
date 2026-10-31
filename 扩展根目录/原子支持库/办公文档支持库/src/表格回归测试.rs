@@ -137,3 +137,24 @@ fn 验证坏样式拒收() {
     let 坏存储 = crate::表格写出::生成表格(&json!({"工作表列表": []}).to_string(), "相对路径.xlsx").unwrap_err();
     assert_eq!(坏存储, 6101);
 }
+
+#[test]
+fn 验证纯文本行号() {
+    let 回执 = crate::表格地址解析::解析纯文本("a\n\nb\n").unwrap();
+    let 值: serde_json::Value = serde_json::from_str(&回执).unwrap();
+    assert_eq!(值["原文"], "a\n\nb\n");
+    assert_eq!(值["块"][1]["正文"], "");
+    assert_eq!(值["块"][2]["行起"], 3);
+    assert_eq!(值["块"][3]["行止"], 4);
+}
+
+#[test]
+fn 验证地址解析() {
+    let 回执 = crate::表格地址解析::解析地址文本("Monthly!$B$2").unwrap();
+    let 值: serde_json::Value = serde_json::from_str(&回执).unwrap();
+    assert_eq!(值["列号"], 2);
+    assert_eq!(值["行号"], 2);
+    assert_eq!(crate::表格地址解析::格式化地址文本(&回执).unwrap(), "Monthly!$B$2");
+    assert_eq!(crate::表格地址解析::解析地址文本("A0").unwrap_err(), 6108);
+    assert_eq!(crate::表格地址解析::解析地址文本("XFE1").unwrap_err(), 6109);
+}

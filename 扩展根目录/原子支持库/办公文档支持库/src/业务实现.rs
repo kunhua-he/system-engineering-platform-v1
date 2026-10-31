@@ -44,6 +44,9 @@ pub fn 执行文本操作(编号: u32, 参数表: &[&str]) -> Result<(u32, Vec<u
         let 块列表 = 切分块(源文本);
         return Ok((4, 组装块JSON(&块列表).into_bytes()));
     }
+    if 编号 == 能力号::解析纯文本 { let 源文本 = 取第几项文本(参数表, 0)?; return Ok((4, crate::表格地址解析::解析纯文本(源文本)?.into_bytes())); }
+    if 编号 == 能力号::解析表格单元格地址 { let 地址文本 = 取第几项文本(参数表, 0)?; return Ok((4, crate::表格地址解析::解析地址文本(地址文本)?.into_bytes())); }
+    if 编号 == 能力号::格式化表格单元格地址 { let 结构文本 = 取第几项文本(参数表, 0)?; return Ok((4, crate::表格地址解析::格式化地址文本(结构文本)?.into_bytes())); }
     if 编号 == 能力号::解析DOCX {
         let 文件路径 = 取第几项文本(参数表, 0)?;
         return Ok((4, 解析DOCX文档(文件路径)?.into_bytes()));
