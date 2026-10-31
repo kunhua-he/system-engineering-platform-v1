@@ -12,6 +12,9 @@ pub mod 能力号 {
     pub const 检查页面结构: u32 = 6119;
     pub const 解析PPTX: u32 = 6120;
     pub const 生成PPTX: u32 = 6121;
+    pub const 解析纯文本: u32 = 6122;
+    pub const 解析表格单元格地址: u32 = 6123;
+    pub const 格式化表格单元格地址: u32 = 6124;
 }
 pub mod 错误码 {
     pub const 参数不合法: u32 = 6101;
@@ -21,6 +24,8 @@ pub mod 错误码 {
     pub const 转换失败: u32 = 6105;
     pub const 转换器不可用: u32 = 6106;
     pub const 内容超限: u32 = 6107;
+    pub const 地址不合法: u32 = 6108;
+    pub const 地址越界: u32 = 6109;
 }
 pub const fn 码项(
     错误码值: u32,
@@ -42,7 +47,7 @@ pub const fn 码项(
     }
 }
 
-pub const 错误码信息表: [错误码信息; 7] = [
+pub const 错误码信息表: [错误码信息; 9] = [
 
     码项(
         错误码::参数不合法,
@@ -99,7 +104,9 @@ pub const 错误码信息表: [错误码信息; 7] = [
         0,
         0,
     ),
+    码项(错误码::地址不合法, "地址不合法\0".as_bytes(), "A1地址、工作表前缀或绝对标志不合契约。\0".as_bytes(), 0, 0, 0),
+    码项(错误码::地址越界, "地址越界\0".as_bytes(), "行列超出工作表边界。\0".as_bytes(), 0, 0, 0),
 ];
 pub const fn 错误码信息表段() -> v1_contract::表段<错误码信息> {
-    v1_contract::表段::构造(错误码信息表.as_ptr(), 7)
+    v1_contract::表段::构造(错误码信息表.as_ptr(), 9)
 }
