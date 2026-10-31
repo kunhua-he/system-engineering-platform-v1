@@ -2,6 +2,7 @@ use v1_contract::错误码信息;
 pub mod 能力号 {
     pub const 渲染JSON上下文: u32 = 4901;
     pub const 提取变量名: u32 = 4902;
+    pub const 渲染网页页面: u32 = 4903;
 }
 pub mod 错误码 {
     pub const 参数不合法: u32 = 4901;
