@@ -7,13 +7,16 @@ use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use db_seam_research::{
     代际令牌, 契约错误, 数据库连接, 版本号, 装载单元, 跨进程租约
 };
+use v1_dataroot::{子目录, 确保子目录, 解析当前环境};
 
 fn 连接信息() -> String {
     数据库连接::默认连接信息()
 }
 
 fn 临时路径(名称: &str) -> PathBuf {
-    std::env::temp_dir().join(format!(
+    let 根目录 = 解析当前环境().expect("解析运行数据根");
+    let 临时目录 = 确保子目录(&根目录, 子目录::临时件).expect("建立临时件目录");
+    临时目录.join(format!(
         "v1-db-seam-{}-{}-{}",
         名称,
         std::process::id(),

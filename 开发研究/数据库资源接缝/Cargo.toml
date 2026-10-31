@@ -14,6 +14,9 @@ path = "src/bin/数据库资源探针.rs"
 
 [workspace]
 
+[dependencies]
+v1-dataroot = { path = "../../运行内核/运行数据根" }
+
 [lints.rust]
 non_snake_case = "allow"
 uncommon_codepoints = "allow"
