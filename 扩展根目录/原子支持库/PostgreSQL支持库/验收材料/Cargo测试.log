@@ -1,0 +1,20 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.00s
+     Running unittests src/lib.rs (构建环境/构建缓存/debug/deps/v1_libpq-378f69c8e83cbe70)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/正式能力验收.rs (构建环境/构建缓存/debug/deps/正式能力验收-af16f27735c193b0)
+
+running 1 test
+test 真实连接事务回滚释放及卸载 ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.98s
+
+   Doc-tests v1_libpq
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

@@ -1,0 +1,30 @@
+{
+  "算法": "sha256",
+  "生成器": "构建装配/形态装配/扩展指纹.py",
+  "生成物声明": "生成物，禁手改。生成器：构建装配/形态装配/扩展指纹.py",
+  "生成命令": "$V1_PY 构建装配/形态装配/扩展指纹.py",
+  "范围": "声明、Rust源码、Cargo清单与锁文件、程序文本、模块及技能制品；不含机器局部支持库制品、说明散文、缓存、指纹本身。",
+  "指纹": {
+    "Cargo.lock": "fe8b7d1775739f770d116eb387370413c737f3e1d9a7f6b8b93d683fd531ba70",
+    "Cargo.toml": "107a1a0e0abefe06783f2f0749ee2d08c32676c82557be8552fd0d5c99b7677c",
+    "src/lib.rs": "65bb7078aff03a65187ef8bf76862036048b16a538d1dab3e5fd320b44fda37b",
+    "src/命令声明面.rs": "1d69e8207069b5289af662571816b84aa605d19437a9ed720b60480c08d5e235",
+    "src/引擎封装.rs": "17ba69f1f377320cc6a50bc16bcec8fef46da48d32284fbd3670f38edfaef6e0",
+    "src/执行函数面.rs": "2b88b643145ded95b26e13728999c9dd492cbfbc8461cfc1f074f003a40223fe",
+    "src/编号与码面.rs": "1cdbd639b81e86751b786abd2f853f4aa71f6c6cc5e559259b77082126d100ee",
+    "src/连接与句柄.rs": "33c28aa0f97dcd919c2b89cb6c83113767f6db48566d78f4c8c032ddcdffb7ad",
+    "src/静态声明.rs": "d0ed150caae064640869a55782c79afebbecf27663d3e4e480ca2d4c24a475f0",
+    "包声明.json": "cea4fb51ccac4fd2cc9e6bf837d226c36ad38e669858485def3e58321ec49aa4",
+    "能力声明/5401.json": "b70f9dd107b2b98821ec9a6a4c2e1296152375abe472ffba2a15bc53ca5bec21",
+    "能力声明/5402.json": "6afcdff4c4e7d57bc6065b0bf84f80946dbf1f0eedbdec7017101098e2e153b4",
+    "能力声明/5403.json": "0b1c453a5b00777dbb6bf623cb4e33a40d14613e931a0557af365ce964516916",
+    "能力声明/5404.json": "77df6a6f46b5b59359b9859db8897acc301e076b8736cd61e3f84fe12243112a",
+    "错误码表/5411.json": "494fff0398eb6d759c8d0e049adfcd1730c77e44fb46647c631678d16f79ee22",
+    "错误码表/5412.json": "29a90f691110cf639d2085df58d5fb117a6382033aa08ec23a627c61a17bc6b9",
+    "错误码表/5413.json": "a15e54413cc9595f1ba5bfc6b913bf8dbfb615cc91708d166afb46fa421e2842",
+    "错误码表/5414.json": "b40a029cbcfea2fec33418b037888d5f65e4fc14b3690696abeaf9b7cdb567fd",
+    "错误码表/5415.json": "997e245f3766a935b2ce2dde70e079d33b1df085662cda4d5c7aef1688287375",
+    "错误码表/5416.json": "920d070ba7306378767a3b0b69315f935df66f6a2e4b66b23b9dbe769d1eea8d",
+    "错误码表/5417.json": "6163d1cce5bbe44bfe46ef00d389a7996b1909276a172eff64ec9a334933f634"
+  }
+}

@@ -1,0 +1,15 @@
+[package]
+name = "v1-libpq"
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+
+[lib]
+name = "v1_libpq"
+path = "src/lib.rs"
+
+[dependencies]
+v1-contract = { path = "../../../契约声明" }
+serde_json = "1"
+
+[workspace]
