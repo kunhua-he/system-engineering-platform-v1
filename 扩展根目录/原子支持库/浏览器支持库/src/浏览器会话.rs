@@ -100,7 +100,7 @@ fn 起浏览器(临时目录: &str) -> Result<(Child, u16), u32> {
             }
         });
     }
-    match 接收端.recv_timeout(std::time::Duration::from_secs(25)) {
+    match 接收端.recv_timeout(std::time::Duration::from_secs(10)) {
         Ok(端口) => Ok((子进程, 端口)),
         Err(_) => {
             let _ = 子进程.kill();
@@ -110,7 +110,7 @@ fn 起浏览器(临时目录: &str) -> Result<(Child, u16), u32> {
     }
 }
 
-/// 开一个新标签，返回它自己的调试地址路径
+/// 开一个新标签，返回对应标签的调试地址路径
 fn 开标签(端口: u16) -> Result<String, u32> {
     let 响应体 = 请求调试口(端口, "PUT", "/json/new?about:blank")?;
     let 值: Value = serde_json::from_str(&响应体).map_err(|_| 错误码::协议不符)?;
@@ -165,7 +165,7 @@ fn 时间戳() -> u128 {
         .unwrap_or(0)
 }
 
-/// 在指定会话上执行一条 CDP 指令，等它自己的回执（id 对得上才算）
+/// 在指定会话上执行一条 CDP 指令，等对应回执（id 对得上才算）
 pub(crate) fn 发指令(句柄: u32, 方法: &str, 参数: Value) -> Result<Value, u32> {
     let mut 表锁 = 表().lock().map_err(|_| 错误码::处理失败)?;
     let 项 = 表锁.get_mut(&句柄).ok_or(错误码::会话不存在)?;
@@ -173,7 +173,7 @@ pub(crate) fn 发指令(句柄: u32, 方法: &str, 参数: Value) -> Result<Valu
     let 本次序 = 项.指令序;
     let 报文 = json!({"id": 本次序, "method": 方法, "params": 参数}).to_string();
     项.标签连接.发文本(&报文)?;
-    let 截止 = std::time::Instant::now() + std::time::Duration::from_secs(30);
+    let 截止 = std::time::Instant::now() + std::time::Duration::from_secs(10);
     while std::time::Instant::now() < 截止 {
         let 回 = 项.标签连接.收文本()?;
         let 值: Value = serde_json::from_str(&回).map_err(|_| 错误码::协议不符)?;
