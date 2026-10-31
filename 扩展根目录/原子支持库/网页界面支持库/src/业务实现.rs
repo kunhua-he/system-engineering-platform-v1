@@ -1,13 +1,13 @@
 use crate::编号与码面::{能力号, 错误码};
 use crate::视觉基准::基准样式文本;
 
-fn 取文本参数(参数表: &[&[u8]], 参数序号: usize) -> Result<String, u32> {
+pub(crate) fn 取文本参数(参数表: &[&[u8]], 参数序号: usize) -> Result<String, u32> {
     Ok(std::str::from_utf8(参数表[参数序号])
         .map_err(|_| 错误码::参数不合法)?
         .to_string())
 }
 
-fn 转义网页文本(原始文本: &str) -> String {
+pub(crate) fn 转义网页文本(原始文本: &str) -> String {
     let mut 转义后文本 = String::with_capacity(原始文本.len());
     for 待转义字符 in 原始文本.chars() {
         match 待转义字符 {
@@ -22,7 +22,7 @@ fn 转义网页文本(原始文本: &str) -> String {
     转义后文本
 }
 
-fn 转文本值(数据值: &serde_json::Value) -> String {
+pub(crate) fn 转文本值(数据值: &serde_json::Value) -> String {
     match 数据值 {
         serde_json::Value::String(文本内容) => 文本内容.clone(),
         serde_json::Value::Null => String::new(),
@@ -30,11 +30,11 @@ fn 转文本值(数据值: &serde_json::Value) -> String {
     }
 }
 
-fn 取对象文本(条目值: &serde_json::Value, 字段名: &str) -> String {
+pub(crate) fn 取对象文本(条目值: &serde_json::Value, 字段名: &str) -> String {
     条目值.get(字段名).map(转文本值).unwrap_or_default()
 }
 
-fn 解析数组参数(原文: &str, 上限: usize) -> Result<serde_json::Value, u32> {
+pub(crate) fn 解析数组参数(原文: &str, 上限: usize) -> Result<serde_json::Value, u32> {
     let 解析结果: serde_json::Value =
         serde_json::from_str(原文).map_err(|_| 错误码::内容不合法)?;
     let 条目表 = 解析结果.as_array().ok_or(错误码::内容不合法)?;
@@ -44,8 +44,19 @@ fn 解析数组参数(原文: &str, 上限: usize) -> Result<serde_json::Value, 
     Ok(解析结果)
 }
 
-fn 拼装整页外壳(
-    页面标题文本: &str, 页面样式体: &str, 页面主体文本: &str
+pub(crate) fn 解析对象参数(原文: &str) -> Result<serde_json::Value, u32> {
+    let 解析结果: serde_json::Value =
+        serde_json::from_str(原文).map_err(|_| 错误码::内容不合法)?;
+    if !解析结果.is_object() {
+        return Err(错误码::内容不合法);
+    }
+    Ok(解析结果)
+}
+
+pub(crate) fn 拼装整页外壳(
+    页面标题文本: &str,
+    页面样式体: &str,
+    页面主体文本: &str,
 ) -> Vec<u8> {
     let mut 整页文本 = String::new();
     整页文本.push_str("<!doctype html><html lang=\"zh-CN\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>");
@@ -513,6 +524,20 @@ fn 渲染按钮(参数表: &[&[u8]]) -> Result<(u32, Vec<u8>), u32> {
     Ok((4, 按钮文本.into_bytes()))
 }
 
+fn 渲染区块组(参数表: &[&[u8]]) -> Result<(u32, Vec<u8>), u32> {
+    let 区块定义原文 = 取文本参数(参数表, 0)?;
+    let 区块定义值: serde_json::Value =
+        serde_json::from_str(&区块定义原文).map_err(|_| 错误码::内容不合法)?;
+    let 区块定义表 = 区块定义值
+        .get("区块")
+        .and_then(|区块项| 区块项.as_array())
+        .ok_or(错误码::内容不合法)?;
+    if 区块定义表.len() > 64 {
+        return Err(错误码::资源受限);
+    }
+    Ok((4, 拼装页面区块(区块定义表)?.into_bytes()))
+}
+
 pub fn 执行业务操作(编号: u32, 参数表: &[&[u8]]) -> Result<(u32, Vec<u8>), u32> {
     match 编号 {
         能力号::渲染页面骨架 => 渲染页面骨架(参数表),
@@ -523,6 +548,17 @@ pub fn 执行业务操作(编号: u32, 参数表: &[&[u8]]) -> Result<(u32, Vec<
         能力号::渲染桌面外壳 => 渲染桌面外壳(参数表),
         能力号::渲染输入控件 => 渲染输入控件(参数表),
         能力号::渲染按钮 => 渲染按钮(参数表),
+        能力号::渲染登录页 => crate::桌面部件::渲染登录页(参数表),
+        能力号::渲染桌面菜单栏 => crate::桌面部件::渲染桌面菜单栏(参数表),
+        能力号::渲染桌面图标区 => crate::桌面部件::渲染桌面图标区(参数表),
+        能力号::渲染桌面图标坞 => crate::桌面部件::渲染桌面图标坞(参数表),
+        能力号::渲染窗口 => crate::桌面部件::渲染窗口(参数表),
+        能力号::渲染桌面交互脚本 => {
+            crate::交互脚本::渲染桌面交互脚本(参数表)
+        }
+        能力号::渲染完整桌面 => crate::桌面部件::渲染完整桌面(参数表),
+        能力号::渲染启动器 => crate::桌面部件::渲染启动器(参数表),
+        能力号::渲染区块组 => 渲染区块组(参数表),
         _ => Err(错误码::参数不合法),
     }
 }
