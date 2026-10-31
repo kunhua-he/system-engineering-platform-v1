@@ -36,9 +36,16 @@ fail-closed 指路。理由：装配带上构建段时首跑 5570 ms，越过五
 `--预构建` 走 `报告环境步`（§四 的一次性冷构建，照实报墙钟但不判顶）。见 `构建装配/门禁/`。
 """
 
+import os
 import sys
 import time
 from pathlib import Path
+
+# macOS 的 clang 已不再自动定位系统 SDK：含 C 代码的依赖（如 TLS 的 ring）会因找不到 string.h 编译失败。
+# 入口在这里按平台补齐，全部子进程继承，构建不依赖调用方 shell 或交互式环境。
+if sys.platform == "darwin" and not os.environ.get("SDKROOT"):
+    if os.path.isdir("/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk"):
+        os.environ["SDKROOT"] = "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk"
 
 起始时刻 = time.monotonic()  # 壳起表点：必须在 import 业务包**之前**（见 构建装配/门禁/命令壳.py）
 
