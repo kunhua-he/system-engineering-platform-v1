@@ -16,7 +16,8 @@ const 脚本模板: &str = r#"<script>
   function 时钟(){
     var 现在 = new Date();
     var 时 = 现在.getHours(), 分 = 现在.getMinutes();
-    var 文本 = '周' + '日一二三四五六'.charAt(现在.getDay()) + ' ' + (时<10?'0':'') + 时 + ':' + (分<10?'0':'') + 分;
+    var 文本 = (现在.getMonth() + 1) + '月' + 现在.getDate() + '日 ' + '周' + '日一二三四五六'.charAt(现在.getDay()) + ' ' +
+      (时<10?'0':'') + 时 + ':' + (分<10?'0':'') + 分;
     全部('[data-clock]').forEach(function(节点){ 节点.textContent = 文本; });
   }
   function 运行点(应用键, 存在){
@@ -185,7 +186,8 @@ const 脚本模板: &str = r#"<script>
       项表.forEach(function(项){
         var 框 = 项.getBoundingClientRect();
         var 距 = Math.abs(事件.clientX - (框.left + 框.width / 2));
-        var 比例 = 距 > 坞范围 ? 0 : 1 - 距 / 坞范围;
+        /* V3 用 cos² 邻域曲线（中点最高、两端平滑归零），比线性更像真 macOS */
+        var 比例 = 距 > 坞范围 ? 0 : Math.pow(Math.cos((距 / 坞范围) * Math.PI / 2), 2);
         var 倍 = 1 + (坞最大倍 - 1) * 比例;
         项.style.transform = 'translateY(' + (-6 * 比例).toFixed(2) + 'px) scale(' + 倍.toFixed(3) + ')';
       });
