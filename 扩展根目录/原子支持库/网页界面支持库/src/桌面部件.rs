@@ -162,7 +162,12 @@ pub(crate) fn 渲染桌面菜单栏(参数表: &[&[u8]]) -> Result<(u32, Vec<u8>
     Ok((4, 菜单栏文本.into_bytes()))
 }
 
-fn 拼装图标条目(图标项: &serde_json::Value, 选中键文本: &str) -> String {
+fn 拼装图标条目(
+    图标项: &serde_json::Value,
+    选中键文本: &str,
+    序号: usize,
+    分类文本: &str,
+) -> String {
     let 图标键文本 = 取键文本(图标项);
     let 图标名称文本 = 取对象文本(图标项, "名称");
     let 图标字形文本 = 取对象文本(图标项, "图标");
@@ -173,6 +178,10 @@ fn 拼装图标条目(图标项: &serde_json::Value, 选中键文本: &str) -> S
     }
     条目文本.push_str("\" data-app=\"");
     条目文本.push_str(&转义网页文本(&图标键文本));
+    条目文本.push_str("\" data-index=\"");
+    条目文本.push_str(&序号.to_string());
+    条目文本.push_str("\" data-category=\"");
+    条目文本.push_str(&转义网页文本(分类文本));
     条目文本.push_str("\" title=\"");
     条目文本.push_str(&转义网页文本(&图标名称文本));
     条目文本.push_str("\"><div class=\"hs-icon-glyph\">");
@@ -183,15 +192,17 @@ fn 拼装图标条目(图标项: &serde_json::Value, 选中键文本: &str) -> S
     条目文本
 }
 
-/// 4920 渲染桌面图标区：按分类分组摆放，系统软件与业务软件各成一组。
+/// 4920 渲染桌面图标区：单一网格（与 V3 一致），分类只随 data-category 带出，摆放交给交互脚本按屏幕算。
 pub(crate) fn 渲染桌面图标区(参数表: &[&[u8]]) -> Result<(u32, Vec<u8>), u32> {
     let 图标分组原文 = 取文本参数(参数表, 0)?;
     let 选中图标键文本 = 取文本参数(参数表, 1)?;
     let 图标分组值 = 解析数组参数(&图标分组原文, 16)?;
     let 图标分组表 = 图标分组值.as_array().ok_or(错误码::内容不合法)?;
     let mut 图标层文本 = String::new();
-    图标层文本.push_str("<div class=\"hs-icon-layer\">");
-    for (分组序, 分组项) in 图标分组表.iter().enumerate() {
+    图标层文本
+        .push_str("<div class=\"hs-icon-layer\"><div class=\"hs-icon-grid\" data-icon-grid=\"1\">");
+    let mut 序号: usize = 0;
+    for 分组项 in 图标分组表 {
         let 分类名称文本 = 取对象文本(分组项, "分类");
         let 分组图标表 = 分组项
             .get("图标")
@@ -200,21 +211,20 @@ pub(crate) fn 渲染桌面图标区(参数表: &[&[u8]]) -> Result<(u32, Vec<u8>
         if 分组图标表.len() > 64 {
             return Err(错误码::资源受限);
         }
-        图标层文本.push_str("<div class=\"hs-icon-group\" style=\"left:");
-        图标层文本.push_str(&(16 + 分组序 as i64 * 104).to_string());
-        图标层文本.push_str("px;top:16px\">");
-        if !分类名称文本.is_empty() {
-            图标层文本.push_str("<div class=\"hs-icon-group-title\">");
-            图标层文本.push_str(&转义网页文本(&分类名称文本));
-            图标层文本.push_str("</div>");
-        }
-        图标层文本.push_str("<div class=\"hs-icon-grid\">");
         for 图标项 in 分组图标表 {
-            图标层文本.push_str(&拼装图标条目(图标项, &选中图标键文本));
+            图标层文本.push_str(&拼装图标条目(
+                图标项,
+                &选中图标键文本,
+                序号,
+                &分类名称文本,
+            ));
+            序号 += 1;
+            if 序号 > 64 {
+                return Err(错误码::资源受限);
+            }
         }
-        图标层文本.push_str("</div></div>");
     }
-    图标层文本.push_str("</div>");
+    图标层文本.push_str("</div></div>");
     Ok((4, 图标层文本.into_bytes()))
 }
 
