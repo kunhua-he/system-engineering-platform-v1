@@ -152,8 +152,51 @@ const 脚本模板: &str = r#"<script>
   });
   时钟();
   setInterval(时钟, 30000);
+  /* ===== 图标网格摆放：照 V3 图标网格模型的算法（中档 88×92，间距 4，留白 18/14，右对齐起点，列优先从最右列往下） ===== */
+  var 图标宽 = 88, 图标高 = 92, 格间距 = 4;
+  var 格宽 = 图标宽 + 格间距, 格高 = 图标高 + 格间距;
+  var 留白X = 18, 留白Y = 14;
+  function 布局图标网格(){
+    var 层 = document.querySelector('.hs-icon-layer');
+    if(!层){ return; }
+    var 项表 = [].slice.call(document.querySelectorAll('.hs-icon'));
+    if(!项表.length){ return; }
+    var 可用宽 = 层.clientWidth - 留白X * 2;
+    var 可用高 = 层.clientHeight - 留白Y * 2;
+    var 列数 = Math.max(1, Math.floor(可用宽 / 格宽));
+    var 行数 = Math.max(1, Math.floor(可用高 / 格高));
+    var 起X = Math.max(留白X, 层.clientWidth - 留白X - ((列数 - 1) * 格宽 + 图标宽));
+    for(var i = 0; i < 项表.length; i++){
+      var 列 = 列数 - 1 - Math.floor(i / 行数);
+      var 行 = i % 行数;
+      if(列 < 0){ 列 = 0; }
+      项表[i].style.left = (起X + 列 * 格宽) + 'px';
+      项表[i].style.top = (留白Y + 行 * 格高) + 'px';
+    }
+  }
+  /* ===== Dock 放大：照 V3 磁吸参数（基准 48、最大 1.58 倍、影响范围 120px） ===== */
+  var 坞基准 = 48, 坞最大倍 = 1.58, 坞范围 = 120;
+  function 绑定坞放大(){
+    var 坞 = document.querySelector('.hs-dock');
+    if(!坞){ return; }
+    var 项表 = [].slice.call(坞.querySelectorAll('.hs-dock-item'));
+    function 复位(){ 项表.forEach(function(项){ 项.style.transform = ''; }); }
+    坞.addEventListener('mousemove', function(事件){
+      项表.forEach(function(项){
+        var 框 = 项.getBoundingClientRect();
+        var 距 = Math.abs(事件.clientX - (框.left + 框.width / 2));
+        var 比例 = 距 > 坞范围 ? 0 : 1 - 距 / 坞范围;
+        var 倍 = 1 + (坞最大倍 - 1) * 比例;
+        项.style.transform = 'translateY(' + (-6 * 比例).toFixed(2) + 'px) scale(' + 倍.toFixed(3) + ')';
+      });
+    });
+    坞.addEventListener('mouseleave', 复位);
+  }
+  布局图标网格();
+  绑定坞放大();
+  window.addEventListener('resize', 布局图标网格);
 })();
-</script>"#;
+</script>\"#;
 
 fn 清理接口文本(原文: &str) -> String {
     let 可用 = 原文
