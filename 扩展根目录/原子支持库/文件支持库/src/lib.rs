@@ -23,6 +23,8 @@ mod 摘要面;
 mod 文件操作桥;
 #[path = "业务实现.rs"]
 mod 业务实现;
+#[path = "受控修复面.rs"]
+mod 受控修复面;
 #[path = "静态声明.rs"]
 mod 静态声明;
 #[cfg(unix)]
