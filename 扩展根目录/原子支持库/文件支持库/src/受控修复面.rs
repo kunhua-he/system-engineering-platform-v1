@@ -8,7 +8,7 @@ use std::{
 };
 use v1_contract::{数据槽, 类型标签};
 
-fn 转义JSON(文本: &str) -> String {
+pub(crate) fn 转义JSON(文本: &str) -> String {
     文本
         .chars()
         .flat_map(|字| match 字 {
@@ -49,7 +49,10 @@ fn 规范仓库(文本: &str) -> Result<PathBuf, u32> {
     }
     Ok(绝对)
 }
-fn 命令<'a>(仓库: &Path, 参数: impl IntoIterator<Item = &'a str>) -> Result<String, u32> {
+pub(crate) fn 命令<'a>(
+    仓库: &Path,
+    参数: impl IntoIterator<Item = &'a str>,
+) -> Result<String, u32> {
     let 输出 = Command::new("git")
         .arg("-C")
         .arg(仓库)
@@ -70,7 +73,7 @@ fn 安全标识(标识: &str) -> bool {
             .chars()
             .all(|字| 字.is_ascii_alphanumeric() || 字 == '-' || 字 == '_')
 }
-fn 工作区路径(根: &Path, 标识: &str) -> Result<PathBuf, u32> {
+pub(crate) fn 工作区路径(根: &Path, 标识: &str) -> Result<PathBuf, u32> {
     if !安全标识(标识) {
         return Err(错误码::受控边界不合法);
     }
@@ -80,7 +83,7 @@ fn 工作区路径(根: &Path, 标识: &str) -> Result<PathBuf, u32> {
     }
     Ok(目标)
 }
-fn 验证工作区(路径: &Path) -> Result<PathBuf, u32> {
+pub(crate) fn 验证工作区(路径: &Path) -> Result<PathBuf, u32> {
     if !路径.is_absolute() {
         return Err(错误码::受控边界不合法);
     }
@@ -153,8 +156,11 @@ fn 标准槽(
     let _ = 编号;
     Ok(值表)
 }
-unsafe fn 调用处理(
-    返回槽: *mut 数据槽, 参数数: u32, 参数槽: *const 数据槽, 编号: u32
+pub(crate) unsafe fn 调用处理(
+    返回槽: *mut 数据槽,
+    参数数: u32,
+    参数槽: *const 数据槽,
+    编号: u32,
 ) {
     if 返回槽.is_null() {
         return;
@@ -165,6 +171,7 @@ unsafe fn 调用处理(
             3121 => 4,
             3122 => 3,
             3123 => 3,
+            3124 => 3,
             _ => return Err(错误码::参数不合法),
         };
         let 入参 = 标准槽(返回槽, 参数数, 参数槽, 编号, 个数)?;
@@ -193,10 +200,11 @@ pub fn 执行业务口(编号: u32, 参数: &[&str]) -> Result<Vec<u8>, u32> {
         3121 => 唯一文本替换(参数),
         3122 => 受控验证(参数),
         3123 => 受控回滚(参数),
+        3124 => crate::受控提交面::受控创建提交(参数),
         _ => Err(错误码::参数不合法),
     }
 }
-fn 工作区事务(参数: &[&str]) -> Result<Vec<u8>, u32> {
+pub(crate) fn 工作区事务(参数: &[&str]) -> Result<Vec<u8>, u32> {
     let 操作 = 参数[0];
     let 仓库 = 规范仓库(参数[1])?;
     let 标识 = 参数[2];
@@ -280,7 +288,7 @@ fn 工作区事务(参数: &[&str]) -> Result<Vec<u8>, u32> {
         _ => Err(错误码::参数不合法),
     }
 }
-fn 路径内文件(根: &Path, 相对: &str) -> Result<PathBuf, u32> {
+pub(crate) fn 路径内文件(根: &Path, 相对: &str) -> Result<PathBuf, u32> {
     let 候选 = Path::new(相对);
     if 候选.is_absolute()
         || 候选.components().any(|片段| {
@@ -363,7 +371,7 @@ fn 唯一文本替换(参数: &[&str]) -> Result<Vec<u8>, u32> {
         ("字节数", 新文.len().to_string()),
     ]))
 }
-fn 解析参数数组(文本: &str) -> Result<Vec<String>, u32> {
+pub(crate) fn 解析参数数组(文本: &str) -> Result<Vec<String>, u32> {
     let 字节 = 文本.as_bytes();
     let mut 位置 = 0;
     fn 空白(字节: &[u8], 位置: &mut usize) {
