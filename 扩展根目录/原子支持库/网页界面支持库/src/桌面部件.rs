@@ -451,16 +451,40 @@ pub(crate) fn 渲染启动器(参数表: &[&[u8]]) -> Result<(u32, Vec<u8>), u32
     启动器文本.push_str(&转义网页文本(&面板标题文本));
     启动器文本.push_str("</h2><input class=\"hs-launchpad-search\" type=\"text\" placeholder=\"");
     启动器文本.push_str(&转义网页文本(&搜索占位文本));
-    启动器文本.push_str("\" data-launchpad-search=\"1\" /><div class=\"hs-launchpad-grid\">");
+    启动器文本.push_str("\" data-launchpad-search=\"1\" />");
+    let mut 当前分类文本 = String::new();
+    let mut 网格已开 = false;
     for 应用项 in 应用条目表 {
+        let 分类文本 = 取对象文本(应用项, "分类");
+        if 分类文本 != 当前分类文本 {
+            if 网格已开 {
+                启动器文本.push_str("</div></div>");
+            }
+            启动器文本.push_str("<div class=\"hs-launchpad-group\" data-group=\"");
+            启动器文本.push_str(&转义网页文本(&分类文本));
+            启动器文本.push_str("\">");
+            if !分类文本.is_empty() {
+                启动器文本.push_str("<h3 class=\"hs-launchpad-group-title\">");
+                启动器文本.push_str(&转义网页文本(&分类文本));
+                启动器文本.push_str("</h3>");
+            }
+            启动器文本.push_str("<div class=\"hs-launchpad-grid\">");
+            当前分类文本 = 分类文本;
+            网格已开 = true;
+        }
         启动器文本.push_str("<div class=\"hs-launchpad-item\" data-app=\"");
         启动器文本.push_str(&转义网页文本(&取键文本(应用项)));
+        启动器文本.push_str("\" data-category=\"");
+        启动器文本.push_str(&转义网页文本(&当前分类文本));
         启动器文本.push_str("\"><div class=\"hs-launchpad-glyph\">");
         启动器文本.push_str(&转义网页文本(&取对象文本(应用项, "图标")));
         启动器文本.push_str("</div><span class=\"hs-launchpad-label\">");
         启动器文本.push_str(&转义网页文本(&取对象文本(应用项, "名称")));
         启动器文本.push_str("</span></div>");
     }
-    启动器文本.push_str("</div></div></div>");
+    if 网格已开 {
+        启动器文本.push_str("</div></div>");
+    }
+    启动器文本.push_str("</div></div>");
     Ok((4, 启动器文本.into_bytes()))
 }
