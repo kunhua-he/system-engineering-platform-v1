@@ -1,0 +1,12 @@
+[package]
+name = "v1-command-safety"
+version = "0.1.0"
+edition = "2024"
+[lib]
+name = "v1_command_safety"
+path = "src/lib.rs"
+[dependencies]
+v1-contract = { path = "../../../契约声明" }
+regex = "=1.13.1"
+base64 = "=0.23.1"
+[workspace]
