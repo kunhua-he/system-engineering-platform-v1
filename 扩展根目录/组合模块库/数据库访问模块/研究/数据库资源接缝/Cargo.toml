@@ -1,0 +1,19 @@
+[package]
+name = "db-seam-research"
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+
+[lib]
+name = "db_seam_research"
+path = "src/lib.rs"
+
+[[bin]]
+name = "db-seam-probe"
+path = "src/bin/数据库资源探针.rs"
+
+[workspace]
+
+[lints.rust]
+non_snake_case = "allow"
+uncommon_codepoints = "allow"
