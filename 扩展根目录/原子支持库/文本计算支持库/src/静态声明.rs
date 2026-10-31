@@ -11,11 +11,11 @@ const 底座说明: &[u8] = "纯文本计算：多重集对账（按条目计次
 const 底座实现版本: v1_contract::版本三元组 = v1_contract::版本三元组::构造(0, 1, 0);
 const 底座要求宿主版本: v1_contract::版本要求 = v1_contract::版本要求::构造(1, 0);
 const 底座要求内核版本: v1_contract::版本要求 = v1_contract::版本要求::构造(1, 0);
-const 底座能力号段: [v1_contract::号段; 1] = [v1_contract::号段::构造(6301, 6302)];
+const 底座能力号段: [v1_contract::号段; 2] = [v1_contract::号段::构造(6301, 6302), v1_contract::号段::构造(6801, 6802)];
 const 底座错误段位表: [u32; 1] = [6];
 
 const fn 底座能力号段表段() -> 表段<v1_contract::号段> {
-    表段::构造(底座能力号段.as_ptr(), 1)
+    表段::构造(底座能力号段.as_ptr(), 2)
 }
 const fn 底座错误段位表段() -> 表段<u32> {
     表段::构造(底座错误段位表.as_ptr(), 1)

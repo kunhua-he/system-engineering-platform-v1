@@ -7,6 +7,8 @@ mod 业务实现;
 mod 执行函数面;
 #[path = "时刻解析.rs"]
 mod 时刻解析;
+#[path = "人格上下文.rs"]
+mod 人格上下文;
 #[path = "时间窗筛选.rs"]
 mod 时间窗筛选;
 #[path = "编号与码面.rs"]
