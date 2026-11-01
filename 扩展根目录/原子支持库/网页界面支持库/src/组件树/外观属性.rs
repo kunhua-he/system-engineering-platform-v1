@@ -284,3 +284,108 @@ pub(crate) fn 拼外观样式(节点: &Value) -> String {
     }
     样式
 }
+
+/// 形态变量的取值类型：颜色必须十六进制，像素是数字，间距是 1–4 段带单位的值。
+pub(crate) enum 变量类型 {
+    颜色,
+    像素,
+    间距,
+}
+
+/// 间距值合法性：`8px`、`10px 12px`、`0 12px`，最多四段，只认数字 + px/%/em。
+fn 间距合法(文本: &str) -> bool {
+    if 文本.is_empty() || 文本.chars().count() > 40 {
+        return false;
+    }
+    let 段表: Vec<&str> = 文本.split(' ').collect();
+    if 段表.len() > 4 {
+        return false;
+    }
+    段表.iter().all(|段| {
+        let 去单位 = 段
+            .trim_end_matches("px")
+            .trim_end_matches('%')
+            .trim_end_matches("em")
+            .trim_end_matches("rem");
+        !去单位.is_empty() && 去单位.chars().all(|字符| 字符.is_ascii_digit() || 字符 == '.')
+    })
+}
+
+/// 形态变量：把声明里的外观对象翻成容器上的 CSS 变量。
+///
+/// 中性样式里用 `var(变量名, 缺省值)` 兜底 —— 底座不知道这些值是给谁的观感，
+/// 只负责校验形状并把值挂上去；不写就是缺省，声明里不为默认值付字节。
+pub(crate) fn 取形态变量(
+    节点: &Value,
+    字段名: &str,
+    映射表: &[(&str, &str, 变量类型)],
+) -> Result<String, u32> {
+    let 外观表 = match 节点.get(字段名) {
+        None | Some(Value::Null) => return Ok(String::new()),
+        Some(Value::Object(表)) => 表.clone(),
+        _ => return Err(错误码::内容不合法),
+    };
+    let 外观值 = Value::Object(外观表);
+    let mut 样式 = String::new();
+    for (键名, 变量名, 类型) in 映射表 {
+        let 原始 = 取对象文本(&外观值, 键名);
+        if 原始.is_empty() {
+            continue;
+        }
+        match 类型 {
+            变量类型::颜色 => {
+                校验颜色值(&原始)?;
+                样式.push_str(&format!(";{变量名}:{原始}"));
+            }
+            变量类型::像素 => {
+                let 数值 = 外观值
+                    .get(*键名)
+                    .and_then(|取值项| 取值项.as_f64())
+                    .ok_or(错误码::内容不合法)?;
+                if !(0.0..=200.0).contains(&数值) {
+                    return Err(错误码::内容不合法);
+                }
+                样式.push_str(&format!(";{变量名}:{数值}px"));
+            }
+            变量类型::间距 => {
+                if !间距合法(&原始) {
+                    return Err(错误码::内容不合法);
+                }
+                样式.push_str(&format!(";{变量名}:{原始}"));
+            }
+        }
+    }
+    Ok(样式)
+}
+
+/// 表格外观字段 → 容器变量。
+pub(crate) const 表格外观映射: [(&str, &str, 变量类型); 7] = [
+    ("表头背景", "--hs-th-bg", 变量类型::颜色),
+    ("表头文字颜色", "--hs-th-ink", 变量类型::颜色),
+    ("单元格文字颜色", "--hs-td-ink", 变量类型::颜色),
+    ("边框颜色", "--hs-td-line", 变量类型::颜色),
+    ("行悬停背景", "--hs-row-hover", 变量类型::颜色),
+    ("字号", "--hs-table-font", 变量类型::像素),
+    ("单元格内边距", "--hs-cell-pad", 变量类型::间距),
+];
+
+/// 菜单外观字段 → 侧栏变量。
+pub(crate) const 菜单外观映射: [(&str, &str, 变量类型); 7] = [
+    ("栏底色", "--hs-menu-panel", 变量类型::颜色),
+    ("项文字颜色", "--hs-menu-ink", 变量类型::颜色),
+    ("激活背景", "--hs-menu-active-bg", 变量类型::颜色),
+    ("激活文字颜色", "--hs-menu-active-ink", 变量类型::颜色),
+    ("项字号", "--hs-menu-font", 变量类型::像素),
+    ("项圆角", "--hs-menu-radius", 变量类型::像素),
+    ("项内边距", "--hs-menu-pad", 变量类型::间距),
+];
+
+/// 气泡外观字段 → 聊天流变量。
+pub(crate) const 气泡外观映射: [(&str, &str, 变量类型); 6] = [
+    ("气泡背景", "--hs-chat-bg", 变量类型::颜色),
+    ("用户气泡背景", "--hs-chat-user-bg", 变量类型::颜色),
+    ("气泡文字颜色", "--hs-chat-ink", 变量类型::颜色),
+    ("用户气泡文字颜色", "--hs-chat-user-ink", 变量类型::颜色),
+    ("气泡圆角", "--hs-chat-radius", 变量类型::像素),
+    ("字号", "--hs-chat-font", 变量类型::像素),
+];

@@ -19,7 +19,8 @@ mod 外观属性;
 mod 应用窗口;
 
 use 外观属性::{
-    取尺寸, 取对齐, 合法标识, 校验节点颜色, 背景样式文本, 校验外观属性, 拼外观样式,
+    取尺寸, 取对齐, 合法标识, 校验节点颜色, 背景样式文本, 校验外观属性, 拼外观样式, 取形态变量,
+    表格外观映射, 菜单外观映射, 气泡外观映射,
 };
 
 pub(crate) const 树最大深度: u16 = 32;
@@ -341,7 +342,9 @@ fn 拼装树节点(节点: &Value, 深度: u16, 状态: &mut 渲染状态) -> Re
                 菜单文本.push_str(&format!("</span></{标签名}>"));
             }
             let 侧栏标题文本 = 取对象文本(节点, "标题");
-            let 样式 = 拼通用样式(节点, "display:flex;align-items:stretch");
+            let 菜单变量 = 取形态变量(节点, "菜单外观", &菜单外观映射)?;
+            let mut 样式 = 拼通用样式(节点, "display:flex;align-items:stretch");
+            样式.push_str(&菜单变量);
             format!(
                 "<div class=\"hs-tree-node hs-tree-sidebar\" style=\"{}\"><aside class=\"hs-tree-sidebar-pane\" style=\"flex:0 0 {}\">{}<div class=\"hs-tree-menu\">{}</div></aside><section class=\"hs-tree-sidebar-main\">{}</section></div>",
                 转义网页文本(&样式),
@@ -551,8 +554,10 @@ fn 拼装树节点(节点: &Value, 深度: u16, 状态: &mut 渲染状态) -> Re
                 .get("行")
                 .and_then(|行项| 行项.as_array())
                 .ok_or(错误码::内容不合法)?;
+            let 表格变量 = 取形态变量(节点, "表格外观", &表格外观映射)?;
             format!(
-                "<div class=\"hs-tree-node hs-card\">{}</div>",
+                "<div class=\"hs-tree-node hs-card\" style=\"{}\">{}</div>",
+                转义网页文本(&表格变量),
                 拼装表格行(列定义, 行数据)?
             )
         }
@@ -576,8 +581,10 @@ fn 拼装树节点(节点: &Value, 深度: u16, 状态: &mut 渲染状态) -> Re
                 None => Vec::new(),
             };
             let 空态文本 = 取对象文本(节点, "空态文案");
+            let 气泡变量 = 取形态变量(节点, "气泡外观", &气泡外观映射)?;
             format!(
-                "<div class=\"hs-tree-node\">{}</div>",
+                "<div class=\"hs-tree-node\" style=\"{}\">{}</div>",
+                转义网页文本(&气泡变量),
                 拼装聊天片段(&消息表, &空态文本)?
             )
         }

@@ -15,10 +15,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','PingFang SC','M
 .hs-page{padding:24px;max-width:1280px;margin:0 auto}
 .hs-title{margin:0 0 16px;font-size:22px;font-weight:700;letter-spacing:.5px;color:var(--hs-text)}
 .hs-card{background:var(--hs-card);border:1px solid var(--hs-border);border-radius:var(--hs-radius-card);padding:20px;margin-bottom:16px;box-shadow:var(--hs-shadow-1)}
-.hs-table{width:100%;border-collapse:collapse;font-size:14px}
-.hs-table th{text-align:left;padding:10px 12px;background:#fafafa;color:var(--hs-text-sub);font-weight:600;border-bottom:1px solid var(--hs-border);white-space:nowrap}
-.hs-table td{padding:10px 12px;border-bottom:1px solid var(--hs-border);color:var(--hs-text-sub)}
-.hs-table tbody tr:hover td{background:var(--hs-primary-light)}
+.hs-table{width:100%;border-collapse:collapse;font-size:var(--hs-table-font,14px)}
+.hs-table th{text-align:left;padding:var(--hs-cell-pad,10px 12px);background:var(--hs-th-bg,#fafafa);color:var(--hs-th-ink,var(--hs-text-sub));font-weight:600;border-bottom:1px solid var(--hs-td-line,var(--hs-border));white-space:nowrap}
+.hs-table td{padding:var(--hs-cell-pad,10px 12px);border-bottom:1px solid var(--hs-td-line,var(--hs-border));color:var(--hs-td-ink,var(--hs-text-sub))}
+.hs-table tbody tr:hover td{background:var(--hs-row-hover,var(--hs-primary-light))}
 .hs-form-item{margin-bottom:16px}
 .hs-form-label{display:block;margin-bottom:6px;font-size:13px;color:var(--hs-text-sub);font-weight:500}
 .hs-input{width:100%;height:32px;padding:0 11px;border:1px solid #dcdfe6;border-radius:var(--hs-radius-base);font-size:14px;font-family:inherit;color:var(--hs-text);background:#fff;line-height:30px}
@@ -56,17 +56,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','PingFang SC','M
 .hs-chat-body{min-width:0}
 .hs-chat-meta{margin-bottom:4px;font-size:12px;color:var(--hs-text-weak)}
 .hs-chat-msg.is-user .hs-chat-meta{text-align:right}
-.hs-chat-text{padding:10px 12px;border-radius:10px;background:#f5f7fa;font-size:14px;line-height:1.62;color:var(--hs-text);white-space:pre-wrap;word-break:break-word}
-.hs-chat-msg.is-user .hs-chat-text{background:var(--hs-primary);color:#fff}
+.hs-chat-text{padding:10px 12px;border-radius:var(--hs-chat-radius,10px);background:var(--hs-chat-bg,#f5f7fa);font-size:var(--hs-chat-font,14px);line-height:1.62;color:var(--hs-chat-ink,var(--hs-text));white-space:pre-wrap;word-break:break-word}
+.hs-chat-msg.is-user .hs-chat-text{background:var(--hs-chat-user-bg,var(--hs-primary));color:var(--hs-chat-user-ink,#fff)}
 .hs-tree{display:flex;flex-direction:column;min-width:0;font-size:14px;color:var(--hs-text)}
 .hs-tree-node{min-width:0}
 .hs-tree-sidebar{display:flex;align-items:stretch;border-radius:10px;overflow:hidden;background:#fff;box-shadow:var(--hs-shadow-1);min-height:0}
-.hs-tree-sidebar-pane{display:flex;flex-direction:column;background:#f7f8fa;border-right:1px solid rgba(60,60,67,.12);padding:10px 8px;min-width:0;overflow:auto}
+.hs-tree-sidebar-pane{display:flex;flex-direction:column;background:var(--hs-menu-panel,#f7f8fa);border-right:1px solid rgba(60,60,67,.12);padding:10px 8px;min-width:0;overflow:auto}
 .hs-tree-sidebar-title{padding:0 6px 8px;font-size:12px;font-weight:600;color:var(--hs-text-weak);letter-spacing:.4px}
 .hs-tree-menu{display:flex;flex-direction:column;gap:2px}
-.hs-tree-menu-item{display:flex;align-items:center;gap:8px;padding:7px 9px;border-radius:8px;font-size:13px;color:var(--hs-text);cursor:default;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hs-tree-menu-item{display:flex;align-items:center;gap:8px;padding:var(--hs-menu-pad,7px 9px);border-radius:var(--hs-menu-radius,8px);font-size:var(--hs-menu-font,13px);color:var(--hs-menu-ink,var(--hs-text));cursor:default;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 a.hs-tree-menu-item{text-decoration:none}
-.hs-tree-menu-item.is-active{background:var(--hs-primary-light);color:var(--hs-primary);font-weight:600}
+.hs-tree-menu-item.is-active{background:var(--hs-menu-active-bg,var(--hs-primary-light));color:var(--hs-menu-active-ink,var(--hs-primary));font-weight:600}
 .hs-tree-menu-icon{flex:0 0 auto;font-size:14px;line-height:1}
 .hs-tree-menu-label{min-width:0;overflow:hidden;text-overflow:ellipsis}
 .hs-tree-sidebar-main{flex:1 1 auto;display:flex;flex-direction:column;gap:12px;padding:14px 16px;min-width:0;overflow:auto}
