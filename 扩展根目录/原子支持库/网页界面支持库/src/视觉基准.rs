@@ -85,6 +85,14 @@ a.hs-tree-menu-item{text-decoration:none}
 .hs-tree-overlay{position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center}
 .hs-tree-overlay.is-hidden{display:none !important}
 .hs-tree-toggle{cursor:pointer}
+.hs-tree-window{position:relative;display:flex;flex-direction:column;overflow:hidden;box-sizing:border-box;width:100%;height:100%}
+.hs-tree-window.is-hidden{display:none !important}
+.hs-tree-window-bar{display:flex;align-items:center;gap:8px;flex:none;padding:0 10px;user-select:none;cursor:default}
+.hs-tree-window-title{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:inherit}
+.hs-tree-window-close{flex:none;border:0;background:transparent;cursor:pointer;font:inherit;line-height:1;padding:4px 7px;border-radius:6px;color:inherit;opacity:.72}
+.hs-tree-window-close:hover{background:rgba(0,0,0,.08);opacity:1}
+.hs-tree-window-body{flex:1;min-height:0;overflow:auto;display:flex;flex-direction:column}
+.hs-tree-window-body>.hs-tree-node{min-height:0}
 .hs-tree-link{text-decoration:none;color:inherit}
 .hs-tree-link:hover{opacity:.72}
 </style>"#

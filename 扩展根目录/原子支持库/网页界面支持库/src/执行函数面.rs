@@ -7,6 +7,8 @@ unsafe fn 处理调用(
     if 参数表.is_null() || 参数个数 != 造命令表()[命令表内位(编号)].参数个数 {
         return Err(错误码::参数不合法);
     }
+    let 输入字节上限 = if 编号 == 能力号::渲染组件树 { 1_048_576 } else { 65536 };
+    let 输出字节上限 = if 编号 == 能力号::渲染组件树 { 4_194_304 } else { 65536 };
     let 参数槽 = unsafe { std::slice::from_raw_parts(参数表, 参数个数 as usize) };
     let mut 字节参数表 = Vec::new();
     for (参数位置, 槽项) in 参数槽.iter().enumerate() {
@@ -18,7 +20,7 @@ unsafe fn 处理调用(
         {
             return Err(错误码::参数不合法);
         }
-        if 槽项.槽字节长度 > 65536 {
+        if 槽项.槽字节长度 > 输入字节上限 {
             return Err(错误码::资源受限);
         }
         let 文本字节 = if 槽项.槽字节长度 == 0 {
@@ -34,7 +36,7 @@ unsafe fn 处理调用(
         字节参数表.push(文本字节);
     }
     let (返回标签, 返回字节) = crate::业务实现::执行业务操作(编号, &字节参数表)?;
-    if 返回字节.len() > 65536 {
+    if 返回字节.len() > 输出字节上限 {
         return Err(错误码::资源受限);
     }
     let 返回长度 = 返回字节.len() as u64;

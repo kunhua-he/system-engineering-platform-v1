@@ -9,14 +9,16 @@ use serde_json::Value;
 use crate::业务实现::{
     取对象文本, 拼装整页外壳, 拼装聊天片段, 拼装表单字段, 拼装表格行, 转义网页文本,
 };
-use crate::交互运行时::显隐切换脚本;
+use crate::交互运行时::{显隐切换脚本, 窗口脚本};
 use crate::编号与码面::错误码;
 use crate::视觉基准::中性样式文本;
 
 #[path = "组件树/外观属性.rs"]
 mod 外观属性;
 
-use 外观属性::{取尺寸, 取对齐, 合法标识, 校验节点颜色, 背景样式文本, 校验外观属性, 拼外观样式};
+use 外观属性::{
+    取尺寸, 取对齐, 合法标识, 校验节点颜色, 校验颜色值, 背景样式文本, 校验外观属性, 拼外观样式,
+};
 
 pub(crate) const 树最大深度: u16 = 32;
 pub(crate) const 树最大节点数: usize = 2000;
@@ -25,6 +27,7 @@ pub(crate) const 树最大节点数: usize = 2000;
 struct 渲染状态 {
     计数: usize,
     需要显隐脚本: bool,
+    需要窗口脚本: bool,
 }
 
 
@@ -387,8 +390,19 @@ fn 拼装树节点(节点: &Value, 深度: u16, 状态: &mut 渲染状态) -> Re
                     取尺寸(子节点, "高").if_empty("auto")
                 );
                 let 内层 = 拼装树节点(子节点, 深度 + 1, 状态)?;
+                // 窗口要能被拖动/置顶：拖拽脚本移动的是画布给它的定位外壳
+                let 拖拽标记 = if 取对象文本(子节点, "类型") == "窗口" {
+                    format!(
+                        " data-window-port=\"{}\"{}",
+                        转义网页文本(&取对象文本(子节点, "标识")),
+                        if 子节点.get("初始隐藏").and_then(Value::as_bool).unwrap_or(true) { " hidden" } else { "" }
+                    )
+                } else {
+                    String::new()
+                };
                 子文本.push_str(&format!(
-                    "<div class=\"hs-tree-canvas-item\" style=\"{}\">{}</div>",
+                    "<div class=\"hs-tree-canvas-item\"{} style=\"{}\">{}</div>",
+                    拖拽标记,
                     转义网页文本(&定位),
                     内层
                 ));
@@ -565,6 +579,60 @@ fn 拼装树节点(节点: &Value, 深度: u16, 状态: &mut 渲染状态) -> Re
                 拼装聊天片段(&消息表, &空态文本)?
             )
         }
+        "窗口" => {
+            let 标识文本 = 取对象文本(节点, "标识");
+            if !合法标识(&标识文本) {
+                return Err(错误码::内容不合法);
+            }
+            let 标题文本 = 取对象文本(节点, "标题");
+            let 初始隐藏 = 节点
+                .get("初始隐藏")
+                .and_then(|隐藏项| 隐藏项.as_bool())
+                .unwrap_or(true);
+            let mut 标题栏样式 = String::from("height:38px");
+            if let Some(Value::Number(栏高)) = 节点.get("标题栏高") {
+                let 栏高值 = 栏高.as_f64().unwrap_or(0.0);
+                if !(24.0..=64.0).contains(&栏高值) {
+                    return Err(错误码::内容不合法);
+                }
+                标题栏样式 = format!("height:{栏高值}px");
+            }
+            for (字段名, 样式属性) in [("标题栏背景", "background"), ("标题栏文字颜色", "color")] {
+                let 取值 = 取对象文本(节点, 字段名);
+                if 取值.is_empty() {
+                    continue;
+                }
+                校验颜色值(&取值)?;
+                标题栏样式.push_str(&format!(";{样式属性}:{取值}"));
+            }
+            let 显示关闭 = 节点
+                .get("显示关闭")
+                .and_then(|关闭项| 关闭项.as_bool())
+                .unwrap_or(true);
+            let 关闭片段 = if 显示关闭 {
+                format!(
+                    "<button class=\"hs-tree-window-close\" type=\"button\" data-window-close=\"{}\" aria-label=\"关闭\">✕</button>",
+                    转义网页文本(&标识文本)
+                )
+            } else {
+                String::new()
+            };
+            let 样式 = 拼通用样式(
+                节点,
+                "position:relative;display:flex;flex-direction:column;overflow:hidden;width:100%;height:100%",
+            );
+            状态.需要窗口脚本 = true;
+            format!(
+                "<div class=\"hs-tree-node hs-tree-window{}\" data-window=\"{}\" style=\"{}\"><div class=\"hs-tree-window-bar\" style=\"{}\"><span class=\"hs-tree-window-title\">{}</span>{}</div><div class=\"hs-tree-window-body\">{}</div></div>",
+                if 初始隐藏 { " is-hidden" } else { "" },
+                转义网页文本(&标识文本),
+                转义网页文本(&样式),
+                转义网页文本(&标题栏样式),
+                转义网页文本(&标题文本),
+                关闭片段,
+                拼子节点(节点, 深度, 状态)?
+            )
+        }
         "悬浮层" => {
             let 标识文本 = 取对象文本(节点, "标识");
             if !合法标识(&标识文本) {
@@ -605,6 +673,17 @@ fn 拼装树节点(节点: &Value, 深度: u16, 状态: &mut 渲染状态) -> Re
         }
         _ => return Err(错误码::内容不合法),
     };
+    let 窗口标识 = 取对象文本(节点, "打开窗口");
+    if !窗口标识.is_empty() {
+        if !合法标识(&窗口标识) {
+            return Err(错误码::内容不合法);
+        }
+        状态.需要窗口脚本 = true;
+        return Ok(format!(
+            "<div class=\"hs-tree-toggle\" data-window-open=\"{}\" style=\"display:contents\">{}</div>",
+            转义网页文本(&窗口标识), 片段文本
+        ));
+    }
     let 切换标识 = 取对象文本(节点, "切换显隐");
     if !切换标识.is_empty() {
         if !合法标识(&切换标识) || 类型文本 == "悬浮层" {
@@ -629,6 +708,7 @@ pub(crate) fn 渲染组件树(参数表: &[&[u8]]) -> Result<(u32, Vec<u8>), u32
     let mut 状态 = 渲染状态 {
         计数: 0,
         需要显隐脚本: false,
+        需要窗口脚本: false,
     };
     let 根文本 = 拼装树节点(根节点, 0, &mut 状态)?;
     if 树定义值
@@ -641,14 +721,19 @@ pub(crate) fn 渲染组件树(参数表: &[&[u8]]) -> Result<(u32, Vec<u8>), u32
         if 状态.需要显隐脚本 {
             主体文本.push_str(显隐切换脚本);
         }
+        if 状态.需要窗口脚本 {
+            主体文本.push_str(窗口脚本);
+        }
         return Ok((4, 拼装整页外壳(&页面标题文本, "", &主体文本, &中性样式文本())));
     }
     let 样式 = 取对象文本(根节点, "容器样式");
-    let 脚本文本 = if 状态.需要显隐脚本 {
-        显隐切换脚本
-    } else {
-        ""
-    };
+    let mut 脚本文本 = String::new();
+    if 状态.需要显隐脚本 {
+        脚本文本.push_str(显隐切换脚本);
+    }
+    if 状态.需要窗口脚本 {
+        脚本文本.push_str(窗口脚本);
+    }
     Ok((
         4,
         format!(
