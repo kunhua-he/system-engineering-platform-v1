@@ -538,6 +538,54 @@ fn 渲染区块组(参数表: &[&[u8]]) -> Result<(u32, Vec<u8>), u32> {
     Ok((4, 拼装页面区块(区块定义表)?.into_bytes()))
 }
 
+/// 4927 渲染聊天消息流：角色气泡列表，用户靠右、助手靠左，纯文本转义输出。
+fn 渲染聊天消息流(参数表: &[&[u8]]) -> Result<(u32, Vec<u8>), u32> {
+    let 聊天定义原文 = 取文本参数(参数表, 0)?;
+    let 聊天定义值: serde_json::Value =
+        serde_json::from_str(&聊天定义原文).map_err(|_| 错误码::内容不合法)?;
+    let 消息表 = 聊天定义值
+        .get("消息")
+        .and_then(|消息项| 消息项.as_array())
+        .ok_or(错误码::内容不合法)?;
+    if 消息表.len() > 300 {
+        return Err(错误码::资源受限);
+    }
+    let 空态文本 = 取对象文本(&聊天定义值, "空态文案");
+    let mut 流文本 = String::new();
+    流文本.push_str("<div class=\"hs-chat\" data-chat=\"1\">");
+    if 消息表.is_empty() {
+        流文本.push_str("<div class=\"hs-chat-empty\">");
+        流文本.push_str(&转义网页文本(if 空态文本.is_empty() {
+            "还没有消息"
+        } else {
+            空态文本.as_str()
+        }));
+        流文本.push_str("</div>");
+    }
+    for 消息项 in 消息表 {
+        let 角色文本 = 取对象文本(消息项, "角色");
+        let 内容原文 = 取对象文本(消息项, "内容");
+        let 时间文本 = 取对象文本(消息项, "时间");
+        let 是用户 = 角色文本 == "user" || 角色文本 == "用户";
+        let 内容文本: String = 内容原文.chars().take(6000).collect();
+        流文本.push_str("<div class=\"hs-chat-msg is-");
+        流文本.push_str(if 是用户 { "user" } else { "assistant" });
+        流文本.push_str("\"><div class=\"hs-chat-avatar\">");
+        流文本.push_str(if 是用户 { "我" } else { "AI" });
+        流文本.push_str("</div><div class=\"hs-chat-body\"><div class=\"hs-chat-meta\">");
+        流文本.push_str(if 是用户 { "我" } else { "智能助手" });
+        if !时间文本.is_empty() {
+            流文本.push_str(" · ");
+            流文本.push_str(&转义网页文本(&时间文本));
+        }
+        流文本.push_str("</div><div class=\"hs-chat-text\">");
+        流文本.push_str(&转义网页文本(&内容文本));
+        流文本.push_str("</div></div></div>");
+    }
+    流文本.push_str("</div>");
+    Ok((4, 流文本.into_bytes()))
+}
+
 pub fn 执行业务操作(编号: u32, 参数表: &[&[u8]]) -> Result<(u32, Vec<u8>), u32> {
     match 编号 {
         能力号::渲染页面骨架 => 渲染页面骨架(参数表),
@@ -559,6 +607,7 @@ pub fn 执行业务操作(编号: u32, 参数表: &[&[u8]]) -> Result<(u32, Vec<
         能力号::渲染完整桌面 => crate::桌面部件::渲染完整桌面(参数表),
         能力号::渲染启动器 => crate::桌面部件::渲染启动器(参数表),
         能力号::渲染区块组 => 渲染区块组(参数表),
+        能力号::渲染聊天消息流 => 渲染聊天消息流(参数表),
         _ => Err(错误码::参数不合法),
     }
 }
