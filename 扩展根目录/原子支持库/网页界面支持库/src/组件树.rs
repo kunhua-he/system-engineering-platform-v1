@@ -605,31 +605,45 @@ fn 拼装树节点(节点: &Value, 深度: u16, 状态: &mut 渲染状态) -> Re
                 校验颜色值(&取值)?;
                 标题栏样式.push_str(&format!(";{样式属性}:{取值}"));
             }
-            let 显示关闭 = 节点
-                .get("显示关闭")
-                .and_then(|关闭项| 关闭项.as_bool())
-                .unwrap_or(true);
-            let 关闭片段 = if 显示关闭 {
-                format!(
-                    "<button class=\"hs-tree-window-close\" type=\"button\" data-window-close=\"{}\" aria-label=\"关闭\">✕</button>",
-                    转义网页文本(&标识文本)
-                )
-            } else {
-                String::new()
+            // 三个窗口按钮与可移动性都是声明变量：缺省只留关闭、窗口可拖
+            let 取开关 = |字段名: &str, 缺省值: bool| {
+                节点
+                    .get(字段名)
+                    .and_then(|开关项| 开关项.as_bool())
+                    .unwrap_or(缺省值)
             };
+            let 可关闭 = 取开关("可关闭", true);
+            let 可最小化 = 取开关("可最小化", false);
+            let 可最大化 = 取开关("可最大化", false);
+            let 可移动 = 取开关("可移动", true);
+            let mut 按钮片段 = String::new();
+            for (开关, 类名后缀, 数据属性, 符号, 说明) in [
+                (可最小化, "min", "data-window-min", "—", "最小化"),
+                (可最大化, "max", "data-window-max", "▢", "最大化"),
+                (可关闭, "close", "data-window-close", "✕", "关闭"),
+            ] {
+                if !开关 {
+                    continue;
+                }
+                按钮片段.push_str(&format!(
+                    "<button class=\"hs-tree-window-{类名后缀}\" type=\"button\" {数据属性}=\"{}\"><span aria-hidden=\"true\">{符号}</span><span class=\"hs-tree-window-sr\">{说明}</span></button>",
+                    转义网页文本(&标识文本)
+                ));
+            }
             let 样式 = 拼通用样式(
                 节点,
                 "position:relative;display:flex;flex-direction:column;overflow:hidden;width:100%;height:100%",
             );
             状态.需要窗口脚本 = true;
             format!(
-                "<div class=\"hs-tree-node hs-tree-window{}\" data-window=\"{}\" style=\"{}\"><div class=\"hs-tree-window-bar\" style=\"{}\"><span class=\"hs-tree-window-title\">{}</span>{}</div><div class=\"hs-tree-window-body\">{}</div></div>",
+                "<div class=\"hs-tree-node hs-tree-window{}\" data-window=\"{}\" data-movable=\"{}\" style=\"{}\"><div class=\"hs-tree-window-bar\" style=\"{}\"><span class=\"hs-tree-window-title\">{}</span>{}</div><div class=\"hs-tree-window-body\">{}</div></div>",
                 if 初始隐藏 { " is-hidden" } else { "" },
                 转义网页文本(&标识文本),
+                if 可移动 { "1" } else { "0" },
                 转义网页文本(&样式),
                 转义网页文本(&标题栏样式),
                 转义网页文本(&标题文本),
-                关闭片段,
+                按钮片段,
                 拼子节点(节点, 深度, 状态)?
             )
         }
