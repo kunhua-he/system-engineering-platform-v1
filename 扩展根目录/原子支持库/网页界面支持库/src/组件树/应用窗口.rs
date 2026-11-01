@@ -118,7 +118,7 @@ pub(crate) fn 拼装窗口(节点: &Value, 深度: u16, 状态: &mut 渲染状�
                 );
                 if !颜色文本.is_empty() {
                     校验颜色值(&颜色文本)?;
-                    样式.push_str(&format!(";background:{颜色文本}"));
+                    样式.push_str(&format!(";--hs-wc:{颜色文本};background:var(--hs-wc,transparent)"));
                 }
                 if !按钮边框颜色.is_empty() {
                     样式.push_str(&format!(";border:0.5px solid {按钮边框颜色}"));

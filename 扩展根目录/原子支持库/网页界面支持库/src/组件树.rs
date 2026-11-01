@@ -9,7 +9,7 @@ use serde_json::Value;
 use crate::业务实现::{
     取对象文本, 拼装整页外壳, 拼装聊天片段, 拼装表单字段, 拼装表格行, 转义网页文本,
 };
-use crate::交互运行时::{显隐切换脚本, 窗口脚本};
+use crate::交互运行时::{显隐切换脚本, 选中脚本, 窗口脚本};
 use crate::编号与码面::错误码;
 use crate::视觉基准::中性样式文本;
 
@@ -20,7 +20,7 @@ mod 应用窗口;
 
 use 外观属性::{
     取尺寸, 取对齐, 合法标识, 校验节点颜色, 背景样式文本, 校验外观属性, 拼外观样式, 取形态变量,
-    表格外观映射, 菜单外观映射, 气泡外观映射,
+    表格外观映射, 菜单外观映射, 气泡外观映射, 校验颜色值,
 };
 
 pub(crate) const 树最大深度: u16 = 32;
@@ -31,6 +31,7 @@ pub(crate) struct 渲染状态 {
     pub(crate) 计数: usize,
     pub(crate) 需要显隐脚本: bool,
     pub(crate) 需要窗口脚本: bool,
+    pub(crate) 需要选中脚本: bool,
 }
 
 
@@ -489,14 +490,32 @@ fn 拼装树节点(节点: &Value, 深度: u16, 状态: &mut 渲染状态) -> Re
             } else {
                 String::new()
             };
-            let 样式 = 拼通用样式(
+            let 可选中 = 节点
+                .get("可选中")
+                .and_then(|开关项| 开关项.as_bool())
+                .unwrap_or(false);
+            let mut 样式 = 拼通用样式(
                 节点,
                 "display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;text-decoration:none;padding:6px 4px",
             );
+            let mut 选中属性 = String::new();
+            if 可选中 {
+                for (字段名, 变量名) in [("选中背景", "--hs-icon-sel-bg"), ("选中描边", "--hs-icon-sel-line")] {
+                    let 取值 = 取对象文本(节点, 字段名);
+                    if 取值.is_empty() {
+                        continue;
+                    }
+                    校验颜色值(&取值)?;
+                    样式.push_str(&format!(";{变量名}:{取值}"));
+                }
+                选中属性 = " data-select=\"1\"".to_string();
+                状态.需要选中脚本 = true;
+            }
             if 打开地址.is_empty() {
                 format!(
-                    "<div class=\"hs-tree-node hs-tree-icon\" style=\"{}\">{}{}</div>",
+                    "<div class=\"hs-tree-node hs-tree-icon\" style=\"{}\"{}>{}{}</div>",
                     转义网页文本(&样式),
+                    选中属性,
                     图形片段,
                     名称片段
                 )
@@ -554,10 +573,40 @@ fn 拼装树节点(节点: &Value, 深度: u16, 状态: &mut 渲染状态) -> Re
                 .get("行")
                 .and_then(|行项| 行项.as_array())
                 .ok_or(错误码::内容不合法)?;
-            let 表格变量 = 取形态变量(节点, "表格外观", &表格外观映射)?;
+            let 斑马纹 = 节点
+                .get("斑马纹")
+                .and_then(|开关项| 开关项.as_bool())
+                .unwrap_or(false);
+            let 表头固定 = 节点
+                .get("表头固定")
+                .and_then(|开关项| 开关项.as_bool())
+                .unwrap_or(false);
+            let 外观变量 = 取形态变量(节点, "表格外观", &表格外观映射)?;
+            let mut 容器样式 = 外观变量;
+            if 表头固定 {
+                let 最大高度 = 节点
+                    .get("最大高度")
+                    .and_then(|高度项| 高度项.as_f64())
+                    .unwrap_or(0.0);
+                if !(80.0..=4000.0).contains(&最大高度) {
+                    return Err(错误码::内容不合法);
+                }
+                容器样式.push_str(&format!(";max-height:{最大高度}px;overflow:auto"));
+            }
+            let 斑马色 = 取对象文本(节点, "斑马纹色");
+            if !斑马色.is_empty() {
+                校验颜色值(&斑马色)?;
+                容器样式.push_str(&format!(";--hs-row-alt:{斑马色}"));
+            }
+            let 容器类 = format!(
+                "hs-tree-node hs-card{}{}",
+                if 斑马纹 { " is-stripe" } else { "" },
+                if 表头固定 { " is-sticky" } else { "" }
+            );
             format!(
-                "<div class=\"hs-tree-node hs-card\" style=\"{}\">{}</div>",
-                转义网页文本(&表格变量),
+                "<div class=\"{}\" style=\"{}\">{}</div>",
+                容器类,
+                转义网页文本(&容器样式),
                 拼装表格行(列定义, 行数据)?
             )
         }
@@ -665,6 +714,7 @@ pub(crate) fn 渲染组件树(参数表: &[&[u8]]) -> Result<(u32, Vec<u8>), u32
         计数: 0,
         需要显隐脚本: false,
         需要窗口脚本: false,
+        需要选中脚本: false,
     };
     let 根文本 = 拼装树节点(根节点, 0, &mut 状态)?;
     if 树定义值
@@ -677,6 +727,9 @@ pub(crate) fn 渲染组件树(参数表: &[&[u8]]) -> Result<(u32, Vec<u8>), u32
         if 状态.需要显隐脚本 {
             主体文本.push_str(显隐切换脚本);
         }
+        if 状态.需要选中脚本 {
+            主体文本.push_str(选中脚本);
+        }
         if 状态.需要窗口脚本 {
             主体文本.push_str(窗口脚本);
         }
@@ -686,6 +739,9 @@ pub(crate) fn 渲染组件树(参数表: &[&[u8]]) -> Result<(u32, Vec<u8>), u32
     let mut 脚本文本 = String::new();
     if 状态.需要显隐脚本 {
         脚本文本.push_str(显隐切换脚本);
+    }
+    if 状态.需要选中脚本 {
+        脚本文本.push_str(选中脚本);
     }
     if 状态.需要窗口脚本 {
         脚本文本.push_str(窗口脚本);
