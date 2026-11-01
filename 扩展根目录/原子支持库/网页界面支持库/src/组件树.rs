@@ -9,10 +9,17 @@ use serde_json::Value;
 use crate::业务实现::{
     取对象文本, 拼装整页外壳, 拼装聊天片段, 拼装表单字段, 拼装表格行, 转义网页文本,
 };
+use crate::交互运行时::显隐切换脚本;
 use crate::编号与码面::错误码;
 
 pub(crate) const 树最大深度: u16 = 32;
 pub(crate) const 树最大节点数: usize = 2000;
+
+/// 渲染过程中的累积状态：节点计数 + 是否需要附通用显隐脚本。
+struct 渲染状态 {
+    计数: usize,
+    需要显隐脚本: bool,
+}
 
 /// 尺寸类字段：数字当像素，字符串原样（"100%"、"auto"）。
 fn 取尺寸(节点: &Value, 字段名: &str) -> String {
@@ -31,6 +38,18 @@ fn 取对齐(节点: &Value, 字段名: &str) -> &'static str {
         "两端" => "space-between",
         _ => "flex-start",
     }
+}
+
+/// 标识合法性：字母、数字、`-`、`_` 与汉字，长度不超过 32（标识只作为 data-* 的值，输出仍转义）。
+fn 合法标识(文本: &str) -> bool {
+    !文本.is_empty()
+        && 文本.chars().count() <= 32
+        && 文本.chars().all(|字符| {
+            字符.is_ascii_alphanumeric()
+                || 字符 == '-'
+                || 字符 == '_'
+                || ('\u{4e00}'..='\u{9fff}').contains(&字符)
+        })
 }
 
 /// 颜色值：#RGB / #RRGGBB / #RRGGBBAA，其他一律拒绝，避免把任意样式当颜色注入。
@@ -225,24 +244,24 @@ fn 拼通用样式(节点: &Value, 基础: &str) -> String {
 }
 
 /// 递归出口：子节点表
-fn 拼子节点(节点: &Value, 深度: u16, 计数: &mut usize) -> Result<String, u32> {
+fn 拼子节点(节点: &Value, 深度: u16, 状态: &mut 渲染状态) -> Result<String, u32> {
     let 子节点表 = match 节点.get("子").and_then(|子项| 子项.as_array()) {
         Some(子项) => 子项,
         None => return Ok(String::new()),
     };
     let mut 子文本 = String::new();
     for 子节点 in 子节点表 {
-        子文本.push_str(&拼装树节点(子节点, 深度 + 1, 计数)?);
+        子文本.push_str(&拼装树节点(子节点, 深度 + 1, 状态)?);
     }
     Ok(子文本)
 }
 
-fn 拼装树节点(节点: &Value, 深度: u16, 计数: &mut usize) -> Result<String, u32> {
+fn 拼装树节点(节点: &Value, 深度: u16, 状态: &mut 渲染状态) -> Result<String, u32> {
     if 深度 > 树最大深度 {
         return Err(错误码::资源受限);
     }
-    *计数 += 1;
-    if *计数 > 树最大节点数 {
+    状态.计数 += 1;
+    if 状态.计数 > 树最大节点数 {
         return Err(错误码::资源受限);
     }
     let 类型文本 = 取对象文本(节点, "类型");
@@ -277,7 +296,7 @@ fn 拼装树节点(节点: &Value, 深度: u16, 计数: &mut usize) -> Result<St
                 提交方式文本,
                 转义网页文本(&提交地址文本),
                 转义网页文本(&样式),
-                拼子节点(节点, 深度, 计数)?
+                拼子节点(节点, 深度, 状态)?
             )
         }
         "输入" => {
@@ -371,7 +390,7 @@ fn 拼装树节点(节点: &Value, 深度: u16, 计数: &mut usize) -> Result<St
             format!(
                 "<div class=\"hs-tree-node hs-tree-row\" style=\"{}\">{}</div>",
                 转义网页文本(&样式),
-                拼子节点(节点, 深度, 计数)?
+                拼子节点(节点, 深度, 状态)?
             )
         }
         "列" => {
@@ -386,7 +405,7 @@ fn 拼装树节点(节点: &Value, 深度: u16, 计数: &mut usize) -> Result<St
             format!(
                 "<div class=\"hs-tree-node hs-tree-col\" style=\"{}\">{}</div>",
                 转义网页文本(&样式),
-                拼子节点(节点, 深度, 计数)?
+                拼子节点(节点, 深度, 状态)?
             )
         }
         "网格" => {
@@ -404,7 +423,7 @@ fn 拼装树节点(节点: &Value, 深度: u16, 计数: &mut usize) -> Result<St
             format!(
                 "<div class=\"hs-tree-node hs-tree-grid\" style=\"{}\">{}</div>",
                 转义网页文本(&样式),
-                拼子节点(节点, 深度, 计数)?
+                拼子节点(节点, 深度, 状态)?
             )
         }
         "侧栏" => {
@@ -427,11 +446,26 @@ fn 拼装树节点(节点: &Value, 深度: u16, 计数: &mut usize) -> Result<St
                     .get("激活")
                     .and_then(|激活项| 激活项.as_bool())
                     .unwrap_or(false);
-                菜单文本.push_str("<div class=\"hs-tree-menu-item");
+                let 打开地址 = 取对象文本(条目项, "打开地址");
+                if !打开地址.is_empty()
+                    && (!打开地址.starts_with('/')
+                        || 打开地址.starts_with("//")
+                        || 打开地址.contains("..")
+                        || 打开地址.contains(':'))
+                {
+                    return Err(错误码::内容不合法);
+                }
+                let 标签名 = if 打开地址.is_empty() { "div" } else { "a" };
+                let 地址属性 = if 打开地址.is_empty() {
+                    String::new()
+                } else {
+                    format!(" href=\"{}\"", 转义网页文本(&打开地址))
+                };
+                菜单文本.push_str(&format!("<{标签名} class=\"hs-tree-menu-item"));
                 if 激活 {
                     菜单文本.push_str(" is-active");
                 }
-                菜单文本.push_str("\">");
+                菜单文本.push_str(&format!("\"{地址属性}>"));
                 let 图标文本 = 取对象文本(条目项, "图标");
                 if !图标文本.is_empty() {
                     菜单文本.push_str("<span class=\"hs-tree-menu-icon\">");
@@ -440,7 +474,7 @@ fn 拼装树节点(节点: &Value, 深度: u16, 计数: &mut usize) -> Result<St
                 }
                 菜单文本.push_str("<span class=\"hs-tree-menu-label\">");
                 菜单文本.push_str(&转义网页文本(&取对象文本(条目项, "名称")));
-                菜单文本.push_str("</span></div>");
+                菜单文本.push_str(&format!("</span></{标签名}>"));
             }
             let 侧栏标题文本 = 取对象文本(节点, "标题");
             let 样式 = 拼通用样式(节点, "display:flex;align-items:stretch");
@@ -457,7 +491,7 @@ fn 拼装树节点(节点: &Value, 深度: u16, 计数: &mut usize) -> Result<St
                     )
                 },
                 菜单文本,
-                拼子节点(节点, 深度, 计数)?
+                拼子节点(节点, 深度, 状态)?
             )
         }
         "分区" => {
@@ -474,7 +508,7 @@ fn 拼装树节点(节点: &Value, 深度: u16, 计数: &mut usize) -> Result<St
                         转义网页文本(&标题文本)
                     )
                 },
-                拼子节点(节点, 深度, 计数)?
+                拼子节点(节点, 深度, 状态)?
             )
         }
         "画布" => {
@@ -493,7 +527,7 @@ fn 拼装树节点(节点: &Value, 深度: u16, 计数: &mut usize) -> Result<St
                     取尺寸(子节点, "宽").if_empty("auto"),
                     取尺寸(子节点, "高").if_empty("auto")
                 );
-                let 内层 = 拼装树节点(子节点, 深度 + 1, 计数)?;
+                let 内层 = 拼装树节点(子节点, 深度 + 1, 状态)?;
                 子文本.push_str(&format!(
                     "<div class=\"hs-tree-canvas-item\" style=\"{}\">{}</div>",
                     转义网页文本(&定位),
@@ -510,13 +544,93 @@ fn 拼装树节点(节点: &Value, 深度: u16, 计数: &mut usize) -> Result<St
             "<h2 class=\"hs-tree-node hs-tree-title\">{}</h2>",
             转义网页文本(&取对象文本(节点, "文本"))
         ),
+        "图标" => {
+            let 名称文本 = 取对象文本(节点, "名称");
+            let 图形文本 = 取对象文本(节点, "图形");
+            let 打开地址 = 取对象文本(节点, "打开地址");
+            if !打开地址.is_empty()
+                && (!打开地址.starts_with('/')
+                    || 打开地址.starts_with("//")
+                    || 打开地址.contains("..")
+                    || 打开地址.contains(':'))
+            {
+                return Err(错误码::内容不合法);
+            }
+            let 图形片段 = if 图形文本.starts_with('/') {
+                if 图形文本.starts_with("//") || 图形文本.contains("..") || 图形文本.contains(':')
+                {
+                    return Err(错误码::内容不合法);
+                }
+                format!(
+                    "<img class=\"hs-tree-icon-img\" src=\"{}\" alt=\"\">",
+                    转义网页文本(&图形文本)
+                )
+            } else {
+                format!(
+                    "<span class=\"hs-tree-icon-glyph\">{}</span>",
+                    转义网页文本(&图形文本)
+                )
+            };
+            let 名称片段 = if 节点
+                .get("显示名称")
+                .and_then(|显示项| 显示项.as_bool())
+                .unwrap_or(true)
+            {
+                format!(
+                    "<span class=\"hs-tree-icon-label\">{}</span>",
+                    转义网页文本(&名称文本)
+                )
+            } else {
+                String::new()
+            };
+            let 样式 = 拼通用样式(
+                节点,
+                "display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;text-decoration:none;padding:6px 4px",
+            );
+            if 打开地址.is_empty() {
+                format!(
+                    "<div class=\"hs-tree-node hs-tree-icon\" style=\"{}\">{}{}</div>",
+                    转义网页文本(&样式),
+                    图形片段,
+                    名称片段
+                )
+            } else {
+                format!(
+                    "<a class=\"hs-tree-node hs-tree-icon\" href=\"{}\" title=\"{}\" style=\"{}\">{}{}</a>",
+                    转义网页文本(&打开地址),
+                    转义网页文本(&名称文本),
+                    转义网页文本(&样式),
+                    图形片段,
+                    名称片段
+                )
+            }
+        }
         "文字" => {
             let 样式 = 拼通用样式(节点, "white-space:pre-wrap;word-break:break-word");
-            format!(
-                "<div class=\"hs-tree-node hs-tree-text\" style=\"{}\">{}</div>",
-                转义网页文本(&样式),
-                转义网页文本(&取对象文本(节点, "文本"))
-            )
+            let 文本内容 = 转义网页文本(&取对象文本(节点, "文本"));
+            let 打开地址 = 取对象文本(节点, "打开地址");
+            if !打开地址.is_empty()
+                && (!打开地址.starts_with('/')
+                    || 打开地址.starts_with("//")
+                    || 打开地址.contains("..")
+                    || 打开地址.contains(':'))
+            {
+                return Err(错误码::内容不合法);
+            }
+            if 打开地址.is_empty() {
+                format!(
+                    "<div class=\"hs-tree-node hs-tree-text\" style=\"{}\">{}</div>",
+                    转义网页文本(&样式),
+                    文本内容
+                )
+            } else {
+                format!(
+                    "<a class=\"hs-tree-node hs-tree-text hs-tree-link\" href=\"{}\" style=\"{}\">{}</a>",
+                    转义网页文本(&打开地址),
+                    转义网页文本(&样式),
+                    文本内容
+                )
+            }
         }
         "分隔条" => {
             let 样式 = 拼通用样式(节点, "");
@@ -564,6 +678,37 @@ fn 拼装树节点(节点: &Value, 深度: u16, 计数: &mut usize) -> Result<St
                 拼装聊天片段(&消息表, &空态文本)?
             )
         }
+        "悬浮层" => {
+            let 标识文本 = 取对象文本(节点, "标识");
+            if !合法标识(&标识文本) {
+                return Err(错误码::内容不合法);
+            }
+            let 快捷键文本 = 取对象文本(节点, "快捷键");
+            if 快捷键文本.chars().count() > 8 {
+                return Err(错误码::内容不合法);
+            }
+            状态.需要显隐脚本 = true;
+            let 初始隐藏 = 节点
+                .get("初始隐藏")
+                .and_then(|隐藏项| 隐藏项.as_bool())
+                .unwrap_or(true);
+            let 样式 = 拼通用样式(
+                节点,
+                "position:absolute;inset:0;z-index:20;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:auto",
+            );
+            format!(
+                "<div class=\"hs-tree-overlay{}\" data-overlay=\"{}\"{} style=\"{}\">{}</div>",
+                if 初始隐藏 { " is-hidden" } else { "" },
+                转义网页文本(&标识文本),
+                if 快捷键文本.is_empty() {
+                    String::new()
+                } else {
+                    format!(" data-key=\"{}\"", 转义网页文本(&快捷键文本))
+                },
+                转义网页文本(&样式),
+                拼子节点(节点, 深度, 状态)?
+            )
+        }
         "原样" => {
             let 片段文本 = 取对象文本(节点, "html");
             if 片段文本.len() > 200_000 {
@@ -573,6 +718,18 @@ fn 拼装树节点(节点: &Value, 深度: u16, 计数: &mut usize) -> Result<St
         }
         _ => return Err(错误码::内容不合法),
     };
+    let 切换标识 = 取对象文本(节点, "切换显隐");
+    if !切换标识.is_empty() {
+        if !合法标识(&切换标识) || 类型文本 == "悬浮层" {
+            return Err(错误码::内容不合法);
+        }
+        状态.需要显隐脚本 = true;
+        return Ok(format!(
+            "<div class=\"hs-tree-toggle\" data-toggle=\"{}\" style=\"display:contents\">{}</div>",
+            转义网页文本(&切换标识),
+            片段文本
+        ));
+    }
     Ok(片段文本)
 }
 
@@ -582,23 +739,36 @@ pub(crate) fn 渲染组件树(参数表: &[&[u8]]) -> Result<(u32, Vec<u8>), u32
     let 树定义值: Value =
         serde_json::from_str(&树定义原文).map_err(|_| 错误码::内容不合法)?;
     let 根节点 = 树定义值.get("根").ok_or(错误码::内容不合法)?;
-    let mut 计数 = 0usize;
-    let 根文本 = 拼装树节点(根节点, 0, &mut 计数)?;
+    let mut 状态 = 渲染状态 {
+        计数: 0,
+        需要显隐脚本: false,
+    };
+    let 根文本 = 拼装树节点(根节点, 0, &mut 状态)?;
     if 树定义值
         .get("整页")
         .and_then(|整页项| 整页项.as_bool())
         .unwrap_or(false)
     {
         let 页面标题文本 = 取对象文本(&树定义值, "页面标题");
-        return Ok((4, 拼装整页外壳(&页面标题文本, "", &根文本)));
+        let mut 主体文本 = 根文本;
+        if 状态.需要显隐脚本 {
+            主体文本.push_str(显隐切换脚本);
+        }
+        return Ok((4, 拼装整页外壳(&页面标题文本, "", &主体文本)));
     }
     let 样式 = 取对象文本(根节点, "容器样式");
+    let 脚本文本 = if 状态.需要显隐脚本 {
+        显隐切换脚本
+    } else {
+        ""
+    };
     Ok((
         4,
         format!(
-            "<div class=\"hs-tree\" data-tree=\"1\" style=\"{}\">{}</div>",
+            "<div class=\"hs-tree\" data-tree=\"1\" style=\"{}\">{}{}</div>",
             转义网页文本(&样式),
-            根文本
+            根文本,
+            脚本文本
         )
         .into_bytes(),
     ))
