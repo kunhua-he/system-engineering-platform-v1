@@ -45,8 +45,14 @@ fn 校验颜色值(颜色文本: &str) -> Result<(), u32> {
     }
 }
 
-/// 背景校验：纯色写字符串，渐变写对象（角度 + 颜色节点），图片写同源资源路径。
-fn 校验背景(节点: &Value) -> Result<(), u32> {
+/// 颜色字段校验：背景（纯色写字符串 / 渐变写对象 / 图片写同源路径）、文字颜色、边框颜色。
+fn 校验节点颜色(节点: &Value) -> Result<(), u32> {
+    for 颜色字段 in ["文字颜色", "边框颜色"] {
+        let 颜色文本 = 取对象文本(节点, 颜色字段);
+        if !颜色文本.is_empty() {
+            校验颜色值(&颜色文本)?;
+        }
+    }
     match 节点.get("背景") {
         None | Some(Value::Null) => Ok(()),
         Some(Value::String(纯色)) => 校验颜色值(纯色),
@@ -191,6 +197,14 @@ fn 拼通用样式(节点: &Value, 基础: &str) -> String {
         样式.push_str(&format!(";padding:{内边距}"));
     }
     样式.push_str(&背景样式文本(节点));
+    let 文字颜色 = 取对象文本(节点, "文字颜色");
+    if !文字颜色.is_empty() {
+        样式.push_str(&format!(";color:{文字颜色}"));
+    }
+    let 边框颜色 = 取对象文本(节点, "边框颜色");
+    if !边框颜色.is_empty() {
+        样式.push_str(&format!(";border-color:{边框颜色}"));
+    }
     let 圆角 = 取尺寸(节点, "圆角");
     if !圆角.is_empty() {
         样式.push_str(&format!(";border-radius:{圆角}"));
@@ -232,7 +246,7 @@ fn 拼装树节点(节点: &Value, 深度: u16, 计数: &mut usize) -> Result<St
         return Err(错误码::资源受限);
     }
     let 类型文本 = 取对象文本(节点, "类型");
-    校验背景(节点)?;
+    校验节点颜色(节点)?;
     let 片段文本 = match 类型文本.as_str() {
         "表单容器" => {
             let 提交地址文本 = 取对象文本(节点, "提交地址");
