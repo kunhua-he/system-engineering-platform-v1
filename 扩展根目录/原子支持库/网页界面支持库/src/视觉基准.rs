@@ -87,8 +87,9 @@ a.hs-tree-menu-item{text-decoration:none}
 .hs-tree-toggle{cursor:pointer}
 .hs-tree-window{position:relative;display:flex;flex-direction:column;overflow:hidden;box-sizing:border-box;width:100%;height:100%}
 .hs-tree-window.is-hidden{display:none !important}
-.hs-tree-window-bar{display:flex;align-items:center;gap:8px;flex:none;padding:0 10px;user-select:none;cursor:default}
+.hs-tree-window-bar{position:relative;display:flex;align-items:center;gap:8px;flex:none;padding:0 10px;user-select:none;cursor:default}
 .hs-tree-window-title{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:inherit}
+.hs-tree-window-bar.is-leading .hs-tree-window-title{position:absolute;left:0;right:0;text-align:center;pointer-events:none;padding:0 76px}
 .hs-tree-window-close,.hs-tree-window-min,.hs-tree-window-max{flex:none;border:0;background:transparent;cursor:pointer;font:inherit;line-height:1;padding:4px 7px;border-radius:6px;color:inherit;opacity:.72}
 .hs-tree-window-close:hover,.hs-tree-window-min:hover,.hs-tree-window-max:hover{background:rgba(0,0,0,.08);opacity:1}
 .hs-tree-window-close,.hs-tree-window-min,.hs-tree-window-max{display:inline-flex;align-items:center;justify-content:center}
