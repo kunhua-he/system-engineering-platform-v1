@@ -7,7 +7,7 @@
 use serde_json::Value;
 
 use crate::业务实现::{
-    取对象文本, 拼装聊天片段, 拼装表单字段, 拼装表格行, 转义网页文本
+    取对象文本, 拼装整页外壳, 拼装聊天片段, 拼装表单字段, 拼装表格行, 转义网页文本,
 };
 use crate::编号与码面::错误码;
 
@@ -33,6 +33,145 @@ fn 取对齐(节点: &Value, 字段名: &str) -> &'static str {
     }
 }
 
+/// 颜色值：#RGB / #RRGGBB / #RRGGBBAA，其他一律拒绝，避免把任意样式当颜色注入。
+fn 校验颜色值(颜色文本: &str) -> Result<(), u32> {
+    let 形状相符 = matches!(颜色文本.len(), 4 | 7 | 9)
+        && 颜色文本.starts_with('#')
+        && 颜色文本[1..].chars().all(|字符| 字符.is_ascii_hexdigit());
+    if 形状相符 {
+        Ok(())
+    } else {
+        Err(错误码::内容不合法)
+    }
+}
+
+/// 背景校验：纯色写字符串，渐变写对象（角度 + 颜色节点），图片写同源资源路径。
+fn 校验背景(节点: &Value) -> Result<(), u32> {
+    match 节点.get("背景") {
+        None | Some(Value::Null) => Ok(()),
+        Some(Value::String(纯色)) => 校验颜色值(纯色),
+        Some(Value::Object(背景表)) => {
+            let 背景值 = Value::Object(背景表.clone());
+            match 取对象文本(&背景值, "类型").as_str() {
+                "线性渐变" => {
+                    let 角度越界 = 背景值
+                        .get("角度")
+                        .and_then(|角度项| 角度项.as_f64())
+                        .map(|角度数值| !(-360.0..=360.0).contains(&角度数值))
+                        .unwrap_or(false);
+                    if 角度越界 {
+                        return Err(错误码::内容不合法);
+                    }
+                    let 颜色节点 = 背景值
+                        .get("颜色节点")
+                        .and_then(|节点项| 节点项.as_array())
+                        .ok_or(错误码::内容不合法)?;
+                    if !(2..=16).contains(&颜色节点.len()) {
+                        return Err(错误码::内容不合法);
+                    }
+                    let mut 上次位置 = -1.0_f64;
+                    for 颜色项 in 颜色节点 {
+                        let 颜色文本 = 颜色项
+                            .get("颜色")
+                            .and_then(|颜色项| 颜色项.as_str())
+                            .ok_or(错误码::内容不合法)?;
+                        校验颜色值(颜色文本)?;
+                        let 位置数值 = 颜色项
+                            .get("位置")
+                            .and_then(|位置项| 位置项.as_f64())
+                            .ok_or(错误码::内容不合法)?;
+                        if !(0.0..=100.0).contains(&位置数值) || 位置数值 < 上次位置 {
+                            return Err(错误码::内容不合法);
+                        }
+                        上次位置 = 位置数值;
+                    }
+                    Ok(())
+                }
+                "图片" => {
+                    let 资源文本 = 取对象文本(&背景值, "资源");
+                    if !资源文本.starts_with('/')
+                        || 资源文本.starts_with("//")
+                        || 资源文本.contains("..")
+                        || 资源文本.contains(':')
+                    {
+                        return Err(错误码::内容不合法);
+                    }
+                    Ok(())
+                }
+                _ => Err(错误码::内容不合法),
+            }
+        }
+        _ => Err(错误码::内容不合法),
+    }
+}
+
+/// 背景样式：调用前必须已过 `校验背景`。
+fn 背景样式文本(节点: &Value) -> String {
+    match 节点.get("背景") {
+        Some(Value::String(纯色)) => format!(";background:{纯色}"),
+        Some(Value::Object(背景表)) => {
+            let 背景值 = Value::Object(背景表.clone());
+            if 取对象文本(&背景值, "类型") == "图片" {
+                return format!(
+                    ";background-image:url(\"{}\");background-size:cover;background-position:center",
+                    转义网页文本(&取对象文本(&背景值, "资源"))
+                );
+            }
+            let 角度 = 背景值
+                .get("角度")
+                .and_then(|角度项| 角度项.as_f64())
+                .unwrap_or(135.0);
+            let mut 节点文本 = String::new();
+            for 颜色项 in 背景值
+                .get("颜色节点")
+                .and_then(|节点项| 节点项.as_array())
+                .map(|节点表| 节点表.as_slice())
+                .unwrap_or(&[])
+            {
+                if !节点文本.is_empty() {
+                    节点文本.push(',');
+                }
+                节点文本.push_str(&format!(
+                    "{} {}%",
+                    取对象文本(颜色项, "颜色"),
+                    颜色项
+                        .get("位置")
+                        .and_then(|位置项| 位置项.as_f64())
+                        .unwrap_or(0.0)
+                ));
+            }
+            format!(";background:linear-gradient({角度}deg,{节点文本})")
+        }
+        _ => String::new(),
+    }
+}
+
+/// 控件自身尺寸与描边：宽 / 高 / 圆角 / 边框颜色 / 背景色。
+fn 控件样式文本(节点: &Value) -> String {
+    let mut 样式 = String::new();
+    let 宽 = 取尺寸(节点, "宽");
+    if !宽.is_empty() {
+        样式.push_str(&format!("width:{宽};"));
+    }
+    let 高 = 取尺寸(节点, "高");
+    if !高.is_empty() {
+        样式.push_str(&format!("height:{高};"));
+    }
+    let 圆角 = 取尺寸(节点, "圆角");
+    if !圆角.is_empty() {
+        样式.push_str(&format!("border-radius:{圆角};"));
+    }
+    let 边框颜色 = 取对象文本(节点, "边框颜色");
+    if !边框颜色.is_empty() {
+        样式.push_str(&format!("border-color:{边框颜色};"));
+    }
+    样式.push_str(&背景样式文本(节点));
+    if 样式.ends_with(';') {
+        样式.pop();
+    }
+    样式
+}
+
 /// 通用样式：所有节点都能带，拼成 style 属性值。
 fn 拼通用样式(节点: &Value, 基础: &str) -> String {
     let mut 样式 = String::from(基础);
@@ -51,10 +190,7 @@ fn 拼通用样式(节点: &Value, 基础: &str) -> String {
     if !内边距.is_empty() {
         样式.push_str(&format!(";padding:{内边距}"));
     }
-    let 背景 = 取对象文本(节点, "背景");
-    if !背景.is_empty() {
-        样式.push_str(&format!(";background:{背景}"));
-    }
+    样式.push_str(&背景样式文本(节点));
     let 圆角 = 取尺寸(节点, "圆角");
     if !圆角.is_empty() {
         样式.push_str(&format!(";border-radius:{圆角}"));
@@ -96,7 +232,119 @@ fn 拼装树节点(节点: &Value, 深度: u16, 计数: &mut usize) -> Result<St
         return Err(错误码::资源受限);
     }
     let 类型文本 = 取对象文本(节点, "类型");
+    校验背景(节点)?;
     let 片段文本 = match 类型文本.as_str() {
+        "表单容器" => {
+            let 提交地址文本 = 取对象文本(节点, "提交地址");
+            if !提交地址文本.starts_with('/')
+                || 提交地址文本.starts_with("//")
+                || 提交地址文本.contains("..")
+            {
+                return Err(错误码::内容不合法);
+            }
+            let 提交方式文本 = match 取对象文本(节点, "方式").as_str() {
+                "" | "POST" => "post",
+                "GET" => "get",
+                _ => return Err(错误码::内容不合法),
+            };
+            let 标识文本 = 取对象文本(节点, "标识");
+            let 辨识属性 = if 标识文本.is_empty() {
+                String::new()
+            } else {
+                format!(" id=\"{}\"", 转义网页文本(&标识文本))
+            };
+            let 样式 = 拼通用样式(
+                节点,
+                "display:flex;flex-direction:column;box-sizing:border-box",
+            );
+            format!(
+                "<form class=\"hs-tree-node hs-tree-form\"{} method=\"{}\" action=\"{}\" style=\"{}\">{}</form>",
+                辨识属性,
+                提交方式文本,
+                转义网页文本(&提交地址文本),
+                转义网页文本(&样式),
+                拼子节点(节点, 深度, 计数)?
+            )
+        }
+        "输入" => {
+            let 输入类型文本 = match 取对象文本(节点, "种类").as_str() {
+                "" | "文本框" => "text",
+                "密码框" => "password",
+                "数字框" => "number",
+                "邮箱" => "email",
+                _ => return Err(错误码::内容不合法),
+            };
+            let 名称文本 = 取对象文本(节点, "名称");
+            if 名称文本.is_empty() {
+                return Err(错误码::内容不合法);
+            }
+            let 标签文本 = 取对象文本(节点, "标签");
+            let 显示标签文本 = if 标签文本.is_empty() {
+                名称文本.clone()
+            } else {
+                标签文本
+            };
+            let 必填属性 = if 节点
+                .get("必填")
+                .and_then(|必填项| 必填项.as_bool())
+                .unwrap_or(false)
+            {
+                " required"
+            } else {
+                ""
+            };
+            let 自动填充文本 = 取对象文本(节点, "自动填充");
+            let 自动填充属性 = if 自动填充文本.is_empty() {
+                String::new()
+            } else {
+                format!(" autocomplete=\"{}\"", 转义网页文本(&自动填充文本))
+            };
+            format!(
+                "<div class=\"hs-tree-node hs-form-item\"><label class=\"hs-form-label\">{}</label><input class=\"hs-input\" type=\"{}\" name=\"{}\" placeholder=\"{}\"{}{} style=\"{}\" /></div>",
+                转义网页文本(&显示标签文本),
+                输入类型文本,
+                转义网页文本(&名称文本),
+                转义网页文本(&取对象文本(节点, "占位文本")),
+                必填属性,
+                自动填充属性,
+                转义网页文本(&控件样式文本(节点))
+            )
+        }
+        "按钮" => {
+            let 样式类文本 = match 取对象文本(节点, "样式").as_str() {
+                "" | "默认" => "hs-button",
+                "主要" => "hs-button hs-button-primary",
+                "成功" => "hs-button hs-button-success",
+                "警告" => "hs-button hs-button-warning",
+                "危险" => "hs-button hs-button-danger",
+                _ => return Err(错误码::内容不合法),
+            };
+            let 提交属性 = if 节点
+                .get("提交")
+                .and_then(|提交项| 提交项.as_bool())
+                .unwrap_or(false)
+            {
+                " type=\"submit\""
+            } else {
+                " type=\"button\""
+            };
+            let 表单标识文本 = 取对象文本(节点, "表单");
+            let 表单属性 = if 表单标识文本.is_empty() {
+                String::new()
+            } else {
+                format!(" form=\"{}\"", 转义网页文本(&表单标识文本))
+            };
+            format!(
+                "<button class=\"{}\"{} data-action=\"{}\"{}{} style=\"{}\">{}</button>",
+                样式类文本,
+                提交属性,
+                转义网页文本(&取对象文本(节点, "动作")),
+                表单属性,
+                "",
+                转义网页文本(&控件样式文本(节点)),
+                转义网页文本(&取对象文本(节点, "文字"))
+            )
+        }
         "行" => {
             let 样式 = 拼通用样式(
                 节点,
@@ -322,6 +570,14 @@ pub(crate) fn 渲染组件树(参数表: &[&[u8]]) -> Result<(u32, Vec<u8>), u32
     let 根节点 = 树定义值.get("根").ok_or(错误码::内容不合法)?;
     let mut 计数 = 0usize;
     let 根文本 = 拼装树节点(根节点, 0, &mut 计数)?;
+    if 树定义值
+        .get("整页")
+        .and_then(|整页项| 整页项.as_bool())
+        .unwrap_or(false)
+    {
+        let 页面标题文本 = 取对象文本(&树定义值, "页面标题");
+        return Ok((4, 拼装整页外壳(&页面标题文本, "", &根文本)));
+    }
     let 样式 = 取对象文本(根节点, "容器样式");
     Ok((
         4,
