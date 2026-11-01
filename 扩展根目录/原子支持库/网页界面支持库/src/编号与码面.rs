@@ -17,6 +17,7 @@ pub mod 能力号 {
     pub const 渲染完整桌面: u32 = 4924;
     pub const 渲染启动器: u32 = 4925;
     pub const 渲染区块组: u32 = 4926;
+    pub const 渲染聊天消息流: u32 = 4927;
 }
 pub mod 错误码 {
     pub const 参数不合法: u32 = 4921;

@@ -114,6 +114,17 @@ body.hs-desk-body{margin:0;overflow:hidden}
 .hs-launchpad-item:hover{background:rgba(0,0,0,.06)}
 .hs-launchpad-glyph{display:flex;align-items:center;justify-content:center;width:58px;height:58px;border-radius:14px;background:rgba(255,255,255,.72);box-shadow:var(--hs-shadow-1);font-size:30px;line-height:1}
 .hs-launchpad-label{max-width:104px;overflow:hidden;font:var(--desktop-font-caption);color:var(--desktop-ink);text-align:center;text-overflow:ellipsis;white-space:nowrap}
+.hs-chat{display:flex;flex-direction:column;gap:12px;padding:2px}
+.hs-chat-empty{padding:36px 0;text-align:center;color:var(--hs-text-weak);font-size:13px}
+.hs-chat-msg{display:flex;gap:10px;align-items:flex-start;max-width:84%}
+.hs-chat-msg.is-user{margin-left:auto;flex-direction:row-reverse}
+.hs-chat-avatar{flex:0 0 32px;display:flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:9px;background:var(--hs-primary-light);color:var(--hs-primary);font-size:13px;font-weight:600}
+.hs-chat-msg.is-user .hs-chat-avatar{background:var(--hs-primary);color:#fff}
+.hs-chat-body{min-width:0}
+.hs-chat-meta{margin-bottom:4px;font-size:12px;color:var(--hs-text-weak)}
+.hs-chat-msg.is-user .hs-chat-meta{text-align:right}
+.hs-chat-text{padding:10px 12px;border-radius:10px;background:#f5f7fa;font-size:14px;line-height:1.62;color:var(--hs-text);white-space:pre-wrap;word-break:break-word}
+.hs-chat-msg.is-user .hs-chat-text{background:var(--hs-primary);color:#fff}
 </style>"#
         .to_string()
 }
