@@ -148,8 +148,8 @@ a.hs-tree-menu-item{text-decoration:none}
 .hs-tree-icon-glyph{font-size:34px;line-height:1}
 .hs-tree-icon-img{width:34px;height:34px;object-fit:contain}
 .hs-tree-icon-label{font-size:11px;line-height:1.25;color:#f1f5f9;text-shadow:0 1px 3px rgba(0,0,0,.5);max-width:88px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;word-break:break-word}
-.hs-tree-overlay{backdrop-filter:blur(34px) saturate(175%);-webkit-backdrop-filter:blur(34px) saturate(175%)}
-.hs-tree-overlay.is-hidden{display:none}
+.hs-tree-overlay{position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(34px) saturate(175%);-webkit-backdrop-filter:blur(34px) saturate(175%)}
+.hs-tree-overlay.is-hidden{display:none !important}
 .hs-tree-toggle{cursor:pointer}
 .hs-tree-link{text-decoration:none;color:inherit}
 .hs-tree-link:hover{opacity:.72}

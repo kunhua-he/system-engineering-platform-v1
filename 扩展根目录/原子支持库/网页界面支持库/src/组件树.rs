@@ -694,7 +694,7 @@ fn 拼装树节点(节点: &Value, 深度: u16, 状态: &mut 渲染状态) -> Re
                 .unwrap_or(true);
             let 样式 = 拼通用样式(
                 节点,
-                "position:absolute;inset:0;z-index:20;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:auto",
+                "position:fixed;inset:0;z-index:60;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:auto",
             );
             format!(
                 "<div class=\"hs-tree-overlay{}\" data-overlay=\"{}\"{} style=\"{}\">{}</div>",
