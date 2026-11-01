@@ -9,6 +9,9 @@ mod 命令声明面;
 mod 执行函数面;
 #[path = "桌面部件.rs"]
 mod 桌面部件;
+#[path = "组件树.rs"]
+mod 组件树;
+
 #[path = "编号与码面.rs"]
 mod 编号与码面;
 #[path = "视觉基准.rs"]

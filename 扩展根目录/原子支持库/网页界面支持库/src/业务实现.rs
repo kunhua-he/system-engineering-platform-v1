@@ -71,7 +71,7 @@ pub(crate) fn 拼装整页外壳(
     整页文本.into_bytes()
 }
 
-fn 拼装表格行(
+pub(crate) fn 拼装表格行(
     表格列定义: &[serde_json::Value],
     表格行数据: &[serde_json::Value],
 ) -> Result<String, u32> {
@@ -98,7 +98,7 @@ fn 拼装表格行(
     Ok(表格主体文本)
 }
 
-fn 拼装表单字段(
+pub(crate) fn 拼装表单字段(
     字段定义: &[serde_json::Value],
     当前值: &serde_json::Value,
 ) -> Result<String, u32> {
@@ -538,19 +538,14 @@ fn 渲染区块组(参数表: &[&[u8]]) -> Result<(u32, Vec<u8>), u32> {
     Ok((4, 拼装页面区块(区块定义表)?.into_bytes()))
 }
 
-/// 4927 渲染聊天消息流：角色气泡列表，用户靠右、助手靠左，纯文本转义输出。
-fn 渲染聊天消息流(参数表: &[&[u8]]) -> Result<(u32, Vec<u8>), u32> {
-    let 聊天定义原文 = 取文本参数(参数表, 0)?;
-    let 聊天定义值: serde_json::Value =
-        serde_json::from_str(&聊天定义原文).map_err(|_| 错误码::内容不合法)?;
-    let 消息表 = 聊天定义值
-        .get("消息")
-        .and_then(|消息项| 消息项.as_array())
-        .ok_or(错误码::内容不合法)?;
+/// 拼装聊天片段：4927 与组件树的「聊天流」叶子共用，返回 .hs-chat 气泡列表。
+pub(crate) fn 拼装聊天片段(
+    消息表: &[serde_json::Value],
+    空态文本: &str,
+) -> Result<String, u32> {
     if 消息表.len() > 300 {
         return Err(错误码::资源受限);
     }
-    let 空态文本 = 取对象文本(&聊天定义值, "空态文案");
     let mut 流文本 = String::new();
     流文本.push_str("<div class=\"hs-chat\" data-chat=\"1\">");
     if 消息表.is_empty() {
@@ -558,7 +553,7 @@ fn 渲染聊天消息流(参数表: &[&[u8]]) -> Result<(u32, Vec<u8>), u32> {
         流文本.push_str(&转义网页文本(if 空态文本.is_empty() {
             "还没有消息"
         } else {
-            空态文本.as_str()
+            空态文本
         }));
         流文本.push_str("</div>");
     }
@@ -583,7 +578,19 @@ fn 渲染聊天消息流(参数表: &[&[u8]]) -> Result<(u32, Vec<u8>), u32> {
         流文本.push_str("</div></div></div>");
     }
     流文本.push_str("</div>");
-    Ok((4, 流文本.into_bytes()))
+    Ok(流文本)
+}
+
+fn 渲染聊天消息流(参数表: &[&[u8]]) -> Result<(u32, Vec<u8>), u32> {
+    let 聊天定义原文 = 取文本参数(参数表, 0)?;
+    let 聊天定义值: serde_json::Value =
+        serde_json::from_str(&聊天定义原文).map_err(|_| 错误码::内容不合法)?;
+    let 消息表 = 聊天定义值
+        .get("消息")
+        .and_then(|消息项| 消息项.as_array())
+        .ok_or(错误码::内容不合法)?;
+    let 空态文本 = 取对象文本(&聊天定义值, "空态文案");
+    Ok((4, 拼装聊天片段(消息表, &空态文本)?.into_bytes()))
 }
 
 pub fn 执行业务操作(编号: u32, 参数表: &[&[u8]]) -> Result<(u32, Vec<u8>), u32> {
@@ -608,6 +615,7 @@ pub fn 执行业务操作(编号: u32, 参数表: &[&[u8]]) -> Result<(u32, Vec<
         能力号::渲染启动器 => crate::桌面部件::渲染启动器(参数表),
         能力号::渲染区块组 => 渲染区块组(参数表),
         能力号::渲染聊天消息流 => 渲染聊天消息流(参数表),
+        能力号::渲染组件树 => crate::组件树::渲染组件树(参数表),
         _ => Err(错误码::参数不合法),
     }
 }
