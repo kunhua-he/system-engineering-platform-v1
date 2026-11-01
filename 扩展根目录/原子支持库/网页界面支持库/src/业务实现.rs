@@ -1,5 +1,5 @@
 use crate::编号与码面::{能力号, 错误码};
-use crate::视觉基准::基准样式文本;
+use crate::视觉基准::完整样式文本;
 
 pub(crate) fn 取文本参数(参数表: &[&[u8]], 参数序号: usize) -> Result<String, u32> {
     Ok(std::str::from_utf8(参数表[参数序号])
@@ -57,12 +57,13 @@ pub(crate) fn 拼装整页外壳(
     页面标题文本: &str,
     页面样式体: &str,
     页面主体文本: &str,
+    样式文本: &str,
 ) -> Vec<u8> {
     let mut 整页文本 = String::new();
     整页文本.push_str("<!doctype html><html lang=\"zh-CN\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>");
     整页文本.push_str(&转义网页文本(页面标题文本));
     整页文本.push_str("</title>");
-    整页文本.push_str(&基准样式文本());
+    整页文本.push_str(样式文本);
     整页文本.push_str("</head><body");
     整页文本.push_str(页面样式体);
     整页文本.push('>');
@@ -289,7 +290,7 @@ fn 渲染页面骨架(参数表: &[&[u8]]) -> Result<(u32, Vec<u8>), u32> {
     页面主体文本.push_str("</h1>");
     页面主体文本.push_str(&页面区块文本);
     页面主体文本.push_str("</div>");
-    Ok((4, 拼装整页外壳(&页面标题文本, "", &页面主体文本)))
+    Ok((4, 拼装整页外壳(&页面标题文本, "", &页面主体文本, &完整样式文本())))
 }
 
 fn 拼装侧栏条目(侧栏条目: &[serde_json::Value]) -> String {
@@ -343,7 +344,7 @@ fn 渲染侧栏布局(参数表: &[&[u8]]) -> Result<(u32, Vec<u8>), u32> {
     页面主体文本.push_str("</header><div class=\"hs-content\">");
     页面主体文本.push_str(&页面区块文本);
     页面主体文本.push_str("</div></div></div>");
-    Ok((4, 拼装整页外壳(&顶栏标题文本, "", &页面主体文本)))
+    Ok((4, 拼装整页外壳(&顶栏标题文本, "", &页面主体文本, &完整样式文本())))
 }
 
 fn 拼装桌面图标(桌面图标: &[serde_json::Value]) -> String {
@@ -427,7 +428,7 @@ fn 渲染桌面外壳(参数表: &[&[u8]]) -> Result<(u32, Vec<u8>), u32> {
     页面主体文本.push_str("</div></div>");
     Ok((
         4,
-        拼装整页外壳(&窗口标题文本, " class=\"hs-desktop-body\"", &页面主体文本),
+        拼装整页外壳(&窗口标题文本, " class=\"hs-desktop-body\"", &页面主体文本, &完整样式文本()),
     ))
 }
 

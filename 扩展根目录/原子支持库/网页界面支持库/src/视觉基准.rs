@@ -1,13 +1,14 @@
-//! V3 视觉基准：界面样式的唯一来源。
+//! 界面样式真源，分两套，互不越界。
 //!
-//! 取值照抄 V3 前端设计令牌（`桌面层/设计体系/desktop-design-tokens.css`）与桌面外壳样式，
-//! 类名与 V3 语义对应，便于逐项对照。这里是唯一的样式真源；能力只返回内联样式，不依赖外部 CSS。
+//! - [`中性样式文本`]：结构必需的最小观感（重置、业务区、表格/表单/输入/按钮、聊天流、组件树骨架）。
+//!   字号、颜色、圆角、阴影、模糊这些观感值一律由调用方在组件树声明里给；这里只保证"不给也还像界面"。
+//! - [`历史外壳样式文本`]：登录页 / 桌面外壳 / 窗口 / Dock / 启动器 的 V3 观感，只服务 4910–4927 这批历史能力。
+//!   4928 组件树不输出这一段 —— 产品外观归调用方声明，底座保持中性。
 
-/// 业务区（Element Plus 观感）+ 登录页 + macOS 桌面外壳 + 启动器的完整样式文本。
-pub(crate) fn 基准样式文本() -> String {
+/// 常量：中性样式（4928 组件树只发这一段）。
+pub(crate) fn 中性样式文本() -> String {
     r#"<style>
-:root{--primary-color:#409eff;--hs-primary:#409eff;--hs-primary-hover:#337ecc;--hs-primary-light:#ecf5ff;--hs-success:#67c23a;--hs-warning:#e6a23c;--hs-danger:#f56c6c;--hs-info:#909399;--hs-bg:#f0f2f5;--hs-card:#ffffff;--hs-border:#e4e7ed;--hs-text:#303133;--hs-text-sub:#606266;--hs-text-weak:#909399;--hs-text-placeholder:#c0c4cc;--hs-radius-base:4px;--hs-radius-card:8px;--hs-radius-panel:12px;--hs-shadow-1:0 1px 3px rgba(0,0,0,.06);--hs-shadow-2:0 4px 12px rgba(0,0,0,.08);--hs-shadow-3:0 8px 24px rgba(0,0,0,.12);
---desktop-menu-bar-height:30px;--desktop-dock-height:66px;--desktop-dock-bottom-gap:12px;--desktop-work-bottom-inset:78px;--desktop-system-blue:#0a84ff;--desktop-ink:rgba(20,20,22,.88);--desktop-wallpaper-ink:rgba(255,255,255,.96);--desktop-material-menubar:rgba(255,255,255,.08);--desktop-material-dock:rgba(255,255,255,.22);--desktop-material-window:rgba(246,246,248,.97);--desktop-shadow-window:0 28px 80px rgba(0,0,0,.36),0 8px 24px rgba(0,0,0,.18),0 0 0 .5px rgba(0,0,0,.2);--desktop-shadow-window-inactive:0 10px 28px rgba(0,0,0,.18),0 2px 8px rgba(0,0,0,.08),0 0 0 .5px rgba(0,0,0,.12);--desktop-shadow-dock:0 18px 40px rgba(0,0,0,.32),0 2px 8px rgba(0,0,0,.16),inset 0 .5px 0 rgba(255,255,255,.5);--desktop-shadow-popover:0 16px 40px rgba(0,0,0,.24),0 0 0 .5px rgba(0,0,0,.08),inset 0 .5px 0 rgba(255,255,255,.55);--desktop-radius-control:6px;--desktop-radius-status-control:4px;--desktop-radius-menu:12px;--desktop-radius-popover:14px;--desktop-radius-panel:16px;--window-radius:13px;--window-maximized-radius:10px;--window-titlebar-height:39px;--window-bg:rgba(246,246,248,.97);--window-border:rgba(0,0,0,.12);--window-titlebar-bg:rgba(236,236,238,.96);--window-titlebar-border:rgba(0,0,0,.08);--window-shadow:var(--desktop-shadow-window);--window-shadow-active:var(--desktop-shadow-window);--desktop-radius-window:13px;--desktop-radius-chip:999px;--desktop-dock-radius:18px;--desktop-radius-launchpad:22px;--desktop-dock-filter:blur(24px) saturate(150%);--desktop-menu-filter:blur(28px) saturate(150%);--desktop-launchpad-panel-max-width:920px;--desktop-launchpad-panel-max-height:640px;--desktop-launchpad-filter:blur(34px) saturate(175%);--desktop-font-menu:600 13px/1.45 -apple-system,BlinkMacSystemFont,'SF Pro Text','PingFang SC',sans-serif;--desktop-font-body:400 13px/1.45 -apple-system,BlinkMacSystemFont,'SF Pro Text','PingFang SC',sans-serif;--desktop-font-caption:400 11px/1.35 -apple-system,BlinkMacSystemFont,'SF Pro Text','PingFang SC',sans-serif;--desktop-duration-fast:130ms;--desktop-duration-standard:210ms;--desktop-ease-standard:cubic-bezier(.32,.72,0,1);--desktop-bg-gradient-start:#0b1b2c;--desktop-bg-gradient-middle:#134e5e;--desktop-bg-gradient-end:#2b1d5e;--desktop-icon-text:#f1f5f9;--desktop-icon-selected-bg:rgba(14,165,233,.18);--desktop-icon-selected-border:rgba(125,211,252,.46);--z-menu-bar:12000;--z-dock:11000;--z-launchpad:14000;--z-spotlight:15000}
+:root{--primary-color:#409eff;--hs-primary:#409eff;--hs-primary-hover:#337ecc;--hs-primary-light:#ecf5ff;--hs-success:#67c23a;--hs-warning:#e6a23c;--hs-danger:#f56c6c;--hs-info:#909399;--hs-bg:#f0f2f5;--hs-card:#ffffff;--hs-border:#e4e7ed;--hs-text:#303133;--hs-text-sub:#606266;--hs-text-weak:#909399;--hs-text-placeholder:#c0c4cc;--hs-radius-base:4px;--hs-radius-card:8px;--hs-radius-panel:12px;--hs-shadow-1:0 1px 3px rgba(0,0,0,.06);--hs-shadow-2:0 4px 12px rgba(0,0,0,.08);--hs-shadow-3:0 8px 24px rgba(0,0,0,.12);--z-menu-bar:12000;--z-dock:11000;--z-launchpad:14000;}
 *{box-sizing:border-box}
 html,body{margin:0;padding:0;height:100%}
 body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','PingFang SC','Microsoft YaHei',sans-serif;background:var(--hs-bg);color:var(--hs-text);-webkit-font-smoothing:antialiased;font-size:14px}
@@ -46,6 +47,54 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','PingFang SC','M
 .hs-main{flex:1 1 auto;display:flex;flex-direction:column;min-width:0}
 .hs-topbar{height:60px;display:flex;align-items:center;padding:0 24px;background:#fff;border-bottom:1px solid var(--hs-border);font-size:16px;font-weight:600;color:var(--hs-text)}
 .hs-content{padding:24px;flex:1 1 auto;overflow:auto}
+.hs-chat{display:flex;flex-direction:column;gap:12px;padding:2px}
+.hs-chat-empty{padding:36px 0;text-align:center;color:var(--hs-text-weak);font-size:13px}
+.hs-chat-msg{display:flex;gap:10px;align-items:flex-start;max-width:84%}
+.hs-chat-msg.is-user{margin-left:auto;flex-direction:row-reverse}
+.hs-chat-avatar{flex:0 0 32px;display:flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:9px;background:var(--hs-primary-light);color:var(--hs-primary);font-size:13px;font-weight:600}
+.hs-chat-msg.is-user .hs-chat-avatar{background:var(--hs-primary);color:#fff}
+.hs-chat-body{min-width:0}
+.hs-chat-meta{margin-bottom:4px;font-size:12px;color:var(--hs-text-weak)}
+.hs-chat-msg.is-user .hs-chat-meta{text-align:right}
+.hs-chat-text{padding:10px 12px;border-radius:10px;background:#f5f7fa;font-size:14px;line-height:1.62;color:var(--hs-text);white-space:pre-wrap;word-break:break-word}
+.hs-chat-msg.is-user .hs-chat-text{background:var(--hs-primary);color:#fff}
+.hs-tree{display:flex;flex-direction:column;min-width:0;font-size:14px;color:var(--hs-text)}
+.hs-tree-node{min-width:0}
+.hs-tree-sidebar{display:flex;align-items:stretch;border-radius:10px;overflow:hidden;background:#fff;box-shadow:var(--hs-shadow-1);min-height:0}
+.hs-tree-sidebar-pane{display:flex;flex-direction:column;background:#f7f8fa;border-right:1px solid rgba(60,60,67,.12);padding:10px 8px;min-width:0;overflow:auto}
+.hs-tree-sidebar-title{padding:0 6px 8px;font-size:12px;font-weight:600;color:var(--hs-text-weak);letter-spacing:.4px}
+.hs-tree-menu{display:flex;flex-direction:column;gap:2px}
+.hs-tree-menu-item{display:flex;align-items:center;gap:8px;padding:7px 9px;border-radius:8px;font-size:13px;color:var(--hs-text);cursor:default;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+a.hs-tree-menu-item{text-decoration:none}
+.hs-tree-menu-item.is-active{background:var(--hs-primary-light);color:var(--hs-primary);font-weight:600}
+.hs-tree-menu-icon{flex:0 0 auto;font-size:14px;line-height:1}
+.hs-tree-menu-label{min-width:0;overflow:hidden;text-overflow:ellipsis}
+.hs-tree-sidebar-main{flex:1 1 auto;display:flex;flex-direction:column;gap:12px;padding:14px 16px;min-width:0;overflow:auto}
+.hs-tree-panel{background:transparent}
+.hs-tree-panel-title{margin:0 0 8px;font-size:13px;font-weight:600;color:var(--hs-text)}
+.hs-tree-title{margin:0 0 4px;font-size:17px;font-weight:600;color:var(--hs-text)}
+.hs-tree-text{font-size:14px;line-height:1.62;color:var(--hs-text)}
+.hs-tree-divider{height:1px;background:rgba(60,60,67,.12);margin:4px 0}
+.hs-tree-canvas-item{min-width:0}
+.hs-tree-icon{text-align:center;transition:transform .12s ease,background .12s ease}
+.hs-tree-icon:hover{background:rgba(255,255,255,.18);transform:translateY(-1px)}
+.hs-tree-icon-glyph{line-height:1}
+.hs-tree-icon-img{width:1em;height:1em;object-fit:contain}
+.hs-tree-icon-mask{display:inline-block;width:1em;height:1em;background-color:currentColor;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-position:center;mask-position:center;-webkit-mask-size:contain;mask-size:contain}
+.hs-tree-icon-label{line-height:1.25;max-width:88px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:var(--hs-clamp,2);-webkit-box-orient:vertical;word-break:break-word}
+.hs-tree-overlay{position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center}
+.hs-tree-overlay.is-hidden{display:none !important}
+.hs-tree-toggle{cursor:pointer}
+.hs-tree-link{text-decoration:none;color:inherit}
+.hs-tree-link:hover{opacity:.72}
+</style>"#
+        .to_string()
+}
+
+/// 常量：V3 外壳观感（历史能力专用，4928 不用）。
+pub(crate) fn 历史外壳样式文本() -> String {
+    r#"<style>
+:root{--desktop-menu-bar-height:30px;--desktop-dock-height:66px;--desktop-dock-bottom-gap:12px;--desktop-work-bottom-inset:78px;--desktop-system-blue:#0a84ff;--desktop-ink:rgba(20,20,22,.88);--desktop-wallpaper-ink:rgba(255,255,255,.96);--desktop-material-menubar:rgba(255,255,255,.08);--desktop-material-dock:rgba(255,255,255,.22);--desktop-material-window:rgba(246,246,248,.97);--desktop-shadow-window:0 28px 80px rgba(0,0,0,.36),0 8px 24px rgba(0,0,0,.18),0 0 0 .5px rgba(0,0,0,.2);--desktop-shadow-window-inactive:0 10px 28px rgba(0,0,0,.18),0 2px 8px rgba(0,0,0,.08),0 0 0 .5px rgba(0,0,0,.12);--desktop-shadow-dock:0 18px 40px rgba(0,0,0,.32),0 2px 8px rgba(0,0,0,.16),inset 0 .5px 0 rgba(255,255,255,.5);--desktop-shadow-popover:0 16px 40px rgba(0,0,0,.24),0 0 0 .5px rgba(0,0,0,.08),inset 0 .5px 0 rgba(255,255,255,.55);--desktop-radius-control:6px;--desktop-radius-status-control:4px;--desktop-radius-menu:12px;--desktop-radius-popover:14px;--desktop-radius-panel:16px;--window-radius:13px;--window-maximized-radius:10px;--window-titlebar-height:39px;--window-bg:rgba(246,246,248,.97);--window-border:rgba(0,0,0,.12);--window-titlebar-bg:rgba(236,236,238,.96);--window-titlebar-border:rgba(0,0,0,.08);--window-shadow:var(--desktop-shadow-window);--window-shadow-active:var(--desktop-shadow-window);--desktop-radius-window:13px;--desktop-radius-chip:999px;--desktop-dock-radius:18px;--desktop-radius-launchpad:22px;--desktop-dock-filter:blur(24px) saturate(150%);--desktop-menu-filter:blur(28px) saturate(150%);--desktop-launchpad-panel-max-width:920px;--desktop-launchpad-panel-max-height:640px;--desktop-launchpad-filter:blur(34px) saturate(175%);--desktop-font-menu:600 13px/1.45 -apple-system,BlinkMacSystemFont,'SF Pro Text','PingFang SC',sans-serif;--desktop-font-body:400 13px/1.45 -apple-system,BlinkMacSystemFont,'SF Pro Text','PingFang SC',sans-serif;--desktop-font-caption:400 11px/1.35 -apple-system,BlinkMacSystemFont,'SF Pro Text','PingFang SC',sans-serif;--desktop-duration-fast:130ms;--desktop-duration-standard:210ms;--desktop-ease-standard:cubic-bezier(.32,.72,0,1);--desktop-bg-gradient-start:#0b1b2c;--desktop-bg-gradient-middle:#134e5e;--desktop-bg-gradient-end:#2b1d5e;--desktop-icon-text:#f1f5f9;--desktop-icon-selected-bg:rgba(14,165,233,.18);--desktop-icon-selected-border:rgba(125,211,252,.46);}
 /* ===== 登录页（照 V3 登录页样式） ===== */
 .hs-login-page{display:flex;align-items:center;justify-content:center;min-height:100vh;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%)}
 .hs-login-card{width:420px;max-width:90vw;padding:48px 40px;background:#fff;border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.15);text-align:center}
@@ -114,45 +163,11 @@ body.hs-desk-body{margin:0;overflow:hidden}
 .hs-launchpad-item:hover{background:rgba(0,0,0,.06)}
 .hs-launchpad-glyph{display:flex;align-items:center;justify-content:center;width:58px;height:58px;border-radius:14px;background:rgba(255,255,255,.72);box-shadow:var(--hs-shadow-1);font-size:30px;line-height:1}
 .hs-launchpad-label{max-width:104px;overflow:hidden;font:var(--desktop-font-caption);color:var(--desktop-ink);text-align:center;text-overflow:ellipsis;white-space:nowrap}
-.hs-chat{display:flex;flex-direction:column;gap:12px;padding:2px}
-.hs-chat-empty{padding:36px 0;text-align:center;color:var(--hs-text-weak);font-size:13px}
-.hs-chat-msg{display:flex;gap:10px;align-items:flex-start;max-width:84%}
-.hs-chat-msg.is-user{margin-left:auto;flex-direction:row-reverse}
-.hs-chat-avatar{flex:0 0 32px;display:flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:9px;background:var(--hs-primary-light);color:var(--hs-primary);font-size:13px;font-weight:600}
-.hs-chat-msg.is-user .hs-chat-avatar{background:var(--hs-primary);color:#fff}
-.hs-chat-body{min-width:0}
-.hs-chat-meta{margin-bottom:4px;font-size:12px;color:var(--hs-text-weak)}
-.hs-chat-msg.is-user .hs-chat-meta{text-align:right}
-.hs-chat-text{padding:10px 12px;border-radius:10px;background:#f5f7fa;font-size:14px;line-height:1.62;color:var(--hs-text);white-space:pre-wrap;word-break:break-word}
-.hs-chat-msg.is-user .hs-chat-text{background:var(--hs-primary);color:#fff}
-.hs-tree{display:flex;flex-direction:column;min-width:0;font-size:14px;color:var(--hs-text)}
-.hs-tree-node{min-width:0}
-.hs-tree-sidebar{display:flex;align-items:stretch;border-radius:10px;overflow:hidden;background:#fff;box-shadow:var(--hs-shadow-1);min-height:0}
-.hs-tree-sidebar-pane{display:flex;flex-direction:column;background:#f7f8fa;border-right:1px solid rgba(60,60,67,.12);padding:10px 8px;min-width:0;overflow:auto}
-.hs-tree-sidebar-title{padding:0 6px 8px;font-size:12px;font-weight:600;color:var(--hs-text-weak);letter-spacing:.4px}
-.hs-tree-menu{display:flex;flex-direction:column;gap:2px}
-.hs-tree-menu-item{display:flex;align-items:center;gap:8px;padding:7px 9px;border-radius:8px;font-size:13px;color:var(--hs-text);cursor:default;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-a.hs-tree-menu-item{text-decoration:none}
-.hs-tree-menu-item.is-active{background:var(--hs-primary-light);color:var(--hs-primary);font-weight:600}
-.hs-tree-menu-icon{flex:0 0 auto;font-size:14px;line-height:1}
-.hs-tree-menu-label{min-width:0;overflow:hidden;text-overflow:ellipsis}
-.hs-tree-sidebar-main{flex:1 1 auto;display:flex;flex-direction:column;gap:12px;padding:14px 16px;min-width:0;overflow:auto}
-.hs-tree-panel{background:transparent}
-.hs-tree-panel-title{margin:0 0 8px;font-size:13px;font-weight:600;color:var(--hs-text)}
-.hs-tree-title{margin:0 0 4px;font-size:17px;font-weight:600;color:var(--hs-text)}
-.hs-tree-text{font-size:14px;line-height:1.62;color:var(--hs-text)}
-.hs-tree-divider{height:1px;background:rgba(60,60,67,.12);margin:4px 0}
-.hs-tree-canvas-item{min-width:0}
-.hs-tree-icon{text-align:center;color:#fff;transition:transform .12s ease,background .12s ease}
-.hs-tree-icon:hover{background:rgba(255,255,255,.18);transform:translateY(-1px)}
-.hs-tree-icon-glyph{font-size:34px;line-height:1}
-.hs-tree-icon-img{width:34px;height:34px;object-fit:contain}
-.hs-tree-icon-label{font-size:11px;line-height:1.25;color:#f1f5f9;text-shadow:0 1px 3px rgba(0,0,0,.5);max-width:88px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;word-break:break-word}
-.hs-tree-overlay{position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(34px) saturate(175%);-webkit-backdrop-filter:blur(34px) saturate(175%)}
-.hs-tree-overlay.is-hidden{display:none !important}
-.hs-tree-toggle{cursor:pointer}
-.hs-tree-link{text-decoration:none;color:inherit}
-.hs-tree-link:hover{opacity:.72}
 </style>"#
         .to_string()
+}
+
+/// 常量：中性 + 历史外壳（历史能力拼整页时用）。
+pub(crate) fn 完整样式文本() -> String {
+    format!("{}{}", 中性样式文本(), 历史外壳样式文本())
 }

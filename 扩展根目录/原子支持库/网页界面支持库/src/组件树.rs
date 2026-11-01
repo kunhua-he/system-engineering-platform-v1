@@ -11,6 +11,12 @@ use crate::业务实现::{
 };
 use crate::交互运行时::显隐切换脚本;
 use crate::编号与码面::错误码;
+use crate::视觉基准::中性样式文本;
+
+#[path = "组件树/外观属性.rs"]
+mod 外观属性;
+
+use 外观属性::{取尺寸, 取对齐, 合法标识, 校验节点颜色, 背景样式文本, 校验外观属性, 拼外观样式};
 
 pub(crate) const 树最大深度: u16 = 32;
 pub(crate) const 树最大节点数: usize = 2000;
@@ -21,155 +27,6 @@ struct 渲染状态 {
     需要显隐脚本: bool,
 }
 
-/// 尺寸类字段：数字当像素，字符串原样（"100%"、"auto"）。
-fn 取尺寸(节点: &Value, 字段名: &str) -> String {
-    match 节点.get(字段名) {
-        Some(Value::Number(数值)) => format!("{数值}px"),
-        Some(Value::String(文本)) => 文本.clone(),
-        _ => String::new(),
-    }
-}
-
-/// 对齐词：居中 / 起点 / 终点 / 两端。
-fn 取对齐(节点: &Value, 字段名: &str) -> &'static str {
-    match 取对象文本(节点, 字段名).as_str() {
-        "居中" => "center",
-        "终点" => "flex-end",
-        "两端" => "space-between",
-        _ => "flex-start",
-    }
-}
-
-/// 标识合法性：字母、数字、`-`、`_` 与汉字，长度不超过 32（标识只作为 data-* 的值，输出仍转义）。
-fn 合法标识(文本: &str) -> bool {
-    !文本.is_empty()
-        && 文本.chars().count() <= 32
-        && 文本.chars().all(|字符| {
-            字符.is_ascii_alphanumeric()
-                || 字符 == '-'
-                || 字符 == '_'
-                || ('\u{4e00}'..='\u{9fff}').contains(&字符)
-        })
-}
-
-/// 颜色值：#RGB / #RRGGBB / #RRGGBBAA，其他一律拒绝，避免把任意样式当颜色注入。
-fn 校验颜色值(颜色文本: &str) -> Result<(), u32> {
-    let 形状相符 = matches!(颜色文本.len(), 4 | 7 | 9)
-        && 颜色文本.starts_with('#')
-        && 颜色文本[1..].chars().all(|字符| 字符.is_ascii_hexdigit());
-    if 形状相符 {
-        Ok(())
-    } else {
-        Err(错误码::内容不合法)
-    }
-}
-
-/// 颜色字段校验：背景（纯色写字符串 / 渐变写对象 / 图片写同源路径）、文字颜色、边框颜色。
-fn 校验节点颜色(节点: &Value) -> Result<(), u32> {
-    for 颜色字段 in ["文字颜色", "边框颜色"] {
-        let 颜色文本 = 取对象文本(节点, 颜色字段);
-        if !颜色文本.is_empty() {
-            校验颜色值(&颜色文本)?;
-        }
-    }
-    match 节点.get("背景") {
-        None | Some(Value::Null) => Ok(()),
-        Some(Value::String(纯色)) => 校验颜色值(纯色),
-        Some(Value::Object(背景表)) => {
-            let 背景值 = Value::Object(背景表.clone());
-            match 取对象文本(&背景值, "类型").as_str() {
-                "线性渐变" => {
-                    let 角度越界 = 背景值
-                        .get("角度")
-                        .and_then(|角度项| 角度项.as_f64())
-                        .map(|角度数值| !(-360.0..=360.0).contains(&角度数值))
-                        .unwrap_or(false);
-                    if 角度越界 {
-                        return Err(错误码::内容不合法);
-                    }
-                    let 颜色节点 = 背景值
-                        .get("颜色节点")
-                        .and_then(|节点项| 节点项.as_array())
-                        .ok_or(错误码::内容不合法)?;
-                    if !(2..=16).contains(&颜色节点.len()) {
-                        return Err(错误码::内容不合法);
-                    }
-                    let mut 上次位置 = -1.0_f64;
-                    for 颜色项 in 颜色节点 {
-                        let 颜色文本 = 颜色项
-                            .get("颜色")
-                            .and_then(|颜色项| 颜色项.as_str())
-                            .ok_or(错误码::内容不合法)?;
-                        校验颜色值(颜色文本)?;
-                        let 位置数值 = 颜色项
-                            .get("位置")
-                            .and_then(|位置项| 位置项.as_f64())
-                            .ok_or(错误码::内容不合法)?;
-                        if !(0.0..=100.0).contains(&位置数值) || 位置数值 < 上次位置 {
-                            return Err(错误码::内容不合法);
-                        }
-                        上次位置 = 位置数值;
-                    }
-                    Ok(())
-                }
-                "图片" => {
-                    let 资源文本 = 取对象文本(&背景值, "资源");
-                    if !资源文本.starts_with('/')
-                        || 资源文本.starts_with("//")
-                        || 资源文本.contains("..")
-                        || 资源文本.contains(':')
-                    {
-                        return Err(错误码::内容不合法);
-                    }
-                    Ok(())
-                }
-                _ => Err(错误码::内容不合法),
-            }
-        }
-        _ => Err(错误码::内容不合法),
-    }
-}
-
-/// 背景样式：调用前必须已过 `校验背景`。
-fn 背景样式文本(节点: &Value) -> String {
-    match 节点.get("背景") {
-        Some(Value::String(纯色)) => format!(";background:{纯色}"),
-        Some(Value::Object(背景表)) => {
-            let 背景值 = Value::Object(背景表.clone());
-            if 取对象文本(&背景值, "类型") == "图片" {
-                return format!(
-                    ";background-image:url(\"{}\");background-size:cover;background-position:center",
-                    转义网页文本(&取对象文本(&背景值, "资源"))
-                );
-            }
-            let 角度 = 背景值
-                .get("角度")
-                .and_then(|角度项| 角度项.as_f64())
-                .unwrap_or(135.0);
-            let mut 节点文本 = String::new();
-            for 颜色项 in 背景值
-                .get("颜色节点")
-                .and_then(|节点项| 节点项.as_array())
-                .map(|节点表| 节点表.as_slice())
-                .unwrap_or(&[])
-            {
-                if !节点文本.is_empty() {
-                    节点文本.push(',');
-                }
-                节点文本.push_str(&format!(
-                    "{} {}%",
-                    取对象文本(颜色项, "颜色"),
-                    颜色项
-                        .get("位置")
-                        .and_then(|位置项| 位置项.as_f64())
-                        .unwrap_or(0.0)
-                ));
-            }
-            format!(";background:linear-gradient({角度}deg,{节点文本})")
-        }
-        _ => String::new(),
-    }
-}
 
 /// 控件自身尺寸与描边：宽 / 高 / 圆角 / 边框颜色 / 背景色。
 fn 控件样式文本(节点: &Value) -> String {
@@ -240,6 +97,7 @@ fn 拼通用样式(节点: &Value, 基础: &str) -> String {
     if !最小高.is_empty() {
         样式.push_str(&format!(";min-height:{最小高}"));
     }
+    样式.push_str(&拼外观样式(节点));
     样式
 }
 
@@ -257,6 +115,7 @@ fn 拼子节点(节点: &Value, 深度: u16, 状态: &mut 渲染状态) -> Resul
 }
 
 fn 拼装树节点(节点: &Value, 深度: u16, 状态: &mut 渲染状态) -> Result<String, u32> {
+    校验外观属性(节点)?;
     if 深度 > 树最大深度 {
         return Err(错误码::资源受限);
     }
@@ -561,10 +420,19 @@ fn 拼装树节点(节点: &Value, 深度: u16, 状态: &mut 渲染状态) -> Re
                 {
                     return Err(错误码::内容不合法);
                 }
-                format!(
-                    "<img class=\"hs-tree-icon-img\" src=\"{}\" alt=\"\">",
-                    转义网页文本(&图形文本)
-                )
+                if 图形文本.ends_with(".svg") {
+                    // SVG 走遮罩：图形跟随节点文字颜色，颜色仍由声明决定
+                    format!(
+                        "<span class=\"hs-tree-icon-mask\" style=\"-webkit-mask-image:url('{}');mask-image:url('{}')\"></span>",
+                        转义网页文本(&图形文本),
+                        转义网页文本(&图形文本)
+                    )
+                } else {
+                    format!(
+                        "<img class=\"hs-tree-icon-img\" src=\"{}\" alt=\"\">",
+                        转义网页文本(&图形文本)
+                    )
+                }
             } else {
                 format!(
                     "<span class=\"hs-tree-icon-glyph\">{}</span>",
@@ -576,10 +444,29 @@ fn 拼装树节点(节点: &Value, 深度: u16, 状态: &mut 渲染状态) -> Re
                 .and_then(|显示项| 显示项.as_bool())
                 .unwrap_or(true)
             {
-                format!(
-                    "<span class=\"hs-tree-icon-label\">{}</span>",
-                    转义网页文本(&名称文本)
-                )
+                let mut 标签样式 = String::new();
+                if let Some(颜色) = 节点
+                    .get("标签颜色")
+                    .and_then(|取值项| 取值项.as_str())
+                {
+                    标签样式.push_str(&format!("color:{颜色};"));
+                }
+                if let Some(字号) = 节点.get("标签字号").and_then(|取值项| 取值项.as_f64())
+                {
+                    标签样式.push_str(&format!("font-size:{字号}px;"));
+                }
+                if 标签样式.is_empty() {
+                    format!(
+                        "<span class=\"hs-tree-icon-label\">{}</span>",
+                        转义网页文本(&名称文本)
+                    )
+                } else {
+                    format!(
+                        "<span class=\"hs-tree-icon-label\" style=\"{}\">{}</span>",
+                        转义网页文本(&标签样式),
+                        转义网页文本(&名称文本)
+                    )
+                }
             } else {
                 String::new()
             };
@@ -754,7 +641,7 @@ pub(crate) fn 渲染组件树(参数表: &[&[u8]]) -> Result<(u32, Vec<u8>), u32
         if 状态.需要显隐脚本 {
             主体文本.push_str(显隐切换脚本);
         }
-        return Ok((4, 拼装整页外壳(&页面标题文本, "", &主体文本)));
+        return Ok((4, 拼装整页外壳(&页面标题文本, "", &主体文本, &中性样式文本())));
     }
     let 样式 = 取对象文本(根节点, "容器样式");
     let 脚本文本 = if 状态.需要显隐脚本 {
