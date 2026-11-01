@@ -15,19 +15,21 @@ use crate::视觉基准::中性样式文本;
 
 #[path = "组件树/外观属性.rs"]
 mod 外观属性;
+#[path = "组件树/应用窗口.rs"]
+mod 应用窗口;
 
 use 外观属性::{
-    取尺寸, 取对齐, 合法标识, 校验节点颜色, 校验颜色值, 背景样式文本, 校验外观属性, 拼外观样式,
+    取尺寸, 取对齐, 合法标识, 校验节点颜色, 背景样式文本, 校验外观属性, 拼外观样式,
 };
 
 pub(crate) const 树最大深度: u16 = 32;
 pub(crate) const 树最大节点数: usize = 2000;
 
 /// 渲染过程中的累积状态：节点计数 + 是否需要附通用显隐脚本。
-struct 渲染状态 {
-    计数: usize,
-    需要显隐脚本: bool,
-    需要窗口脚本: bool,
+pub(crate) struct 渲染状态 {
+    pub(crate) 计数: usize,
+    pub(crate) 需要显隐脚本: bool,
+    pub(crate) 需要窗口脚本: bool,
 }
 
 
@@ -58,7 +60,7 @@ fn 控件样式文本(节点: &Value) -> String {
 }
 
 /// 通用样式：所有节点都能带，拼成 style 属性值。
-fn 拼通用样式(节点: &Value, 基础: &str) -> String {
+pub(crate) fn 拼通用样式(节点: &Value, 基础: &str) -> String {
     let mut 样式 = String::from(基础);
     let 宽 = 取尺寸(节点, "宽");
     let 高 = 取尺寸(节点, "高");
@@ -105,7 +107,7 @@ fn 拼通用样式(节点: &Value, 基础: &str) -> String {
 }
 
 /// 递归出口：子节点表
-fn 拼子节点(节点: &Value, 深度: u16, 状态: &mut 渲染状态) -> Result<String, u32> {
+pub(crate) fn 拼子节点(节点: &Value, 深度: u16, 状态: &mut 渲染状态) -> Result<String, u32> {
     let 子节点表 = match 节点.get("子").and_then(|子项| 子项.as_array()) {
         Some(子项) => 子项,
         None => return Ok(String::new()),
@@ -579,74 +581,7 @@ fn 拼装树节点(节点: &Value, 深度: u16, 状态: &mut 渲染状态) -> Re
                 拼装聊天片段(&消息表, &空态文本)?
             )
         }
-        "窗口" => {
-            let 标识文本 = 取对象文本(节点, "标识");
-            if !合法标识(&标识文本) {
-                return Err(错误码::内容不合法);
-            }
-            let 标题文本 = 取对象文本(节点, "标题");
-            let 初始隐藏 = 节点
-                .get("初始隐藏")
-                .and_then(|隐藏项| 隐藏项.as_bool())
-                .unwrap_or(true);
-            let mut 标题栏样式 = String::from("height:38px");
-            if let Some(Value::Number(栏高)) = 节点.get("标题栏高") {
-                let 栏高值 = 栏高.as_f64().unwrap_or(0.0);
-                if !(24.0..=64.0).contains(&栏高值) {
-                    return Err(错误码::内容不合法);
-                }
-                标题栏样式 = format!("height:{栏高值}px");
-            }
-            for (字段名, 样式属性) in [("标题栏背景", "background"), ("标题栏文字颜色", "color")] {
-                let 取值 = 取对象文本(节点, 字段名);
-                if 取值.is_empty() {
-                    continue;
-                }
-                校验颜色值(&取值)?;
-                标题栏样式.push_str(&format!(";{样式属性}:{取值}"));
-            }
-            // 三个窗口按钮与可移动性都是声明变量：缺省只留关闭、窗口可拖
-            let 取开关 = |字段名: &str, 缺省值: bool| {
-                节点
-                    .get(字段名)
-                    .and_then(|开关项| 开关项.as_bool())
-                    .unwrap_or(缺省值)
-            };
-            let 可关闭 = 取开关("可关闭", true);
-            let 可最小化 = 取开关("可最小化", false);
-            let 可最大化 = 取开关("可最大化", false);
-            let 可移动 = 取开关("可移动", true);
-            let mut 按钮片段 = String::new();
-            for (开关, 类名后缀, 数据属性, 符号, 说明) in [
-                (可最小化, "min", "data-window-min", "—", "最小化"),
-                (可最大化, "max", "data-window-max", "▢", "最大化"),
-                (可关闭, "close", "data-window-close", "✕", "关闭"),
-            ] {
-                if !开关 {
-                    continue;
-                }
-                按钮片段.push_str(&format!(
-                    "<button class=\"hs-tree-window-{类名后缀}\" type=\"button\" {数据属性}=\"{}\"><span aria-hidden=\"true\">{符号}</span><span class=\"hs-tree-window-sr\">{说明}</span></button>",
-                    转义网页文本(&标识文本)
-                ));
-            }
-            let 样式 = 拼通用样式(
-                节点,
-                "position:relative;display:flex;flex-direction:column;overflow:hidden;width:100%;height:100%",
-            );
-            状态.需要窗口脚本 = true;
-            format!(
-                "<div class=\"hs-tree-node hs-tree-window{}\" data-window=\"{}\" data-movable=\"{}\" style=\"{}\"><div class=\"hs-tree-window-bar\" style=\"{}\"><span class=\"hs-tree-window-title\">{}</span>{}</div><div class=\"hs-tree-window-body\">{}</div></div>",
-                if 初始隐藏 { " is-hidden" } else { "" },
-                转义网页文本(&标识文本),
-                if 可移动 { "1" } else { "0" },
-                转义网页文本(&样式),
-                转义网页文本(&标题栏样式),
-                转义网页文本(&标题文本),
-                按钮片段,
-                拼子节点(节点, 深度, 状态)?
-            )
-        }
+        "窗口" => 应用窗口::拼装窗口(节点, 深度, 状态)?,
         "悬浮层" => {
             let 标识文本 = 取对象文本(节点, "标识");
             if !合法标识(&标识文本) {

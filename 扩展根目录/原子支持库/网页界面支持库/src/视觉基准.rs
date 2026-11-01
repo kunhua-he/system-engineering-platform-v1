@@ -91,6 +91,7 @@ a.hs-tree-menu-item{text-decoration:none}
 .hs-tree-window-title{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:inherit}
 .hs-tree-window-close,.hs-tree-window-min,.hs-tree-window-max{flex:none;border:0;background:transparent;cursor:pointer;font:inherit;line-height:1;padding:4px 7px;border-radius:6px;color:inherit;opacity:.72}
 .hs-tree-window-close:hover,.hs-tree-window-min:hover,.hs-tree-window-max:hover{background:rgba(0,0,0,.08);opacity:1}
+.hs-tree-window-close,.hs-tree-window-min,.hs-tree-window-max{display:inline-flex;align-items:center;justify-content:center}
 .hs-tree-window-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
 .hs-tree-window.is-min{height:auto !important}
 .hs-tree-window.is-min .hs-tree-window-body{display:none}

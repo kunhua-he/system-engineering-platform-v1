@@ -159,7 +159,7 @@ pub(crate) fn 背景样式文本(节点: &Value) -> String {
 }
 
 /// 外观属性白名单：数值字段（字段名，最小，最大）。
-const 数值外观字段: [(&str, f64, f64); 7] = [
+const 数值外观字段: [(&str, f64, f64); 8] = [
     ("字体大小", 1.0, 200.0),
     ("字重", 100.0, 900.0),
     ("行高", 0.8, 3.0),
@@ -167,11 +167,12 @@ const 数值外观字段: [(&str, f64, f64); 7] = [
     ("模糊", 0.0, 80.0),
     ("裁剪行数", 1.0, 6.0),
     ("层", 0.0, 200.0),
+    ("饱和", 50.0, 300.0),
 ];
 
 /// 外观属性白名单：枚举字段（字段名，允许取值）。
 const 枚举外观字段: [(&str, &[&str]); 2] = [
-    ("阴影", &["无", "轻", "中", "重", "浮层"]),
+    ("阴影", &["无", "轻", "中", "重", "浮层", "窗口"]),
     ("文字阴影", &["无", "轻", "中"]),
 ];
 
@@ -213,6 +214,7 @@ pub(crate) fn 阴影样式文本(档位: &str) -> &'static str {
         "中" => "0 4px 12px rgba(0,0,0,.08)",
         "重" => "0 8px 24px rgba(0,0,0,.12)",
         "浮层" => "0 16px 40px rgba(0,0,0,.24),0 0 0 .5px rgba(0,0,0,.08)",
+        "窗口" => "0 28px 80px rgba(0,0,0,.36),0 8px 24px rgba(0,0,0,.18),0 0 0 .5px rgba(0,0,0,.2)",
         _ => "",
     }
 }
@@ -247,12 +249,23 @@ pub(crate) fn 拼外观样式(节点: &Value) -> String {
             样式.push_str(&format!(";{属性名}:{数值}{单位}"));
         }
     }
-    if let Some(数值) = 节点.get("模糊").and_then(|取值项| 取值项.as_f64()) {
-        if 数值 > 0.0 {
-            样式.push_str(&format!(
-                ";-webkit-backdrop-filter:blur({数值}px);backdrop-filter:blur({数值}px)"
-            ));
+    // 模糊与饱和合成一条 backdrop-filter：只看模糊、只看饱和、两样都给都能成立
+    let 模糊值 = 节点.get("模糊").and_then(|取值项| 取值项.as_f64()).unwrap_or(0.0);
+    let 饱和值 = 节点.get("饱和").and_then(|取值项| 取值项.as_f64()).unwrap_or(0.0);
+    if 模糊值 > 0.0 || 饱和值 > 0.0 {
+        let mut 滤镜 = String::new();
+        if 模糊值 > 0.0 {
+            滤镜.push_str(&format!("blur({模糊值}px)"));
         }
+        if 饱和值 > 0.0 {
+            if !滤镜.is_empty() {
+                滤镜.push(' ');
+            }
+            滤镜.push_str(&format!("saturate({}%)", 饱和值.round() as u32));
+        }
+        样式.push_str(&format!(
+            ";-webkit-backdrop-filter:{滤镜};backdrop-filter:{滤镜}"
+        ));
     }
     if let Some(数值) = 节点.get("裁剪行数").and_then(|取值项| 取值项.as_f64()) {
         样式.push_str(&format!(";--hs-clamp:{}", 数值.round() as u32));
