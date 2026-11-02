@@ -1,5 +1,33 @@
+//! JSON 数据支持库业务总入口：**只做入口上界校验与按能力号分派**，实现按关注点住同名字文件夹
+//! `src/业务实现/`（`开发规范.md` 第六节「改一处不必读全件」）。
+//!
+//! | 件 | 职责 | 能力号 |
+//! | --- | --- | --- |
+//! | 本文件 | 解析入口上界与深度校验 · 5218–5220 转接响应塑形 · 主分派 | 5201–5220 总口 |
+//! | `指针与列表.rs` | JSON 指针寻址 · 列表取值 · 真/假文本判定 | 5202 · 5203 · 5205 · 5206 · 5208 · 5209 · 5210 |
+//! | `查找与排序.rs` | 单项命中判定 · 类型序比较 · 标量文本化 | 5205 · 5206 · 5208 · 5213 |
+//! | `展平.rs` | 点分路径拼接 · 字典展平递归 · 结构条目展平递归 | 5211 · 5212 |
+//! | `格式互转与合并.rs` | CSV 全文解析 · JSON 深合并 · JSON 到 YAML 值转换 | 5214 · 5215 · 5217 |
+//!
+//! 解析入口 `解析文本上限` 留在本文件：`响应塑形实现` 按件直接引用，改动面最小。
+
 use crate::编号与码面::{能力号, 错误码};
 use v1_contract::复合值载荷::{复合值, 复合元素, 编码复合值载荷};
+
+#[path = "业务实现/指针与列表.rs"]
+mod 指针与列表;
+#[path = "业务实现/查找与排序.rs"]
+mod 查找与排序;
+#[path = "业务实现/展平.rs"]
+mod 展平;
+#[path = "业务实现/格式互转与合并.rs"]
+mod 格式互转与合并;
+
+use 查找与排序::{取比较键, 单项命中, 比较值, 标量文本};
+use 展平::{展平上下文, 展平条目递归, 展平字典递归};
+use 指针与列表::{取列表, 取逻辑文本, 指针取值};
+use 格式互转与合并::{深合并值, 转YAML值, 解析CSV全文};
+
 pub(crate) fn 解析文本上限(原文: &str, 上限: usize) -> Result<serde_json::Value, u32> {
     if 原文.len() > 上限 {
         return Err(错误码::JSON资源受限);
@@ -32,304 +60,6 @@ pub(crate) fn 解析文本上限(原文: &str, 上限: usize) -> Result<serde_js
 }
 fn 解析文本(原文: &str) -> Result<serde_json::Value, u32> {
     解析文本上限(原文, 65536)
-}
-fn 指针取值<'载荷生命期>(
-    解析值: &'载荷生命期 serde_json::Value,
-    选择指针: &str,
-) -> Result<&'载荷生命期 serde_json::Value, u32> {
-    if 选择指针.len() > 4096 {
-        return Err(错误码::JSON资源受限);
-    }
-    if !选择指针.is_empty() && !选择指针.starts_with('/') {
-        return Err(错误码::JSON参数不合法);
-    }
-    let mut 字符迭代 = 选择指针.chars();
-    while let Some(字符值) = 字符迭代.next() {
-        if 字符值 == '~' && !matches!(字符迭代.next(), Some('0' | '1')) {
-            return Err(错误码::JSON参数不合法);
-        }
-    }
-    解析值.pointer(选择指针).ok_or(错误码::JSON路径不存在)
-}
-
-fn 取列表(文本内容: &str) -> Result<Vec<serde_json::Value>, u32> {
-    match 解析文本(文本内容)? {
-        serde_json::Value::Array(列表值) => {
-            if 列表值.len() > 10000 {
-                return Err(错误码::JSON资源受限);
-            }
-            Ok(列表值)
-        }
-        _ => Err(错误码::JSON类型不符),
-    }
-}
-
-fn 取逻辑文本(文本内容: &str) -> Result<bool, u32> {
-    match 文本内容.trim() {
-        "真" | "true" => Ok(true),
-        "假" | "false" => Ok(false),
-        _ => Err(错误码::JSON参数不合法),
-    }
-}
-
-fn 单项命中(条目: &serde_json::Value, 字段名: &str, 直接匹配: bool, 期望值: &serde_json::Value) -> bool {
-    if 直接匹配 || 字段名.is_empty() {
-        条目 == 期望值
-    } else {
-        条目.get(字段名).is_some_and(|字段值| 字段值 == 期望值)
-    }
-}
-
-
-fn 值序号(候选值: &serde_json::Value) -> u8 {
-    match 候选值 {
-        serde_json::Value::Null => 0,
-        serde_json::Value::Bool(_) => 1,
-        serde_json::Value::Number(_) => 2,
-        serde_json::Value::String(_) => 3,
-        serde_json::Value::Array(_) => 4,
-        serde_json::Value::Object(_) => 5,
-    }
-}
-
-fn 比较值(左项: &serde_json::Value, 右项: &serde_json::Value) -> std::cmp::Ordering {
-    let (左序, 右序) = (值序号(左项), 值序号(右项));
-    if 左序 != 右序 {
-        return 左序.cmp(&右序);
-    }
-    match (左项, 右项) {
-        (serde_json::Value::Number(左数), serde_json::Value::Number(右数)) => {
-            左数.as_f64().unwrap_or(0.0).total_cmp(&右数.as_f64().unwrap_or(0.0))
-        }
-        (serde_json::Value::String(左文), serde_json::Value::String(右文)) => 左文.cmp(右文),
-        (serde_json::Value::Bool(左逻), serde_json::Value::Bool(右逻)) => 左逻.cmp(右逻),
-        _ => std::cmp::Ordering::Equal,
-    }
-}
-
-fn 取比较键<'a>(条目: &'a serde_json::Value, 字段名: &str, 直接匹配: bool) -> &'a serde_json::Value {
-    if 直接匹配 || 字段名.is_empty() {
-        条目
-    } else {
-        条目.get(字段名).unwrap_or(&serde_json::Value::Null)
-    }
-}
-
-
-fn 标量文本(候选值: &serde_json::Value) -> String {
-    match 候选值 {
-        serde_json::Value::String(内文) => 内文.clone(),
-        serde_json::Value::Null => String::new(),
-        serde_json::Value::Bool(逻辑值) => {
-            if *逻辑值 {
-                "真".to_owned()
-            } else {
-                "假".to_owned()
-            }
-        }
-        其他值 => 其他值.to_string(),
-    }
-}
-
-fn 拼接路径(路径前缀: &str, 分隔符: &str, 末段: &str) -> String {
-    if 路径前缀.is_empty() {
-        末段.to_owned()
-    } else {
-        format!("{路径前缀}{分隔符}{末段}")
-    }
-}
-
-fn 展平字典递归(
-    候选值: &serde_json::Value,
-    路径前缀: &str,
-    分隔符: &str,
-    剩余深度: usize,
-    收录: &mut serde_json::Map<String, serde_json::Value>,
-) {
-    match 候选值 {
-        serde_json::Value::Object(成员表) if 剩余深度 > 1 => {
-            for (字段名, 字段值) in 成员表 {
-                展平字典递归(字段值, &拼接路径(路径前缀, 分隔符, 字段名), 分隔符, 剩余深度 - 1, 收录);
-            }
-        }
-        其他值 => {
-            收录.insert(路径前缀.to_owned(), 其他值.clone());
-        }
-    }
-}
-
-struct 展平上下文<'a> {
-    分隔符: &'a str,
-    索引格式: &'a str,
-    超深标记: &'a str,
-    根路径: &'a str,
-    最大条目数: usize,
-    条目表: Vec<serde_json::Value>,
-    已截断: bool,
-}
-
-fn 渲染索引(格式: &str, 序号: usize) -> String {
-    格式.replace("{索引}", &序号.to_string())
-}
-
-fn 展平条目递归(候选值: &serde_json::Value, 路径: &str, 剩余深度: usize, 上下文: &mut 展平上下文<'_>) {
-    if 上下文.条目表.len() >= 上下文.最大条目数 {
-        上下文.已截断 = true;
-        return;
-    }
-    match 候选值 {
-        serde_json::Value::Object(成员表) if 剩余深度 > 0 => {
-            if 成员表.is_empty() {
-                上下文.条目表.push(serde_json::json!({
-                    "路径": if 路径.is_empty() { 上下文.根路径 } else { 路径 },
-                    "值": serde_json::Value::Object(成员表.clone()),
-                    "超深": false,
-                }));
-                return;
-            }
-            for (字段名, 字段值) in 成员表 {
-                展平条目递归(字段值, &拼接路径(路径, 上下文.分隔符, 字段名), 剩余深度 - 1, 上下文);
-            }
-        }
-        serde_json::Value::Array(列表值) if 剩余深度 > 0 => {
-            if 列表值.is_empty() {
-                上下文.条目表.push(serde_json::json!({
-                    "路径": if 路径.is_empty() { 上下文.根路径 } else { 路径 },
-                    "值": serde_json::Value::Array(Vec::new()),
-                    "超深": false,
-                }));
-                return;
-            }
-            for (序号, 元素值) in 列表值.iter().enumerate() {
-                let 索引段 = 渲染索引(上下文.索引格式, 序号);
-                展平条目递归(元素值, &拼接路径(路径, 上下文.分隔符, &索引段), 剩余深度 - 1, 上下文);
-            }
-        }
-        serde_json::Value::Object(_) | serde_json::Value::Array(_) => {
-            上下文.条目表.push(serde_json::json!({
-                "路径": if 路径.is_empty() { 上下文.根路径 } else { 路径 },
-                "值": 上下文.超深标记,
-                "超深": true,
-            }));
-        }
-        标量值 => {
-            上下文.条目表.push(serde_json::json!({
-                "路径": if 路径.is_empty() { 上下文.根路径 } else { 路径 },
-                "值": 标量值.clone(),
-                "超深": false,
-            }));
-        }
-    }
-}
-
-
-fn 解析CSV全文(CSV文本: &str, 分隔符: char, 严格模式: bool) -> Result<Vec<Vec<String>>, u32> {
-    let mut 行表: Vec<Vec<String>> = Vec::new();
-    let mut 字段表: Vec<String> = Vec::new();
-    let mut 字段缓冲 = String::new();
-    let (mut 在引号内, mut 字段已开始) = (false, false);
-    let mut 字符迭代 = CSV文本.chars().peekable();
-    while let Some(当前字符) = 字符迭代.next() {
-        if 在引号内 {
-            if 当前字符 == '"' {
-                if 字符迭代.peek() == Some(&'"') {
-                    字符迭代.next();
-                    字段缓冲.push('"');
-                } else {
-                    在引号内 = false;
-                }
-            } else {
-                字段缓冲.push(当前字符);
-            }
-            continue;
-        }
-        if 当前字符 == '"' {
-            if 严格模式 && (!字段缓冲.is_empty() || 字段已开始) {
-                return Err(错误码::JSON参数不合法);
-            }
-            在引号内 = true;
-            字段已开始 = true;
-            continue;
-        }
-        if 当前字符 == 分隔符 {
-            字段表.push(std::mem::take(&mut 字段缓冲));
-            字段已开始 = false;
-            if 字段表.len() > 1000 {
-                return Err(错误码::JSON资源受限);
-            }
-            continue;
-        }
-        if 当前字符 == '\n' || 当前字符 == '\r' {
-            if 当前字符 == '\r' && 字符迭代.peek() == Some(&'\n') {
-                字符迭代.next();
-            }
-            字段表.push(std::mem::take(&mut 字段缓冲));
-            字段已开始 = false;
-            if 字段表.len() == 1 && 字段表[0].is_empty() {
-                字段表.clear();
-            } else {
-                行表.push(std::mem::take(&mut 字段表));
-            }
-            if 行表.len() > 10000 {
-                return Err(错误码::JSON资源受限);
-            }
-            continue;
-        }
-        字段缓冲.push(当前字符);
-        字段已开始 = true;
-    }
-    if 在引号内 && 严格模式 {
-        return Err(错误码::JSON参数不合法);
-    }
-    字段表.push(字段缓冲);
-    if !(字段表.len() == 1 && 字段表[0].is_empty()) {
-        行表.push(字段表);
-    }
-    Ok(行表)
-}
-
-fn 深合并值(基础值: &mut serde_json::Value, 覆盖值: &serde_json::Value) {
-    if let (serde_json::Value::Object(基础表), serde_json::Value::Object(覆盖表)) = (&mut *基础值, 覆盖值) {
-        for (键名, 值项) in 覆盖表 {
-            match 基础表.get_mut(键名) {
-                Some(已有项) => 深合并值(已有项, 值项),
-                None => {
-                    基础表.insert(键名.clone(), 值项.clone());
-                }
-            }
-        }
-        return;
-    }
-    *基础值 = 覆盖值.clone();
-}
-
-
-fn 转YAML值(候选值: &serde_json::Value) -> serde_yaml_ng::Value {
-    match 候选值 {
-        serde_json::Value::Null => serde_yaml_ng::Value::Null,
-        serde_json::Value::Bool(逻辑值) => serde_yaml_ng::Value::Bool(*逻辑值),
-        serde_json::Value::Number(数值项) => {
-            if let Some(整数项) = 数值项.as_i64() {
-                serde_yaml_ng::Value::Number(整数项.into())
-            } else if let Some(无符号项) = 数值项.as_u64() {
-                serde_yaml_ng::Value::Number(无符号项.into())
-            } else if let Some(浮点项) = 数值项.as_f64() {
-                serde_yaml_ng::Value::Number(浮点项.into())
-            } else {
-                serde_yaml_ng::Value::String(数值项.to_string())
-            }
-        }
-        serde_json::Value::String(文本项) => serde_yaml_ng::Value::String(文本项.clone()),
-        serde_json::Value::Array(列表项) => {
-            serde_yaml_ng::Value::Sequence(列表项.iter().map(转YAML值).collect())
-        }
-        serde_json::Value::Object(对象项) => serde_yaml_ng::Value::Mapping(
-            对象项
-                .iter()
-                .map(|(键名, 值项)| (serde_yaml_ng::Value::String(键名.clone()), 转YAML值(值项)))
-                .collect(),
-        ),
-    }
 }
 
 pub fn 执行文本操作(编号: u32, 文本参数表: &[&str]) -> Result<(u32, Vec<u8>), u32> {
@@ -600,6 +330,7 @@ pub fn 执行文本操作(编号: u32, 文本参数表: &[&str]) -> Result<(u32,
     }
     Ok((4, 返回文本.into_bytes()))
 }
+
 #[cfg(test)]
 mod 验证样本 {
     use super::*;

@@ -18,6 +18,8 @@ mod 外观属性;
 mod 应用窗口;
 #[path = "组件树/数据表格.rs"]
 mod 数据表格;
+
+pub(crate) use 外观属性::控件样式文本;
 #[path = "组件树/容器.rs"]
 mod 容器;
 #[path = "组件树/叶面.rs"]
@@ -26,7 +28,7 @@ mod 叶面;
 mod 表单控件;
 
 use 外观属性::{
-    取尺寸, 合法标识, 校验节点颜色, 背景样式文本, 校验外观属性, 拼外观样式, 校验颜色值, };
+    取尺寸, 合法标识, 校验节点颜色, 背景样式文本, 校验外观属性, 拼外观样式, };
 
 
 pub(crate) const 树最大深度: u16 = 32;
@@ -44,50 +46,6 @@ pub(crate) struct 渲染状态 {
 
 
 /// 控件自身尺寸与描边：宽 / 高 / 圆角 / 边框颜色 / 背景色。
-pub(crate) fn 控件样式文本(节点: &Value) -> String {
-    let mut 样式 = String::new();
-    let 宽 = 取尺寸(节点, "宽");
-    if !宽.is_empty() {
-        样式.push_str(&format!("width:{宽};"));
-    }
-    let 高 = 取尺寸(节点, "高");
-    if !高.is_empty() {
-        样式.push_str(&format!("height:{高};"));
-    }
-    let 圆角 = 取尺寸(节点, "圆角");
-    if !圆角.is_empty() {
-        样式.push_str(&format!("border-radius:{圆角};"));
-    }
-    let 边框颜色 = 取对象文本(节点, "边框颜色");
-    if !边框颜色.is_empty() {
-        样式.push_str(&format!("border-color:{边框颜色};"));
-    }
-    let 背景文本 = 背景样式文本(节点);
-    if !背景文本.is_empty() {
-        样式.push_str(&背景文本);
-        样式.push(';');
-    }
-    // 控件上的文字与内边距也归声明，按钮/chip 才不必靠固定皮肤
-    let 文字颜色 = 取对象文本(节点, "文字颜色");
-    if !文字颜色.is_empty() {
-        校验颜色值(&文字颜色).ok();
-        样式.push_str(&format!("color:{文字颜色};"));
-    }
-    if let Some(字号) = 节点.get("字号").and_then(|取值项| 取值项.as_f64()) {
-        样式.push_str(&format!("font-size:{字号}px;"));
-    }
-    if let Some(字重) = 节点.get("字重").and_then(|取值项| 取值项.as_f64()) {
-        样式.push_str(&format!("font-weight:{};", 字重 as u32));
-    }
-    let 内边距 = 取对象文本(节点, "内边距");
-    if !内边距.is_empty() {
-        样式.push_str(&format!("padding:{内边距};"));
-    }
-    if 样式.ends_with(';') {
-        样式.pop();
-    }
-    样式
-}
 
 /// 通用样式：所有节点都能带，拼成 style 属性值。
 pub(crate) fn 拼通用样式(节点: &Value, 基础: &str) -> String {

@@ -5,6 +5,11 @@
 
 use serde_json::Value;
 
+#[path = "外观属性/控件样式.rs"]
+mod 控件样式;
+
+pub(crate) use 控件样式::控件样式文本;
+
 use crate::编号与码面::错误码;
 use crate::业务实现::{取对象文本, 转义网页文本};
 
@@ -293,7 +298,7 @@ pub(crate) enum 变量类型 {
 }
 
 /// 间距值合法性：`8px`、`10px 12px`、`0 12px`，最多四段，只认数字 + px/%/em。
-fn 间距合法(文本: &str) -> bool {
+pub(super) fn 间距合法(文本: &str) -> bool {
     if 文本.is_empty() || 文本.chars().count() > 40 {
         return false;
     }
