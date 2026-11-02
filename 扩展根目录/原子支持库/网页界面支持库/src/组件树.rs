@@ -6,7 +6,7 @@
 
 use serde_json::Value;
 
-use crate::业务实现::{取对象文本, 拼装整页外壳, 拼装聊天片段, 拼装表单字段, 转义网页文本};
+use crate::业务实现::{取对象文本, 拼装整页外壳, 转义网页文本};
 use crate::交互运行时::{显隐切换脚本, 放大脚本, 筛选脚本, 选中脚本, 窗口脚本};
 use crate::编号与码面::错误码;
 use crate::视觉基准::中性样式文本;
@@ -18,11 +18,15 @@ mod 外观属性;
 mod 应用窗口;
 #[path = "组件树/数据表格.rs"]
 mod 数据表格;
+#[path = "组件树/容器.rs"]
+mod 容器;
+#[path = "组件树/叶面.rs"]
+mod 叶面;
+#[path = "组件树/表单控件.rs"]
+mod 表单控件;
 
 use 外观属性::{
-    取尺寸, 取对齐, 合法标识, 校验节点颜色, 背景样式文本, 校验外观属性, 拼外观样式, 取形态变量,
-    菜单外观映射, 气泡外观映射, 校验颜色值, 选中属性文本, 容器属性文本, 筛选属性与状态,
-};
+    取尺寸, 合法标识, 校验节点颜色, 背景样式文本, 校验外观属性, 拼外观样式, 校验颜色值, };
 
 
 pub(crate) const 树最大深度: u16 = 32;
@@ -40,7 +44,7 @@ pub(crate) struct 渲染状态 {
 
 
 /// 控件自身尺寸与描边：宽 / 高 / 圆角 / 边框颜色 / 背景色。
-fn 控件样式文本(节点: &Value) -> String {
+pub(crate) fn 控件样式文本(节点: &Value) -> String {
     let mut 样式 = String::new();
     let 宽 = 取尺寸(节点, "宽");
     if !宽.is_empty() {
@@ -145,7 +149,7 @@ pub(crate) fn 拼子节点(节点: &Value, 深度: u16, 状态: &mut 渲染状�
     Ok(子文本)
 }
 
-fn 拼装树节点(节点: &Value, 深度: u16, 状态: &mut 渲染状态) -> Result<String, u32> {
+pub(crate) fn 拼装树节点(节点: &Value, 深度: u16, 状态: &mut 渲染状态) -> Result<String, u32> {
     校验外观属性(节点)?;
     if 深度 > 树最大深度 {
         return Err(错误码::资源受限);
@@ -157,514 +161,25 @@ fn 拼装树节点(节点: &Value, 深度: u16, 状态: &mut 渲染状态) -> Re
     let 类型文本 = 取对象文本(节点, "类型");
     校验节点颜色(节点)?;
     let 片段文本 = match 类型文本.as_str() {
-        "表单容器" => {
-            let 提交地址文本 = 取对象文本(节点, "提交地址");
-            if !提交地址文本.starts_with('/')
-                || 提交地址文本.starts_with("//")
-                || 提交地址文本.contains("..")
-            {
-                return Err(错误码::内容不合法);
-            }
-            let 提交方式文本 = match 取对象文本(节点, "方式").as_str() {
-                "" | "POST" => "post",
-                "GET" => "get",
-                _ => return Err(错误码::内容不合法),
-            };
-            let 标识文本 = 取对象文本(节点, "标识");
-            let 辨识属性 = if 标识文本.is_empty() {
-                String::new()
-            } else {
-                format!(" id=\"{}\"", 转义网页文本(&标识文本))
-            };
-            let 样式 = 拼通用样式(
-                节点,
-                "display:flex;flex-direction:column;box-sizing:border-box",
-            );
-            format!(
-                "<form class=\"hs-tree-node hs-tree-form\"{} method=\"{}\" action=\"{}\" style=\"{}\">{}</form>",
-                辨识属性,
-                提交方式文本,
-                转义网页文本(&提交地址文本),
-                转义网页文本(&样式),
-                拼子节点(节点, 深度, 状态)?
-            )
-        }
-        "输入" => {
-            let 输入类型文本 = match 取对象文本(节点, "种类").as_str() {
-                "" | "文本框" => "text",
-                "密码框" => "password",
-                "数字框" => "number",
-                "邮箱" => "email",
-                _ => return Err(错误码::内容不合法),
-            };
-            let 名称文本 = 取对象文本(节点, "名称");
-            if 名称文本.is_empty() {
-                return Err(错误码::内容不合法);
-            }
-            let 标签文本 = 取对象文本(节点, "标签");
-            let 显示标签文本 = if 标签文本.is_empty() {
-                名称文本.clone()
-            } else {
-                标签文本
-            };
-            let 必填属性 = if 节点
-                .get("必填")
-                .and_then(|必填项| 必填项.as_bool())
-                .unwrap_or(false)
-            {
-                " required"
-            } else {
-                ""
-            };
-            let 自动填充文本 = 取对象文本(节点, "自动填充");
-            let 自动填充属性 = if 自动填充文本.is_empty() {
-                String::new()
-            } else {
-                format!(" autocomplete=\"{}\"", 转义网页文本(&自动填充文本))
-            };
-            let 输入筛选 = 筛选属性与状态(节点, 状态)?;
-            format!(
-                "<div class=\"hs-tree-node hs-form-item\"><label class=\"hs-form-label\">{}</label><input class=\"hs-input\" type=\"{}\" name=\"{}\" placeholder=\"{}\"{}{} style=\"{}\"{} /></div>",
-                转义网页文本(&显示标签文本),
-                输入类型文本,
-                转义网页文本(&名称文本),
-                转义网页文本(&取对象文本(节点, "占位文本")),
-                必填属性,
-                自动填充属性,
-                转义网页文本(&控件样式文本(节点)),
-                输入筛选
-            )
-        }
-        "按钮" => {
-            let 样式类文本 = match 取对象文本(节点, "样式").as_str() {
-                "" | "默认" => "hs-button",
-                "主要" => "hs-button hs-button-primary",
-                "成功" => "hs-button hs-button-success",
-                "警告" => "hs-button hs-button-warning",
-                "危险" => "hs-button hs-button-danger",
-                _ => return Err(错误码::内容不合法),
-            };
-            let 提交属性 = if 节点
-                .get("提交")
-                .and_then(|提交项| 提交项.as_bool())
-                .unwrap_or(false)
-            {
-                " type=\"submit\""
-            } else {
-                " type=\"button\""
-            };
-            let 表单标识文本 = 取对象文本(节点, "表单");
-            let 表单属性 = if 表单标识文本.is_empty() {
-                String::new()
-            } else {
-                format!(" form=\"{}\"", 转义网页文本(&表单标识文本))
-            };
-            let mut 按钮样式 = 控件样式文本(节点);
-            let 按钮选中 = 选中属性文本(节点, &mut 按钮样式, 状态)?;
-            let 按钮筛选 = 筛选属性与状态(节点, 状态)?;
-            format!(
-                "<button class=\"{}\"{} data-action=\"{}\"{}{} style=\"{}\"{}>{}</button>",
-                样式类文本,
-                提交属性,
-                转义网页文本(&取对象文本(节点, "动作")),
-                表单属性,
-                按钮选中,
-                转义网页文本(&按钮样式),
-                按钮筛选,
-                转义网页文本(&取对象文本(节点, "文字"))
-            )
-        }
-        "行" => {
-            let 样式 = 拼通用样式(
-                节点,
-                &format!(
-                    "display:flex;flex-direction:row;align-items:{};justify-content:{};min-width:0",
-                    取对齐(节点, "垂直对齐"),
-                    取对齐(节点, "水平对齐")
-                ),
-            );
-            let 容器属性 = 容器属性文本(节点, 状态)?;
-            format!(
-                "<div class=\"hs-tree-node hs-tree-row\" style=\"{}\"{}>{}</div>",
-                转义网页文本(&样式),
-                容器属性,
-                拼子节点(节点, 深度, 状态)?
-            )
-        }
-        "列" => {
-            let 样式 = 拼通用样式(
-                节点,
-                &format!(
-                    "display:flex;flex-direction:column;align-items:{};justify-content:{};min-width:0",
-                    取对齐(节点, "水平对齐"),
-                    取对齐(节点, "垂直对齐")
-                ),
-            );
-            let 容器属性 = 容器属性文本(节点, 状态)?;
-            format!(
-                "<div class=\"hs-tree-node hs-tree-col\" style=\"{}\"{}>{}</div>",
-                转义网页文本(&样式),
-                容器属性,
-                拼子节点(节点, 深度, 状态)?
-            )
-        }
-        "网格" => {
-            let 列数 = match 节点.get("列数") {
-                Some(Value::Number(数值)) => 数值.as_u64().unwrap_or(3).clamp(1, 24),
-                _ => 3,
-            };
-            let 样式 = 拼通用样式(
-                节点,
-                &format!(
-                    "display:grid;grid-template-columns:repeat({列数},minmax(0,1fr));align-items:{}",
-                    取对齐(节点, "垂直对齐")
-                ),
-            );
-            let 容器属性 = 容器属性文本(节点, 状态)?;
-            format!(
-                "<div class=\"hs-tree-node hs-tree-grid\" style=\"{}\"{}>{}</div>",
-                转义网页文本(&样式),
-                容器属性,
-                拼子节点(节点, 深度, 状态)?
-            )
-        }
-        "侧栏" => {
-            let 栏宽 = {
-                let 原值 = 取尺寸(节点, "栏宽");
-                if 原值.is_empty() {
-                    "232px".to_string()
-                } else {
-                    原值
-                }
-            };
-            let 菜单条目表 = 节点
-                .get("菜单")
-                .and_then(|菜单项| 菜单项.as_array())
-                .cloned()
-                .unwrap_or_default();
-            let mut 菜单文本 = String::new();
-            for 条目项 in &菜单条目表 {
-                let 激活 = 条目项
-                    .get("激活")
-                    .and_then(|激活项| 激活项.as_bool())
-                    .unwrap_or(false);
-                let 打开地址 = 取对象文本(条目项, "打开地址");
-                if !打开地址.is_empty()
-                    && (!打开地址.starts_with('/')
-                        || 打开地址.starts_with("//")
-                        || 打开地址.contains("..")
-                        || 打开地址.contains(':'))
-                {
-                    return Err(错误码::内容不合法);
-                }
-                let 标签名 = if 打开地址.is_empty() { "div" } else { "a" };
-                let 地址属性 = if 打开地址.is_empty() {
-                    String::new()
-                } else {
-                    format!(" href=\"{}\"", 转义网页文本(&打开地址))
-                };
-                菜单文本.push_str(&format!("<{标签名} class=\"hs-tree-menu-item"));
-                if 激活 {
-                    菜单文本.push_str(" is-active");
-                }
-                菜单文本.push_str(&format!("\"{地址属性}>"));
-                let 图标文本 = 取对象文本(条目项, "图标");
-                if !图标文本.is_empty() {
-                    菜单文本.push_str("<span class=\"hs-tree-menu-icon\">");
-                    菜单文本.push_str(&转义网页文本(&图标文本));
-                    菜单文本.push_str("</span>");
-                }
-                菜单文本.push_str("<span class=\"hs-tree-menu-label\">");
-                菜单文本.push_str(&转义网页文本(&取对象文本(条目项, "名称")));
-                菜单文本.push_str(&format!("</span></{标签名}>"));
-            }
-            let 侧栏标题文本 = 取对象文本(节点, "标题");
-            let 菜单变量 = 取形态变量(节点, "菜单外观", &菜单外观映射)?;
-            let mut 样式 = 拼通用样式(节点, "display:flex;align-items:stretch");
-            样式.push_str(&菜单变量);
-            format!(
-                "<div class=\"hs-tree-node hs-tree-sidebar\" style=\"{}\"><aside class=\"hs-tree-sidebar-pane\" style=\"flex:0 0 {}\">{}<div class=\"hs-tree-menu\">{}</div></aside><section class=\"hs-tree-sidebar-main\">{}</section></div>",
-                转义网页文本(&样式),
-                转义网页文本(&栏宽),
-                if 侧栏标题文本.is_empty() {
-                    String::new()
-                } else {
-                    format!(
-                        "<div class=\"hs-tree-sidebar-title\">{}</div>",
-                        转义网页文本(&侧栏标题文本)
-                    )
-                },
-                菜单文本,
-                拼子节点(节点, 深度, 状态)?
-            )
-        }
-        "分区" => {
-            let 样式 = 拼通用样式(节点, "display:flex;flex-direction:column;min-width:0");
-            let 容器属性 = 容器属性文本(节点, 状态)?;
-            let 标题文本 = 取对象文本(节点, "标题");
-            format!(
-                "<section class=\"hs-tree-node hs-tree-panel\" style=\"{}\"{}>{}{}</section>",
-                转义网页文本(&样式),
-                容器属性,
-                if 标题文本.is_empty() {
-                    String::new()
-                } else {
-                    format!(
-                        "<h3 class=\"hs-tree-panel-title\">{}</h3>",
-                        转义网页文本(&标题文本)
-                    )
-                },
-                拼子节点(节点, 深度, 状态)?
-            )
-        }
-        "画布" => {
-            let 样式 = 拼通用样式(节点, "position:relative;min-width:0");
-            let 子节点表 = 节点
-                .get("子")
-                .and_then(|子项| 子项.as_array())
-                .cloned()
-                .unwrap_or_default();
-            let mut 子文本 = String::new();
-            for 子节点 in &子节点表 {
-                let 定位 = format!(
-                    "position:absolute;left:{};top:{};width:{};height:{}",
-                    取尺寸(子节点, "左").if_empty("0px"),
-                    取尺寸(子节点, "上").if_empty("0px"),
-                    取尺寸(子节点, "宽").if_empty("auto"),
-                    取尺寸(子节点, "高").if_empty("auto")
-                );
-                let 内层 = 拼装树节点(子节点, 深度 + 1, 状态)?;
-                // 窗口要能被拖动/置顶：拖拽脚本移动的是画布给它的定位外壳
-                let 拖拽标记 = if 取对象文本(子节点, "类型") == "窗口" {
-                    format!(
-                        " data-window-port=\"{}\"{}",
-                        转义网页文本(&取对象文本(子节点, "标识")),
-                        if 子节点.get("初始隐藏").and_then(Value::as_bool).unwrap_or(true) { " hidden" } else { "" }
-                    )
-                } else {
-                    String::new()
-                };
-                子文本.push_str(&format!(
-                    "<div class=\"hs-tree-canvas-item\"{} style=\"{}\">{}</div>",
-                    拖拽标记,
-                    转义网页文本(&定位),
-                    内层
-                ));
-            }
-            format!(
-                "<div class=\"hs-tree-node hs-tree-canvas\" style=\"{}\">{}</div>",
-                转义网页文本(&样式),
-                子文本
-            )
-        }
-        "标题" => format!(
-            "<h2 class=\"hs-tree-node hs-tree-title\">{}</h2>",
-            转义网页文本(&取对象文本(节点, "文本"))
-        ),
-        "图标" => {
-            let 名称文本 = 取对象文本(节点, "名称");
-            let 图形文本 = 取对象文本(节点, "图形");
-            let 打开地址 = 取对象文本(节点, "打开地址");
-            if !打开地址.is_empty()
-                && (!打开地址.starts_with('/')
-                    || 打开地址.starts_with("//")
-                    || 打开地址.contains("..")
-                    || 打开地址.contains(':'))
-            {
-                return Err(错误码::内容不合法);
-            }
-            let 图形片段 = if 图形文本.starts_with('/') {
-                if 图形文本.starts_with("//") || 图形文本.contains("..") || 图形文本.contains(':')
-                {
-                    return Err(错误码::内容不合法);
-                }
-                if 图形文本.ends_with(".svg") {
-                    // SVG 走遮罩：图形跟随节点文字颜色，颜色仍由声明决定
-                    format!(
-                        "<span class=\"hs-tree-icon-mask\" style=\"-webkit-mask-image:url('{}');mask-image:url('{}')\"></span>",
-                        转义网页文本(&图形文本),
-                        转义网页文本(&图形文本)
-                    )
-                } else {
-                    format!(
-                        "<img class=\"hs-tree-icon-img\" src=\"{}\" alt=\"\">",
-                        转义网页文本(&图形文本)
-                    )
-                }
-            } else {
-                format!(
-                    "<span class=\"hs-tree-icon-glyph\">{}</span>",
-                    转义网页文本(&图形文本)
-                )
-            };
-            let 名称片段 = if 节点
-                .get("显示名称")
-                .and_then(|显示项| 显示项.as_bool())
-                .unwrap_or(true)
-            {
-                let mut 标签样式 = String::new();
-                if let Some(颜色) = 节点
-                    .get("标签颜色")
-                    .and_then(|取值项| 取值项.as_str())
-                {
-                    标签样式.push_str(&format!("color:{颜色};"));
-                }
-                if let Some(字号) = 节点.get("标签字号").and_then(|取值项| 取值项.as_f64())
-                {
-                    标签样式.push_str(&format!("font-size:{字号}px;"));
-                }
-                if 标签样式.is_empty() {
-                    format!(
-                        "<span class=\"hs-tree-icon-label\">{}</span>",
-                        转义网页文本(&名称文本)
-                    )
-                } else {
-                    format!(
-                        "<span class=\"hs-tree-icon-label\" style=\"{}\">{}</span>",
-                        转义网页文本(&标签样式),
-                        转义网页文本(&名称文本)
-                    )
-                }
-            } else {
-                String::new()
-            };
-            let 可选中 = 节点
-                .get("可选中")
-                .and_then(|开关项| 开关项.as_bool())
-                .unwrap_or(false);
-            let mut 样式 = 拼通用样式(
-                节点,
-                "display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;text-decoration:none;padding:6px 4px",
-            );
-            let mut 选中属性 = String::new();
-            if 可选中 {
-                选中属性 = 选中属性文本(节点, &mut 样式, 状态)?;
-            }
-            let 图标筛选 = 筛选属性与状态(节点, 状态)?;
-            if 打开地址.is_empty() {
-                format!(
-                    "<div class=\"hs-tree-node hs-tree-icon\" style=\"{}\"{}{}>{}{}</div>",
-                    转义网页文本(&样式),
-                    选中属性,
-                    图标筛选,
-                    图形片段,
-                    名称片段
-                )
-            } else {
-                format!(
-                    "<a class=\"hs-tree-node hs-tree-icon\" href=\"{}\" title=\"{}\" style=\"{}\">{}{}</a>",
-                    转义网页文本(&打开地址),
-                    转义网页文本(&名称文本),
-                    转义网页文本(&样式),
-                    图形片段,
-                    名称片段
-                )
-            }
-        }
-        "文字" => {
-            let mut 样式 = 拼通用样式(节点, "white-space:pre-wrap;word-break:break-word");
-            let 文字选中 = 选中属性文本(节点, &mut 样式, 状态)?;
-            let 文本内容 = 转义网页文本(&取对象文本(节点, "文本"));
-            let 打开地址 = 取对象文本(节点, "打开地址");
-            if !打开地址.is_empty()
-                && (!打开地址.starts_with('/')
-                    || 打开地址.starts_with("//")
-                    || 打开地址.contains("..")
-                    || 打开地址.contains(':'))
-            {
-                return Err(错误码::内容不合法);
-            }
-            if 打开地址.is_empty() {
-                format!(
-                    "<div class=\"hs-tree-node hs-tree-text\" style=\"{}\"{}>{}</div>",
-                    转义网页文本(&样式),
-                    文字选中,
-                    文本内容
-                )
-            } else {
-                format!(
-                    "<a class=\"hs-tree-node hs-tree-text hs-tree-link\" href=\"{}\" style=\"{}\"{}>{}</a>",
-                    转义网页文本(&打开地址),
-                    转义网页文本(&样式),
-                    文字选中,
-                    文本内容
-                )
-            }
-        }
-        "分隔条" => {
-            let 样式 = 拼通用样式(节点, "");
-            format!(
-                "<div class=\"hs-tree-node hs-tree-divider\" style=\"{}\"></div>",
-                转义网页文本(&样式)
-            )
-        }
+"表单容器" => 表单控件::拼装表单容器(节点, 深度, 状态)?,
+"输入" => 表单控件::拼装输入(节点, 深度, 状态)?,
+"按钮" => 表单控件::拼装按钮(节点, 深度, 状态)?,
+"行" => 容器::拼装行(节点, 深度, 状态)?,
+"列" => 容器::拼装列(节点, 深度, 状态)?,
+"网格" => 容器::拼装网格(节点, 深度, 状态)?,
+"侧栏" => 容器::拼装侧栏(节点, 深度, 状态)?,
+"分区" => 容器::拼装分区(节点, 深度, 状态)?,
+"画布" => 容器::拼装画布(节点, 深度, 状态)?,
+"标题" => 叶面::拼装标题(节点, 深度, 状态)?,
+"图标" => 叶面::拼装图标(节点, 深度, 状态)?,
+"文字" => 叶面::拼装文字(节点, 深度, 状态)?,
+"分隔条" => 叶面::拼装分隔条(节点, 深度, 状态)?,
         "表格" => 拼装表格(节点, 状态)?,
-        "表单" => {
-            let 字段定义 = 节点
-                .get("字段")
-                .and_then(|字段项| 字段项.as_array())
-                .ok_or(错误码::内容不合法)?;
-            let 缺省值 = 节点
-                .get("值")
-                .cloned()
-                .unwrap_or_else(|| Value::Object(serde_json::Map::new()));
-            format!(
-                "<div class=\"hs-tree-node hs-card\">{}</div>",
-                拼装表单字段(字段定义, &缺省值)?
-            )
-        }
-        "聊天流" => {
-            let 消息表 = match 节点.get("消息").and_then(|消息项| 消息项.as_array()) {
-                Some(消息项) => 消息项.clone(),
-                None => Vec::new(),
-            };
-            let 空态文本 = 取对象文本(节点, "空态文案");
-            let 气泡变量 = 取形态变量(节点, "气泡外观", &气泡外观映射)?;
-            format!(
-                "<div class=\"hs-tree-node\" style=\"{}\">{}</div>",
-                转义网页文本(&气泡变量),
-                拼装聊天片段(&消息表, &空态文本)?
-            )
-        }
+"表单" => 表单控件::拼装表单(节点, 深度, 状态)?,
+"聊天流" => 叶面::拼装聊天流(节点, 深度, 状态)?,
         "窗口" => 应用窗口::拼装窗口(节点, 深度, 状态)?,
-        "悬浮层" => {
-            let 标识文本 = 取对象文本(节点, "标识");
-            if !合法标识(&标识文本) {
-                return Err(错误码::内容不合法);
-            }
-            let 快捷键文本 = 取对象文本(节点, "快捷键");
-            if 快捷键文本.chars().count() > 8 {
-                return Err(错误码::内容不合法);
-            }
-            状态.需要显隐脚本 = true;
-            let 初始隐藏 = 节点
-                .get("初始隐藏")
-                .and_then(|隐藏项| 隐藏项.as_bool())
-                .unwrap_or(true);
-            let 样式 = 拼通用样式(
-                节点,
-                "position:fixed;inset:0;z-index:60;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:auto",
-            );
-            format!(
-                "<div class=\"hs-tree-overlay{}\" data-overlay=\"{}\"{} style=\"{}\">{}</div>",
-                if 初始隐藏 { " is-hidden" } else { "" },
-                转义网页文本(&标识文本),
-                if 快捷键文本.is_empty() {
-                    String::new()
-                } else {
-                    format!(" data-key=\"{}\"", 转义网页文本(&快捷键文本))
-                },
-                转义网页文本(&样式),
-                拼子节点(节点, 深度, 状态)?
-            )
-        }
-        "原样" => {
-            let 片段文本 = 取对象文本(节点, "html");
-            if 片段文本.len() > 200_000 {
-                return Err(错误码::资源受限);
-            }
-            片段文本
-        }
+"悬浮层" => 容器::拼装悬浮层(节点, 深度, 状态)?,
+"原样" => 叶面::拼装原样(节点, 深度, 状态)?,
         _ => return Err(错误码::内容不合法),
     };
     let 窗口标识 = 取对象文本(节点, "打开窗口");
@@ -762,7 +277,7 @@ pub(crate) fn 渲染组件树(参数表: &[&[u8]]) -> Result<(u32, Vec<u8>), u32
 }
 
 /// 空串兜底的小工具（画布定位用）。
-trait 空值兜底 {
+pub(crate) trait 空值兜底 {
     fn if_empty(self, 兜底: &str) -> String;
 }
 
