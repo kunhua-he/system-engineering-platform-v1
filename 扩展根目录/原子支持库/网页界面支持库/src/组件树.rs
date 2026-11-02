@@ -9,19 +9,23 @@ use serde_json::Value;
 use crate::业务实现::{
     取对象文本, 拼装整页外壳, 拼装聊天片段, 拼装表单字段, 拼装表格行, 转义网页文本,
 };
-use crate::交互运行时::{显隐切换脚本, 选中脚本, 窗口脚本};
+use crate::交互运行时::{显隐切换脚本, 放大脚本, 筛选脚本, 选中脚本, 窗口脚本};
 use crate::编号与码面::错误码;
 use crate::视觉基准::中性样式文本;
+use 数据表格::拼装表格;
 
 #[path = "组件树/外观属性.rs"]
 mod 外观属性;
 #[path = "组件树/应用窗口.rs"]
 mod 应用窗口;
+#[path = "组件树/数据表格.rs"]
+mod 数据表格;
 
 use 外观属性::{
     取尺寸, 取对齐, 合法标识, 校验节点颜色, 背景样式文本, 校验外观属性, 拼外观样式, 取形态变量,
-    表格外观映射, 菜单外观映射, 气泡外观映射, 校验颜色值,
+    表格外观映射, 菜单外观映射, 气泡外观映射, 校验颜色值, 选中属性文本, 容器属性文本, 筛选属性与状态,
 };
+
 
 pub(crate) const 树最大深度: u16 = 32;
 pub(crate) const 树最大节点数: usize = 2000;
@@ -32,6 +36,8 @@ pub(crate) struct 渲染状态 {
     pub(crate) 需要显隐脚本: bool,
     pub(crate) 需要窗口脚本: bool,
     pub(crate) 需要选中脚本: bool,
+    pub(crate) 需要放大脚本: bool,
+    pub(crate) 需要筛选脚本: bool,
 }
 
 
@@ -54,7 +60,27 @@ fn 控件样式文本(节点: &Value) -> String {
     if !边框颜色.is_empty() {
         样式.push_str(&format!("border-color:{边框颜色};"));
     }
-    样式.push_str(&背景样式文本(节点));
+    let 背景文本 = 背景样式文本(节点);
+    if !背景文本.is_empty() {
+        样式.push_str(&背景文本);
+        样式.push(';');
+    }
+    // 控件上的文字与内边距也归声明，按钮/chip 才不必靠固定皮肤
+    let 文字颜色 = 取对象文本(节点, "文字颜色");
+    if !文字颜色.is_empty() {
+        校验颜色值(&文字颜色).ok();
+        样式.push_str(&format!("color:{文字颜色};"));
+    }
+    if let Some(字号) = 节点.get("字号").and_then(|取值项| 取值项.as_f64()) {
+        样式.push_str(&format!("font-size:{字号}px;"));
+    }
+    if let Some(字重) = 节点.get("字重").and_then(|取值项| 取值项.as_f64()) {
+        样式.push_str(&format!("font-weight:{};", 字重 as u32));
+    }
+    let 内边距 = 取对象文本(节点, "内边距");
+    if !内边距.is_empty() {
+        样式.push_str(&format!("padding:{内边距};"));
+    }
     if 样式.ends_with(';') {
         样式.pop();
     }
@@ -198,15 +224,17 @@ fn 拼装树节点(节点: &Value, 深度: u16, 状态: &mut 渲染状态) -> Re
             } else {
                 format!(" autocomplete=\"{}\"", 转义网页文本(&自动填充文本))
             };
+            let 输入筛选 = 筛选属性与状态(节点, 状态)?;
             format!(
-                "<div class=\"hs-tree-node hs-form-item\"><label class=\"hs-form-label\">{}</label><input class=\"hs-input\" type=\"{}\" name=\"{}\" placeholder=\"{}\"{}{} style=\"{}\" /></div>",
+                "<div class=\"hs-tree-node hs-form-item\"><label class=\"hs-form-label\">{}</label><input class=\"hs-input\" type=\"{}\" name=\"{}\" placeholder=\"{}\"{}{} style=\"{}\"{} /></div>",
                 转义网页文本(&显示标签文本),
                 输入类型文本,
                 转义网页文本(&名称文本),
                 转义网页文本(&取对象文本(节点, "占位文本")),
                 必填属性,
                 自动填充属性,
-                转义网页文本(&控件样式文本(节点))
+                转义网页文本(&控件样式文本(节点)),
+                输入筛选
             )
         }
         "按钮" => {
@@ -233,14 +261,18 @@ fn 拼装树节点(节点: &Value, 深度: u16, 状态: &mut 渲染状态) -> Re
             } else {
                 format!(" form=\"{}\"", 转义网页文本(&表单标识文本))
             };
+            let mut 按钮样式 = 控件样式文本(节点);
+            let 按钮选中 = 选中属性文本(节点, &mut 按钮样式, 状态)?;
+            let 按钮筛选 = 筛选属性与状态(节点, 状态)?;
             format!(
-                "<button class=\"{}\"{} data-action=\"{}\"{}{} style=\"{}\">{}</button>",
+                "<button class=\"{}\"{} data-action=\"{}\"{}{} style=\"{}\"{}>{}</button>",
                 样式类文本,
                 提交属性,
                 转义网页文本(&取对象文本(节点, "动作")),
                 表单属性,
-                "",
-                转义网页文本(&控件样式文本(节点)),
+                按钮选中,
+                转义网页文本(&按钮样式),
+                按钮筛选,
                 转义网页文本(&取对象文本(节点, "文字"))
             )
         }
@@ -253,9 +285,11 @@ fn 拼装树节点(节点: &Value, 深度: u16, 状态: &mut 渲染状态) -> Re
                     取对齐(节点, "水平对齐")
                 ),
             );
+            let 容器属性 = 容器属性文本(节点, 状态)?;
             format!(
-                "<div class=\"hs-tree-node hs-tree-row\" style=\"{}\">{}</div>",
+                "<div class=\"hs-tree-node hs-tree-row\" style=\"{}\"{}>{}</div>",
                 转义网页文本(&样式),
+                容器属性,
                 拼子节点(节点, 深度, 状态)?
             )
         }
@@ -268,9 +302,11 @@ fn 拼装树节点(节点: &Value, 深度: u16, 状态: &mut 渲染状态) -> Re
                     取对齐(节点, "垂直对齐")
                 ),
             );
+            let 容器属性 = 容器属性文本(节点, 状态)?;
             format!(
-                "<div class=\"hs-tree-node hs-tree-col\" style=\"{}\">{}</div>",
+                "<div class=\"hs-tree-node hs-tree-col\" style=\"{}\"{}>{}</div>",
                 转义网页文本(&样式),
+                容器属性,
                 拼子节点(节点, 深度, 状态)?
             )
         }
@@ -286,9 +322,11 @@ fn 拼装树节点(节点: &Value, 深度: u16, 状态: &mut 渲染状态) -> Re
                     取对齐(节点, "垂直对齐")
                 ),
             );
+            let 容器属性 = 容器属性文本(节点, 状态)?;
             format!(
-                "<div class=\"hs-tree-node hs-tree-grid\" style=\"{}\">{}</div>",
+                "<div class=\"hs-tree-node hs-tree-grid\" style=\"{}\"{}>{}</div>",
                 转义网页文本(&样式),
+                容器属性,
                 拼子节点(节点, 深度, 状态)?
             )
         }
@@ -364,10 +402,12 @@ fn 拼装树节点(节点: &Value, 深度: u16, 状态: &mut 渲染状态) -> Re
         }
         "分区" => {
             let 样式 = 拼通用样式(节点, "display:flex;flex-direction:column;min-width:0");
+            let 容器属性 = 容器属性文本(节点, 状态)?;
             let 标题文本 = 取对象文本(节点, "标题");
             format!(
-                "<section class=\"hs-tree-node hs-tree-panel\" style=\"{}\">{}{}</section>",
+                "<section class=\"hs-tree-node hs-tree-panel\" style=\"{}\"{}>{}{}</section>",
                 转义网页文本(&样式),
+                容器属性,
                 if 标题文本.is_empty() {
                     String::new()
                 } else {
@@ -500,22 +540,15 @@ fn 拼装树节点(节点: &Value, 深度: u16, 状态: &mut 渲染状态) -> Re
             );
             let mut 选中属性 = String::new();
             if 可选中 {
-                for (字段名, 变量名) in [("选中背景", "--hs-icon-sel-bg"), ("选中描边", "--hs-icon-sel-line")] {
-                    let 取值 = 取对象文本(节点, 字段名);
-                    if 取值.is_empty() {
-                        continue;
-                    }
-                    校验颜色值(&取值)?;
-                    样式.push_str(&format!(";{变量名}:{取值}"));
-                }
-                选中属性 = " data-select=\"1\"".to_string();
-                状态.需要选中脚本 = true;
+                选中属性 = 选中属性文本(节点, &mut 样式, 状态)?;
             }
+            let 图标筛选 = 筛选属性与状态(节点, 状态)?;
             if 打开地址.is_empty() {
                 format!(
-                    "<div class=\"hs-tree-node hs-tree-icon\" style=\"{}\"{}>{}{}</div>",
+                    "<div class=\"hs-tree-node hs-tree-icon\" style=\"{}\"{}{}>{}{}</div>",
                     转义网页文本(&样式),
                     选中属性,
+                    图标筛选,
                     图形片段,
                     名称片段
                 )
@@ -531,7 +564,8 @@ fn 拼装树节点(节点: &Value, 深度: u16, 状态: &mut 渲染状态) -> Re
             }
         }
         "文字" => {
-            let 样式 = 拼通用样式(节点, "white-space:pre-wrap;word-break:break-word");
+            let mut 样式 = 拼通用样式(节点, "white-space:pre-wrap;word-break:break-word");
+            let 文字选中 = 选中属性文本(节点, &mut 样式, 状态)?;
             let 文本内容 = 转义网页文本(&取对象文本(节点, "文本"));
             let 打开地址 = 取对象文本(节点, "打开地址");
             if !打开地址.is_empty()
@@ -544,15 +578,17 @@ fn 拼装树节点(节点: &Value, 深度: u16, 状态: &mut 渲染状态) -> Re
             }
             if 打开地址.is_empty() {
                 format!(
-                    "<div class=\"hs-tree-node hs-tree-text\" style=\"{}\">{}</div>",
+                    "<div class=\"hs-tree-node hs-tree-text\" style=\"{}\"{}>{}</div>",
                     转义网页文本(&样式),
+                    文字选中,
                     文本内容
                 )
             } else {
                 format!(
-                    "<a class=\"hs-tree-node hs-tree-text hs-tree-link\" href=\"{}\" style=\"{}\">{}</a>",
+                    "<a class=\"hs-tree-node hs-tree-text hs-tree-link\" href=\"{}\" style=\"{}\"{}>{}</a>",
                     转义网页文本(&打开地址),
                     转义网页文本(&样式),
+                    文字选中,
                     文本内容
                 )
             }
@@ -564,52 +600,7 @@ fn 拼装树节点(节点: &Value, 深度: u16, 状态: &mut 渲染状态) -> Re
                 转义网页文本(&样式)
             )
         }
-        "表格" => {
-            let 列定义 = 节点
-                .get("列")
-                .and_then(|列项| 列项.as_array())
-                .ok_or(错误码::内容不合法)?;
-            let 行数据 = 节点
-                .get("行")
-                .and_then(|行项| 行项.as_array())
-                .ok_or(错误码::内容不合法)?;
-            let 斑马纹 = 节点
-                .get("斑马纹")
-                .and_then(|开关项| 开关项.as_bool())
-                .unwrap_or(false);
-            let 表头固定 = 节点
-                .get("表头固定")
-                .and_then(|开关项| 开关项.as_bool())
-                .unwrap_or(false);
-            let 外观变量 = 取形态变量(节点, "表格外观", &表格外观映射)?;
-            let mut 容器样式 = 外观变量;
-            if 表头固定 {
-                let 最大高度 = 节点
-                    .get("最大高度")
-                    .and_then(|高度项| 高度项.as_f64())
-                    .unwrap_or(0.0);
-                if !(80.0..=4000.0).contains(&最大高度) {
-                    return Err(错误码::内容不合法);
-                }
-                容器样式.push_str(&format!(";max-height:{最大高度}px;overflow:auto"));
-            }
-            let 斑马色 = 取对象文本(节点, "斑马纹色");
-            if !斑马色.is_empty() {
-                校验颜色值(&斑马色)?;
-                容器样式.push_str(&format!(";--hs-row-alt:{斑马色}"));
-            }
-            let 容器类 = format!(
-                "hs-tree-node hs-card{}{}",
-                if 斑马纹 { " is-stripe" } else { "" },
-                if 表头固定 { " is-sticky" } else { "" }
-            );
-            format!(
-                "<div class=\"{}\" style=\"{}\">{}</div>",
-                容器类,
-                转义网页文本(&容器样式),
-                拼装表格行(列定义, 行数据)?
-            )
-        }
+        "表格" => 拼装表格(节点, 状态)?,
         "表单" => {
             let 字段定义 = 节点
                 .get("字段")
@@ -715,6 +706,8 @@ pub(crate) fn 渲染组件树(参数表: &[&[u8]]) -> Result<(u32, Vec<u8>), u32
         需要显隐脚本: false,
         需要窗口脚本: false,
         需要选中脚本: false,
+        需要放大脚本: false,
+        需要筛选脚本: false,
     };
     let 根文本 = 拼装树节点(根节点, 0, &mut 状态)?;
     if 树定义值
@@ -726,6 +719,12 @@ pub(crate) fn 渲染组件树(参数表: &[&[u8]]) -> Result<(u32, Vec<u8>), u32
         let mut 主体文本 = 根文本;
         if 状态.需要显隐脚本 {
             主体文本.push_str(显隐切换脚本);
+        }
+        if 状态.需要筛选脚本 {
+            主体文本.push_str(筛选脚本);
+        }
+        if 状态.需要放大脚本 {
+            主体文本.push_str(放大脚本);
         }
         if 状态.需要选中脚本 {
             主体文本.push_str(选中脚本);
@@ -739,6 +738,12 @@ pub(crate) fn 渲染组件树(参数表: &[&[u8]]) -> Result<(u32, Vec<u8>), u32
     let mut 脚本文本 = String::new();
     if 状态.需要显隐脚本 {
         脚本文本.push_str(显隐切换脚本);
+    }
+    if 状态.需要筛选脚本 {
+        脚本文本.push_str(筛选脚本);
+    }
+    if 状态.需要放大脚本 {
+        脚本文本.push_str(放大脚本);
     }
     if 状态.需要选中脚本 {
         脚本文本.push_str(选中脚本);

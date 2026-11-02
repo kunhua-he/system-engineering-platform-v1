@@ -389,3 +389,96 @@ pub(crate) const 气泡外观映射: [(&str, &str, 变量类型); 6] = [
     ("气泡圆角", "--hs-chat-radius", 变量类型::像素),
     ("字号", "--hs-chat-font", 变量类型::像素),
 ];
+
+/// 可选中节点的公共属性：给了 `可选中` 才出 data-select，同片区由选中脚本保证单选。
+pub(crate) fn 选中属性文本(节点: &Value, 样式: &mut String, 状态: &mut crate::组件树::渲染状态) -> Result<String, u32> {
+    let 可选中 = 节点
+        .get("可选中")
+        .and_then(|开关项| 开关项.as_bool())
+        .unwrap_or(false);
+    if !可选中 {
+        return Ok(String::new());
+    }
+    for (字段名, 变量名) in [
+        ("选中背景", "--hs-sel-bg"),
+        ("选中描边", "--hs-sel-line"),
+        ("选中文字颜色", "--hs-sel-ink"),
+    ] {
+        let 取值 = 取对象文本(节点, 字段名);
+        if 取值.is_empty() {
+            continue;
+        }
+        校验颜色值(&取值)?;
+        样式.push_str(&format!(";{变量名}:{取值}"));
+    }
+    状态.需要选中脚本 = true;
+    Ok(" data-select=\"1\"".to_string())
+}
+
+/// 放大容器属性：`放大` 对象里的峰值与半径决定悬停放大曲线，脚本按它算邻域衰减。
+pub(crate) fn 放大属性文本(节点: &Value, 状态: &mut crate::组件树::渲染状态) -> Result<String, u32> {
+    let 放大表 = match 节点.get("放大") {
+        None | Some(Value::Null) => return Ok(String::new()),
+        Some(Value::Object(表)) => 表.clone(),
+        _ => return Err(错误码::内容不合法),
+    };
+    let 放大值 = Value::Object(放大表);
+    let 峰值 = 放大值
+        .get("峰值")
+        .and_then(|取值项| 取值项.as_f64())
+        .unwrap_or(1.0);
+    if !(1.0..=2.5).contains(&峰值) {
+        return Err(错误码::内容不合法);
+    }
+    let 半径 = 放大值
+        .get("半径")
+        .and_then(|取值项| 取值项.as_f64())
+        .unwrap_or(120.0);
+    if !(20.0..=400.0).contains(&半径) {
+        return Err(错误码::内容不合法);
+    }
+    状态.需要放大脚本 = true;
+    Ok(format!(" data-magnify=\"{峰值},{半径}\""))
+}
+
+/// 筛选属性：`筛选值` 让节点可被筛；`筛选目标`（输入）与 `筛选分类`（按钮）指向被筛容器。
+pub(crate) fn 筛选属性文本(节点: &Value) -> Result<String, u32> {
+    for (字段名, 属性名) in [
+        ("筛选区", "data-filter-scope"),
+        ("筛选值", "data-filter-value"),
+        ("筛选目标", "data-filter-target"),
+        ("筛选分类", "data-filter-cat"),
+    ] {
+        let 取值 = 取对象文本(节点, 字段名);
+        if 取值.is_empty() {
+            continue;
+        }
+        if 取值.chars().count() > 64 || 取值.contains('"') || 取值.contains('<') {
+            return Err(错误码::内容不合法);
+        }
+        return Ok(format!(" {属性名}=\"{}\"", 取值));
+    }
+    Ok(String::new())
+}
+
+/// 筛选属性 + 状态位：给了筛选相关字段才需要筛选脚本。
+pub(crate) fn 筛选属性与状态(
+    节点: &Value,
+    状态: &mut crate::组件树::渲染状态,
+) -> Result<String, u32> {
+    let 属性 = 筛选属性文本(节点)?;
+    if !属性.is_empty() {
+        状态.需要筛选脚本 = true;
+    }
+    Ok(属性)
+}
+
+/// 容器属性：放大与筛选都写在容器上，两者可同时生效。
+pub(crate) fn 容器属性文本(
+    节点: &Value,
+    状态: &mut crate::组件树::渲染状态,
+) -> Result<String, u32> {
+    let mut 属性 = 放大属性文本(节点, 状态)?;
+    属性.push_str(&筛选属性与状态(节点, 状态)?);
+    Ok(属性)
+}

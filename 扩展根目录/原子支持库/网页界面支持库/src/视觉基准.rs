@@ -84,8 +84,11 @@ a.hs-tree-menu-item{text-decoration:none}
 .hs-tree-icon-glyph{line-height:1}
 .hs-tree-icon-img{width:1em;height:1em;object-fit:contain}
 .hs-tree-icon-mask{display:inline-block;width:1em;height:1em;background-color:currentColor;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-position:center;mask-position:center;-webkit-mask-size:contain;mask-size:contain}
-.hs-tree-icon[data-select]{cursor:pointer}
-.hs-tree-icon.is-selected{border-radius:8px;background:var(--hs-icon-sel-bg,rgba(14,165,233,.18));outline:1px solid var(--hs-icon-sel-line,rgba(125,211,252,.46))}
+[data-select]{cursor:pointer}
+.is-selected{background:var(--hs-sel-bg,rgba(14,165,233,.18)) !important;color:var(--hs-sel-ink,inherit) !important;outline:1px solid var(--hs-sel-line,rgba(125,211,252,.46))}
+.hs-tree-icon.is-selected{border-radius:8px}
+.hs-button.is-selected,.hs-tree-text.is-selected{border-radius:999px}
+[data-magnify] .hs-tree-icon{transform-origin:bottom center;will-change:transform}
 .hs-tree-icon-label{line-height:1.25;max-width:88px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:var(--hs-clamp,2);-webkit-box-orient:vertical;word-break:break-word}
 .hs-tree-overlay{position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center}
 .hs-tree-overlay.is-hidden{display:none !important}

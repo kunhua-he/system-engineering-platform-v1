@@ -57,3 +57,70 @@ var 片区=目标.closest('.hs-tree-canvas')||目标.closest('.hs-tree-grid')||d
 片区.querySelectorAll('[data-select]').forEach(function(节点){节点.classList.toggle('is-selected',节点===目标)});
 });
 })();</script>"#;
+
+/// 放大脚本：容器声明了 `放大` 才生效。鼠标横向位置决定邻域缩放，
+/// 曲线是 cos² 平滑衰减（距离 0 处到峰值，到半径处回到 1），缩放靠 transform + 外边距让邻居让位。
+pub(crate) const 放大脚本: &str = r#"<script>(function(){
+document.querySelectorAll('[data-magnify]').forEach(function(容器){
+var 参数=容器.getAttribute('data-magnify').split(',');
+var 峰值=Number(参数[0])||1;if(峰值<=1){return}
+var 半径=Number(参数[1])||120;
+var 项表=Array.prototype.slice.call(容器.querySelectorAll('.hs-tree-icon'));
+if(!项表.length){return}
+var 基准宽=项表.map(function(项){return 项.offsetWidth||1});
+var 当前=项表.map(function(){return 1});
+var 鼠横=null,平滑=null,帧号=0;
+function 目标缩放(索引,横){
+  if(横===null){return 1}
+  var 框=项表[索引].getBoundingClientRect();
+  var 距=Math.abs(横-(框.left+框.width/2));
+  if(距>=半径){return 1}
+  var 余弦=Math.cos((距/半径)*Math.PI/2);
+  return 1+(峰值-1)*余弦*余弦;
+}
+function 应用(索引,值){项表[索引].style.transform='scale('+值+')';var 余=((值-1)*基准宽[索引]/2);项表[索引].style.marginLeft=余+'px';项表[索引].style.marginRight=余+'px'}
+function 跑(){
+  帧号=0;
+  if(鼠横===null){平滑=null}else if(平滑===null){平滑=鼠横}else{平滑+= (鼠横-平滑)*0.3}
+  var 在动=false;
+  项表.forEach(function(项,索引){
+    var 想要=目标缩放(索引,平滑);
+    var 现值=当前[索引]+(想要-当前[索引])*0.28;
+    if(Math.abs(现值-想要)<0.001){现值=想要}
+    if(Math.abs(现值-当前[索引])>0.0004){应用(索引,现值);当前[索引]=现值}
+    if(Math.abs(现值-1)>0.001||(平滑!==null&&想要>1)){在动=true}
+  });
+  if(在动||鼠横!==null){帧号=requestAnimationFrame(跑)}
+}
+容器.addEventListener('mousemove',function(事件){鼠横=事件.clientX;if(!帧号){帧号=requestAnimationFrame(跑)}});
+容器.addEventListener('mouseleave',function(){鼠横=null;if(!帧号){帧号=requestAnimationFrame(跑)}});
+});
+})();</script>"#;
+
+/// 筛选脚本：输入框按文字筛、分类按钮按 `筛选值` 筛，都作用在同一片被筛容器上。
+pub(crate) const 筛选脚本: &str = r#"<script>(function(){
+function 找片(名字){return document.querySelector('[data-filter-scope="'+名字+'"]')}
+function 应用(片,词,类){片.querySelectorAll('[data-filter-value]').forEach(function(项){
+var 命中=true;
+var 值=项.getAttribute('data-filter-value')||'';
+if(词){命中=(项.textContent||'').indexOf(词)>=0}
+if(命中&&类&&类!=='全部'){命中=(值===类)}
+项.style.display=命中?'':'none';
+});}
+document.querySelectorAll('[data-filter-target]').forEach(function(输入){
+输入.addEventListener('input',function(){
+var 片=找片(输入.getAttribute('data-filter-target'));if(!片){return}
+片.setAttribute('data-词',输入.value.trim());
+应用(片,片.getAttribute('data-词')||'',片.getAttribute('data-类')||'');
+});});
+document.addEventListener('click',function(事件){
+var 按钮=事件.target.closest('[data-filter-cat]');if(!按钮){return}
+事件.preventDefault();
+var 目标=按钮.closest('[data-filter-scope]');
+if(!目标){return}
+var 类=按钮.getAttribute('data-filter-cat')||'';
+目标.setAttribute('data-类',类);
+目标.querySelectorAll('[data-filter-cat]').forEach(function(钮){钮.classList.toggle('is-selected',钮===按钮)});
+应用(目标,目标.getAttribute('data-词')||'',类);
+});
+})();</script>"#;
