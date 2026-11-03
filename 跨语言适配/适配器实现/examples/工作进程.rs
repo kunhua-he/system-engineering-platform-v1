@@ -50,12 +50,8 @@ fn main() -> ExitCode {
     // SAFETY: fd 0 由 `进程池::生成进程` 接上 UnixStream 的子端（Stdio::from(OwnedFd)）；
     // 每个进程恰好接管一次 ⇒ 不存在二次接管同一个 fd。
     let 流通道 = unsafe { UnixStream::from_raw_fd(0) };
-    let mut 进程 = match 工作进程::创建(
-        流通道,
-        &支持库引用表,
-        模块制品,
-        &缓存根目录,
-    ) {
+    let mut 进程 = match 工作进程::创建(流通道, &支持库引用表, 模块制品, &缓存根目录)
+    {
         Ok(进程) => 进程,
         Err(错误) => {
             eprintln!("工作进程装载失败：{错误:?}");

@@ -26,10 +26,10 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 
 use v1_contract::平台信息;
 
-use crate::适配器;
 use crate::契约读取::读契约串;
-use crate::装载失败;
 use crate::核心实现::适配器定义::已装载声明;
+use crate::装载失败;
+use crate::适配器;
 
 /// `Clone` = **执行引用快照**：深拷路由表（每单元 `Arc` 克隆，不复制注册表）、
 /// 由路由表**重建**独立台账；配额账本 · 通知账 · 留痕 · 追踪号 · 在途计数**共享**（实例级）。
@@ -83,7 +83,9 @@ pub(crate) struct 在途引用 {
 impl 在途引用 {
     pub(crate) fn 取得(引用计数: &Arc<AtomicUsize>) -> Self {
         引用计数.fetch_add(1, Ordering::AcqRel);
-        Self { 引用计数: Arc::clone(引用计数) }
+        Self {
+            引用计数: Arc::clone(引用计数),
+        }
     }
 }
 

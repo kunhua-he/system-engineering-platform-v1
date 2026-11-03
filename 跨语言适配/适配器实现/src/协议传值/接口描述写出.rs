@@ -108,7 +108,9 @@ pub fn 写JSON文本(输出缓冲: &mut String, 文本值: &str) {
             '\u{08}' => 输出缓冲.push_str("\\b"),
             '\u{0C}' => 输出缓冲.push_str("\\f"),
             // 其余控制字符必须转义（裸控制字符不是合法 JSON）。
-            字符表 if (字符表 as u32) < 0x20 => 输出缓冲.push_str(&format!("\\u{:04x}", 字符表 as u32)),
+            字符表 if (字符表 as u32) < 0x20 => {
+                输出缓冲.push_str(&format!("\\u{:04x}", 字符表 as u32))
+            }
             字符表 => 输出缓冲.push(字符表),
         }
     }

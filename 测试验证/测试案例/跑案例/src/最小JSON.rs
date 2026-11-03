@@ -35,7 +35,10 @@ impl JSON值 {
     /// 按键取成员。**只对对象有意义**，其余一律 `None`（不猜、不转换）。
     pub fn 取成员(&self, 键名: &str) -> Option<&JSON值> {
         match self {
-            JSON值::对象值(项表) => 项表.iter().find(|(名称, _)| 名称 == 键名).map(|(_, 待处理值)| 待处理值),
+            JSON值::对象值(项表) => 项表
+                .iter()
+                .find(|(名称, _)| 名称 == 键名)
+                .map(|(_, 待处理值)| 待处理值),
             _ => None,
         }
     }
@@ -81,12 +84,18 @@ impl JSON值 {
 
 /// 解析。错误信息带**字节位置**——案例文件写错时要能直接找到那一处。
 pub fn 解析JSON值(来源: &str) -> Result<JSON值, String> {
-    let mut 位读游标 = 位读游标 { 字节: 来源.as_bytes(), 游标位: 0 };
+    let mut 位读游标 = 位读游标 {
+        字节: 来源.as_bytes(),
+        游标位: 0,
+    };
     位读游标.跳空白();
     let 文本缓冲 = 位读游标.取值()?;
     位读游标.跳空白();
     if 位读游标.游标位 != 位读游标.字节.len() {
-        return Err(format!("第 {} 字节起有多余内容（JSON 只许一个顶层值）", 位读游标.游标位));
+        return Err(format!(
+            "第 {} 字节起有多余内容（JSON 只许一个顶层值）",
+            位读游标.游标位
+        ));
     }
     Ok(文本缓冲)
 }
@@ -98,7 +107,10 @@ struct 位读游标<'a> {
 
 impl 位读游标<'_> {
     fn 跳空白(&mut self) {
-        while matches!(self.字节.get(self.游标位), Some(b' ' | b'\t' | b'\n' | b'\r')) {
+        while matches!(
+            self.字节.get(self.游标位),
+            Some(b' ' | b'\t' | b'\n' | b'\r')
+        ) {
             self.游标位 += 1;
         }
     }
@@ -115,11 +127,12 @@ impl 位读游标<'_> {
             }
             Some(实到字节) => Err(format!(
                 "第 {} 字节：期望 `{}`，实到 `{}`",
-                self.游标位,
-                字符表 as char,
-                实到字节 as char
+                self.游标位, 字符表 as char, 实到字节 as char
             )),
-            None => Err(format!("第 {} 字节：期望 `{}`，已到末尾", self.游标位, 字符表 as char)),
+            None => Err(format!(
+                "第 {} 字节：期望 `{}`，已到末尾",
+                self.游标位, 字符表 as char
+            )),
         }
     }
 
@@ -168,7 +181,12 @@ impl 位读游标<'_> {
                     self.游标位 += 1;
                     return Ok(JSON值::对象值(项表));
                 }
-                Some(实到字节) => return Err(format!("第 {} 字节：对象里期望 `,` 或 `}}`，实到 `{}`", self.游标位, 实到字节 as char)),
+                Some(实到字节) => {
+                    return Err(format!(
+                        "第 {} 字节：对象里期望 `,` 或 `}}`，实到 `{}`",
+                        self.游标位, 实到字节 as char
+                    ));
+                }
                 None => return Err("对象未闭合（缺 `}`）".to_owned()),
             }
         }
@@ -192,7 +210,12 @@ impl 位读游标<'_> {
                     self.游标位 += 1;
                     return Ok(JSON值::数组值(项表));
                 }
-                Some(实到字节) => return Err(format!("第 {} 字节：数组里期望 `,` 或 `]`，实到 `{}`", self.游标位, 实到字节 as char)),
+                Some(实到字节) => {
+                    return Err(format!(
+                        "第 {} 字节：数组里期望 `,` 或 `]`，实到 `{}`",
+                        self.游标位, 实到字节 as char
+                    ));
+                }
                 None => return Err("数组未闭合（缺 `]`）".to_owned()),
             }
         }
@@ -211,7 +234,9 @@ impl 位读游标<'_> {
                 }
                 Some(b'\\') => {
                     self.游标位 += 1;
-                    let 转义字节 = self.取当前字节().ok_or_else(|| "转义符后已到末尾".to_owned())?;
+                    let 转义字节 = self
+                        .取当前字节()
+                        .ok_or_else(|| "转义符后已到末尾".to_owned())?;
                     self.游标位 += 1;
                     match 转义字节 {
                         b'"' => 文本缓冲.push('"'),
@@ -223,7 +248,12 @@ impl 位读游标<'_> {
                         b'r' => 文本缓冲.push('\r'),
                         b't' => 文本缓冲.push('\t'),
                         b'u' => 文本缓冲.push(self.取码点()?),
-                        _ => return Err(format!("第 {} 字节：不认的转义 `\\{}`", 区间起点, 转义字节 as char)),
+                        _ => {
+                            return Err(format!(
+                                "第 {} 字节：不认的转义 `\\{}`",
+                                区间起点, 转义字节 as char
+                            ));
+                        }
                     }
                 }
                 Some(实到字节) if 实到字节 < 0x20 => {
@@ -260,7 +290,8 @@ impl 位读游标<'_> {
                 return Err("\\u 代理对不配对（低代理不在 DC00–DFFF）".to_owned());
             }
             let 合成码点 = 0x10000 + ((高代理 - 0xD800) << 10) + (低代理 - 0xDC00);
-            return char::from_u32(合成码点).ok_or_else(|| format!("\\u 合成的码点 {合成码点:#x} 不是字符"));
+            return char::from_u32(合成码点)
+                .ok_or_else(|| format!("\\u 合成的码点 {合成码点:#x} 不是字符"));
         }
         char::from_u32(高代理).ok_or_else(|| format!("\\u{高代理:04x} 不是字符"))
     }
@@ -271,7 +302,8 @@ impl 位读游标<'_> {
             .get(self.游标位..self.游标位 + 4)
             .ok_or_else(|| "\\u 后不足 4 位十六进制".to_owned())?;
         let 源文本 = std::str::from_utf8(片段).map_err(|_| "\\u 后不是 UTF-8".to_owned())?;
-        let 四位值 = u32::from_str_radix(源文本, 16).map_err(|_| format!("\\u 后不是十六进制：{源文本}"))?;
+        let 四位值 =
+            u32::from_str_radix(源文本, 16).map_err(|_| format!("\\u 后不是十六进制：{源文本}"))?;
         self.游标位 += 4;
         Ok(四位值)
     }
@@ -281,14 +313,19 @@ impl 位读游标<'_> {
         if matches!(self.取当前字节(), Some(b'-' | b'+')) {
             self.游标位 += 1;
         }
-        while matches!(self.取当前字节(), Some(b'0'..=b'9' | b'.' | b'e' | b'E' | b'+' | b'-')) {
+        while matches!(
+            self.取当前字节(),
+            Some(b'0'..=b'9' | b'.' | b'e' | b'E' | b'+' | b'-')
+        ) {
             self.游标位 += 1;
         }
         if 区间起点 == self.游标位 {
             return Err(format!("第 {区间起点} 字节：不是一个值"));
         }
-        let 源文本 = std::str::from_utf8(&self.字节[区间起点..self.游标位]).map_err(|_| "数字不是 UTF-8".to_owned())?;
-        源文本.parse::<f64>()
+        let 源文本 = std::str::from_utf8(&self.字节[区间起点..self.游标位])
+            .map_err(|_| "数字不是 UTF-8".to_owned())?;
+        源文本
+            .parse::<f64>()
             .map(JSON值::数值项)
             .map_err(|_| format!("第 {区间起点} 字节：`{源文本}` 不是数"))
     }
@@ -324,16 +361,40 @@ mod 测试 {
     /// 正向样本：干净输入必须通过，且读到的东西与写的一样。
     #[test]
     fn 干净输入逐字段读得对() {
-        let 待处理值 = 解析JSON(r#"{"案例名":"反解","步骤":[{"能力编号":1105}],"结果":true,"无":null,"数":1568}"#);
-        assert_eq!(待处理值.取成员("案例名").and_then(|成员值| 成员值.取字符串()), Some("反解"));
-        assert_eq!(待处理值.取成员("步骤").and_then(|成员值| 成员值.取数组()).map(<[JSON值]>::len), Some(1));
+        let 待处理值 = 解析JSON(
+            r#"{"案例名":"反解","步骤":[{"能力编号":1105}],"结果":true,"无":null,"数":1568}"#,
+        );
         assert_eq!(
-            待处理值.取成员("步骤").and_then(|步骤值| 步骤值.取数组()).and_then(|步骤值| 步骤值.first()).and_then(|步骤值| 步骤值.取成员("能力编号")).and_then(|成员值| 成员值.取整数()),
+            待处理值
+                .取成员("案例名")
+                .and_then(|成员值| 成员值.取字符串()),
+            Some("反解")
+        );
+        assert_eq!(
+            待处理值
+                .取成员("步骤")
+                .and_then(|成员值| 成员值.取数组())
+                .map(<[JSON值]>::len),
+            Some(1)
+        );
+        assert_eq!(
+            待处理值
+                .取成员("步骤")
+                .and_then(|步骤值| 步骤值.取数组())
+                .and_then(|步骤值| 步骤值.first())
+                .and_then(|步骤值| 步骤值.取成员("能力编号"))
+                .and_then(|成员值| 成员值.取整数()),
             Some(1105)
         );
-        assert_eq!(待处理值.取成员("结果").and_then(|成员值| 成员值.真假()), Some(true));
+        assert_eq!(
+            待处理值.取成员("结果").and_then(|成员值| 成员值.真假()),
+            Some(true)
+        );
         assert!(matches!(待处理值.取成员("无"), Some(JSON值::空值项)));
-        assert_eq!(待处理值.取成员("数").and_then(|成员值| 成员值.取整数()), Some(1568));
+        assert_eq!(
+            待处理值.取成员("数").and_then(|成员值| 成员值.取整数()),
+            Some(1568)
+        );
     }
 
     /// 反向样本：坏输入必须报错（不是静默给一个空值）。

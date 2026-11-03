@@ -22,10 +22,10 @@
 #![allow(uncommon_codepoints)]
 #![allow(non_snake_case)]
 
-#[path = "分配错误形状.rs"]
-mod 分配错误形状;
 #[path = "分配.rs"]
 mod 分配;
+#[path = "分配错误形状.rs"]
+mod 分配错误形状;
 
 #[cfg(test)]
 #[path = "测试.rs"]

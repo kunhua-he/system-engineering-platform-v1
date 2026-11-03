@@ -105,7 +105,9 @@ pub(crate) fn 收集语料(根目录: &Path, 输出缓冲: &mut Vec<PathBuf>) {
         return;
     };
     for 目录项 in 项集.flatten() {
-        let Ok(类型) = 目录项.file_type() else { continue };
+        let Ok(类型) = 目录项.file_type() else {
+            continue;
+        };
         let 路径 = 目录项.path();
         if 类型.is_dir() {
             收集语料(&路径, 输出缓冲);
@@ -122,7 +124,10 @@ pub(crate) fn 收集语料(根目录: &Path, 输出缓冲: &mut Vec<PathBuf>) {
 /// 的 UB 检查）。故本助手只交字节，槽由调用方就地造。
 pub(crate) fn 注册表字节(项集: &[(&str, u16)]) -> Vec<u8> {
     crate::语义::名号表::从项(
-        项集.iter().map(|(名称, 号值)| (名称.as_bytes().to_vec(), *号值)).collect(),
+        项集
+            .iter()
+            .map(|(名称, 号值)| (名称.as_bytes().to_vec(), *号值))
+            .collect(),
     )
     .编码()
 }

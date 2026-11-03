@@ -9,16 +9,18 @@ use std::path::{Path, PathBuf};
 use v1_compiler::执行函数面::本机生成::本机依赖;
 use v1_compiler::语义;
 
-use super::依赖要求::{取实现版本, 依赖要求};
-use super::声明读取::{声明值, 读声明件};
+use super::依赖要求::{依赖要求, 取实现版本};
 use super::声明取值::取整数;
+use super::声明读取::{声明值, 读声明件};
 
 /// 标识串 → 包目录（扫 `扩展根目录/` 下全部 `包声明.json`，按标识串精确命中），
 /// 并**当场按装载依赖校验的同一合同**核被选包的 `实现版本` 是否满足版本门槛。
 ///
 /// fail-closed：命中 0 份 = 缺依赖；命中多份 = 分不清用哪份；被选包缺 `标识串` / `实现版本`
 /// 或版本不满足（含「要求未来版本」）= 拒。不让要求未来不兼容版本也生成。
-pub(super) fn 定位依赖包(仓根: &Path, 要求表: &[依赖要求]) -> Result<Vec<PathBuf>, String> {
+pub(super) fn 定位依赖包(
+    仓根: &Path, 要求表: &[依赖要求]
+) -> Result<Vec<PathBuf>, String> {
     let mut 目录表 = Vec::with_capacity(要求表.len());
     for 要求项 in 要求表 {
         let 命中表: Vec<PathBuf> = 扫包目录(&仓根.join("扩展根目录"))
@@ -26,7 +28,12 @@ pub(super) fn 定位依赖包(仓根: &Path, 要求表: &[依赖要求]) -> Resu
             .filter(|包目录| {
                 读声明件(&包目录.join("包声明.json"))
                     .ok()
-                    .and_then(|声明| 声明.取键("标识串").and_then(声明值::取文本).map(str::to_owned))
+                    .and_then(|声明| {
+                        声明
+                            .取键("标识串")
+                            .and_then(声明值::取文本)
+                            .map(str::to_owned)
+                    })
                     .is_some_and(|自身标识| 自身标识 == 要求项.标识串)
             })
             .collect();
@@ -66,11 +73,15 @@ pub(super) fn 扫包目录(扫描根: &Path) -> Vec<PathBuf> {
         if 当前目录.join("包声明.json").is_file() {
             结果表.push(当前目录.clone());
         }
-        let Ok(目录项) = fs::read_dir(&当前目录) else { continue };
+        let Ok(目录项) = fs::read_dir(&当前目录) else {
+            continue;
+        };
         for 目录条目 in 目录项.flatten() {
             let 条目路径 = 目录条目.path();
             if 条目路径.is_dir()
-                && 条目路径.file_name().is_some_and(|目录名| 目录名 != "target" && 目录名 != ".git")
+                && 条目路径
+                    .file_name()
+                    .is_some_and(|目录名| 目录名 != "target" && 目录名 != ".git")
             {
                 待扫.push(条目路径);
             }
@@ -84,20 +95,32 @@ pub(super) fn 扫包目录(扫描根: &Path) -> Vec<PathBuf> {
 /// **两种写法同号**：声明里的 `名称`（如 `整数`）与易语言式 `名称`＋`型`（如 `整数型`）——
 /// 模块程序文本按后者写（既有样本就这么写），构建侧不能因为差一个「型」字就拒。
 /// 标签超出 `u16` 的声明（`4294967295` 这类占位号）不进表：名号表的号是 `u16`。
-pub(super) fn 收集类型表(仓根: &Path, 依赖目录表: &[PathBuf]) -> Result<语义::名号表, String> {
+pub(super) fn 收集类型表(
+    仓根: &Path,
+    依赖目录表: &[PathBuf],
+) -> Result<语义::名号表, String> {
     let mut 声明目录表 = vec![仓根.join("契约声明/类型声明")];
     for 依赖目录 in 依赖目录表 {
         let 声明目录 = 依赖目录.join("类型声明");
-        if 声明目录.try_exists().map_err(|错误| format!("类型声明目录无法检查：{错误}"))? {
+        if 声明目录
+            .try_exists()
+            .map_err(|错误| format!("类型声明目录无法检查：{错误}"))?
+        {
             声明目录表.push(声明目录);
         }
     }
     let mut 类型表项: BTreeMap<Vec<u8>, u16> = BTreeMap::new();
     for 声明目录 in 声明目录表 {
         for 声明件 in 列声明目录(&声明目录)? {
-            let Ok(类型号) = 取整数(&声明件, "类型标签") else { continue };
-            let Ok(u16标签) = u16::try_from(类型号) else { continue };
-            let Some(名称) = 声明件.取键("名称").and_then(声明值::取文本) else { continue };
+            let Ok(类型号) = 取整数(&声明件, "类型标签") else {
+                continue;
+            };
+            let Ok(u16标签) = u16::try_from(类型号) else {
+                continue;
+            };
+            let Some(名称) = 声明件.取键("名称").and_then(声明值::取文本) else {
+                continue;
+            };
             类型表项.insert(名称.as_bytes().to_vec(), u16标签);
             类型表项.insert(format!("{名称}型").into_bytes(), u16标签);
         }
@@ -117,7 +140,10 @@ pub(super) fn 收集命令表(依赖目录表: &[PathBuf]) -> Result<语义::名
                 取整数(&能力声明, "编号"),
                 能力声明.取键("名称").and_then(声明值::取文本),
             ) else {
-                return Err(format!("依赖 {} 的能力声明缺 编号/名称", 依赖目录.display()));
+                return Err(format!(
+                    "依赖 {} 的能力声明缺 编号/名称",
+                    依赖目录.display()
+                ));
             };
             let u16编号 = u16::try_from(编号).map_err(|_| format!("能力号 {编号} 超出 u16"))?;
             类型表项.insert(名称.as_bytes().to_vec(), u16编号);
@@ -139,7 +165,9 @@ pub(super) fn 收集锁定依赖(
     let mut 锁定表 = Vec::new();
     for 依赖目录 in 依赖目录表 {
         for 能力声明 in 列声明目录(&依赖目录.join("能力声明"))? {
-            let Some(名称) = 能力声明.取键("名称").and_then(声明值::取文本) else { continue };
+            let Some(名称) = 能力声明.取键("名称").and_then(声明值::取文本) else {
+                continue;
+            };
             if !源文本.contains(名称) {
                 continue;
             }
@@ -166,7 +194,8 @@ pub(super) fn 收集锁定依赖(
 
 /// 列一个声明目录里的全部 `*.json`（按文件名升序，读不动即拒）。
 pub(super) fn 列声明目录(声明目录: &Path) -> Result<Vec<声明值>, String> {
-    let 目录项 = fs::read_dir(声明目录).map_err(|错误| format!("读不到 {}：{错误}", 声明目录.display()))?;
+    let 目录项 =
+        fs::read_dir(声明目录).map_err(|错误| format!("读不到 {}：{错误}", 声明目录.display()))?;
     let mut 路径表: Vec<PathBuf> = 目录项
         .flatten()
         .map(|目录条目| 目录条目.path())
@@ -185,5 +214,8 @@ pub(super) fn 找仓根(起点: &Path) -> Result<PathBuf, String> {
             return Ok(候选目录.to_path_buf());
         }
     }
-    Err(format!("从 {} 往上找不到含 契约声明/ 的仓根", 起点.display()))
+    Err(format!(
+        "从 {} 往上找不到含 契约声明/ 的仓根",
+        起点.display()
+    ))
 }

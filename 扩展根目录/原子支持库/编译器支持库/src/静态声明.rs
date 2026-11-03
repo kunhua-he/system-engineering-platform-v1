@@ -13,5 +13,5 @@ pub(crate) mod 声明与导出;
 #[path = "接缝.rs"]
 pub(crate) mod 接缝;
 
-pub use 接缝::取平台信息;
 pub use 声明与导出::扩展声明;
+pub use 接缝::取平台信息;

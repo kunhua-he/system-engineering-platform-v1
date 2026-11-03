@@ -1,11 +1,15 @@
 use v1_contract::错误码信息;
 pub mod 能力号 {
     pub const 渲染组件树: u32 = 4928;
+    pub const 操作组件: u32 = 4929;
+    pub const 读组件状态: u32 = 4930;
+    pub const 释放组件句柄: u32 = 4931;
 }
 pub mod 错误码 {
     pub const 参数不合法: u32 = 4921;
     pub const 内容不合法: u32 = 4922;
     pub const 资源受限: u32 = 4923;
+    pub const 组件句柄无效: u32 = 4924;
 }
 pub const fn 码项(
     错误码: u32,
@@ -27,7 +31,7 @@ pub const fn 码项(
     }
 }
 
-pub const 错误码信息表: [错误码信息; 3] = [
+pub const 错误码信息表: [错误码信息; 4] = [
     码项(
         错误码::参数不合法,
         "参数不合法\0".as_bytes(),
@@ -52,7 +56,15 @@ pub const 错误码信息表: [错误码信息; 3] = [
         0,
         0,
     ),
+    码项(
+        错误码::组件句柄无效,
+        "组件句柄无效\0".as_bytes(),
+        "组件句柄不存在或已释放；调用方需重新渲染组件树取新句柄\0".as_bytes(),
+        0,
+        0,
+        0,
+    ),
 ];
 pub const fn 错误码信息表段() -> v1_contract::表段<错误码信息> {
-    v1_contract::表段::构造(错误码信息表.as_ptr(), 3)
+    v1_contract::表段::构造(错误码信息表.as_ptr(), 4)
 }

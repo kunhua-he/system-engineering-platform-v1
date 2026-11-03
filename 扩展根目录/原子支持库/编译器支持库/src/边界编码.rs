@@ -12,9 +12,9 @@
 //! （切分在 `词法.rs`、建树在 `语法.rs`、定号在 `语义/建表.rs`、段头在 `容器.rs`）。
 //! 编解码各只有这一处，不另起第二套。
 
-#[path = "边界编码/结构编码.rs"]
-pub(crate) mod 结构编码;
 #[path = "边界编码/原生路编码.rs"]
 pub(crate) mod 原生路编码;
+#[path = "边界编码/结构编码.rs"]
+pub(crate) mod 结构编码;
 #[path = "边界编码/语义编码.rs"]
 pub(crate) mod 语义编码;

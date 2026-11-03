@@ -15,14 +15,14 @@
 //! （E0754），故每条 `mod` 都显式给 `#[path]`；**模块名不能与它再导出的同名项撞**
 //! （E0255）—— 故 `能力号` / `错误码` 两个模块块住在带 `定义` 后缀的件里。
 
+#[path = "编号与码面/码映射.rs"]
+pub(crate) mod 码映射;
 #[path = "编号与码面/能力号定义.rs"]
 pub(crate) mod 能力号定义;
 #[path = "编号与码面/错误码定义.rs"]
 pub(crate) mod 错误码定义;
-#[path = "编号与码面/码映射.rs"]
-pub(crate) mod 码映射;
 
-pub use 能力号定义::能力号;
-pub use 错误码定义::错误码;
 pub use 码映射::形状错误码;
 pub(crate) use 码映射::语义错误码;
+pub use 能力号定义::能力号;
+pub use 错误码定义::错误码;

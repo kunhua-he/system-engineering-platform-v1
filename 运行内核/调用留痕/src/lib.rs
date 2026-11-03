@@ -50,15 +50,15 @@
 
 pub use 留痕记录形状::{留痕, 调用类};
 
+#[path = "指纹.rs"]
+mod 指纹;
 #[path = "留痕记录形状.rs"]
 mod 留痕记录形状;
 #[path = "缓冲.rs"]
 mod 缓冲;
-#[path = "指纹.rs"]
-mod 指纹;
 
-pub use 缓冲::{丢弃策略, 留痕缓冲};
 pub use 指纹::槽表指纹;
+pub use 缓冲::{丢弃策略, 留痕缓冲};
 
 #[cfg(test)]
 #[path = "测试.rs"]

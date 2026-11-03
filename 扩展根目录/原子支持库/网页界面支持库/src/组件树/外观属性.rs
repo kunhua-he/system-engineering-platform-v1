@@ -5,13 +5,8 @@
 
 use serde_json::Value;
 
-#[path = "外观属性/控件样式.rs"]
-mod 控件样式;
-
-pub(crate) use 控件样式::控件样式文本;
-
-use crate::编号与码面::错误码;
 use crate::业务实现::{取对象文本, 转义网页文本};
+use crate::编号与码面::错误码;
 
 /// 尺寸类字段：数字当像素，字符串原样（"100%"、"auto"）。
 pub(crate) fn 取尺寸(节点: &Value, 字段名: &str) -> String {
@@ -163,6 +158,16 @@ pub(crate) fn 背景样式文本(节点: &Value) -> String {
     }
 }
 
+/// 字号取值：`字体大小` 与 `字号` 是同一含义的两个名字，互为回退。
+///
+/// 收敛口径（2026-11-02 组件收敛裁决）：同一份声明写哪个都生效，值域统一 1 至 200。
+pub(crate) fn 字号取值(节点: &Value) -> Option<f64> {
+    节点
+        .get("字体大小")
+        .and_then(|项| 项.as_f64())
+        .or_else(|| 节点.get("字号").and_then(|项| 项.as_f64()))
+}
+
 /// 外观属性白名单：数值字段（字段名，最小，最大）。
 const 数值外观字段: [(&str, f64, f64); 8] = [
     ("字体大小", 1.0, 200.0),
@@ -187,6 +192,14 @@ pub(crate) fn 校验外观属性(节点: &Value) -> Result<(), u32> {
         if let Some(取值项) = 节点.get(字段名) {
             let 数值 = 取值项.as_f64().ok_or(错误码::内容不合法)?;
             if !(最小值..=最大值).contains(&数值) {
+                return Err(错误码::内容不合法);
+            }
+        }
+    }
+    for 字号字段 in ["字体大小", "字号"] {
+        if let Some(取值项) = 节点.get(字号字段) {
+            let 数值 = 取值项.as_f64().ok_or(错误码::内容不合法)?;
+            if !(1.0..=200.0).contains(&数值) {
                 return Err(错误码::内容不合法);
             }
         }
@@ -219,7 +232,9 @@ pub(crate) fn 阴影样式文本(档位: &str) -> &'static str {
         "中" => "0 4px 12px rgba(0,0,0,.08)",
         "重" => "0 8px 24px rgba(0,0,0,.12)",
         "浮层" => "0 16px 40px rgba(0,0,0,.24),0 0 0 .5px rgba(0,0,0,.08)",
-        "窗口" => "0 28px 80px rgba(0,0,0,.36),0 8px 24px rgba(0,0,0,.18),0 0 0 .5px rgba(0,0,0,.2)",
+        "窗口" => {
+            "0 28px 80px rgba(0,0,0,.36),0 8px 24px rgba(0,0,0,.18),0 0 0 .5px rgba(0,0,0,.2)"
+        }
         _ => "",
     }
 }
@@ -236,16 +251,12 @@ pub(crate) fn 文字阴影样式文本(档位: &str) -> &'static str {
 /// 把校验过的外观属性拼进内联样式。
 pub(crate) fn 拼外观样式(节点: &Value) -> String {
     let mut 样式 = String::new();
-    for (字段名, 单位) in [
-        ("字体大小", "px"),
-        ("字重", ""),
-        ("行高", ""),
-        ("字距", "px"),
-        ("层", ""),
-    ] {
+    if let Some(字号) = 字号取值(节点) {
+        样式.push_str(&format!(";font-size:{字号}px"));
+    }
+    for (字段名, 单位) in [("字重", ""), ("行高", ""), ("字距", "px"), ("层", "")] {
         if let Some(数值) = 节点.get(字段名).and_then(|取值项| 取值项.as_f64()) {
             let 属性名 = match 字段名 {
-                "字体大小" => "font-size",
                 "字重" => "font-weight",
                 "行高" => "line-height",
                 "字距" => "letter-spacing",
@@ -255,8 +266,14 @@ pub(crate) fn 拼外观样式(节点: &Value) -> String {
         }
     }
     // 模糊与饱和合成一条 backdrop-filter：只看模糊、只看饱和、两样都给都能成立
-    let 模糊值 = 节点.get("模糊").and_then(|取值项| 取值项.as_f64()).unwrap_or(0.0);
-    let 饱和值 = 节点.get("饱和").and_then(|取值项| 取值项.as_f64()).unwrap_or(0.0);
+    let 模糊值 = 节点
+        .get("模糊")
+        .and_then(|取值项| 取值项.as_f64())
+        .unwrap_or(0.0);
+    let 饱和值 = 节点
+        .get("饱和")
+        .and_then(|取值项| 取值项.as_f64())
+        .unwrap_or(0.0);
     if 模糊值 > 0.0 || 饱和值 > 0.0 {
         let mut 滤镜 = String::new();
         if 模糊值 > 0.0 {
@@ -312,7 +329,10 @@ pub(super) fn 间距合法(文本: &str) -> bool {
             .trim_end_matches('%')
             .trim_end_matches("em")
             .trim_end_matches("rem");
-        !去单位.is_empty() && 去单位.chars().all(|字符| 字符.is_ascii_digit() || 字符 == '.')
+        !去单位.is_empty()
+            && 去单位
+                .chars()
+                .all(|字符| 字符.is_ascii_digit() || 字符 == '.')
     })
 }
 
@@ -364,10 +384,11 @@ pub(crate) fn 取形态变量(
 }
 
 /// 表格外观字段 → 容器变量。
-pub(crate) const 表格外观映射: [(&str, &str, 变量类型); 7] = [
+pub(crate) const 表格外观映射: [(&str, &str, 变量类型); 8] = [
     ("表头背景", "--hs-th-bg", 变量类型::颜色),
     ("表头文字颜色", "--hs-th-ink", 变量类型::颜色),
     ("单元格文字颜色", "--hs-td-ink", 变量类型::颜色),
+    ("单元格背景", "--hs-td-bg", 变量类型::颜色),
     ("边框颜色", "--hs-td-line", 变量类型::颜色),
     ("行悬停背景", "--hs-row-hover", 变量类型::颜色),
     ("字号", "--hs-table-font", 变量类型::像素),
@@ -396,7 +417,11 @@ pub(crate) const 气泡外观映射: [(&str, &str, 变量类型); 6] = [
 ];
 
 /// 可选中节点的公共属性：给了 `可选中` 才出 data-select，同片区由选中脚本保证单选。
-pub(crate) fn 选中属性文本(节点: &Value, 样式: &mut String, 状态: &mut crate::组件树::渲染状态) -> Result<String, u32> {
+pub(crate) fn 选中属性文本(
+    节点: &Value,
+    样式: &mut String,
+    状态: &mut crate::组件树::渲染状态,
+) -> Result<String, u32> {
     let 可选中 = 节点
         .get("可选中")
         .and_then(|开关项| 开关项.as_bool())
@@ -421,7 +446,10 @@ pub(crate) fn 选中属性文本(节点: &Value, 样式: &mut String, 状态: &m
 }
 
 /// 放大容器属性：`放大` 对象里的峰值与半径决定悬停放大曲线，脚本按它算邻域衰减。
-pub(crate) fn 放大属性文本(节点: &Value, 状态: &mut crate::组件树::渲染状态) -> Result<String, u32> {
+pub(crate) fn 放大属性文本(
+    节点: &Value,
+    状态: &mut crate::组件树::渲染状态,
+) -> Result<String, u32> {
     let 放大表 = match 节点.get("放大") {
         None | Some(Value::Null) => return Ok(String::new()),
         Some(Value::Object(表)) => 表.clone(),

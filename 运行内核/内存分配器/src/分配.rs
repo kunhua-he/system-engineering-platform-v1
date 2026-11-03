@@ -2,7 +2,7 @@
 //!
 //! 源出 `lib.rs`（拆件依据：`项目文档/开发规范/开发规范.md` 第六节「入口零实现」），**逐字搬家**。
 
-use std::alloc::{alloc_zeroed, dealloc, Layout};
+use std::alloc::{Layout, alloc_zeroed, dealloc};
 use std::collections::{HashMap, HashSet};
 
 use v1_contract::声明数据::{分配对齐, 单次分配上限};
@@ -22,7 +22,10 @@ pub struct 分配器 {
 
 impl 分配器 {
     pub fn 构造() -> Self {
-        Self { 活块: HashMap::new(), 已释放: HashSet::new() }
+        Self {
+            活块: HashMap::new(),
+            已释放: HashSet::new(),
+        }
     }
 
     /// 分配 `字节长度` 字节，返回地址。
@@ -35,12 +38,20 @@ impl 分配器 {
             return Err(分配错误::零长度);
         }
         if 字节长度 > 单次分配上限 {
-            return Err(分配错误::超上限 { 请求: 字节长度, 上限: 单次分配上限 });
+            return Err(分配错误::超上限 {
+                请求: 字节长度,
+                上限: 单次分配上限,
+            });
         }
         // 走到这里：1 <= 字节长度 <= u32::MAX，对齐固定 16。
         // 若目标平台的 usize 装不下（32 位下 size + align - 1 溢出），按超上限处理。
-        let 内存布局 = Layout::from_size_align(字节长度 as usize, 分配对齐 as usize)
-            .map_err(|_| 分配错误::超上限 { 请求: 字节长度, 上限: 单次分配上限 })?;
+        let 内存布局 =
+            Layout::from_size_align(字节长度 as usize, 分配对齐 as usize).map_err(|_| {
+                分配错误::超上限 {
+                    请求: 字节长度,
+                    上限: 单次分配上限,
+                }
+            })?;
         // SAFETY: 布局已校验且非零长度，alloc_zeroed 对合法布局是安全的。
         // 用 alloc_zeroed 而非 alloc：交出去的内存先清零，跨语言读到的不是垃圾，
         // 确定性优先（README 第二节「要求确定性」）。
@@ -75,7 +86,9 @@ impl 分配器 {
             });
         };
         // SAFETY: 长度与对齐来自本分配器成功的一次分配，布局必然合法。
-        let 内存布局 = unsafe { Layout::from_size_align_unchecked(槽字节长度 as usize, 分配对齐 as usize) };
+        let 内存布局 = unsafe {
+            Layout::from_size_align_unchecked(槽字节长度 as usize, 分配对齐 as usize)
+        };
         // SAFETY: 地址由本分配器交出、尚未释放（刚从活块账上取下），且按同一布局分配。
         unsafe { dealloc(块地址 as *mut u8, 内存布局) };
         self.已释放.insert(块地址);

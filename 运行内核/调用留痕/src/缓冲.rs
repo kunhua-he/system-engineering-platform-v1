@@ -2,9 +2,9 @@
 //!
 //! 裁决与五判据对比见 `项目文档/决策记录/2026-09-27_留痕形状装两个号.md`。
 
-use core::sync::atomic::{AtomicI32, AtomicU32, AtomicU64, AtomicU8, Ordering};
+use core::sync::atomic::{AtomicI32, AtomicU8, AtomicU32, AtomicU64, Ordering};
 
-use v1_contract::{能力号, 操作号, 资源号};
+use v1_contract::{操作号, 能力号, 资源号};
 
 use crate::留痕记录形状::{留痕, 调用类};
 

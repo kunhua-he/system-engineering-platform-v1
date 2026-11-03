@@ -45,7 +45,10 @@ pub struct 入口声明 {
 impl 入口声明 {
     /// 声明侧的形状：只说载体，不填路径。
     pub const fn 仅载体(载体类型: 载体类型) -> Self {
-        Self { 载体类型, 路径: None }
+        Self {
+            载体类型,
+            路径: None,
+        }
     }
 }
 

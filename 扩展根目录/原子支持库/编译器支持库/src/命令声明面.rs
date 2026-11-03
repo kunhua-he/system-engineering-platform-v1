@@ -10,9 +10,9 @@
 //!
 //! 参数表行序与 `能力声明/<编号>.json` 的 `参数表` **逐行对应**（有测试守着）。
 
+#[path = "命令声明面/判据落点.rs"]
+pub(crate) mod 判据落点;
 #[path = "命令声明面/参数表.rs"]
 pub(crate) mod 参数表;
 #[path = "命令声明面/命令表.rs"]
 pub(crate) mod 命令表;
-#[path = "命令声明面/判据落点.rs"]
-pub(crate) mod 判据落点;

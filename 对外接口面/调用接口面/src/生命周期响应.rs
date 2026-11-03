@@ -39,19 +39,19 @@
 //! | `装载回执.rs` | 重扫扩展根 · 多趟试装 · 装上/切换/已在/剔除 | [`装载`] |
 //! | `模块候选.rs` | 模块候选身份的 fail-closed 判读 | `模块候选身份` |
 
-#[path = "生命周期响应/就绪读数.rs"]
-mod 就绪读数;
 #[path = "生命周期响应/判定层级.rs"]
 mod 判定层级;
 #[path = "生命周期响应/卸载.rs"]
 mod 卸载;
-#[path = "生命周期响应/装载回执.rs"]
-mod 装载回执;
+#[path = "生命周期响应/就绪读数.rs"]
+mod 就绪读数;
 #[path = "生命周期响应/模块候选.rs"]
 mod 模块候选;
+#[path = "生命周期响应/装载回执.rs"]
+mod 装载回执;
 
-pub(crate) use 就绪读数::读数;
 #[cfg(unix)]
 pub(crate) use 卸载::卸载扩展;
+pub(crate) use 就绪读数::读数;
 #[cfg(unix)]
 pub(crate) use 装载回执::装载;

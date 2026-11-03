@@ -31,11 +31,11 @@
 
 use std::num::NonZeroU64;
 use std::os::unix::net::UnixStream;
-use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Mutex;
+use std::sync::atomic::{AtomicU64, Ordering};
 
-use v1_adapter::线协议::线协议会话;
 use v1_adapter::协议结果;
+use v1_adapter::线协议::线协议会话;
 use v1_contract::数据槽;
 
 use crate::入口绑定::{黑盒体, 黑盒结果};
@@ -113,12 +113,20 @@ impl 跨进程体 {
 
     /// 黑盒体这一层的失败只有这一个码：底座不认识它的内部。
     fn 报失败(&self, 操作号: u32) -> 黑盒结果 {
-        黑盒结果::失败(资源错误::资源执行失败 { 资源号: self.资源号, 操作号 })
+        黑盒结果::失败(资源错误::资源执行失败 {
+            资源号: self.资源号,
+            操作号,
+        })
     }
 }
 
 impl 黑盒体 for 跨进程体 {
-    fn 调用操作(&self, 操作号: u32, 输入槽表: &[数据槽], 输出槽表: &mut Vec<数据槽>) -> 黑盒结果 {
+    fn 调用操作(
+        &self,
+        操作号: u32,
+        输入槽表: &[数据槽],
+        输出槽表: &mut Vec<数据槽>,
+    ) -> 黑盒结果 {
         let 请求标识 = self.取请求标识();
         let mut 会话 = self.会话锁.lock().unwrap_or_else(|错误| 错误.into_inner());
         if 会话.发起调用(请求标识, 操作号, 输入槽表).is_err() {
@@ -155,7 +163,12 @@ impl 跨进程体 {
     ///    ★ 要真做多输出，得先由线协议扩成「槽表 + 数据区」——本件不复制一份协议。
     /// 3. **空槽不当值**：协议用一个空槽表示「无返回」，声明要 1 位时它不是那位值
     ///    （当值 push 会造出一个 `0` 号标签的假槽，上层判形状时才发现）。
-    fn 收下返回槽(&self, 操作号: u32, 返回槽: 数据槽, 输出槽表: &mut Vec<数据槽>) -> 黑盒结果 {
+    fn 收下返回槽(
+        &self,
+        操作号: u32,
+        返回槽: 数据槽,
+        输出槽表: &mut Vec<数据槽>,
+    ) -> 黑盒结果 {
         match self.输出位数() {
             // 未注入输出契约（旧调用方）：保持单槽原样搬运，一字不改。
             None => {

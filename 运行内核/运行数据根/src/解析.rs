@@ -51,7 +51,10 @@ pub const 覆盖变量名: &str = "V1_RUN_DATA_ROOT";
 /// - 覆盖非空 ⇒ 原样用它（**不再拼 [`默认目录名`]** —— 覆盖就是完整根，部署方说了算）；
 /// - 覆盖为空 / 缺 ⇒ 平台数据目录 + [`默认目录名`]；
 /// - 两条都拿不到 ⇒ [`解析失败::无位置`]。
-pub fn 解析运行数据根(解析环境: &解析环境, 目标平台: 目标平台) -> Result<PathBuf, 解析失败> {
+pub fn 解析运行数据根(
+    解析环境: &解析环境,
+    目标平台: 目标平台,
+) -> Result<PathBuf, 解析失败> {
     if let Some(环境覆盖值) = 解析环境.环境覆盖
         && !环境覆盖值.is_empty()
     {
@@ -71,10 +74,17 @@ fn 默认基目录(解析环境: &解析环境, 目标平台: 目标平台) -> O
         目标平台::MacOS => 解析环境
             .家目录
             .filter(|家目录| !家目录.is_empty())
-            .map(|家目录| PathBuf::from(家目录).join("Library").join("Application Support")),
+            .map(|家目录| {
+                PathBuf::from(家目录)
+                    .join("Library")
+                    .join("Application Support")
+            }),
         // Linux：`$XDG_DATA_HOME`，未设则按 XDG 规范退回 `~/.local/share`
         目标平台::Linux => {
-            if let Some(数据根配置) = 解析环境.xdg数据目录.filter(|数据根目录| !数据根目录.is_empty()) {
+            if let Some(数据根配置) = 解析环境
+                .xdg数据目录
+                .filter(|数据根目录| !数据根目录.is_empty())
+            {
                 return Some(PathBuf::from(数据根配置));
             }
             解析环境

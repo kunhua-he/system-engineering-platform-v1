@@ -9,7 +9,7 @@
 //! 只在与它对得上的地方（总字符数）做一次交叉校验。
 
 use super::夹具::判切分六条不变量;
-use crate::测试夹具::{读语料, 语料文件};
+use crate::测试夹具::{语料文件, 读语料};
 use crate::词法::切分::切记号;
 use crate::词法::字符集::是否兜底;
 use crate::语言面::记号种类;
@@ -28,7 +28,8 @@ fn 语料_53份_全部成功且六条不变量逐条过() {
     let mut 记号总数 = 0usize;
     for 路径 in &文件s {
         let 原文 = 读语料(路径);
-        let 输出流 = 切记号(&原文).unwrap_or_else(|错误| panic!("{}：切不动，{错误:?}", 路径.display()));
+        let 输出流 =
+            切记号(&原文).unwrap_or_else(|错误| panic!("{}：切不动，{错误:?}", 路径.display()));
         let 六条结果 = 判切分六条不变量(&输出流);
         for (序号, 是否通过) in 六条结果.iter().enumerate() {
             assert!(是否通过, "{}：J{} 没过", 路径.display(), 序号 + 1);

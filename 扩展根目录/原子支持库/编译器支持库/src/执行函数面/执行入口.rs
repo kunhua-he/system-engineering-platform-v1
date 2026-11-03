@@ -12,18 +12,22 @@
 
 use v1_contract::数据槽;
 
-use crate::边界编码::{结构编码, 原生路编码, 语义编码};
 use crate::编号与码面::语义错误码;
-use crate::能力包件::{包件错误, 接口段编码};
 use crate::能力包件::装包::装包 as 装包件;
-use crate::{容器, 诊断, 形状错误码, 词法, 语法, 语义, 错误码};
+use crate::能力包件::{包件错误, 接口段编码};
+use crate::边界编码::{原生路编码, 结构编码, 语义编码};
+use crate::{容器, 形状错误码, 诊断, 词法, 语义, 语法, 错误码};
 
-use super::槽读写::{取字节集, 取文本, 写文本, 写字节集, 写错误槽};
+use super::槽读写::{写字节集, 写文本, 写错误槽, 取字节集, 取文本};
 
 /// 1101 词法分析：程序文本（**文本槽**，类型标签 4）→ 记号流边界编码（字节集）。
 ///
 /// 入参出参的类型标签逐字取自 `能力声明/1101.json`（参数表行序即契约 · 返回类型 5）。
-pub(crate) unsafe extern "C-unwind" fn 词法分析执行(返回槽: *mut 数据槽, 参数个数: u32, 参数表: *const 数据槽) {
+pub(crate) unsafe extern "C-unwind" fn 词法分析执行(
+    返回槽: *mut 数据槽,
+    参数个数: u32,
+    参数表: *const 数据槽,
+) {
     if 返回槽.is_null() {
         return;
     }
@@ -51,7 +55,11 @@ pub(crate) unsafe extern "C-unwind" fn 词法分析执行(返回槽: *mut 数据
 /// 入参出参的类型标签逐字取自 `能力声明/1102.json`：参数表是**程序文本**（不是记号流，
 /// 与 `说明/设计说明.md` §二 写的「记号流 → 语法树」不同 —— 那是设计稿，声明是契约）。
 /// 故本函数把两步串起来：`切记号` → `建树`。两个入口都是既有实现，这里只做接线。
-pub(crate) unsafe extern "C-unwind" fn 语法分析执行(返回槽: *mut 数据槽, 参数个数: u32, 参数表: *const 数据槽) {
+pub(crate) unsafe extern "C-unwind" fn 语法分析执行(
+    返回槽: *mut 数据槽,
+    参数个数: u32,
+    参数表: *const 数据槽,
+) {
     if 返回槽.is_null() {
         return;
     }
@@ -87,7 +95,11 @@ pub(crate) unsafe extern "C-unwind" fn 语法分析执行(返回槽: *mut 数据
 ///
 /// 失败三档：入参槽不合契约 → `1135`；三张表的载荷解不出来 / 号装不下 → `1134`；
 /// 解不出的名字 → `1136`（第一条）。都是结构化码，不 panic、不返回字符串。
-pub(crate) unsafe extern "C-unwind" fn 语义分析执行(返回槽: *mut 数据槽, 参数个数: u32, 参数表: *const 数据槽) {
+pub(crate) unsafe extern "C-unwind" fn 语义分析执行(
+    返回槽: *mut 数据槽,
+    参数个数: u32,
+    参数表: *const 数据槽,
+) {
     if 返回槽.is_null() {
         return;
     }
@@ -118,7 +130,8 @@ pub(crate) unsafe extern "C-unwind" fn 语义分析执行(返回槽: *mut 数据
     };
     // SAFETY: 返回槽 可写。
     let 错误码 = match 词法::切记号(&原文).and_then(|输出流| 语法::建树(&输出流)) {
-        Ok(语法树) => match 语义::语义分析(&语法树, &命令表, &常量表, &类型表) {
+        Ok(语法树) => match 语义::语义分析(&语法树, &命令表, &常量表, &类型表)
+        {
             Ok(带号结构) => {
                 // SAFETY: 返回槽 可写。
                 unsafe { 写字节集(返回槽, 语义编码::编码带号结构(&带号结构)) };
@@ -160,7 +173,11 @@ pub(crate) unsafe extern "C-unwind" fn 语义分析执行(返回槽: *mut 数据
 /// **如实登记一处缺口**（与 1102 / 1103 同一处，不在本腿所有权内）：上游链能报出的 `1137`
 /// （引号不配对）与 `1108–1133`（记号流 / 语法树形状）不在 `1106.json` 的 `可抛错误码` 里 ——
 /// 1103 也是这个形状（`能力声明/1103.json` 只列 `1134`/`1135`/`1136`），补法见 `命令表.rs` 的同一段注。
-pub(crate) unsafe extern "C-unwind" fn 编译执行(返回槽: *mut 数据槽, 参数个数: u32, 参数表: *const 数据槽) {
+pub(crate) unsafe extern "C-unwind" fn 编译执行(
+    返回槽: *mut 数据槽,
+    参数个数: u32,
+    参数表: *const 数据槽,
+) {
     if 返回槽.is_null() {
         return;
     }
@@ -200,7 +217,8 @@ pub(crate) unsafe extern "C-unwind" fn 编译执行(返回槽: *mut 数据槽, �
     };
     // 上游链：与 `语义分析执行` 逐字同路（1101 → 1102 → 1103）。带号结构不进包（见上）。
     let 错误码 = match 词法::切记号(&原文).and_then(|输出流| 语法::建树(&输出流)) {
-        Ok(语法树) => match 语义::语义分析(&语法树, &命令表, &常量表, &类型表) {
+        Ok(语法树) => match 语义::语义分析(&语法树, &命令表, &常量表, &类型表)
+        {
             Ok(_带号结构) => match 装包件(&说明, &能力码) {
                 Ok(包件字节) => {
                     // SAFETY: 返回槽 可写。
@@ -209,7 +227,9 @@ pub(crate) unsafe extern "C-unwind" fn 编译执行(返回槽: *mut 数据槽, �
                 }
                 // 装包失败：段头写不出（段名是常量、非空且远短于 27 字节 ⇒ 实际不可达）
                 // 或往返不一致。两者都归本库的边界编码码（不另开码 —— 段位 9 裁决 §五）。
-                Err(包件错误::生成失败(_)) | Err(包件错误::往返不一致) => 错误码::结构编码非法,
+                Err(包件错误::生成失败(_)) | Err(包件错误::往返不一致) => {
+                    错误码::结构编码非法
+                }
             },
             Err(错误) => 语义错误码(&错误),
         },
@@ -232,7 +252,11 @@ pub(crate) unsafe extern "C-unwind" fn 编译执行(返回槽: *mut 数据槽, �
 /// 本函数**不写错误码**：文本槽正常（含空文本）必写非空字节集（全过 = 1 字节标签 0，
 /// 有失败 = 标签 1 + 诊断）；入参槽不合契约（不是文本槽 / 位次越界）⇒ 写**空字节集** =
 /// 「没跑」，与「全过」的 1 字节标记可区分（两条测试钉住这条口径）。
-pub(crate) unsafe extern "C-unwind" fn 诊断执行(返回槽: *mut 数据槽, 参数个数: u32, 参数表: *const 数据槽) {
+pub(crate) unsafe extern "C-unwind" fn 诊断执行(
+    返回槽: *mut 数据槽,
+    参数个数: u32,
+    参数表: *const 数据槽,
+) {
     if 返回槽.is_null() {
         return;
     }
@@ -251,7 +275,11 @@ pub(crate) unsafe extern "C-unwind" fn 诊断执行(返回槽: *mut 数据槽, �
 }
 
 /// 1105 反解容器：`.e` 容器字节 → 容器结构边界编码。
-pub(crate) unsafe extern "C-unwind" fn 反解容器执行(返回槽: *mut 数据槽, 参数个数: u32, 参数表: *const 数据槽) {
+pub(crate) unsafe extern "C-unwind" fn 反解容器执行(
+    返回槽: *mut 数据槽,
+    参数个数: u32,
+    参数表: *const 数据槽,
+) {
     if 返回槽.is_null() {
         return;
     }
@@ -278,7 +306,11 @@ pub(crate) unsafe extern "C-unwind" fn 反解容器执行(返回槽: *mut 数据
 }
 
 /// 1104 生成容器：容器结构边界编码 → `.e` 容器字节。
-pub(crate) unsafe extern "C-unwind" fn 生成容器执行(返回槽: *mut 数据槽, 参数个数: u32, 参数表: *const 数据槽) {
+pub(crate) unsafe extern "C-unwind" fn 生成容器执行(
+    返回槽: *mut 数据槽,
+    参数个数: u32,
+    参数表: *const 数据槽,
+) {
     if 返回槽.is_null() {
         return;
     }
@@ -314,7 +346,11 @@ pub(crate) unsafe extern "C-unwind" fn 生成容器执行(返回槽: *mut 数据
 /// 只把入参文本原样写回返回槽（**引用槽 + 所有权交出**，与 `写字节集` 同一条口径）。
 ///
 /// 可抛错误码只有一条 `1135 参数槽不符`：入参槽不是文本（类型标签 4）/ 位次越界。
-pub(crate) unsafe extern "C-unwind" fn 回显文本执行(返回槽: *mut 数据槽, 参数个数: u32, 参数表: *const 数据槽) {
+pub(crate) unsafe extern "C-unwind" fn 回显文本执行(
+    返回槽: *mut 数据槽,
+    参数个数: u32,
+    参数表: *const 数据槽,
+) {
     if 返回槽.is_null() {
         return;
     }

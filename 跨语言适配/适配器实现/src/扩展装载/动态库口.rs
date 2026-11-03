@@ -29,5 +29,7 @@ pub(crate) fn 最近装载错误() -> String {
         return String::from("dlopen/dlsym 未给出原因");
     }
     // SAFETY: 非空 ⇒ 按 POSIX 是 NUL 结尾可读串。
-    unsafe { CStr::from_ptr(指针) }.to_string_lossy().into_owned()
+    unsafe { CStr::from_ptr(指针) }
+        .to_string_lossy()
+        .into_owned()
 }

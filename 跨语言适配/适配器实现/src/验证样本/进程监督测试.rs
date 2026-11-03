@@ -25,12 +25,20 @@ fn 正常退出回收后台后代并关闭输出通道() {
         let 输出文本 = String::from_utf8(回执.标准输出.clone()).unwrap();
         let 进程编号: Vec<&str> = 输出文本.split_whitespace().collect();
         assert_eq!(进程编号.len(), 2);
-        let 状态输出 = Command::new("/bin/ps").args(["-o", "stat=", "-p", 进程编号[1]]).output().unwrap();
+        let 状态输出 = Command::new("/bin/ps")
+            .args(["-o", "stat=", "-p", 进程编号[1]])
+            .output()
+            .unwrap();
         let 状态文本 = String::from_utf8_lossy(&状态输出.stdout).trim().to_owned();
         if !状态文本.is_empty() && !状态文本.starts_with('Z') {
-            let _ = Command::new("/bin/kill").args(["-KILL", 进程编号[1]]).status();
+            let _ = Command::new("/bin/kill")
+                .args(["-KILL", 进程编号[1]])
+                .status();
         }
-        assert!(状态文本.is_empty() || 状态文本.starts_with('Z'), "后代仍存活：{状态文本}");
+        assert!(
+            状态文本.is_empty() || 状态文本.starts_with('Z'),
+            "后代仍存活：{状态文本}"
+        );
         assert_eq!(回执.退出状态.unwrap().code(), Some(0));
         assert_eq!(回执.故障, None);
         assert!(回执.进程组已回收);

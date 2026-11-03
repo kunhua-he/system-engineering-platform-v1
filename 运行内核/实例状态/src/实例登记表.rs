@@ -11,7 +11,7 @@
 
 use std::collections::HashMap;
 
-use crate::实例句柄形状::{实例错误, 实例句柄};
+use crate::实例句柄形状::{实例句柄, 实例错误};
 
 /// 一条实例记录：令牌 + 是否已释放。
 ///
@@ -29,14 +29,22 @@ pub struct 实例表 {
 
 impl 实例表 {
     pub fn 构造() -> Self {
-        Self { 实例台账: HashMap::new() }
+        Self {
+            实例台账: HashMap::new(),
+        }
     }
 
     /// 开一个实例，返回句柄。
     pub fn 开启实例(&mut self) -> 实例句柄 {
         let 令牌 = Box::new(0u8);
         let 句柄值 = &*令牌 as *const u8 as u64;
-        self.实例台账.insert(句柄值, 实例记录 { _令牌: 令牌, 已释放: false });
+        self.实例台账.insert(
+            句柄值,
+            实例记录 {
+                _令牌: 令牌,
+                已释放: false,
+            },
+        );
         实例句柄(句柄值)
     }
 

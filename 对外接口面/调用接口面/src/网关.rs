@@ -31,18 +31,18 @@
 //! ⇒ 网关能共享同一个适配器。网关这边**一条 `unsafe` 都没有**：`服务` 自动 `Sync`，
 //! 因为契约身份是标量快照，其余字段是原子 / `PathBuf`。每个连接仍设读写超时（`读超时毫秒`）。
 
+use crate::分发::{处理请求, 拒绝状态码, 请求环境, 造应答};
 use crate::协议解析;
-use crate::分发::{造应答, 处理请求, 请求环境, 拒绝状态码};
-use crate::报文读写::{报文, 读报文, 写响应};
+use crate::契约级常量::{工具根默认, 接口端口, 监听地址, 静态根};
+use crate::报文读写::{写响应, 报文, 读报文};
 use crate::端点路由;
-use crate::契约级常量::{监听地址, 接口端口, 工具根默认, 静态根};
 use std::io::Read;
 use std::net::{TcpListener, TcpStream};
 use std::path::PathBuf;
-use std::sync::{Arc, Mutex, RwLock};
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
+use std::sync::{Arc, Mutex, RwLock};
 use std::time::Duration;
-use v1_adapter::{版本三元组, 平台信息, 适配器, 丢弃策略, 留痕容量};
+use v1_adapter::{丢弃策略, 平台信息, 版本三元组, 留痕容量, 适配器};
 use v1_resource_gateway::资源网关口;
 
 // ── 子模块：注入与读数（`服务` 上「部署事实进 / 读数出」那一组口）──
@@ -139,7 +139,9 @@ impl 服务 {
     /// 装载声明根 → 绑定 `127.0.0.1:端口`。静态托管根取 [`静态根`]（相对进程工作目录）。
     ///
     /// `端口` 传 `0` 让 OS 分配（测试与多实例用；实际端口由 [`服务::端口`] 报出）。
-    pub fn 绑定端口(声明根: &[&'static 平台信息], 监听端口: u16) -> Result<Self, 启动失败> {
+    pub fn 绑定端口(
+        声明根: &[&'static 平台信息], 监听端口: u16
+    ) -> Result<Self, 启动失败> {
         Self::绑定并托管(声明根, 监听端口, PathBuf::from(静态根))
     }
 
@@ -224,14 +226,15 @@ impl 服务 {
                 let 排空截止 = std::time::Instant::now() + Duration::from_millis(200);
                 let mut 排空字节数 = 0usize;
                 let mut 排空缓冲 = [0u8; 4096];
-                while std::time::Instant::now() < 排空截止 && 排空字节数 < 4 * 1024 * 1024 {
+                while std::time::Instant::now() < 排空截止 && 排空字节数 < 4 * 1024 * 1024
+                {
                     match 输出流.read(&mut 排空缓冲) {
                         Ok(0) | Err(_) => break,
                         Ok(排空长度) => 排空字节数 += 排空长度,
                     }
                 }
                 return Ok(());
-            },
+            }
         };
         写响应(&mut 输出流, &造应答)
     }
@@ -322,7 +325,10 @@ impl 服务 {
                 Err(错误) => {
                     return 造应答::协议错误(
                         400,
-                        &format!("请求体不是合法 JSON：{}（第 {} 字节）", 错误.说明文字, 错误.出错位置),
+                        &format!(
+                            "请求体不是合法 JSON：{}（第 {} 字节）",
+                            错误.说明文字, 错误.出错位置
+                        ),
                     );
                 }
             }
@@ -361,7 +367,11 @@ impl 服务 {
             }
         }
         // 锁内取执行引用：克隆 `Arc`（路由快照），随即释放读锁。
-        let 执行引用 = self.适配器.read().unwrap_or_else(|中毒| 中毒.into_inner()).clone();
+        let 执行引用 = self
+            .适配器
+            .read()
+            .unwrap_or_else(|中毒| 中毒.into_inner())
+            .clone();
         // 资源网关口同样的快照（锁内取引用、锁外调，长活不占锁）。
         let 资源关口引用 = self
             .资源关口

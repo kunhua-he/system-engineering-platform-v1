@@ -12,7 +12,9 @@ const 轮询间隔: Duration = Duration::from_millis(2);
 unsafe extern "C" {
     fn kill(进程组号: i32, 信号编号: i32) -> i32;
     #[cfg(all(target_os = "macos", target_pointer_width = "64"))]
-    fn waitid(身份种类: i32, 进程标识: u32, 退出记录: *mut 退出观测, 观察选项: i32) -> i32;
+    fn waitid(
+        身份种类: i32, 进程标识: u32, 退出记录: *mut 退出观测, 观察选项: i32
+    ) -> i32;
 }
 
 #[cfg(all(target_os = "macos", target_pointer_width = "64"))]
@@ -35,13 +37,18 @@ fn 观察进程退出(进程标识: u32) -> io::Result<bool> {
     {
         let mut 退出记录: 退出观测 = unsafe { std::mem::zeroed() };
         let 观察结果 = unsafe { waitid(1, 进程标识, &mut 退出记录, 0x01 | 0x04 | 0x20) };
-        if 观察结果 < 0 { return Err(io::Error::last_os_error()); }
+        if 观察结果 < 0 {
+            return Err(io::Error::last_os_error());
+        }
         Ok(退出记录.进程编号 != 0)
     }
     #[cfg(not(all(target_os = "macos", target_pointer_width = "64")))]
     {
         let _ = 进程标识;
-        Err(io::Error::new(io::ErrorKind::Unsupported, "当前只验收macOS64位退出观测"))
+        Err(io::Error::new(
+            io::ErrorKind::Unsupported,
+            "当前只验收macOS64位退出观测",
+        ))
     }
 }
 
@@ -83,17 +90,27 @@ impl 输出收集 {
         let (读取通道, 写入通道) = UnixStream::pair()?;
         读取通道.set_nonblocking(true)?;
         Ok((
-            Self { 通信通道: 读取通道, 保留字节: Vec::new(), 丢弃字节: 0, 通道已结束: false },
+            Self {
+                通信通道: 读取通道,
+                保留字节: Vec::new(),
+                丢弃字节: 0,
+                通道已结束: false,
+            },
             Stdio::from(OwnedFd::from(写入通道)),
         ))
     }
 
     fn 排空当前(&mut self) -> io::Result<()> {
-        if self.通道已结束 { return Ok(()); }
+        if self.通道已结束 {
+            return Ok(());
+        }
         let mut 读取缓冲 = [0u8; 8192];
         for _ in 0..16 {
             match self.通信通道.read(&mut 读取缓冲) {
-                Ok(0) => { self.通道已结束 = true; break; }
+                Ok(0) => {
+                    self.通道已结束 = true;
+                    break;
+                }
                 Ok(读取长度) => {
                     let 保留长度 = 读取长度.min(输出保留上限 - self.保留字节.len());
                     self.保留字节.extend_from_slice(&读取缓冲[..保留长度]);
@@ -110,17 +127,28 @@ impl 输出收集 {
 
 pub fn 监督执行(执行命令: &mut Command, 截止时间: Instant) -> io::Result<监督回执> {
     if !cfg!(all(target_os = "macos", target_pointer_width = "64")) {
-        return Err(io::Error::new(io::ErrorKind::Unsupported, "当前监督仅验收macOS64位"));
+        return Err(io::Error::new(
+            io::ErrorKind::Unsupported,
+            "当前监督仅验收macOS64位",
+        ));
     }
     let 开始时间 = Instant::now();
-    if 截止时间 <= 开始时间 || 截止时间.duration_since(开始时间) > Duration::from_secs(5) {
-        return Err(io::Error::new(io::ErrorKind::InvalidInput, "截止时间须在剩余五秒预算内"));
+    if 截止时间 <= 开始时间 || 截止时间.duration_since(开始时间) > Duration::from_secs(5)
+    {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            "截止时间须在剩余五秒预算内",
+        ));
     }
     let 回收预留 = 回收预算.min(截止时间.duration_since(开始时间) / 2);
     let 执行截止 = 截止时间 - 回收预留;
     let (mut 输出收集器, 输出写口) = 输出收集::创建通道()?;
     let (mut 错误收集器, 错误写口) = 输出收集::创建通道()?;
-    执行命令.stdin(Stdio::null()).stdout(输出写口).stderr(错误写口).process_group(0);
+    执行命令
+        .stdin(Stdio::null())
+        .stdout(输出写口)
+        .stderr(错误写口)
+        .process_group(0);
     let mut 能力进程 = 执行命令.spawn()?;
     执行命令.stdout(Stdio::null()).stderr(Stdio::null());
     let 进程组号 = i32::try_from(能力进程.id()).map_err(io::Error::other)?;
@@ -163,12 +191,15 @@ pub fn 监督执行(执行命令: &mut Command, 截止时间: Instant) -> io::Re
         if 退出状态.is_none() {
             match 能力进程.try_wait() {
                 Ok(Some(进程结局)) => 退出状态 = Some(进程结局),
-                Ok(None) => {},
+                Ok(None) => {}
                 Err(_) => break,
             }
         }
-        if 退出状态.is_some() && 输出收集器.通道已结束 && 错误收集器.通道已结束
-            && 进程组已消失(进程组号) {
+        if 退出状态.is_some()
+            && 输出收集器.通道已结束
+            && 错误收集器.通道已结束
+            && 进程组已消失(进程组号)
+        {
             进程组已回收 = true;
             break;
         }
@@ -182,7 +213,11 @@ pub fn 监督执行(执行命令: &mut Command, 截止时间: Instant) -> io::Re
     if 故障.is_none() && (输出收集器.丢弃字节 > 0 || 错误收集器.丢弃字节 > 0) {
         故障 = Some(监督故障::输出超量);
     }
-    let 待回收进程 = if 退出状态.is_some() { None } else { Some(能力进程) };
+    let 待回收进程 = if 退出状态.is_some() {
+        None
+    } else {
+        Some(能力进程)
+    };
     Ok(监督回执 {
         退出状态,
         标准输出: 输出收集器.保留字节,

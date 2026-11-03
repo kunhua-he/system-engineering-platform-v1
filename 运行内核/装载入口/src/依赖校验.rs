@@ -12,7 +12,7 @@
 
 use std::ffi::CString;
 
-use crate::读数::{标识串字节数, 是合法标识串, 读串};
+use crate::读数::{是合法标识串, 标识串字节数, 读串};
 use v1_contract::{已载入台账, 平台信息, 版本要求};
 
 /// 依赖清单的项数上限（防呆：超过就当声明不自洽）。
@@ -32,7 +32,9 @@ const 依赖清单上限: usize = 256;
 /// 不过一律报 `载入错误::依赖缺失`（**不引新码**）：对调用方而言「依赖不在」与
 /// 「依赖在但版本不够」是同一条出路 —— 换一份能用的依赖，或把那一份升上去。
 /// 版本够不够比的是 `版本三元组::满足`（提供方拿要求当门槛）。
-pub(crate) fn 依赖清单合法(声明: &平台信息, 自身: &[u8], 台账: &dyn 已载入台账) -> bool {
+pub(crate) fn 依赖清单合法(
+    声明: &平台信息, 自身: &[u8], 台账: &dyn 已载入台账
+) -> bool {
     let 表项数 = 声明.依赖清单.表项数;
     if 表项数 == 0 {
         // 空清单 = 「不依赖任何东西」；此时要求表也必须空（项数相等由建表与下面这一句一起守）。
@@ -45,8 +47,11 @@ pub(crate) fn 依赖清单合法(声明: &平台信息, 自身: &[u8], 台账: &
         return false;
     }
     // SAFETY: 项数 > 0 且两张表的项表都非空（上面已挡），长度 = 项数。
-    let 依赖项表 = unsafe { core::slice::from_raw_parts(声明.依赖清单.项表, 表项数 as usize) };
-    let 版本要求表 = unsafe { core::slice::from_raw_parts(声明.依赖版本要求.项表, 表项数 as usize) };
+    let 依赖项表 =
+        unsafe { core::slice::from_raw_parts(声明.依赖清单.项表, 表项数 as usize) };
+    let 版本要求表 = unsafe {
+        core::slice::from_raw_parts(声明.依赖版本要求.项表, 表项数 as usize)
+    };
     依赖项表合法(自身, 依赖项表, 版本要求表, 台账)
 }
 
@@ -63,7 +68,8 @@ pub fn 依赖清单合法文本(
     依赖版本要求: &[版本要求],
     台账: &dyn 已载入台账,
 ) -> bool {
-    if !是合法标识串(自身标识串.as_bytes()) || 依赖清单.len() != 依赖版本要求.len() {
+    if !是合法标识串(自身标识串.as_bytes()) || 依赖清单.len() != 依赖版本要求.len()
+    {
         return false;
     }
     if 依赖清单.is_empty() {
@@ -82,8 +88,10 @@ pub fn 依赖清单合法文本(
         };
         依赖串表.push(依赖串);
     }
-    let 项表: Vec<*const u8> =
-        依赖串表.iter().map(|依赖串| 依赖串.as_ptr().cast::<u8>()).collect();
+    let 项表: Vec<*const u8> = 依赖串表
+        .iter()
+        .map(|依赖串| 依赖串.as_ptr().cast::<u8>())
+        .collect();
     依赖项表合法(自身标识串.as_bytes(), &项表, 依赖版本要求, 台账)
 }
 

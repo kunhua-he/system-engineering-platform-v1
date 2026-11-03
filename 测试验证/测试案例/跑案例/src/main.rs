@@ -27,22 +27,22 @@
 // 与 `扩展根目录/原子支持库/编译器支持库` 同一处置（那里也是 `#![allow(non_snake_case)]`）。
 #![allow(non_snake_case)]
 
+#[path = "判定.rs"]
+mod 判定;
+#[path = "回执.rs"]
+mod 回执;
 #[path = "最小JSON.rs"]
 mod 最小JSON;
 #[path = "案例.rs"]
 mod 案例;
-#[path = "错误码.rs"]
-mod 错误码;
-#[path = "回执.rs"]
-mod 回执;
 #[path = "装载声明.rs"]
 mod 装载声明;
 #[path = "观测.rs"]
 mod 观测;
-#[path = "判定.rs"]
-mod 判定;
 #[path = "跑案例.rs"]
 mod 跑案例;
+#[path = "错误码.rs"]
+mod 错误码;
 
 #[path = "运行定位.rs"]
 mod 运行定位;
@@ -50,4 +50,3 @@ mod 运行定位;
 fn main() {
     std::process::exit(跑案例::跑案例入口());
 }
-

@@ -15,14 +15,11 @@
 //! | [`声明自洽`](测试用例/声明自洽.rs) | 声明 ↔ 实现不漂的证据 · 导出符号形状 |
 
 #[cfg(test)]
+#[path = "测试用例/声明自洽.rs"]
+mod 声明自洽;
+#[cfg(test)]
 #[path = "测试用例/夹具.rs"]
 pub(crate) mod 夹具;
-#[cfg(test)]
-#[path = "测试用例/解码.rs"]
-pub(crate) mod 解码;
-#[cfg(test)]
-#[path = "测试用例/最小JSON.rs"]
-pub(crate) mod 最小JSON;
 #[cfg(test)]
 #[path = "测试用例/契约形状_互操作.rs"]
 mod 契约形状_互操作;
@@ -30,14 +27,17 @@ mod 契约形状_互操作;
 #[path = "测试用例/契约形状_原生路.rs"]
 mod 契约形状_原生路;
 #[cfg(test)]
-#[path = "测试用例/契约形状_语义.rs"]
-mod 契约形状_语义;
-#[cfg(test)]
 #[path = "测试用例/契约形状_诊断.rs"]
 mod 契约形状_诊断;
 #[cfg(test)]
-#[path = "测试用例/声明自洽.rs"]
-mod 声明自洽;
+#[path = "测试用例/契约形状_语义.rs"]
+mod 契约形状_语义;
+#[cfg(test)]
+#[path = "测试用例/最小JSON.rs"]
+pub(crate) mod 最小JSON;
+#[cfg(test)]
+#[path = "测试用例/解码.rs"]
+pub(crate) mod 解码;
 #[cfg(test)]
 #[path = "测试用例/长活原语考题.rs"]
 mod 长活原语考题;

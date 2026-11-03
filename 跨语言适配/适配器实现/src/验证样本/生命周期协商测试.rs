@@ -14,7 +14,7 @@
 use core::sync::atomic::{AtomicUsize, Ordering};
 
 use super::*;
-use v1_contract::{号段, 表段, 版本三元组, 版本要求, 执行函数};
+use v1_contract::{号段, 执行函数, 版本三元组, 版本要求, 表段};
 
 /// 扩展标识串（32 位十六进制 + NUL；与底座身份不同）。
 static 扩展标识串: &[u8] = b"a1b2c3d4e5f60718293a4b5c6d7e8f90\0";
@@ -31,10 +31,16 @@ static 在飞引用计数: AtomicUsize = AtomicUsize::new(0);
 static 收到通知数: AtomicUsize = AtomicUsize::new(0);
 
 /// 「按指针」那条测试的通知函数：`2001 卸载` / `2003 延迟释放` 时，若还有在飞引用 ⇒ 回 `2015` 拒绝。
-unsafe extern "C" fn 扩展通知(收到通知号: v1_contract::通知号, _参数一: usize, _参数二: usize) -> isize {
+unsafe extern "C" fn 扩展通知(
+    收到通知号: v1_contract::通知号,
+    _参数一: usize,
+    _参数二: usize,
+) -> isize {
     收到通知数.fetch_add(1, Ordering::SeqCst);
-    if matches!(收到通知号, 生命周期通知::卸载扩展 | 生命周期通知::延迟释放应答)
-        && 在飞引用计数.load(Ordering::SeqCst) == 0
+    if matches!(
+        收到通知号,
+        生命周期通知::卸载扩展 | 生命周期通知::延迟释放应答
+    ) && 在飞引用计数.load(Ordering::SeqCst) == 0
     {
         通知返回::延迟释放
     } else {
@@ -46,27 +52,38 @@ unsafe extern "C" fn 扩展通知(收到通知号: v1_contract::通知号, _参�
 ///
 /// 两条测试各用**自身的通知函数**（故各用自身的 static）⇒ 不共享可变全局，可并行跑。
 /// 此前两条共用一个 `static 在飞引用` ⇒ 并行时互相污染，谁先 store 谁说话，红在谁身上随机。
-unsafe extern "C" fn 扩展通知放行(_通知号: v1_contract::通知号, _参数一: usize, _参数二: usize) -> isize {
+unsafe extern "C" fn 扩展通知放行(
+    _通知号: v1_contract::通知号,
+    _参数一: usize,
+    _参数二: usize,
+) -> isize {
     通知返回::成功
 }
 
 /// 演示扩展的执行函数（零参，回空）。
-unsafe extern "C-unwind" fn 演示执行(_返回槽: *mut 数据槽, _参数个数: u32, _参数表: *const 数据槽) {}
+unsafe extern "C-unwind" fn 演示执行(
+    _返回槽: *mut 数据槽,
+    _参数个数: u32,
+    _参数表: *const 数据槽,
+) {
+}
 
 /// 造一份演示扩展声明：能力 1xxx + **申报生命周期通知段 2000–2999** + 带给定的通知函数。
+#[rustfmt::skip]
 fn 造生命周期扩展(通知: unsafe extern "C" fn(v1_contract::通知号, usize, usize) -> isize) -> &'static 平台信息 {
-    let 命令表: &'static [v1_registry::命令信息] = Box::leak(Box::new([v1_registry::命令信息 {
-        名称: c"演示命令".as_ptr().cast::<u8>(),
-        说明: c"演示扩展自用。".as_ptr().cast::<u8>(),
-        类别号: 0,
-        状态位: 0,
-        返回类型: v1_contract::类型标签::构造(0),
-        用户级别: 0,
-        参数个数: 0,
-        参数表: core::ptr::null(),
-        编号: v1_contract::能力号::构造(1000),
-        可抛错误码: 表段::空实例(),
-    }]));
+    let 命令表: &'static [v1_registry::命令信息] =
+        Box::leak(Box::new([v1_registry::命令信息 {
+            名称: c"演示命令".as_ptr().cast::<u8>(),
+            说明: c"演示扩展自用。".as_ptr().cast::<u8>(),
+            类别号: 0,
+            状态位: 0,
+            返回类型: v1_contract::类型标签::构造(0),
+            用户级别: 0,
+            参数个数: 0,
+            参数表: core::ptr::null(),
+            编号: v1_contract::能力号::构造(1000),
+            可抛错误码: 表段::空实例(),
+        }]));
     let 执行函数表: &'static [执行函数] = Box::leak(Box::new([演示执行 as 执行函数]));
     Box::leak(Box::new(平台信息 {
         声明格式号: v1_contract::声明格式号,
@@ -77,7 +94,9 @@ fn 造生命周期扩展(通知: unsafe extern "C" fn(v1_contract::通知号, us
         要求宿主版本: 版本要求::构造(1, 0),
         要求内核版本: 版本要求::构造(1, 0),
         名称: c"生命周期演示扩展".as_ptr().cast::<u8>(),
-        说明: c"只演示生命周期通知，不参与平台语义。".as_ptr().cast::<u8>(),
+        说明: c"只演示生命周期通知，不参与平台语义。"
+            .as_ptr()
+            .cast::<u8>(),
         状态位: 0,
         类型表: 表段::空实例(),
         命令表: 表段::构造(命令表.as_ptr(), 1),
@@ -141,13 +160,21 @@ static 旧版收到: AtomicUsize = AtomicUsize::new(0);
 static 新版收到: AtomicUsize = AtomicUsize::new(0);
 
 /// 旧版端点：只计数（升级后不应再被调）。
-unsafe extern "C" fn 旧版通知(_通知号: v1_contract::通知号, _参数一: usize, _参数二: usize) -> isize {
+unsafe extern "C" fn 旧版通知(
+    _通知号: v1_contract::通知号,
+    _参数一: usize,
+    _参数二: usize,
+) -> isize {
     旧版收到.fetch_add(1, Ordering::SeqCst);
     通知返回::成功
 }
 
 /// 新版端点：只计数（升级后应由它接住通知）。
-unsafe extern "C" fn 新版通知(_通知号: v1_contract::通知号, _参数一: usize, _参数二: usize) -> isize {
+unsafe extern "C" fn 新版通知(
+    _通知号: v1_contract::通知号,
+    _参数一: usize,
+    _参数二: usize,
+) -> isize {
     新版收到.fetch_add(1, Ordering::SeqCst);
     通知返回::成功
 }
@@ -160,8 +187,7 @@ fn 升级后通知端点归新版() {
     新版收到.store(0, Ordering::SeqCst);
     let 旧版 = 造生命周期扩展(旧版通知);
     let 新版 = 造生命周期扩展(新版通知);
-    let mut 适配器 = 适配器::装载声明根(&[v1_loader::底座声明(), 旧版])
-        .expect("旧版必须载得进来");
+    let mut 适配器 = 适配器::装载声明根(&[v1_loader::底座声明(), 旧版]).expect("旧版必须载得进来");
     let 旧版装载时 = 旧版收到.load(Ordering::SeqCst);
     assert!(旧版装载时 >= 1, "装载时给旧版端点发过一次装载通知");
     assert_eq!(新版收到.load(Ordering::SeqCst), 0, "升级前新版端点不该被调");
@@ -170,7 +196,11 @@ fn 升级后通知端点归新版() {
     assert_eq!(适配器.通知端点数(), 1, "同标识串仍恰好 1 个端点");
     let 新版升级后 = 新版收到.load(Ordering::SeqCst);
     assert!(新版升级后 >= 1, "升级后端点归新版：装载通知发给新版");
-    assert_eq!(旧版收到.load(Ordering::SeqCst), 旧版装载时, "升级后旧版不再收通知");
+    assert_eq!(
+        旧版收到.load(Ordering::SeqCst),
+        旧版装载时,
+        "升级后旧版不再收通知"
+    );
 }
 
 /// **按标识（文本）的卸载路**（HTTP 面走的就是这一组）：
@@ -183,17 +213,28 @@ fn 生命周期_按标识文本请求卸载真跑通() {
         .expect("扩展申报生命周期通知号段必须载得进来");
 
     // 文本来自契约里的标识串（去 NUL）—— 与 HTTP 面请求体里那串同形。
-    let 标识文本 = core::str::from_utf8(&扩展标识串[..扩展标识串.len() - 1]).expect("标识串是 ASCII");
-    assert_eq!(适配器.通知端点标识串(), vec![标识文本.to_owned()], "索引与端点表同源");
+    let 标识文本 =
+        core::str::from_utf8(&扩展标识串[..扩展标识串.len() - 1]).expect("标识串是 ASCII");
+    assert_eq!(
+        适配器.通知端点标识串(),
+        vec![标识文本.to_owned()],
+        "索引与端点表同源"
+    );
 
     // 没注册过的标识 ⇒ 未命中（宪法第 6 条：未命中不是错误）。
-    assert_eq!(适配器.请求卸载按标识("ffffffffffffffffffffffffffffffff"), 派发结果::未命中);
+    assert_eq!(
+        适配器.请求卸载按标识("ffffffffffffffffffffffffffffffff"),
+        派发结果::未命中
+    );
     assert_eq!(适配器.通知端点数(), 1, "未命中不动端点表");
 
     // 已注册的标识 ⇒ 走真卸载：扩展回成功 ⇒ 完整收回，索引与端点表一起清。
     assert_eq!(适配器.请求卸载按标识(标识文本), 派发结果::成功);
     assert_eq!(适配器.通知端点数(), 0, "放行即收回：端点摘掉");
-    assert!(适配器.通知端点标识串().is_empty(), "索引同步摘掉，就绪读数不虚高");
+    assert!(
+        适配器.通知端点标识串().is_empty(),
+        "索引同步摘掉，就绪读数不虚高"
+    );
     println!("按标识卸载：{标识文本} → 成功，端点剩 0 个");
 }
 
@@ -208,7 +249,8 @@ fn 卸载_完整状态转换_能力失效且可重装() {
     let 扩展 = 造生命周期扩展(扩展通知放行);
     let mut 适配器 = 适配器::装载声明根(&[v1_loader::底座声明(), 扩展])
         .expect("扩展申报生命周期通知号段必须载得进来");
-    let 标识文本 = core::str::from_utf8(&扩展标识串[..扩展标识串.len() - 1]).expect("标识串是 ASCII");
+    let 标识文本 =
+        core::str::from_utf8(&扩展标识串[..扩展标识串.len() - 1]).expect("标识串是 ASCII");
 
     // 卸载前：能力 1000 调得通（演示命令 0 参）。
     let mut 返回槽 = 数据槽::空槽();
@@ -224,7 +266,9 @@ fn 卸载_完整状态转换_能力失效且可重装() {
     // ① 路由收回：同一号不再可调（注册表不认这个号 ⇒ 未载入段位），不是“还调得通”。
     let mut 返回槽 = 数据槽::空槽();
     match 适配器.调用能力(1000, &[], &mut 返回槽) {
-        转发结果::失败(调度错误::提供者未载入 { 能力号: 未命中号 }) => assert_eq!(未命中号.取号值(), 1000),
+        转发结果::失败(调度错误::提供者未载入 {
+            能力号: 未命中号
+        }) => assert_eq!(未命中号.取号值(), 1000),
         其余值 => panic!("卸载后该号必须报「提供者未载入」，实际 {其余值:?}"),
     }
     assert_eq!(
@@ -234,7 +278,9 @@ fn 卸载_完整状态转换_能力失效且可重装() {
     );
 
     // ② 装载身份注销：同一声明重新装载必须成功（不再报「标识串非法」）。
-    适配器.追加装载(扩展).expect("卸载后同一身份必须可重新装载（台账身份已注销）");
+    适配器
+        .追加装载(扩展)
+        .expect("卸载后同一身份必须可重新装载（台账身份已注销）");
     assert_eq!(适配器.已装载声明数(), 卸载前声明数, "重装后份数回位");
     let mut 返回槽 = 数据槽::空槽();
     assert!(
@@ -270,10 +316,16 @@ static 交错次号段表: [号段; 1] = [号段::构造(2500, 2999)];
 static 交错通知号段表: [号段; 1] = [号段::构造(2000, 2015)];
 
 /// 交错样本首扩展的通知函数：在飞引用未清零时对 `2001`/`2003` 回 `2015` 拒绝（其余回成功）。
-unsafe extern "C" fn 交错首通知(收到通知号: v1_contract::通知号, _参数一: usize, _参数二: usize) -> isize {
+unsafe extern "C" fn 交错首通知(
+    收到通知号: v1_contract::通知号,
+    _参数一: usize,
+    _参数二: usize,
+) -> isize {
     交错首收到.fetch_add(1, Ordering::SeqCst);
-    if matches!(收到通知号, 生命周期通知::卸载扩展 | 生命周期通知::延迟释放应答)
-        && 交错首在飞.load(Ordering::SeqCst) == 0
+    if matches!(
+        收到通知号,
+        生命周期通知::卸载扩展 | 生命周期通知::延迟释放应答
+    ) && 交错首在飞.load(Ordering::SeqCst) == 0
     {
         通知返回::延迟释放
     } else {
@@ -282,7 +334,11 @@ unsafe extern "C" fn 交错首通知(收到通知号: v1_contract::通知号, _�
 }
 
 /// 交错样本次扩展的通知函数：**始终放行** —— 它只当「另一份实例」的对照，不参与拒绝路。
-unsafe extern "C" fn 交错次通知(_通知号: v1_contract::通知号, _参数一: usize, _参数二: usize) -> isize {
+unsafe extern "C" fn 交错次通知(
+    _通知号: v1_contract::通知号,
+    _参数一: usize,
+    _参数二: usize,
+) -> isize {
     交错次收到.fetch_add(1, Ordering::SeqCst);
     通知返回::成功
 }
@@ -290,20 +346,22 @@ unsafe extern "C" fn 交错次通知(_通知号: v1_contract::通知号, _参数
 /// 造一份交错样本用的扩展声明：标识串 · 能力号 · 能力号段表 · 通知函数。
 // 签名写成**单行**：判据 ⑩ 靠「块开括号那一行是否以 `fn 名字` 开头」认具名项，
 // 多行签名会让块上行以 `)` 开头 ⇒ 被读成匿名夹具。
+#[rustfmt::skip]
 fn 造交错扩展(标识串: &'static [u8], 能力号值: u32, 号段表: &'static [号段], 通知: unsafe extern "C" fn(v1_contract::通知号, usize, usize) -> isize) -> &'static 平台信息 {
     static 错误段位表: [u32; 1] = [1];
-    let 命令表: &'static [v1_registry::命令信息] = Box::leak(Box::new([v1_registry::命令信息 {
-        名称: c"交错演示命令".as_ptr().cast::<u8>(),
-        说明: c"交错样本自用。".as_ptr().cast::<u8>(),
-        类别号: 0,
-        状态位: 0,
-        返回类型: v1_contract::类型标签::构造(0),
-        用户级别: 0,
-        参数个数: 0,
-        参数表: core::ptr::null(),
-        编号: v1_contract::能力号::构造(能力号值),
-        可抛错误码: 表段::空实例(),
-    }]));
+    let 命令表: &'static [v1_registry::命令信息] =
+        Box::leak(Box::new([v1_registry::命令信息 {
+            名称: c"交错演示命令".as_ptr().cast::<u8>(),
+            说明: c"交错样本自用。".as_ptr().cast::<u8>(),
+            类别号: 0,
+            状态位: 0,
+            返回类型: v1_contract::类型标签::构造(0),
+            用户级别: 0,
+            参数个数: 0,
+            参数表: core::ptr::null(),
+            编号: v1_contract::能力号::构造(能力号值),
+            可抛错误码: 表段::空实例(),
+        }]));
     let 执行函数表: &'static [执行函数] = Box::leak(Box::new([演示执行 as 执行函数]));
     Box::leak(Box::new(平台信息 {
         声明格式号: v1_contract::声明格式号,
@@ -376,7 +434,11 @@ fn 交错_调用装载卸载重装交错不误释放不串状态() {
         "未完成卸载必须返回明确状态，不许假成功"
     );
     assert_eq!(适配器.已装载声明数(), 卸载前声明数, "被拒的卸载不许动份数");
-    assert_eq!(适配器.通知端点数(), 2, "被拒的卸载必须原样保留端点（不误用旧句柄）");
+    assert_eq!(
+        适配器.通知端点数(),
+        2,
+        "被拒的卸载必须原样保留端点（不误用旧句柄）"
+    );
     assert!(
         matches!(适配器.调用能力(1000, &[], &mut 返回槽), 转发结果::成功(_)),
         "卸载未完成 ⇒ 不许提前释放"
@@ -390,7 +452,9 @@ fn 交错_调用装载卸载重装交错不误释放不串状态() {
     交错首在飞.store(1, Ordering::SeqCst);
     assert_eq!(适配器.请求卸载按标识(首扩展标识), 派发结果::成功);
     match 适配器.调用能力(1000, &[], &mut 返回槽) {
-        转发结果::失败(调度错误::提供者未载入 { 能力号: 未命中号 }) => {
+        转发结果::失败(调度错误::提供者未载入 {
+            能力号: 未命中号
+        }) => {
             assert_eq!(未命中号.取号值(), 1000)
         }
         其余值 => panic!("收回后该号必须报「提供者未载入」，实际 {其余值:?}"),
@@ -408,7 +472,9 @@ fn 交错_调用装载卸载重装交错不误释放不串状态() {
     );
 
     // ⑤ 重启 = 同身份重装 ⇒ **真恢复**（不假恢复）：能力与端点都回来。
-    适配器.追加装载(首扩展).expect("同一身份重装必须成功（台账身份已注销）");
+    适配器
+        .追加装载(首扩展)
+        .expect("同一身份重装必须成功（台账身份已注销）");
     assert_eq!(适配器.已装载声明数(), 卸载前声明数, "重装后份数回位");
     assert_eq!(适配器.通知端点数(), 2, "重装后端点回位");
     assert!(

@@ -17,11 +17,14 @@ impl Drop for 临时目录 {
 }
 fn 建临时目录(标签: &str) -> 临时目录 {
     for 临时序号 in 0..128 {
-        let 时间戳 = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_nanos();
-        let 目录根 = std::env::temp_dir()
-            .canonicalize()
+        let 时间戳 = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
             .unwrap()
-            .join(format!("装载件缓存加固-{标签}-{}-{时间戳}-{临时序号}", std::process::id()));
+            .as_nanos();
+        let 目录根 = std::env::temp_dir().canonicalize().unwrap().join(format!(
+            "装载件缓存加固-{标签}-{}-{时间戳}-{临时序号}",
+            std::process::id()
+        ));
         match fs::create_dir(&目录根) {
             Ok(()) => return 临时目录 { 目录根 },
             Err(错误) if 错误.kind() == std::io::ErrorKind::AlreadyExists => continue,
@@ -43,15 +46,26 @@ fn 候选择源_全不可信时报出每一条拒因() {
     let 测试根 = 建临时目录("择源");
     let (真件, _) = 写制品(&测试根.目录根);
     let 全假件 = 测试根.目录根.join("假制品.支持库制品");
-    assert_eq!(按候选择源(&[&全假件, &真件]).unwrap(), 真件.as_path(), "链件不参与时选中真件");
+    assert_eq!(
+        按候选择源(&[&全假件, &真件]).unwrap(),
+        真件.as_path(),
+        "链件不参与时选中真件"
+    );
     #[cfg(unix)]
     {
         let 链件 = 测试根.目录根.join("链制品.支持库制品");
         std::os::unix::fs::symlink(&真件, &链件).unwrap();
-        assert_eq!(按候选择源(&[&链件, &真件]).unwrap(), 真件.as_path(), "链件跳过、真件选中");
+        assert_eq!(
+            按候选择源(&[&链件, &真件]).unwrap(),
+            真件.as_path(),
+            "链件跳过、真件选中"
+        );
     }
     let 全不可信 = 按候选择源(&[&全假件]).unwrap_err();
-    assert!(全不可信.contains("假制品"), "拒因要点名那一条路径：{全不可信}");
+    assert!(
+        全不可信.contains("假制品"),
+        "拒因要点名那一条路径：{全不可信}"
+    );
     assert!(按候选择源(&[]).unwrap_err().contains("空的"));
 }
 
@@ -63,7 +77,10 @@ fn 读制品有上限_超限不读未超限读回() {
     let 超过本件长度 = 容器::装包(b"interface", 代码字节).len() as u64 - 1;
     let 拒因 = 读制品有上限(&制品文件, 超过本件长度).unwrap_err();
     assert!(拒因.contains("超过上限"), "该报超上限：{拒因}");
-    assert_eq!(读制品有上限(&制品文件, 能力码字节上限).unwrap().len() as u64, 超过本件长度 + 1);
+    assert_eq!(
+        读制品有上限(&制品文件, 能力码字节上限).unwrap().len() as u64,
+        超过本件长度 + 1
+    );
 }
 
 /// 权限位过宽：组/他人可写的缓存件 ⇒ 拒（校验过的字节可能被第三方换掉）。

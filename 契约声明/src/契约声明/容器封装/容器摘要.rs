@@ -54,8 +54,12 @@ fn 压缩状态(状态: &mut [u32; 8], 数据块: &[u8]) {
         字符表[序号] = u32::from_be_bytes(数据块[序号 * 4..序号 * 4 + 4].try_into().unwrap());
     }
     for 序号 in 16..64 {
-        let 小西格玛 = 字符表[序号 - 15].rotate_right(7) ^ 字符表[序号 - 15].rotate_right(18) ^ (字符表[序号 - 15] >> 3);
-        let 大西格玛 = 字符表[序号 - 2].rotate_right(17) ^ 字符表[序号 - 2].rotate_right(19) ^ (字符表[序号 - 2] >> 10);
+        let 小西格玛 = 字符表[序号 - 15].rotate_right(7)
+            ^ 字符表[序号 - 15].rotate_right(18)
+            ^ (字符表[序号 - 15] >> 3);
+        let 大西格玛 = 字符表[序号 - 2].rotate_right(17)
+            ^ 字符表[序号 - 2].rotate_right(19)
+            ^ (字符表[序号 - 2] >> 10);
         字符表[序号] = 字符表[序号 - 16]
             .wrapping_add(小西格玛)
             .wrapping_add(字符表[序号 - 7])
@@ -65,14 +69,16 @@ fn 压缩状态(状态: &mut [u32; 8], 数据块: &[u8]) {
     let mut 轮状态 = *状态;
 
     for 序号 in 0..64 {
-        let 大西格玛 = 轮状态[4].rotate_right(6) ^ 轮状态[4].rotate_right(11) ^ 轮状态[4].rotate_right(25);
+        let 大西格玛 =
+            轮状态[4].rotate_right(6) ^ 轮状态[4].rotate_right(11) ^ 轮状态[4].rotate_right(25);
         let 选择值 = (轮状态[4] & 轮状态[5]) ^ ((!轮状态[4]) & 轮状态[6]);
         let 轮压缩量 = 轮状态[7]
             .wrapping_add(大西格玛)
             .wrapping_add(选择值)
             .wrapping_add(轮常量[序号])
             .wrapping_add(字符表[序号]);
-        let 小西格玛 = 轮状态[0].rotate_right(2) ^ 轮状态[0].rotate_right(13) ^ 轮状态[0].rotate_right(22);
+        let 小西格玛 =
+            轮状态[0].rotate_right(2) ^ 轮状态[0].rotate_right(13) ^ 轮状态[0].rotate_right(22);
         let 多数 = (轮状态[0] & 轮状态[1]) ^ (轮状态[0] & 轮状态[2]) ^ (轮状态[1] & 轮状态[2]);
         let 轮进位量 = 小西格玛.wrapping_add(多数);
 

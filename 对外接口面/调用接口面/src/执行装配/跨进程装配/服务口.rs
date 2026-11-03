@@ -13,7 +13,7 @@ use v1_adapter::平台信息;
 
 use crate::网关::服务;
 
-use super::{跨进程部署, 条目结局, 启用状态};
+use super::{启用状态, 条目结局, 跨进程部署};
 
 impl 服务 {
     /// **由部署配置注入执行域**（冻结件 §四「生产启用」）。
@@ -34,13 +34,17 @@ impl 服务 {
             启用状态::创建(部署).装载依据(self.后缀表文本.clone(), self.缓存根目录.clone()),
         );
         let 结局表 = {
-            let 适配器 =
-                Arc::make_mut(self.适配器.get_mut().unwrap_or_else(|中毒| 中毒.into_inner()));
+            let 适配器 = Arc::make_mut(
+                self.适配器
+                    .get_mut()
+                    .unwrap_or_else(|中毒| 中毒.into_inner()),
+            );
             let 结局表 = 状态.注入(适配器, 已装声明);
             for (标识串, 结局) in &结局表 {
                 if matches!(结局, 条目结局::拒收(_)) {
                     for (声明, _) in 已装声明 {
-                        if super::取声明标识串(声明).as_deref() == Some(标识串.as_str()) {
+                        if super::取声明标识串(声明).as_deref() == Some(标识串.as_str())
+                        {
                             let _ = 适配器.击杀跨进程域(声明);
                             适配器.收回装载(声明);
                         }
@@ -49,13 +53,19 @@ impl 服务 {
             }
             结局表
         };
-        *self.跨进程.get_mut().unwrap_or_else(|中毒| 中毒.into_inner()) = Some(状态);
+        *self
+            .跨进程
+            .get_mut()
+            .unwrap_or_else(|中毒| 中毒.into_inner()) = Some(状态);
         结局表
     }
 
     /// 本实例开过跨进程域表没有（装配侧与验证面用）。
     pub fn 有跨进程域(&self) -> bool {
-        self.适配器.read().unwrap_or_else(|中毒| 中毒.into_inner()).有跨进程域()
+        self.适配器
+            .read()
+            .unwrap_or_else(|中毒| 中毒.into_inner())
+            .有跨进程域()
     }
 
     /// 生产启用状态（运行期装载 / 卸载按同一份配置登记 / 注销执行域）。

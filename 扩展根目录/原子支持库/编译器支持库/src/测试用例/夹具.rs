@@ -6,7 +6,7 @@
 use std::path::{Path, PathBuf};
 
 use v1_contract::声明数据::{类型标签_0004, 类型标签_0005};
-use v1_contract::{数据槽, 平台信息};
+use v1_contract::{平台信息, 数据槽};
 
 use crate::容器;
 
@@ -25,8 +25,7 @@ pub(crate) fn 读JSON件(相对: &str) -> 最小JSON::JSON值 {
 
 /// 造一条**类型 2（系统信息）**的合法容器：段名用实测 GBK 字节。
 pub(crate) fn 样例容器() -> 容器::容器 {
-    const GBK系统信息段: &[u8] =
-        &[0xCF, 0xB5, 0xCD, 0xB3, 0xD0, 0xC5, 0xCF, 0xA2, 0xB6, 0xCE];
+    const GBK系统信息段: &[u8] = &[0xCF, 0xB5, 0xCD, 0xB3, 0xD0, 0xC5, 0xCF, 0xA2, 0xB6, 0xCE];
     容器::容器 {
         段表: vec![容器::容器段 {
             段头字段: 容器::段头 {
@@ -43,12 +42,22 @@ pub(crate) fn 样例容器() -> 容器::容器 {
 
 /// 造一个「引用字节集」的数据槽（不交出所有权：调用方保留 Vec）。
 pub(crate) fn 字节集槽(字节: &[u8]) -> 数据槽 {
-    数据槽::指针(类型标签_0005, 字节.as_ptr() as u64, 字节.len() as u64, false)
+    数据槽::指针(
+        类型标签_0005,
+        字节.as_ptr() as u64,
+        字节.len() as u64,
+        false,
+    )
 }
 
 /// 造一个「引用文本」的数据槽（不交出所有权：调用方保留 `&str`）。
 pub(crate) fn 文本槽(源文本: &str) -> 数据槽 {
-    数据槽::指针(类型标签_0004, 源文本.as_ptr() as u64, 源文本.len() as u64, false)
+    数据槽::指针(
+        类型标签_0004,
+        源文本.as_ptr() as u64,
+        源文本.len() as u64,
+        false,
+    )
 }
 
 /// 一段真的程序文本（原生格式：UTF-8 · LF · 缩进 4 个半角空格）。
@@ -62,7 +71,10 @@ pub(crate) unsafe fn 取返回字节(数据槽: &数据槽) -> Vec<u8> {
     assert_eq!(数据槽.类型标签, 类型标签_0005, "返回槽该是字节集");
     assert!(数据槽.是否引用(), "返回槽该是引用");
     // SAFETY: 由调用方保证数据槽是刚写出的引用槽。
-    unsafe { core::slice::from_raw_parts(数据槽.槽值 as *const u8, 数据槽.槽字节长度 as usize) }.to_vec()
+    unsafe {
+        core::slice::from_raw_parts(数据槽.槽值 as *const u8, 数据槽.槽字节长度 as usize)
+    }
+    .to_vec()
 }
 
 /// 按「交出所有权」的契约释放返回槽里的字节集（测试里必须做，否则泄漏）。
@@ -70,8 +82,10 @@ pub(crate) unsafe fn 取返回字节(数据槽: &数据槽) -> Vec<u8> {
 /// # Safety
 /// 数据槽必须来自本模块执行函数写出的字节集槽。
 pub(crate) unsafe fn 释放返回字节(数据槽: &数据槽) {
-    if 数据槽.类型标签 == 类型标签_0005 && 数据槽.是否引用() && 数据槽.槽值 != 0 {
-        let 片段 = core::ptr::slice_from_raw_parts_mut(数据槽.槽值 as *mut u8, 数据槽.槽字节长度 as usize);
+    if 数据槽.类型标签 == 类型标签_0005 && 数据槽.是否引用() && 数据槽.槽值 != 0
+    {
+        let 片段 =
+            core::ptr::slice_from_raw_parts_mut(数据槽.槽值 as *mut u8, 数据槽.槽字节长度 as usize);
         // SAFETY: 由调用方保证该指针来自 Box<[u8]>，且只释放一次。
         drop(unsafe { Box::from_raw(片段) });
     }
@@ -106,5 +120,7 @@ pub(crate) unsafe fn 读串(指针: *const u8) -> Option<&'static [u8]> {
 pub(crate) fn 读段位表切片(声明: &'static 平台信息) -> &'static [u32] {
     assert!(声明.错误段位表.表项数 > 0 && !声明.错误段位表.项表.is_null());
     // SAFETY: 项数 > 0 且项表非空，指向静态只读数组。
-    unsafe { core::slice::from_raw_parts(声明.错误段位表.项表, 声明.错误段位表.表项数 as usize) }
+    unsafe {
+        core::slice::from_raw_parts(声明.错误段位表.项表, 声明.错误段位表.表项数 as usize)
+    }
 }

@@ -17,7 +17,10 @@ fn 静态托管_根路径回首页() {
     let 服务 = 起服务();
     let 造应答 = 发请求(&服务, &取请求("/"));
 
-    assert_eq!(造应答.状态, 200, "`GET /` 必须回前端的 index.html，不是 404");
+    assert_eq!(
+        造应答.状态, 200,
+        "`GET /` 必须回前端的 index.html，不是 404"
+    );
     assert!(
         造应答.报文头.contains("text/html; charset=utf-8"),
         "静态件的内容类型必须随件走（不是 application/json）：\n{}",
@@ -28,9 +31,14 @@ fn 静态托管_根路径回首页() {
         "回的第一段该是 index.html 的开头：\n{}",
         造应答.报文体.chars().take(80).collect::<String>()
     );
-    assert!(造应答.报文体.contains("网页版编译器"), "该是真页面，不是占位");
     assert!(
-        造应答.报文头.contains(&format!("Content-Length: {}", 造应答.报文体.len())),
+        造应答.报文体.contains("网页版编译器"),
+        "该是真页面，不是占位"
+    );
+    assert!(
+        造应答
+            .报文头
+            .contains(&format!("Content-Length: {}", 造应答.报文体.len())),
         "Content-Length 必须按字节数算"
     );
 }
@@ -41,16 +49,33 @@ fn 静态托管_前端自身的件按扩展名给内容类型() {
     let 服务 = 起服务();
     for (路径, 类型, 特征) in [
         ("/样式资源/页面样式.css", "text/css; charset=utf-8", "{"),
-        ("/接口请求/请求客户端.js", "text/javascript; charset=utf-8", "fetch"),
+        (
+            "/接口请求/请求客户端.js",
+            "text/javascript; charset=utf-8",
+            "fetch",
+        ),
         ("/应用.js", "text/javascript; charset=utf-8", "import"),
     ] {
         let 造应答 = 发请求(&服务, &取请求(路径));
         assert_eq!(造应答.状态, 200, "「{路径}」该取得到");
-        assert!(造应答.报文头.contains(类型), "「{路径}」的内容类型该是 {类型}：\n{}", 造应答.报文头);
-        assert!(造应答.报文体.contains(特征), "「{路径}」该是真件：\n{}", 造应答.报文体);
+        assert!(
+            造应答.报文头.contains(类型),
+            "「{路径}」的内容类型该是 {类型}：\n{}",
+            造应答.报文头
+        );
+        assert!(
+            造应答.报文体.contains(特征),
+            "「{路径}」该是真件：\n{}",
+            造应答.报文体
+        );
     }
     // 浏览器发的是百分号编码路径（`/页面样式.css` → `/%E9%A1%B5%E9%9D%A2%E6%A0%B7%E5%BC%8F.css`）。
-    let 造应答 = 发请求(&服务, &取请求("/%E6%A0%B7%E5%BC%8F%E8%B5%84%E6%BA%90/%E9%A1%B5%E9%9D%A2%E6%A0%B7%E5%BC%8F.css"));
+    let 造应答 = 发请求(
+        &服务,
+        &取请求(
+            "/%E6%A0%B7%E5%BC%8F%E8%B5%84%E6%BA%90/%E9%A1%B5%E9%9D%A2%E6%A0%B7%E5%BC%8F.css",
+        ),
+    );
     assert_eq!(造应答.状态, 200, "百分号编码的件名必须认得出来");
     assert!(造应答.报文头.contains("text/css"));
 }

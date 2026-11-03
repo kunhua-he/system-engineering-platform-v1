@@ -83,7 +83,9 @@ fn 是本机站点(站点文本: &str) -> bool {
     // 剥路径（`http://主机/随便`）：取第一个 `/` 之前那一段。
     let 权限段 = 余下.split('/').next().unwrap_or(余下);
     let 主机段 = 去端口(权限段);
-    本机站点名.iter().any(|候选项| 主机段.eq_ignore_ascii_case(候选项))
+    本机站点名
+        .iter()
+        .any(|候选项| 主机段.eq_ignore_ascii_case(候选项))
 }
 
 /// 从「主机[:端口]」里剥掉端口与 IPv6 的方括号 ⇒ 主机段（比较用）。

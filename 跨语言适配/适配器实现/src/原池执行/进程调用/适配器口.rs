@@ -7,9 +7,9 @@
 //! 子件能读父件的私有项（Rust 隐私：子模块看得见祖先的私项）—— 故本件直接用
 //! 父件的 `送一登记调用` / `造跨进程错误槽` / `域部署` / `跨进程域表`，父件无需开口子。
 
-use crate::进程池::{执行域标识, 进程池错误, 进程池配置};
+use crate::进程池::{执行域标识, 进程池配置, 进程池错误};
 
-use super::{送一登记调用, 造跨进程错误槽, 域部署, 跨进程域表};
+use super::{域部署, 跨进程域表, 送一登记调用, 造跨进程错误槽};
 
 #[cfg(unix)]
 impl crate::适配器 {
@@ -18,7 +18,11 @@ impl crate::适配器 {
         if self.跨进程.is_none() {
             let 域表 = std::sync::Arc::new(std::sync::Mutex::new(跨进程域表::创建(配置)));
             let 信号 = std::sync::Arc::clone(&取锁(&域表).回收通知);
-            let Ok(回收线程) = super::按需执行::启动回收(std::sync::Arc::downgrade(&域表), 信号) else { return; };
+            let Ok(回收线程) =
+                super::按需执行::启动回收(std::sync::Arc::downgrade(&域表), 信号)
+            else {
+                return;
+            };
             取锁(&域表).回收线程 = Some(回收线程);
             self.跨进程 = Some(域表);
         }
@@ -26,10 +30,14 @@ impl crate::适配器 {
 
     /// 登记和运行分开计数，未调用的登记不占进程额度。
     pub fn 跨进程登记数(&self) -> usize {
-        self.跨进程.as_ref().map_or(0, |域表| 取锁(域表).部署表.len())
+        self.跨进程
+            .as_ref()
+            .map_or(0, |域表| 取锁(域表).部署表.len())
     }
     pub fn 跨进程运行数(&self) -> usize {
-        self.跨进程.as_ref().map_or(0, |域表| 取锁(域表).执行池.活进程数())
+        self.跨进程
+            .as_ref()
+            .map_or(0, |域表| 取锁(域表).执行池.活进程数())
     }
 
     /// 这个实例开过跨进程表没有。
@@ -53,8 +61,12 @@ impl crate::适配器 {
     }
 
     /// 支持库与模块共用静态登记，首次调用再启动并握手。
-    fn 登记域部署(&self, 标识: 执行域标识, 部署: 域部署) -> Result<(), 进程池错误> {
-        let Some(域表) = self.跨进程.as_ref() else { return Err(进程池错误::域不存在); };
+    fn 登记域部署(
+        &self, 标识: 执行域标识, 部署: 域部署
+    ) -> Result<(), 进程池错误> {
+        let Some(域表) = self.跨进程.as_ref() else {
+            return Err(进程池错误::域不存在);
+        };
         取锁(域表).登记跨进程域(标识, 部署)
     }
 
@@ -91,25 +103,51 @@ impl crate::适配器 {
     }
 
     /// 一包多个编号原子登记到一个域；不占用运行进程，冲突时整批零写。
-    pub fn 登记模块能力组(&self, 模块身份串: &str, 制品版本: (u32,u32,u32), 能力号表: &[u32], 部署: 域部署) -> Result<(), String> {
-        if 模块身份串.is_empty() || 能力号表.is_empty() { return Err("模块身份或能力号表为空".to_owned()); }
-        let 模块域标识 = 执行域标识 { 适配器实例号: self.实例号, 扩展标识串: 模块身份串.to_owned(), 制品版本 };
+    pub fn 登记模块能力组(
+        &self,
+        模块身份串: &str,
+        制品版本: (u32, u32, u32),
+        能力号表: &[u32],
+        部署: 域部署,
+    ) -> Result<(), String> {
+        if 模块身份串.is_empty() || 能力号表.is_empty() {
+            return Err("模块身份或能力号表为空".to_owned());
+        }
+        let 模块域标识 = 执行域标识 {
+            适配器实例号: self.实例号,
+            扩展标识串: 模块身份串.to_owned(),
+            制品版本,
+        };
         let 域表 = self.跨进程.as_ref().ok_or("模块进程表未开启")?;
         let mut 域表锁 = 取锁(域表);
         let mut 已有编号 = std::collections::BTreeSet::new();
         for 能力号 in 能力号表 {
-            if !已有编号.insert(*能力号) { return Err(format!("模块能力号重复：{能力号}")); }
-            if let Some(已有标识) = 域表锁.取模块域标识(*能力号) && 已有标识 != 模块域标识 { return Err(format!("模块能力号{能力号}已归属其他域")); }
+            if !已有编号.insert(*能力号) {
+                return Err(format!("模块能力号重复：{能力号}"));
+            }
+            if let Some(已有标识) = 域表锁.取模块域标识(*能力号)
+                && 已有标识 != 模块域标识
+            {
+                return Err(format!("模块能力号{能力号}已归属其他域"));
+            }
         }
-        域表锁.登记跨进程域(模块域标识.clone(), 部署).map_err(|错误| format!("模块部署登记失败：{错误:?}"))?;
-        for 能力号 in 能力号表 { 域表锁.登记模块路由(*能力号, 模块域标识.clone()); }
+        域表锁
+            .登记跨进程域(模块域标识.clone(), 部署)
+            .map_err(|错误| format!("模块部署登记失败：{错误:?}"))?;
+        for 能力号 in 能力号表 {
+            域表锁.登记模块路由(*能力号, 模块域标识.clone());
+        }
         Ok(())
     }
 
     /// 这条号归哪个已装载单元 —— 判据与路由**同一套**（「谁认这个号就归谁」）。
-    fn 按号找声明(&self, 号值: v1_contract::能力号) -> Option<&'static v1_contract::平台信息> {
+    fn 按号找声明(
+        &self,
+        号值: v1_contract::能力号,
+    ) -> Option<&'static v1_contract::平台信息> {
         for 装载单元 in &self.装载单元s {
-            if let v1_registry::命令槽::已载入 { .. } = 装载单元.注册表.按号取命令(号值) {
+            if let v1_registry::命令槽::已载入 { .. } = 装载单元.注册表.按号取命令(号值)
+            {
                 return Some(装载单元.声明);
             }
         }
@@ -153,7 +191,11 @@ impl crate::适配器 {
         }
         let 声明 = self.按号找声明(号值)?;
         let 标识 = self.按声明算域标识(声明).ok()?;
-        if 取锁(域表).含域(&标识) { Some(标识) } else { None }
+        if 取锁(域表).含域(&标识) {
+            Some(标识)
+        } else {
+            None
+        }
     }
 
     /// **击杀一个已登记域的工作进程**（验证面与部署下架用）。

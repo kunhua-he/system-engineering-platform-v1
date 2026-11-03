@@ -91,7 +91,9 @@ impl<'a> 游标<'a> {
         }
     }
 
-    fn 取字面(&mut self, 期望: &[u8], 待处理值: 协议值) -> Result<协议值, 解析错误> {
+    fn 取字面(
+        &mut self, 期望: &[u8], 待处理值: 协议值
+    ) -> Result<协议值, 解析错误> {
         if self.字节[self.游标位..].starts_with(期望) {
             self.游标位 += 期望.len();
             return Ok(待处理值);
@@ -162,7 +164,9 @@ impl<'a> 游标<'a> {
                 Some(b'"') => break,
                 Some(b'\\') => self.取转义(&mut 输出缓冲)?,
                 // 未转义的控制字符在 JSON 里不合法（含裸换行）。
-                Some(字符表) if 字符表 < 0x20 => return Err(self.报错("字符串里有未转义的控制字符")),
+                Some(字符表) if 字符表 < 0x20 => {
+                    return Err(self.报错("字符串里有未转义的控制字符"));
+                }
                 Some(字符表) => 输出缓冲.push(字符表),
             }
         }
@@ -184,7 +188,8 @@ impl<'a> 游标<'a> {
                 let 码元 = self.取四位十六进制()?;
                 // 代理对：高代理必须紧跟一个低代理，合起来才是一个码点。
                 let 码点 = if (0xD800..0xDC00).contains(&码元) {
-                    if self.前进一字节() != Some(b'\\') || self.前进一字节() != Some(b'u') {
+                    if self.前进一字节() != Some(b'\\') || self.前进一字节() != Some(b'u')
+                    {
                         return Err(self.报错("高代理后面必须紧跟一个 \\u 低代理"));
                     }
                     let 低码元 = self.取四位十六进制()?;
@@ -209,7 +214,9 @@ impl<'a> 游标<'a> {
     fn 取四位十六进制(&mut self) -> Result<u16, 解析错误> {
         let mut 待处理值: u16 = 0;
         for _ in 0..4 {
-            let 字符表 = self.前进一字节().ok_or_else(|| self.报错("\\u 后面要跟四位十六进制"))?;
+            let 字符表 = self
+                .前进一字节()
+                .ok_or_else(|| self.报错("\\u 后面要跟四位十六进制"))?;
             let 十六进制值 = (字符表 as char)
                 .to_digit(16)
                 .ok_or_else(|| self.报错("\\u 后面要跟四位十六进制"))?;
@@ -224,7 +231,9 @@ impl<'a> 游标<'a> {
             self.游标位 += 1;
         }
         // 前导零不合法（`01` 与 `1` 是两种写法，JSON 只认后者）。
-        if self.取当前字节() == Some(b'0') && matches!(self.字节.get(self.游标位 + 1), Some(b'0'..=b'9')) {
+        if self.取当前字节() == Some(b'0')
+            && matches!(self.字节.get(self.游标位 + 1), Some(b'0'..=b'9'))
+        {
             return Err(self.报错("数字不许有前导零"));
         }
         while matches!(self.取当前字节(), Some(b'0'..=b'9')) {
@@ -288,8 +297,14 @@ mod 解析测试 {
         ));
         assert!(matches!(解析协议值("1.5"), Ok(协议值::小数(_))));
         assert!(matches!(解析协议值("2e3"), Ok(协议值::小数(_))));
-        assert_eq!(解析协议值(r#""a\u0062""#).expect("转义").取文本(), Some("ab"));
-        assert_eq!(解析协议值(r#""\ud83d\ude00""#).expect("代理对").取文本(), Some("😀"));
+        assert_eq!(
+            解析协议值(r#""a\u0062""#).expect("转义").取文本(),
+            Some("ab")
+        );
+        assert_eq!(
+            解析协议值(r#""\ud83d\ude00""#).expect("代理对").取文本(),
+            Some("😀")
+        );
     }
 
     #[test]
@@ -301,7 +316,13 @@ mod 解析测试 {
         };
         assert_eq!(对象成员[0].0, "次项", "键序 = 插入序");
         assert_eq!(对象成员[1].0, "首项");
-        assert_eq!(待处理值.取成员("首项").and_then(协议值::取数组).map(<[_]>::len), Some(2));
+        assert_eq!(
+            待处理值
+                .取成员("首项")
+                .and_then(协议值::取数组)
+                .map(<[_]>::len),
+            Some(2)
+        );
     }
 
     #[test]
@@ -331,7 +352,10 @@ mod 解析测试 {
     #[test]
     fn 深度上限_超了就报错不爆栈() {
         let 超深文本 = "[".repeat(最大深度 + 5);
-        assert!(解析协议值(&超深文本).is_err(), "超深必须报错（爆栈是崩溃，不是 400）");
+        assert!(
+            解析协议值(&超深文本).is_err(),
+            "超深必须报错（爆栈是崩溃，不是 400）"
+        );
     }
 
     #[test]

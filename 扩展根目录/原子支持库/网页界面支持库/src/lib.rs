@@ -7,6 +7,10 @@ mod 交互运行时;
 mod 命令声明面;
 #[path = "执行函数面.rs"]
 mod 执行函数面;
+#[path = "组件实例.rs"]
+mod 组件实例;
+#[path = "组件操作.rs"]
+mod 组件操作;
 #[path = "组件树.rs"]
 mod 组件树;
 

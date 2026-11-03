@@ -6,16 +6,25 @@
 use serde_json::Value;
 
 use crate::业务实现::{取对象文本, 转义网页文本};
-use crate::编号与码面::错误码;
 use crate::组件树::{拼子节点, 拼通用样式, 渲染状态};
+use crate::编号与码面::错误码;
 
 use super::外观属性::{合法标识, 校验颜色值};
 
 /// 三键定义：(开关, 类名后缀, 数据属性, 符号形态的图形, 读屏说明, 圆点颜色字段)。
-type 按钮定义项 = (bool, &'static str, &'static str, &'static str, &'static str, &'static str);
+type 按钮定义项 = (
+    bool,
+    &'static str,
+    &'static str,
+    &'static str,
+    &'static str,
+    &'static str,
+);
 
 /// 拼装一扇窗口：标题栏（按钮 + 标题）+ 正文。
-pub(crate) fn 拼装窗口(节点: &Value, 深度: u16, 状态: &mut 渲染状态) -> Result<String, u32> {
+pub(crate) fn 拼装窗口(
+    节点: &Value, 深度: u16, 状态: &mut 渲染状态
+) -> Result<String, u32> {
     let 标识文本 = 取对象文本(节点, "标识");
     if !合法标识(&标识文本) {
         return Err(错误码::内容不合法);
@@ -34,7 +43,8 @@ pub(crate) fn 拼装窗口(节点: &Value, 深度: u16, 状态: &mut 渲染状�
         }
         标题栏样式 = format!("height:{栏高值}px");
     }
-    for (字段名, 样式属性) in [("标题栏背景", "background"), ("标题栏文字颜色", "color")] {
+    for (字段名, 样式属性) in [("标题栏背景", "background"), ("标题栏文字颜色", "color")]
+    {
         let 取值 = 取对象文本(节点, 字段名);
         if 取值.is_empty() {
             continue;
@@ -96,9 +106,23 @@ pub(crate) fn 拼装窗口(节点: &Value, 深度: u16, 状态: &mut 渲染状�
 
     // 数组按 macOS 顺序写（关闭、最小化、最大化）；放在右端时按 DOM 顺序倒过来，视觉仍是 最小化/最大化/关闭
     let 全部按钮: [按钮定义项; 3] = [
-        (可关闭, "close", "data-window-close", "✕", "关闭", "关闭颜色"),
-        (可最小化, "min", "data-window-min", "—", "最小化", "最小化颜色"),
-        (可最大化, "max", "data-window-max", "▢", "最大化", "最大化颜色"),
+        (可关闭, "close", "data-窗口-close", "✕", "关闭", "关闭颜色"),
+        (
+            可最小化,
+            "min",
+            "data-窗口最小化",
+            "—",
+            "最小化",
+            "最小化颜色",
+        ),
+        (
+            可最大化,
+            "max",
+            "data-窗口最大化",
+            "▢",
+            "最大化",
+            "最大化颜色",
+        ),
     ];
     let 按钮序列: Vec<按钮定义项> = if 按钮在起点 {
         全部按钮.to_vec()
@@ -118,7 +142,9 @@ pub(crate) fn 拼装窗口(节点: &Value, 深度: u16, 状态: &mut 渲染状�
                 );
                 if !颜色文本.is_empty() {
                     校验颜色值(&颜色文本)?;
-                    样式.push_str(&format!(";--hs-wc:{颜色文本};background:var(--hs-wc,transparent)"));
+                    样式.push_str(&format!(
+                        ";--hs-wc:{颜色文本};background:var(--hs-wc,transparent)"
+                    ));
                 }
                 if !按钮边框颜色.is_empty() {
                     样式.push_str(&format!(";border:0.5px solid {按钮边框颜色}"));
@@ -153,18 +179,27 @@ pub(crate) fn 拼装窗口(节点: &Value, 深度: u16, 状态: &mut 渲染状�
         (标题片段, 按钮片段)
     };
     标题栏样式.push_str(&format!(";gap:{按钮间距}px"));
-    let 栏修饰类 = if 按钮在起点 { " is-leading" } else { "" };
+    let 栏修饰类 = if 按钮在起点 { " 标题居中" } else { "" };
 
     let 样式 = 拼通用样式(
         节点,
         "position:relative;display:flex;flex-direction:column;overflow:hidden;width:100%;height:100%",
     );
     状态.需要窗口脚本 = true;
+    // 窗口状态（位置/尺寸/开合）摆到 data-* 上：底座只报初值，存与取都归调用方
+    let 初值 = serde_json::json!({
+        "左": 节点.get("左").cloned().unwrap_or(Value::Null),
+        "上": 节点.get("上").cloned().unwrap_or(Value::Null),
+        "宽": 节点.get("宽").cloned().unwrap_or(Value::Null),
+        "高": 节点.get("高").cloned().unwrap_or(Value::Null),
+        "开合": !初始隐藏,
+    });
     Ok(format!(
-        "<div class=\"hs-tree-node hs-tree-window{}\" data-window=\"{}\" data-movable=\"{}\" style=\"{}\"><div class=\"hs-tree-window-bar{}\" style=\"{}\">{}{}</div><div class=\"hs-tree-window-body\">{}</div></div>",
-        if 初始隐藏 { " is-hidden" } else { "" },
+        "<div class=\"hs-tree-node hs-tree-window{}\" data-窗口=\"{}\" data-可拖动=\"{}\" data-窗口状态=\"{}\" style=\"{}\"><div class=\"hs-tree-window-bar{}\" style=\"{}\">{}{}</div><div class=\"hs-tree-window-body\">{}</div></div>",
+        if 初始隐藏 { " 已隐藏" } else { "" },
         转义网页文本(&标识文本),
         if 可移动 { "1" } else { "0" },
+        转义网页文本(&初值.to_string()),
         转义网页文本(&样式),
         栏修饰类,
         转义网页文本(&标题栏样式),

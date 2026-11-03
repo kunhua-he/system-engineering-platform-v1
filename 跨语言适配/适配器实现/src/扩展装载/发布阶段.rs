@@ -83,15 +83,15 @@ pub fn 默认发布根目录() -> Option<PathBuf> {
 ///
 /// 失败一律给一句可读原因，不 panic、不静默落进源码树。
 pub fn 落创作件(发布根: &Path, 键名: &str, 字节: &[u8]) -> Result<PathBuf, String> {
-    let 创作目录 = 确保阶段目录(发布根, 发布阶段::创作)
-        .map_err(|错误| format!("建不出创作目录：{错误}"))?;
+    let 创作目录 =
+        确保阶段目录(发布根, 发布阶段::创作).map_err(|错误| format!("建不出创作目录：{错误}"))?;
     原子落件(&创作目录, 键名, 字节)
 }
 
 /// 落一份制品进**待验**目录（原子发布 · 同键重入交回同一路径）。
 pub fn 落待验件(发布根: &Path, 键名: &str, 字节: &[u8]) -> Result<PathBuf, String> {
-    let 待验目录 = 确保阶段目录(发布根, 发布阶段::待验)
-        .map_err(|错误| format!("建不出待验目录：{错误}"))?;
+    let 待验目录 =
+        确保阶段目录(发布根, 发布阶段::待验).map_err(|错误| format!("建不出待验目录：{错误}"))?;
     原子落件(&待验目录, 键名, 字节)
 }
 
@@ -100,8 +100,8 @@ pub fn 落待验件(发布根: &Path, 键名: &str, 字节: &[u8]) -> Result<Pat
 /// 归档而不是删除 —— 仍被在途引用持有的那一份不许被抹掉（`候选发布.rs` 的租约语义在盘上的对应）。
 pub fn 晋级到发布(发布根: &Path, 键名: &str) -> Result<PathBuf, String> {
     let 待验目录 = 阶段目录路径(发布根, 发布阶段::待验);
-    let 发布目录 = 确保阶段目录(发布根, 发布阶段::发布)
-        .map_err(|错误| format!("建不出发布目录：{错误}"))?;
+    let 发布目录 =
+        确保阶段目录(发布根, 发布阶段::发布).map_err(|错误| format!("建不出发布目录：{错误}"))?;
     let 待验件 = 待验目录.join(键名);
     if !待验件.is_file() {
         return Err("待验目录里没有这一份，不晋级".to_owned());
@@ -111,8 +111,7 @@ pub fn 晋级到发布(发布根: &Path, 键名: &str) -> Result<PathBuf, String
         let 旧版本目录 = 确保阶段目录(发布根, 发布阶段::旧版本)
             .map_err(|错误| format!("建不出旧版本目录：{错误}"))?;
         let 归档路径 = 旧版本目录.join(归档名(键名));
-        fs::rename(&发布件, &归档路径)
-            .map_err(|错误| format!("旧版本归档失败：{错误}"))?;
+        fs::rename(&发布件, &归档路径).map_err(|错误| format!("旧版本归档失败：{错误}"))?;
     }
     fs::rename(&待验件, &发布件).map_err(|错误| format!("晋级失败：{错误}"))?;
     Ok(发布件)
@@ -174,7 +173,11 @@ fn 建临时件(落点目录: &Path, 键名: &str) -> Result<(临时清理, fs::
             ".{键名}.{}.{纳秒}.{临时序号}{临时件后缀}",
             std::process::id()
         ));
-        match fs::OpenOptions::new().write(true).create_new(true).open(&临时路径) {
+        match fs::OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(&临时路径)
+        {
             Ok(临时文件) => return Ok((临时清理 { 临时路径 }, 临时文件)),
             Err(错误) if 错误.kind() == std::io::ErrorKind::AlreadyExists => continue,
             Err(错误) => return Err(format!("创作临时件创建失败：{错误}")),
@@ -199,11 +202,14 @@ mod 发布阶段测试 {
 
     fn 创建测试目录() -> 测试目录 {
         for 临时序号 in 0..128 {
-            let 纳秒 = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_nanos();
-            let 目录根 = std::env::temp_dir()
-                .canonicalize()
+            let 纳秒 = SystemTime::now()
+                .duration_since(UNIX_EPOCH)
                 .unwrap()
-                .join(format!("发布阶段验证-{}-{纳秒}-{临时序号}", std::process::id()));
+                .as_nanos();
+            let 目录根 = std::env::temp_dir().canonicalize().unwrap().join(format!(
+                "发布阶段验证-{}-{纳秒}-{临时序号}",
+                std::process::id()
+            ));
             match fs::create_dir(&目录根) {
                 Ok(()) => return 测试目录 { 目录根 },
                 Err(错误) if 错误.kind() == std::io::ErrorKind::AlreadyExists => continue,
@@ -269,9 +275,16 @@ mod 发布阶段测试 {
         let 再次 = 落创作件(&发布根, "某件", 字节).unwrap();
         assert_eq!(首次, 再次, "同键重入必须交回同一路径");
         assert_eq!(fs::read(&首次).unwrap(), 字节);
-        assert_eq!(首次.parent(), Some(阶段目录路径(&发布根, 发布阶段::创作).as_path()));
+        assert_eq!(
+            首次.parent(),
+            Some(阶段目录路径(&发布根, 发布阶段::创作).as_path())
+        );
         let 创作目录 = 阶段目录路径(&发布根, 发布阶段::创作);
-        assert_eq!(fs::read_dir(&创作目录).unwrap().count(), 1, "临时件不该留下");
+        assert_eq!(
+            fs::read_dir(&创作目录).unwrap().count(),
+            1,
+            "临时件不该留下"
+        );
     }
 
     #[test]
@@ -290,7 +303,11 @@ mod 发布阶段测试 {
         assert_eq!(归档表.len(), 1, "被顶下来的那一份该进旧版本目录");
         assert_eq!(fs::read(归档表[0].path()).unwrap(), b"version-1");
         let 待验目录 = 阶段目录路径(&发布根, 发布阶段::待验);
-        assert_eq!(fs::read_dir(&待验目录).unwrap().count(), 0, "晋级后待验目录该空");
+        assert_eq!(
+            fs::read_dir(&待验目录).unwrap().count(),
+            0,
+            "晋级后待验目录该空"
+        );
     }
 
     #[test]
@@ -298,8 +315,14 @@ mod 发布阶段测试 {
         let 测试根 = 创建测试目录();
         let 发布根 = 测试根.目录根.join("候选发布");
         assert!(落待验件(&发布根, "缺件", b"payload").is_ok());
-        assert!(晋级到发布(&发布根, "不存在的那一份").is_err(), "待验目录没有就不晋级");
+        assert!(
+            晋级到发布(&发布根, "不存在的那一份").is_err(),
+            "待验目录没有就不晋级"
+        );
         assert!(原子落件(&发布根, "同键异内容", b"payload-a").is_ok());
-        assert!(原子落件(&发布根, "同键异内容", b"payload-b").is_err(), "同键异内容不覆盖");
+        assert!(
+            原子落件(&发布根, "同键异内容", b"payload-b").is_err(),
+            "同键异内容不覆盖"
+        );
     }
 }

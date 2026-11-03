@@ -54,8 +54,9 @@ pub unsafe fn 读串(指针: *const u8, 读取上限: usize) -> Option<&'static 
 /// `指针` 要么为空，要么指向**至少 `契约串上限` 字节可读**的静态数据。
 pub unsafe fn 读契约串(指针: *const u8) -> String {
     // SAFETY: 由调用方保证 指针..指针+契约串上限 可读。
-    unsafe { 读串(指针, 契约串上限) }
-        .map_or_else(String::new, |字节| String::from_utf8_lossy(字节).into_owned())
+    unsafe { 读串(指针, 契约串上限) }.map_or_else(String::new, |字节| {
+        String::from_utf8_lossy(字节).into_owned()
+    })
 }
 
 /// 标识串形状：恰好 32 位十六进制字符。
@@ -65,7 +66,8 @@ pub(crate) fn 是合法标识串(字节串: &[u8]) -> bool {
 
 /// 号段表 → 切片（判定的合法性由 `判号段表` 负责；此处项数 0 或项表空一律给空切片）。
 pub(crate) fn 号段切片(项表: 表段<号段>) -> &'static [号段] {
-    if 项表.表项数 == 0 || 项表.项表.is_null() || 项表.表项数 as usize > 号段表上限 {
+    if 项表.表项数 == 0 || 项表.项表.is_null() || 项表.表项数 as usize > 号段表上限
+    {
         return &[];
     }
     // SAFETY: 契约保证号段表指向静态只读数组；项数 > 0 且项表非空。
@@ -74,7 +76,8 @@ pub(crate) fn 号段切片(项表: 表段<号段>) -> &'static [号段] {
 
 /// 号段表 → 段表。项数 0 或项表空 ⇒ 空（`登记` 用；判定的合法性由 `判号段表` 负责）。
 pub(crate) fn 读号段表(项表: 表段<号段>) -> Vec<号段> {
-    if 项表.表项数 == 0 || 项表.项表.is_null() || 项表.表项数 as usize > 号段表上限 {
+    if 项表.表项数 == 0 || 项表.项表.is_null() || 项表.表项数 as usize > 号段表上限
+    {
         return Vec::new();
     }
     // SAFETY: 契约保证号段表指向静态只读数组；项数 > 0 且项表非空。

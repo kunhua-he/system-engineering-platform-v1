@@ -28,7 +28,9 @@ use v1_adapter::平台信息;
 
 /// 取一个目录下的直接子目录，**按名字排序**（装载顺序即依赖序，不许随文件系统飘）。
 pub fn 列子目录(扩展根目录: &Path) -> Vec<PathBuf> {
-    let Ok(目录读器) = fs::read_dir(扩展根目录) else { return Vec::new() };
+    let Ok(目录读器) = fs::read_dir(扩展根目录) else {
+        return Vec::new();
+    };
     let mut 输出缓冲: Vec<PathBuf> = 目录读器
         .filter_map(|目录项| 目录项.ok())
         .map(|目录项| 目录项.path())
@@ -50,7 +52,10 @@ pub struct 后缀表 {
 impl 后缀表 {
     /// 按种类名取制品后缀（`None` = 本后缀表里没有这个种类）。
     pub fn 取种类后缀(&self, 种类名: &str) -> Option<&str> {
-        self.分类.iter().find(|(名称, _)| 名称 == 种类名).map(|(_, 后缀项)| 后缀项.as_str())
+        self.分类
+            .iter()
+            .find(|(名称, _)| 名称 == 种类名)
+            .map(|(_, 后缀项)| 后缀项.as_str())
     }
 }
 
@@ -69,23 +74,35 @@ pub fn 读后缀表(源文本: &str) -> Result<后缀表, String> {
     let mut 后缀列表: Vec<String> = Vec::new();
     let mut 分类: Vec<(String, String)> = Vec::new();
     for 种类项 in 扩展种类 {
-        let Some(后缀项) = 种类项.取成员("制品后缀").and_then(|待处理值| 待处理值.取文本()) else {
+        let Some(后缀项) = 种类项
+            .取成员("制品后缀")
+            .and_then(|待处理值| 待处理值.取文本())
+        else {
             continue;
         };
-        let 种类名 = 种类项.取成员("种类").and_then(|待处理值| 待处理值.取文本()).unwrap_or_default();
+        let 种类名 = 种类项
+            .取成员("种类")
+            .and_then(|待处理值| 待处理值.取文本())
+            .unwrap_or_default();
         后缀列表.push(后缀项.to_owned());
         分类.push((种类名.to_owned(), 后缀项.to_owned()));
     }
     if 后缀列表.is_empty() {
-        return Err("后缀表的 `三类扩展[].制品后缀` 一个都没有（空后缀集 ⇒ 没有候选可扫）".to_owned());
+        return Err(
+            "后缀表的 `三类扩展[].制品后缀` 一个都没有（空后缀集 ⇒ 没有候选可扫）".to_owned(),
+        );
     }
-    Ok(后缀表 { 制品后缀: 后缀列表, 分类 })
+    Ok(后缀表 {
+        制品后缀: 后缀列表,
+        分类,
+    })
 }
 
 /// 是不是本平台要扫的制品（按后缀找，不按名字找 —— 名字里会有扩展名，底座不许认名字）。
 pub fn 是制品(路径: &Path, 后缀表: &后缀表) -> bool {
     let 名称 = 路径.file_name().and_then(|名称| 名称.to_str());
-    路径.is_file() && 名称.is_some_and(|名称| 后缀表.制品后缀.iter().any(|尾部| 名称.ends_with(尾部)))
+    路径.is_file()
+        && 名称.is_some_and(|名称| 后缀表.制品后缀.iter().any(|尾部| 名称.ends_with(尾部)))
 }
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -126,8 +143,8 @@ pub fn 取扩展声明(
     }
     // ②③：解包取能力码段 → 落仓外缓存件（模块 / 技能没有码段 ⇒ 这一步报因，不进 dlopen）。
     let 落盘路径 = v1_adapter::装载件缓存::解包到缓存(&制品文件[0], 缓存根目录)?;
-    let 路径串 =
-        CString::new(落盘路径.as_os_str().as_encoded_bytes()).map_err(|_| "库路径含 NUL".to_owned())?;
+    let 路径串 = CString::new(落盘路径.as_os_str().as_encoded_bytes())
+        .map_err(|_| "库路径含 NUL".to_owned())?;
     // SAFETY: 路径串是 NUL 结尾的合法 C 串；句柄只装载不释放（本进程活到服务停）。
     let 句柄 = unsafe { dlopen(路径串.as_ptr(), RTLD_NOW) };
     if 句柄.is_null() {
@@ -139,7 +156,8 @@ pub fn 取扩展声明(
         return Err(format!("取不到接缝符号 GetPlatformInfo（{}）", 最近错误()));
     }
     // SAFETY: 接缝形状由 `边界协议.md` §二 冻结：`const 平台信息* GetPlatformInfo(void)`。
-    let 取平台信息: extern "C" fn() -> *const 平台信息 = unsafe { core::mem::transmute(符号指针) };
+    let 取平台信息: extern "C" fn() -> *const 平台信息 =
+        unsafe { core::mem::transmute(符号指针) };
     let 指针 = 取平台信息();
     if 指针.is_null() {
         return Err("GetPlatformInfo 返回空指针".to_owned());
@@ -157,7 +175,9 @@ pub fn 最近错误() -> String {
         return "无 dlerror 说明".to_owned();
     }
     // SAFETY: 非空 ⇒ 按 POSIX 是 NUL 结尾可读串。
-    unsafe { CStr::from_ptr(指针) }.to_string_lossy().into_owned()
+    unsafe { CStr::from_ptr(指针) }
+        .to_string_lossy()
+        .into_owned()
 }
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -186,10 +206,16 @@ pub fn 读声明根(源文本: &str) -> Result<声明根扫描, String> {
         .ok_or_else(|| "扩展根声明缺 `种类` 段".to_owned())?;
     let mut 目录s = Vec::new();
     for 种类项 in 扩展种类 {
-        let Some(扩展根目录) = 种类项.取成员("扩展落点").and_then(|待处理值| 待处理值.取文本()) else {
+        let Some(扩展根目录) = 种类项
+            .取成员("扩展落点")
+            .and_then(|待处理值| 待处理值.取文本())
+        else {
             continue;
         };
         目录s.push(PathBuf::from(扩展根目录));
     }
-    Ok(声明根扫描 { 种类数: 扩展种类.len(), 目录s })
+    Ok(声明根扫描 {
+        种类数: 扩展种类.len(),
+        目录s,
+    })
 }

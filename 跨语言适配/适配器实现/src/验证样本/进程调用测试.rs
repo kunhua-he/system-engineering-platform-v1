@@ -15,15 +15,17 @@ use std::sync::Arc;
 use std::thread;
 use std::time::{Duration, Instant};
 
-use v1_contract::{类型标签, 数据槽};
+use v1_contract::{数据槽, 类型标签};
 
 use crate::线程安全::取锁;
 
-use crate::进程帧::{调用帧预算, 接收任意帧, 接收帧, 发送帧, 消息帧, 消息类别};
-use crate::进程调用::{造跨进程错误槽, 域部署, 跨进程域表};
-use crate::进程池::{进程池配置, 进程池错误, 执行域标识};
-use crate::线协议::{编码调用结果, 解码调用请求};
 use crate::协议结果;
+use crate::线协议::{编码调用结果, 解码调用请求};
+use crate::进程帧::{
+    发送帧, 接收任意帧, 接收帧, 消息帧, 消息类别, 调用帧预算
+};
+use crate::进程池::{执行域标识, 进程池配置, 进程池错误};
+use crate::进程调用::{域部署, 跨进程域表, 造跨进程错误槽};
 
 fn 造标识() -> 执行域标识 {
     执行域标识 {
@@ -44,7 +46,6 @@ fn 短命进程() -> 域部署 {
         启动参数: vec![String::from("-c"), String::from("sleep 0.1")],
     }
 }
-
 
 #[test]
 fn 同域事务排队计入总预算() {
@@ -69,7 +70,8 @@ fn 同域事务排队计入总预算() {
 fn 起应答环(宿主端: UnixStream, 回值: u64) -> thread::JoinHandle<()> {
     let mut 对端 = 宿主端;
     thread::spawn(move || {
-        let Ok(mut 预算) = 调用帧预算::创建(Instant::now() + Duration::from_millis(1500)) else {
+        let Ok(mut 预算) = 调用帧预算::创建(Instant::now() + Duration::from_millis(1500))
+        else {
             return;
         };
         // 第一条：装载初始化重放（通知帧）。答它的回执 —— 重放路径要收得到。
@@ -92,7 +94,11 @@ fn 起应答环(宿主端: UnixStream, 回值: u64) -> thread::JoinHandle<()> {
         let Ok(载荷) = 编码调用结果(协议结果::成功, &回槽) else {
             return;
         };
-        let 回帧 = 消息帧 { 消息类型: 消息类别::调用结果, 请求标识: 调用帧.请求标识, 载荷 };
+        let 回帧 = 消息帧 {
+            消息类型: 消息类别::调用结果,
+            请求标识: 调用帧.请求标识,
+            载荷,
+        };
         let _ = 发送帧(&mut 对端, &回帧, &mut 预算);
     })
 }
@@ -124,7 +130,8 @@ fn 跨进程往返_真收到回值() {
 fn 起慢应答环(宿主端: UnixStream, 回值: u64, 拖延: Duration) -> thread::JoinHandle<()> {
     let mut 对端 = 宿主端;
     thread::spawn(move || {
-        let Ok(mut 预算) = 调用帧预算::创建(Instant::now() + Duration::from_millis(3000)) else {
+        let Ok(mut 预算) = 调用帧预算::创建(Instant::now() + Duration::from_millis(3000))
+        else {
             return;
         };
         if let Ok(收到帧) = 接收任意帧(&mut 对端, &mut 预算) {
@@ -139,7 +146,11 @@ fn 起慢应答环(宿主端: UnixStream, 回值: u64, 拖延: Duration) -> thre
             thread::sleep(拖延);
             let 回槽 = 数据槽::内联槽(类型标签::构造(1), 回值, 0);
             if let Ok(载荷) = 编码调用结果(协议结果::成功, &回槽) {
-                let 回帧 = 消息帧 { 消息类型: 消息类别::调用结果, 请求标识: 调用帧.请求标识, 载荷 };
+                let 回帧 = 消息帧 {
+                    消息类型: 消息类别::调用结果,
+                    请求标识: 调用帧.请求标识,
+                    载荷,
+                };
                 let _ = 发送帧(&mut 对端, &回帧, &mut 预算);
             }
         }
@@ -163,10 +174,14 @@ fn 慢域不阻塞健康域_锁收窄验收() {
     let 快等 = 起快应答环(快对端, 2222);
     let mut 域表本体 = 跨进程域表::创建(进程池配置::default());
     let 慢标识 = 执行域标识 {
-        适配器实例号: 7, 扩展标识串: String::from("扩展慢"), 制品版本: (1, 0, 0),
+        适配器实例号: 7,
+        扩展标识串: String::from("扩展慢"),
+        制品版本: (1, 0, 0),
     };
     let 快标识 = 执行域标识 {
-        适配器实例号: 7, 扩展标识串: String::from("扩展快"), 制品版本: (1, 0, 0),
+        适配器实例号: 7,
+        扩展标识串: String::from("扩展快"),
+        制品版本: (1, 0, 0),
     };
     域表本体.登记已连域(慢标识.clone(), 慢宿主端).unwrap();
     域表本体.登记已连域(快标识.clone(), 快宿主端).unwrap();
@@ -189,8 +204,14 @@ fn 慢域不阻塞健康域_锁收窄验收() {
     let _ = 快等.join();
     assert_eq!(快读数.unwrap().槽值, 2222, "健康域必须拿到本域的回值");
     assert_eq!(慢读数.unwrap().槽值, 1111, "慢域也拿到本域的回值");
-    assert!(快耗时 < Duration::from_millis(500), "健康域被拖住了：耗时 {快耗时:?}（慢域睡 800 ms）");
-    assert!(慢耗时 >= Duration::from_millis(700), "慢域本就该慢：{慢耗时:?}");
+    assert!(
+        快耗时 < Duration::from_millis(500),
+        "健康域被拖住了：耗时 {快耗时:?}（慢域睡 800 ms）"
+    );
+    assert!(
+        慢耗时 >= Duration::from_millis(700),
+        "慢域本就该慢：{慢耗时:?}"
+    );
 }
 
 #[test]
@@ -198,14 +219,21 @@ fn 池错翻码把进程没了与活着没答分开() {
     // `0034` 的说明明写「与 0004 分开（超时是进程活着但没答）」—— 本测试盯那条分界。
     assert_eq!(crate::进程调用::按池错翻码(进程池错误::通道断开), 34);
     assert_eq!(crate::进程调用::按池错翻码(进程池错误::熔断中), 34);
-    assert_eq!(crate::进程调用::按池错翻码(进程池错误::预算耗尽), 4, "活着但没答 = 0004 超时");
+    assert_eq!(
+        crate::进程调用::按池错翻码(进程池错误::预算耗尽),
+        4,
+        "活着但没答 = 0004 超时"
+    );
 }
 
 #[test]
 fn 错误槽形状与边界面同形() {
     // 载体报的错与业务报的错走**同一个槽位**（类型标签 = 错误），调用方按同一个口径读。
     let 槽体 = 造跨进程错误槽(34);
-    assert_eq!(槽体.类型标签.取号值(), v1_contract::声明数据::类型标签_4294967295.取号值());
+    assert_eq!(
+        槽体.类型标签.取号值(),
+        v1_contract::声明数据::类型标签_4294967295.取号值()
+    );
     assert_eq!(槽体.槽值, 34);
 }
 
@@ -234,7 +262,10 @@ fn 重复登记不同部署参数给确定结局() {
         启动参数: vec![String::from("-c"), String::from("sleep 6")],
     };
     assert!(
-        matches!(域表.登记跨进程域(标识.clone(), 部署二), Err(进程池错误::部署参数不符)),
+        matches!(
+            域表.登记跨进程域(标识.clone(), 部署二),
+            Err(进程池错误::部署参数不符)
+        ),
         "换部署参数必须结构化拒"
     );
     assert_eq!(域表.已建执行域(), 0, "静态登记和被拒重复登记都不启动进程");
@@ -248,7 +279,8 @@ fn 重复登记不同部署参数给确定结局() {
 fn 起慢握手环(宿主端: UnixStream, 拖延: Duration) -> thread::JoinHandle<()> {
     let mut 对端 = 宿主端;
     thread::spawn(move || {
-        let Ok(mut 预算) = 调用帧预算::创建(Instant::now() + Duration::from_millis(3000)) else {
+        let Ok(mut 预算) = 调用帧预算::创建(Instant::now() + Duration::from_millis(3000))
+        else {
             return;
         };
         if let Ok(收到帧) = 接收任意帧(&mut 对端, &mut 预算) {
@@ -273,7 +305,9 @@ fn 装载握手不阻塞健康域调用() {
     let 慢握手 = 起慢握手环(慢对端, Duration::from_millis(800));
     let mut 表锁本体 = 跨进程域表::创建(进程池配置::default());
     let 慢标识 = 执行域标识 {
-        适配器实例号: 7, 扩展标识串: String::from("扩展慢握手"), 制品版本: (1, 0, 0),
+        适配器实例号: 7,
+        扩展标识串: String::from("扩展慢握手"),
+        制品版本: (1, 0, 0),
     };
     表锁本体.登记已连域(慢标识.clone(), 慢宿主端).unwrap();
     let 表锁 = Arc::new(std::sync::Mutex::new(表锁本体));
@@ -281,10 +315,14 @@ fn 装载握手不阻塞健康域调用() {
         let 锁体 = 取锁(&表锁);
         (锁体.取句柄(&慢标识).unwrap(), 锁体.取号源())
     };
-    let 握手线程 = thread::spawn(move || 跨进程域表::初始化一域按句柄(&慢句柄, 慢号源.as_ref()));
+    let 握手线程 =
+        thread::spawn(move || 跨进程域表::初始化一域按句柄(&慢句柄, 慢号源.as_ref()));
     thread::sleep(Duration::from_millis(80));
     let 表锁起点 = Instant::now();
-    let 健康读数 = { let 锁体 = 取锁(&表锁); 锁体.含域(&慢标识) };
+    let 健康读数 = {
+        let 锁体 = 取锁(&表锁);
+        锁体.含域(&慢标识)
+    };
     let 表锁耗时 = 表锁起点.elapsed();
     assert!(健康读数, "握手期这个域必须在表里");
     assert!(

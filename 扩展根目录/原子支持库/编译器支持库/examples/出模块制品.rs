@@ -57,35 +57,37 @@
 //! | `执行体编译.rs` | 段 20 执行体：本机编译 + 平台身份载荷 |
 //! | `契约产物.rs` | 由构建回执定位契约产物 |
 
-#[path = "出模块制品/声明读取.rs"]
-mod 声明读取;
-#[path = "出模块制品/声明取值.rs"]
-mod 声明取值;
-#[path = "出模块制品/接口装配.rs"]
-mod 接口装配;
-#[path = "出模块制品/依赖要求.rs"]
-mod 依赖要求;
 #[path = "出模块制品/依赖定位.rs"]
 mod 依赖定位;
-#[path = "出模块制品/执行体编译.rs"]
-mod 执行体编译;
+#[path = "出模块制品/依赖要求.rs"]
+mod 依赖要求;
+#[path = "出模块制品/声明取值.rs"]
+mod 声明取值;
+#[path = "出模块制品/声明读取.rs"]
+mod 声明读取;
 #[path = "出模块制品/契约产物.rs"]
 mod 契约产物;
+#[path = "出模块制品/执行体编译.rs"]
+mod 执行体编译;
+#[path = "出模块制品/接口装配.rs"]
+mod 接口装配;
 
 use std::fs;
 use std::path::Path;
 use std::process::ExitCode;
 
-use v1_compiler::能力包件::接口说明;
 use v1_compiler::执行函数面::本机生成;
-use v1_compiler::{语法, 语义, 词法};
+use v1_compiler::能力包件::接口说明;
+use v1_compiler::{词法, 语义, 语法};
 
-use 依赖定位::{列声明目录, 定位依赖包, 收集命令表, 收集锁定依赖, 收集类型表, 找仓根};
+use 依赖定位::{
+    列声明目录, 定位依赖包, 找仓根, 收集命令表, 收集类型表, 收集锁定依赖
+};
 use 依赖要求::取依赖要求表;
-use 声明读取::读声明件;
 use 声明取值::{取整数, 取文本};
-use 接口装配::取接口说明;
+use 声明读取::读声明件;
 use 执行体编译::{出执行体, 取工具链};
+use 接口装配::取接口说明;
 
 fn main() -> ExitCode {
     let 命令行参数: Vec<String> = std::env::args().skip(1).collect();
@@ -107,11 +109,17 @@ fn main() -> ExitCode {
 
 /// 一个模块目录 → 写出 `.模块制品`，返回它自述的那条接口说明。
 fn 出制品(模块目录: &Path) -> Result<Vec<接口说明>, String> {
-    let 目录名 = 模块目录.file_name().and_then(|名称| 名称.to_str()).ok_or("模块目录名非法")?.to_owned();
+    let 目录名 = 模块目录
+        .file_name()
+        .and_then(|名称| 名称.to_str())
+        .ok_or("模块目录名非法")?
+        .to_owned();
     let 包声明 = 读声明件(&模块目录.join("包声明.json"))?;
     let 仓根 = 找仓根(模块目录)?;
     let 能力声明表 = 列声明目录(&模块目录.join("能力声明"))?;
-    if 能力声明表.is_empty() { return Err("模块没有能力声明".to_owned()); }
+    if 能力声明表.is_empty() {
+        return Err("模块没有能力声明".to_owned());
+    }
     let 依赖要求表 = 取依赖要求表(&包声明)?;
     let 依赖目录表 = 定位依赖包(&仓根, &依赖要求表)?;
     let 类型表 = 收集类型表(&仓根, &依赖目录表)?;
@@ -123,36 +131,78 @@ fn 出制品(模块目录: &Path) -> Result<Vec<接口说明>, String> {
         let 编号 = u32::try_from(取整数(能力声明, "编号")?).map_err(|_| "模块能力号越界")?;
         let 源件 = if let Some(源码映射) = 包声明.取键("源码映射") {
             let 源码名 = 取文本(源码映射, &编号.to_string())?;
-            let 源件 = 模块目录.join(源码名).canonicalize().map_err(|错误| format!("模块源码不可解析：{错误}"))?;
-            if !源件.starts_with(模块目录.canonicalize().map_err(|错误| format!("模块根不可解析：{错误}"))?) { return Err("模块源码越出包目录".to_owned()); }
+            let 源件 = 模块目录
+                .join(源码名)
+                .canonicalize()
+                .map_err(|错误| format!("模块源码不可解析：{错误}"))?;
+            if !源件.starts_with(
+                模块目录
+                    .canonicalize()
+                    .map_err(|错误| format!("模块根不可解析：{错误}"))?,
+            ) {
+                return Err("模块源码越出包目录".to_owned());
+            }
             源件
-        } else { 模块目录.join(format!("{目录名}.程序文本")) };
-        let 源文本 = fs::read_to_string(&源件).map_err(|错误| format!("读不到 {}：{错误}", 源件.display()))?;
+        } else {
+            模块目录.join(format!("{目录名}.程序文本"))
+        };
+        let 源文本 = fs::read_to_string(&源件)
+            .map_err(|错误| format!("读不到 {}：{错误}", 源件.display()))?;
         let 锁定依赖 = 收集锁定依赖(&命令表, &源文本, &依赖目录表)?;
-        let 记号流 = 词法::切记号(&源文本).map_err(|错误| format!("能力{编号}词法不过：{错误:?}"))?;
+        let 记号流 =
+            词法::切记号(&源文本).map_err(|错误| format!("能力{编号}词法不过：{错误:?}"))?;
         let 语法树 = 语法::建树(&记号流).map_err(|错误| format!("能力{编号}语法不过：{错误:?}"))?;
-        语义::语义分析(&语法树, &命令表, &语义::名号表::空实例(), &类型表).map_err(|错误| format!("能力{编号}语义不过：{错误:?}"))?;
+        语义::语义分析(&语法树, &命令表, &语义::名号表::空实例(), &类型表)
+            .map_err(|错误| format!("能力{编号}语义不过：{错误:?}"))?;
         let 产物 = 本机生成::生成本机源码(&本机生成::本机生成请求 {
-            程序文本: 源文本.as_bytes(), 命令表: &命令表, 常量表: &语义::名号表::空实例(), 类型表: &类型表,
-            锁定依赖: &锁定依赖, 工具链身份: &工具链身份, 平台身份: &平台身份,
-        }).map_err(|错误| format!("能力{编号}本机生成不过：{错误:?}"))?;
+            程序文本: 源文本.as_bytes(),
+            命令表: &命令表,
+            常量表: &语义::名号表::空实例(),
+            类型表: &类型表,
+            锁定依赖: &锁定依赖,
+            工具链身份: &工具链身份,
+            平台身份: &平台身份,
+        })
+        .map_err(|错误| format!("能力{编号}本机生成不过：{错误:?}"))?;
         let 接口说明 = 取接口说明(模块目录, 能力声明)?;
-        if 接口说明.参数表.iter().map(|参数项| 参数项.类型标签).collect::<Vec<_>>() != 产物.参数类型号表
-            || 接口说明.返回类型 != 产物.返回类型号 {
-            return Err(format!("能力{编号}声明与程序签名不一致：声明参数{:?}、返回{}；程序参数{:?}、返回{}",
-                接口说明.参数表.iter().map(|参数项| 参数项.类型标签).collect::<Vec<_>>(), 接口说明.返回类型,
-                产物.参数类型号表, 产物.返回类型号));
+        if 接口说明
+            .参数表
+            .iter()
+            .map(|参数项| 参数项.类型标签)
+            .collect::<Vec<_>>()
+            != 产物.参数类型号表
+            || 接口说明.返回类型 != 产物.返回类型号
+        {
+            return Err(format!(
+                "能力{编号}声明与程序签名不一致：声明参数{:?}、返回{}；程序参数{:?}、返回{}",
+                接口说明
+                    .参数表
+                    .iter()
+                    .map(|参数项| 参数项.类型标签)
+                    .collect::<Vec<_>>(),
+                接口说明.返回类型,
+                产物.参数类型号表,
+                产物.返回类型号
+            ));
         }
         说明表.push(接口说明);
         产物组.push((编号, 产物));
     }
     说明表.sort_by_key(|说明| 说明.编号);
     let 执行体 = 出执行体(&产物组, &工具链命令, &平台身份)?;
-    let 接口字节 = v1_contract::接口说明段::编码接口组(&说明表).ok_or("模块接口说明组为空、重复或长度越界")?;
-    let 包件字节 = v1_contract::容器::装包三段(&接口字节, &执行体, v1_contract::容器::段类型_本机执行体);
-    let 三段 = v1_contract::容器::解包类型化(&包件字节).map_err(|错误| format!("装出的模块包不可读：{错误:?}"))?;
+    let 接口字节 =
+        v1_contract::接口说明段::编码接口组(&说明表).ok_or("模块接口说明组为空、重复或长度越界")?;
+    let 包件字节 =
+        v1_contract::容器::装包三段(&接口字节, &执行体, v1_contract::容器::段类型_本机执行体);
+    let 三段 = v1_contract::容器::解包类型化(&包件字节)
+        .map_err(|错误| format!("装出的模块包不可读：{错误:?}"))?;
     let 回读 = v1_contract::接口说明段::解码接口组(&三段.接口说明段).ok_or("模块接口组解不开")?;
-    if 回读 != 说明表 || 三段.本体段 != 执行体 || 三段.本体段类别 != v1_contract::容器::本体段类别::本机执行体 { return Err("模块接口组与执行体往返不一致".to_owned()); }
+    if 回读 != 说明表
+        || 三段.本体段 != 执行体
+        || 三段.本体段类别 != v1_contract::容器::本体段类别::本机执行体
+    {
+        return Err("模块接口组与执行体往返不一致".to_owned());
+    }
     let 制品件 = 模块目录.join(format!("{目录名}.模块制品"));
     if 制品件.is_symlink() {
         return Err(format!("制品目标是符号链接：{}", 制品件.display()));
@@ -166,7 +216,10 @@ fn 出制品(模块目录: &Path) -> Result<Vec<接口说明>, String> {
             .as_nanos()
     ));
     use std::io::Write;
-    let mut 制品文件 = fs::OpenOptions::new().write(true).create_new(true).open(&暂存制品)
+    let mut 制品文件 = fs::OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(&暂存制品)
         .map_err(|错误| format!("创建暂存制品失败 {}：{错误}", 暂存制品.display()))?;
     if let Err(错误) = 制品文件.write_all(&包件字节) {
         drop(制品文件);
@@ -178,6 +231,11 @@ fn 出制品(模块目录: &Path) -> Result<Vec<接口说明>, String> {
         let _ = fs::remove_file(&暂存制品);
         return Err(format!("替换制品失败 {}：{错误}", 制品件.display()));
     }
-    println!("  {}个能力合编一件：{}（{}字节）", 说明表.len(), 制品件.display(), 包件字节.len());
+    println!(
+        "  {}个能力合编一件：{}（{}字节）",
+        说明表.len(),
+        制品件.display(),
+        包件字节.len()
+    );
     Ok(说明表)
 }

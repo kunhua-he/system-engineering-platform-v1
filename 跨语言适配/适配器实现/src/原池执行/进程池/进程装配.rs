@@ -12,7 +12,7 @@ use std::os::unix::process::CommandExt;
 use std::process::{Child, Command, Stdio};
 use std::time::{Duration, Instant};
 
-use super::{子进程前提, 工作进程, 监督判读, 进程池错误, 进程池配置};
+use super::{子进程前提, 工作进程, 监督判读, 进程池配置, 进程池错误};
 
 /// 一份部署参数（启动程序 + 启动参数）的**指纹**：同域重复登记时据此判「参数变没变」。
 ///
@@ -22,12 +22,22 @@ pub fn 部署指纹(启动程序: &str, 启动参数: &[String]) -> u64 {
     const 质数: u64 = 0x0000_0100_0000_01b3;
     // FNV-1a 64 位偏移基准（内联，不另起名）。
     let mut 指纹 = 0xcbf2_9ce4_8422_2325u64;
-    for 字节 in 启动程序.as_bytes().iter().copied().chain(core::iter::once(0u8)) {
+    for 字节 in 启动程序
+        .as_bytes()
+        .iter()
+        .copied()
+        .chain(core::iter::once(0u8))
+    {
         指纹 ^= u64::from(字节);
         指纹 = 指纹.wrapping_mul(质数);
     }
     for 参数项 in 启动参数 {
-        for 字节 in 参数项.as_bytes().iter().copied().chain(core::iter::once(0u8)) {
+        for 字节 in 参数项
+            .as_bytes()
+            .iter()
+            .copied()
+            .chain(core::iter::once(0u8))
+        {
             指纹 ^= u64::from(字节);
             指纹 = 指纹.wrapping_mul(质数);
         }
@@ -111,7 +121,10 @@ pub(crate) fn 查实崩溃(配置: 进程池配置, 工作: &mut 工作进程) {
         工作.运行中 = false;
         工作.连续崩溃次数 = 工作.连续崩溃次数.saturating_add(1);
         let 位移 = 工作.连续崩溃次数.saturating_sub(1).min(20);
-        let 退避毫秒 = 配置.退避基数毫秒.saturating_mul(1u64 << 位移).min(配置.退避上限毫秒);
+        let 退避毫秒 = 配置
+            .退避基数毫秒
+            .saturating_mul(1u64 << 位移)
+            .min(配置.退避上限毫秒);
         工作.下次允许拉起 = 现在时刻 + Duration::from_millis(退避毫秒);
         if 工作.连续崩溃次数 >= 配置.重启预算 {
             工作.熔断截至 = Some(现在时刻 + Duration::from_millis(配置.熔断时长毫秒));

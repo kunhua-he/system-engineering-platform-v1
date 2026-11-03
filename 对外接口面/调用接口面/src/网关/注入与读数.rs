@@ -69,8 +69,12 @@ impl 服务 {
     /// 必须在**共享出去之前**调（`&mut self`）；开与不开发影响的是
     /// `GET /接口/留痕` 有没有内容，不影响任何调用结果（留痕不进关键路径）。
     pub fn 启用留痕(&mut self, 容量: u32, 策略: v1_adapter::丢弃策略) {
-        Arc::make_mut(self.适配器.get_mut().unwrap_or_else(|中毒| 中毒.into_inner()))
-            .启用留痕(容量, 策略);
+        Arc::make_mut(
+            self.适配器
+                .get_mut()
+                .unwrap_or_else(|中毒| 中毒.into_inner()),
+        )
+        .启用留痕(容量, 策略);
     }
 
     /// **真正绑上的端口**。根端点的 `实际端口` 报的就是它（不报常量：测试与多实例下
@@ -87,7 +91,10 @@ impl 服务 {
     /// 唯一腿（验证面与装配用）。返回**执行引用**（`Arc` 克隆）：锁内取、锁外可长活；
     /// 调用方按 `&服务.适配器()` 取 `&适配器`（`Arc` 自动解引用）。
     pub fn 适配器(&self) -> Arc<适配器> {
-        self.适配器.read().unwrap_or_else(|中毒| 中毒.into_inner()).clone()
+        self.适配器
+            .read()
+            .unwrap_or_else(|中毒| 中毒.into_inner())
+            .clone()
     }
 
     /// **注入资源网关口**（装配侧的口）。在**共享出去之前**调（`&mut self`）——
@@ -102,6 +109,9 @@ impl 服务 {
 
     /// 取**资源关口引用**（验证面与装配用）。返回 `Arc` 克隆：锁内取、锁外可长活。
     pub fn 取资源关口(&self) -> Arc<资源网关口> {
-        self.资源关口.read().unwrap_or_else(|中毒| 中毒.into_inner()).clone()
+        self.资源关口
+            .read()
+            .unwrap_or_else(|中毒| 中毒.into_inner())
+            .clone()
     }
 }

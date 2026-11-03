@@ -49,7 +49,7 @@ mod 入口;
 mod 整理;
 
 pub use 入口::整理诊断;
-pub use 整理::{字节位置, 阶段号, 读数};
+pub use 整理::{字节位置, 读数, 阶段号};
 
 #[cfg(test)]
 #[path = "诊断/测试.rs"]

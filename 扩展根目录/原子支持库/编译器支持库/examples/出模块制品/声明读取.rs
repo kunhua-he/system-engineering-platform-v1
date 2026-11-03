@@ -22,7 +22,10 @@ impl 声明值 {
     /// 按名取对象成员（不是对象就回 `None`）。
     pub fn 取键(&self, 键名: &str) -> Option<&声明值> {
         match self {
-            声明值::对象项(成员表) => 成员表.iter().find(|(成员名, _)| 成员名 == 键名).map(|(_, 成员值)| 成员值),
+            声明值::对象项(成员表) => 成员表
+                .iter()
+                .find(|(成员名, _)| 成员名 == 键名)
+                .map(|(_, 成员值)| 成员值),
             _ => None,
         }
     }
@@ -58,7 +61,10 @@ impl 声明值 {
 
     /// 取数组里的文本表。
     pub fn 取文本表(&self) -> Option<Vec<String>> {
-        self.取表()?.iter().map(|文本项| 文本项.取文本().map(str::to_owned)).collect()
+        self.取表()?
+            .iter()
+            .map(|文本项| 文本项.取文本().map(str::to_owned))
+            .collect()
     }
 }
 
@@ -82,7 +88,8 @@ pub fn 解析声明(原文: &str) -> Result<声明值, String> {
 
 fn 跳空白(原文: &str, 读取位置: &mut usize) {
     let 字节 = 原文.as_bytes();
-    while *读取位置 < 字节.len() && matches!(字节[*读取位置], b' ' | b'\t' | b'\n' | b'\r') {
+    while *读取位置 < 字节.len() && matches!(字节[*读取位置], b' ' | b'\t' | b'\n' | b'\r')
+    {
         *读取位置 += 1;
     }
 }
@@ -98,12 +105,20 @@ fn 读值(原文: &str, 读取位置: &mut usize) -> Result<声明值, String> {
         Some(b'f') => 读定字(原文, 读取位置, "false", 声明值::逻辑值(false)),
         Some(b'n') => 读定字(原文, 读取位置, "null", 声明值::空值项),
         Some(b'-' | b'0'..=b'9') => 读整数(原文, 读取位置),
-        Some(其他字节) => Err(format!("不认的字符 {:?}（位置 {}）", *其他字节 as char, *读取位置)),
+        Some(其他字节) => Err(format!(
+            "不认的字符 {:?}（位置 {}）",
+            *其他字节 as char, *读取位置
+        )),
         None => Err("意外结束".to_owned()),
     }
 }
 
-fn 读定字(原文: &str, 读取位置: &mut usize, 定字: &str, 定值: 声明值) -> Result<声明值, String> {
+fn 读定字(
+    原文: &str,
+    读取位置: &mut usize,
+    定字: &str,
+    定值: 声明值,
+) -> Result<声明值, String> {
     if 原文[*读取位置..].starts_with(定字) {
         *读取位置 += 定字.len();
         Ok(定值)
@@ -143,7 +158,12 @@ fn 读对象(原文: &str, 读取位置: &mut usize) -> Result<声明值, String
                 *读取位置 += 1;
                 return Ok(声明值::对象项(成员表));
             }
-            _ => return Err(format!("对象成员后既不是逗号也不是右括号（位置 {}）", *读取位置)),
+            _ => {
+                return Err(format!(
+                    "对象成员后既不是逗号也不是右括号（位置 {}）",
+                    *读取位置
+                ));
+            }
         }
     }
 }
@@ -166,7 +186,12 @@ fn 读数组(原文: &str, 读取位置: &mut usize) -> Result<声明值, String
                 *读取位置 += 1;
                 return Ok(声明值::表项(项表));
             }
-            _ => return Err(format!("数组项后既不是逗号也不是右括号（位置 {}）", *读取位置)),
+            _ => {
+                return Err(format!(
+                    "数组项后既不是逗号也不是右括号（位置 {}）",
+                    *读取位置
+                ));
+            }
         }
     }
 }

@@ -7,8 +7,8 @@
 use std::sync::atomic::{AtomicUsize, Ordering};
 
 use v1_contract::{
-    号段, 参数信息, 命令信息, 命令状态, 调用账本, 执行函数, 数据槽, 平台信息, 声明格式号,
-    表段, 版本三元组, 版本要求,
+    参数信息, 号段, 命令信息, 命令状态, 声明格式号, 平台信息, 执行函数, 数据槽, 版本三元组,
+    版本要求, 表段, 调用账本,
 };
 use v1_registry::命令槽;
 
@@ -49,7 +49,13 @@ pub(crate) unsafe extern "C-unwind" fn 零参命令(
 ) {
     let _ = (参数个数, 参数表);
     // SAFETY: 调度核心保证 `返回槽` 可写。
-    unsafe { 返回槽.write(数据槽::内联槽(v1_contract::类型标签::构造(测试标签), 42, 0)) };
+    unsafe {
+        返回槽.write(数据槽::内联槽(
+            v1_contract::类型标签::构造(测试标签),
+            42,
+            0,
+        ))
+    };
 }
 
 /// 两参命令：个数与类型都逐位对得上时**真进执行函数**（正样本）。
@@ -64,7 +70,13 @@ pub(crate) unsafe extern "C-unwind" fn 两参命令(
 ) {
     let _ = (参数个数, 参数表);
     // SAFETY: 调度核心保证 `返回槽` 可写。
-    unsafe { 返回槽.write(数据槽::内联槽(v1_contract::类型标签::构造(测试标签), 7, 0)) };
+    unsafe {
+        返回槽.write(数据槽::内联槽(
+            v1_contract::类型标签::构造(测试标签),
+            7,
+            0,
+        ))
+    };
 }
 
 /// 个数校验命令：**个数不符时不该被调到** —— 被调到就记一笔（本用例独占的计数）。
@@ -76,7 +88,13 @@ pub(crate) unsafe extern "C-unwind" fn 个数校验命令(
     个数校验进过次数.fetch_add(1, Ordering::SeqCst);
     let _ = (参数个数, 参数表);
     // SAFETY: 调度核心保证 `返回槽` 可写。
-    unsafe { 返回槽.write(数据槽::内联槽(v1_contract::类型标签::构造(测试标签), 7, 0)) };
+    unsafe {
+        返回槽.write(数据槽::内联槽(
+            v1_contract::类型标签::构造(测试标签),
+            7,
+            0,
+        ))
+    };
 }
 
 /// 类型校验命令：**类型不符时不该被调到** —— 被调到就记一笔（本用例独占的计数）。
@@ -88,7 +106,13 @@ pub(crate) unsafe extern "C-unwind" fn 类型校验命令(
     类型校验进过次数.fetch_add(1, Ordering::SeqCst);
     let _ = (参数个数, 参数表);
     // SAFETY: 调度核心保证 `返回槽` 可写。
-    unsafe { 返回槽.write(数据槽::内联槽(v1_contract::类型标签::构造(测试标签), 7, 0)) };
+    unsafe {
+        返回槽.write(数据槽::内联槽(
+            v1_contract::类型标签::构造(测试标签),
+            7,
+            0,
+        ))
+    };
 }
 
 /// 配额命令：0 参，配额用尽时**不该被调到**。
@@ -100,7 +124,13 @@ pub(crate) unsafe extern "C-unwind" fn 配额命令(
     配额次数.fetch_add(1, Ordering::SeqCst);
     let _ = (参数个数, 参数表);
     // SAFETY: 调度核心保证 `返回槽` 可写。
-    unsafe { 返回槽.write(数据槽::内联槽(v1_contract::类型标签::构造(测试标签), 7, 0)) };
+    unsafe {
+        返回槽.write(数据槽::内联槽(
+            v1_contract::类型标签::构造(测试标签),
+            7,
+            0,
+        ))
+    };
 }
 
 /// 拒绝命令：账本说"不许进"时**不该被调到**（本函数只负责数次数）。
@@ -112,7 +142,13 @@ pub(crate) unsafe extern "C-unwind" fn 拒绝命令(
     拒绝命令被调次数.fetch_add(1, Ordering::SeqCst);
     let _ = (参数个数, 参数表);
     // SAFETY: 调度核心保证 `返回槽` 可写。
-    unsafe { 返回槽.write(数据槽::内联槽(v1_contract::类型标签::构造(测试标签), 7, 0)) };
+    unsafe {
+        返回槽.write(数据槽::内联槽(
+            v1_contract::类型标签::构造(测试标签),
+            7,
+            0,
+        ))
+    };
 }
 
 /// 慢命令：睡过 1 毫秒，用来验超时段位。
@@ -124,7 +160,13 @@ pub(crate) unsafe extern "C-unwind" fn 慢命令(
     std::thread::sleep(std::time::Duration::from_millis(2));
     let _ = (参数个数, 参数表);
     // SAFETY: 调度核心保证 `返回槽` 可写。
-    unsafe { 返回槽.write(数据槽::内联槽(v1_contract::类型标签::构造(测试标签), 9, 0)) };
+    unsafe {
+        返回槽.write(数据槽::内联槽(
+            v1_contract::类型标签::构造(测试标签),
+            9,
+            0,
+        ))
+    };
 }
 
 /// 演示崩溃命令：故意 panic，验「扩展崩了不带走调用方」。
@@ -201,7 +243,9 @@ pub(crate) static 命令表_测试: 静态项<[命令信息; 4]> = 静态项([
     },
     命令信息 {
         名称: c"保留项".as_ptr().cast::<u8>(),
-        说明: c"编号占着、实现还没来；与已废止处置相反".as_ptr().cast::<u8>(),
+        说明: c"编号占着、实现还没来；与已废止处置相反"
+            .as_ptr()
+            .cast::<u8>(),
         类别号: 0,
         状态位: 命令状态::错误,
         返回类型: v1_contract::类型标签::构造(测试标签),
@@ -219,7 +263,8 @@ pub(crate) const 测试能力号段: [号段; 1] = [号段::构造(1000, 1999)];
 ///
 /// 不写字面量：编号必须落在本声明申报的能力号段内，换号段就得跟着换号，否则越界
 /// （`项目文档/决策记录/2026-09-27_接缝反解与1对1的边界.md` §二 裁决 5）。
-pub(crate) const 测试命令首号: v1_contract::能力号 = v1_contract::能力号::构造(测试能力号段[0].段起点.取号值());
+pub(crate) const 测试命令首号: v1_contract::能力号 =
+    v1_contract::能力号::构造(测试能力号段[0].段起点.取号值());
 
 /// 命令号表用裸 `u32`（`数据类型信息.命令号表` 是 `表段<u32>`）—— 夹具里从 `测试命令首号` 取。
 #[allow(dead_code)]

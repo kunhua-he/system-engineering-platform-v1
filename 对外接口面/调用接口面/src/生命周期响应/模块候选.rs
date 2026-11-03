@@ -15,9 +15,9 @@
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use crate::跨进程装配::模块身份;
-use crate::模块制品;
 use crate::协议值::协议值;
+use crate::模块制品;
+use crate::跨进程装配::模块身份;
 
 /// 一个模块候选目录 → 它的**身份**，判不过一律给因。
 pub(super) fn 模块候选身份(
@@ -36,10 +36,27 @@ pub(super) fn 模块候选身份(
     let 依赖表达 = 模块制品::取模块依赖表达(模块目录)?;
     let 能力声明表 = 能力声明编号表(模块目录)?;
     let 制品编号表: Vec<u32> = 模块接口说明.iter().map(|说明| 说明.编号).collect();
-    let mut 排序编号表 = 制品编号表.clone(); 排序编号表.sort_unstable();
-    if 能力声明表.is_empty() || 能力声明表 != 排序编号表 { return Err(format!("模块声明号表{能力声明表:?}与制品号表{排序编号表:?}不符")); }
+    let mut 排序编号表 = 制品编号表.clone();
+    排序编号表.sort_unstable();
+    if 能力声明表.is_empty() || 能力声明表 != 排序编号表 {
+        return Err(format!(
+            "模块声明号表{能力声明表:?}与制品号表{排序编号表:?}不符"
+        ));
+    }
     for 说明 in &模块接口说明 {
-        if ![1,4,v1_adapter::复合值载荷::列表标签,v1_adapter::复合值载荷::结果结构标签].contains(&说明.返回类型) { return Err(format!("模块能力{}返回类型{}尚未支持",说明.编号,说明.返回类型)); }
+        if ![
+            1,
+            4,
+            v1_adapter::复合值载荷::列表标签,
+            v1_adapter::复合值载荷::结果结构标签,
+        ]
+        .contains(&说明.返回类型)
+        {
+            return Err(format!(
+                "模块能力{}返回类型{}尚未支持",
+                说明.编号, 说明.返回类型
+            ));
+        }
     }
     Ok(模块身份 {
         标识串: 依赖表达.标识串,
@@ -81,8 +98,8 @@ fn 能力声明编号表(模块目录: &Path) -> Result<Vec<u32>, String> {
 /// 模块目录 → `包声明.json` 的 `实现版本`（主 · 次 · 构建）。
 fn 模块实现版本(模块目录: &Path) -> Result<(u32, u32, u32), String> {
     let 声明件 = 模块目录.join(crate::契约级常量::扩展声明件);
-    let 声明文本 =
-        fs::read_to_string(&声明件).map_err(|错误| format!("读不到 {}：{错误}", 声明件.display()))?;
+    let 声明文本 = fs::read_to_string(&声明件)
+        .map_err(|错误| format!("读不到 {}：{错误}", 声明件.display()))?;
     let 声明值 = crate::协议解析::解析协议值(&声明文本)
         .map_err(|错误| format!("{} 不是合法 JSON：{}", 声明件.display(), 错误.说明文字))?;
     let 版本值 = 声明值
@@ -107,7 +124,10 @@ fn 模块制品路径(模块目录: &Path, 模块制品后缀: &str) -> Result<P
         .filter(|路径| 模块制品::是模块制品(路径, 模块制品后缀))
         .collect();
     if 模块制品文件表.len() != 1 {
-        return Err(format!("模块制品 {} 个（要求恰好 1 个）", 模块制品文件表.len()));
+        return Err(format!(
+            "模块制品 {} 个（要求恰好 1 个）",
+            模块制品文件表.len()
+        ));
     }
     Ok(模块制品文件表[0].clone())
 }

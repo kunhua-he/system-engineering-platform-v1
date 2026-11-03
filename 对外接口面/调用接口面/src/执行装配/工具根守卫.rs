@@ -81,7 +81,8 @@ pub fn 判路径在根内(允许根: &Path, 给定: &str) -> Result<PathBuf, Str
             "相对路径爬到允许根之上（`..` 比已见过的普通段还多）⇒ 越界；允许根：{}",
             规范根.display()
         )),
-        Some(规范给定) if 规范给定.is_absolute() => match 规范给定.strip_prefix(&规范根) {
+        Some(规范给定) if 规范给定.is_absolute() => match 规范给定.strip_prefix(&规范根)
+        {
             Ok(根内相对) => Ok(允许根.join(根内相对)),
             Err(_) => Err(format!(
                 "绝对路径不在允许根内 ⇒ 越界；允许根：{}",

@@ -18,8 +18,7 @@ use v1_contract::容器;
 /// **不看内容、不看落点**：来源链上的符号链接或非普通文件一律不信任 —— 符号链接的所指
 /// 可以在「校验」与「落盘」之间被换掉，那两处校验过的就不是同一份字节。
 pub(super) fn 判定来源信任(制品路径: &Path) -> Result<(), String> {
-    let 来源属性 =
-        fs::symlink_metadata(制品路径).map_err(|错误| format!("读不到制品：{错误}"))?;
+    let 来源属性 = fs::symlink_metadata(制品路径).map_err(|错误| format!("读不到制品：{错误}"))?;
     if 来源属性.file_type().is_symlink() || !来源属性.is_file() {
         return Err("制品来源是符号链接或非普通文件".to_owned());
     }
@@ -35,8 +34,7 @@ pub(super) fn 校验内容(制品字节: &[u8]) -> Result<Vec<u8>, String> {
         return Err("制品段指纹缺失、损坏或与内容不符".to_owned());
     }
     let 本体段头 = 容器::文件头魔数.len() + 容器::段头长度 + 三段.接口说明段.len();
-    if 制品字节.get(本体段头 + 0x0B) != Some(&容器::段类型_能力码)
-        || 三段.能力码段.is_empty()
+    if 制品字节.get(本体段头 + 0x0B) != Some(&容器::段类型_能力码) || 三段.能力码段.is_empty()
     {
         return Err("本体不是非空的支持库能力码段，不进 dlopen".to_owned());
     }
@@ -46,7 +44,9 @@ pub(super) fn 校验内容(制品字节: &[u8]) -> Result<Vec<u8>, String> {
 /// **读制品有上限** —— 先看元数据字节数，过了上限就不读（**不是先读进来再判**）。
 ///
 /// 元数据读不到 ⇒ 如实报因（不当作「大小 0」放过）。
-pub(super) fn 读制品有上限(制品路径: &Path, 字节上限: u64) -> Result<Vec<u8>, String> {
+pub(super) fn 读制品有上限(
+    制品路径: &Path, 字节上限: u64
+) -> Result<Vec<u8>, String> {
     let 制品属性 = fs::metadata(制品路径).map_err(|错误| format!("读不到制品：{错误}"))?;
     if 制品属性.len() > 字节上限 {
         return Err(format!(
@@ -91,7 +91,9 @@ pub(super) fn 判平台身份(载荷: &[u8], 当前平台身份: &str) -> Result
     let (制品身份, 执行体) =
         容器::拆执行体载荷(载荷).map_err(|错误| format!("执行体载荷拆不开：{错误:?}"))?;
     if 制品身份 != 当前平台身份 {
-        return Err(format!("平台身份不符：制品给 {制品身份} · 本机是 {当前平台身份}"));
+        return Err(format!(
+            "平台身份不符：制品给 {制品身份} · 本机是 {当前平台身份}"
+        ));
     }
     Ok(执行体)
 }

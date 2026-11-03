@@ -50,7 +50,11 @@ pub const 上下文入口符号: &str = "v1_module_exec_ctx";
 
 /// 包内按编号定位能力；函数参数形状仍复用已有 C 入口。
 pub fn 模块能力入口符号(编号: u32, 是否带上下文: bool) -> alloc::string::String {
-    let 符号前缀 = if 是否带上下文 { 上下文入口符号 } else { 入口符号 };
+    let 符号前缀 = if 是否带上下文 {
+        上下文入口符号
+    } else {
+        入口符号
+    };
     alloc::format!("{符号前缀}_{编号}")
 }
 
@@ -91,11 +95,16 @@ pub fn 打包执行体载荷(平台身份: &str, 执行体: &[u8]) -> Vec<u8> {
 pub fn 拆执行体载荷(载荷: &[u8]) -> Result<(String, Vec<u8>), 载荷错误> {
     let 长度字节 = 载荷.get(..身份长度宽度).ok_or(载荷错误::载荷截断)?;
     let 声明 = u16::from_be_bytes([长度字节[0], 长度字节[1]]) as usize;
-    let 越界 = || 载荷错误::身份长度越界 { 声明, 可读: 载荷.len() };
+    let 越界 = || 载荷错误::身份长度越界 {
+        声明,
+        可读: 载荷.len(),
+    };
     if 声明 > 身份长度上界 {
         return Err(越界());
     }
-    let 身份段 = 载荷.get(身份长度宽度..身份长度宽度 + 声明).ok_or_else(越界)?;
+    let 身份段 = 载荷
+        .get(身份长度宽度..身份长度宽度 + 声明)
+        .ok_or_else(越界)?;
     let 执行体 = 载荷.get(身份长度宽度 + 声明..).ok_or_else(越界)?;
     if 执行体.is_empty() {
         return Err(载荷错误::执行体为空);

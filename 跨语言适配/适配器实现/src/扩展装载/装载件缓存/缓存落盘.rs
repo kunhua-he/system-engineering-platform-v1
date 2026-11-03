@@ -33,8 +33,14 @@ pub(super) fn 缓存路径对象(缓存根目录: &Path) -> Result<(), String> {
             continue;
         }
         match fs::symlink_metadata(目录路径) {
-            Ok(目录属性) if 目录属性.is_dir() && !目录属性.file_type().is_symlink() => {}
-            Ok(_) => return Err(format!("缓存目录链含符号链接或非目录：{}", 目录路径.display())),
+            Ok(目录属性) if 目录属性.is_dir() && !目录属性.file_type().is_symlink() => {
+            }
+            Ok(_) => {
+                return Err(format!(
+                    "缓存目录链含符号链接或非目录：{}",
+                    目录路径.display()
+                ));
+            }
             Err(错误) if 错误.kind() == std::io::ErrorKind::NotFound => {}
             Err(错误) => return Err(format!("缓存目录检查失败：{错误}")),
         }
@@ -46,7 +52,11 @@ pub(super) fn 缓存路径对象(缓存根目录: &Path) -> Result<(), String> {
 ///
 /// **不判来源**（来源已由 [`判定来源信任`] 判过）、**不重判内容**（内容已由 [`校验内容`] 判过，
 /// 字节由调用方交进来）：写临时件 → `hard_link` 原子发布（同名已在即视为已写好）→ 复核落盘件。
-pub(super) fn 写入缓存件(缓存根目录: &Path, 键名: &str, 能力码段: &[u8]) -> Result<PathBuf, String> {
+pub(super) fn 写入缓存件(
+    缓存根目录: &Path,
+    键名: &str,
+    能力码段: &[u8],
+) -> Result<PathBuf, String> {
     缓存路径对象(缓存根目录)?;
     fs::create_dir_all(缓存根目录).map_err(|错误| format!("建不出缓存目录：{错误}"))?;
     缓存路径对象(缓存根目录)?;
@@ -55,7 +65,8 @@ pub(super) fn 写入缓存件(缓存根目录: &Path, 键名: &str, 能力码段
         return Ok(落盘路径);
     }
     let (临时清理, mut 临时文件) = 创建缓存临时件(缓存根目录, 键名)?;
-    临时文件.write_all(能力码段)
+    临时文件
+        .write_all(能力码段)
         .and_then(|_| 临时文件.sync_all())
         .map_err(|错误| format!("缓存临时件写入或同步失败：{错误}"))?;
     drop(临时文件);
@@ -77,9 +88,8 @@ pub(super) fn 写入缓存件(缓存根目录: &Path, 键名: &str, 能力码段
 /// （中断写入 / 别人动过）—— 报错就把「清一下再装」变成要人手动干的事，而装载本来能自身修好。
 /// 删不掉（权限 / 被占用）才是真停：**如实报因**，不假装未命中（假装会连着失败且看不出为什么）。
 fn 删脏件当未命中(落盘路径: &Path, 因由: &str) -> Result<bool, String> {
-    fs::remove_file(落盘路径).map_err(|错误| {
-        format!("缓存件{因由}（{}），且删不掉它：{错误}", 落盘路径.display())
-    })?;
+    fs::remove_file(落盘路径)
+        .map_err(|错误| format!("缓存件{因由}（{}），且删不掉它：{错误}", 落盘路径.display()))?;
     Ok(false)
 }
 
@@ -136,7 +146,9 @@ fn 验证缓存件(落盘路径: &Path, 能力码段: &[u8]) -> Result<bool, Str
         Ok(缓存文件) => 缓存文件,
         Err(错误) => return 删脏件当未命中(落盘路径, &format!("读不出：{错误}")),
     };
-    let 打开属性 = 缓存文件.metadata().map_err(|错误| format!("缓存句柄检查失败：{错误}"))?;
+    let 打开属性 = 缓存文件
+        .metadata()
+        .map_err(|错误| format!("缓存句柄检查失败：{错误}"))?;
     if !打开属性.is_file() {
         return Err("缓存句柄不是普通文件".to_owned());
     }
@@ -147,9 +159,10 @@ fn 验证缓存件(落盘路径: &Path, 能力码段: &[u8]) -> Result<bool, Str
     {
         return 删脏件当未命中(落盘路径, &format!("读不出：{错误}"));
     }
-    let 复核属性 = fs::symlink_metadata(落盘路径)
-        .map_err(|错误| format!("缓存件复核失败：{错误}"))?;
-    if !复核属性.is_file() || 复核属性.file_type().is_symlink() || 缓存字节 != 能力码段 {
+    let 复核属性 =
+        fs::symlink_metadata(落盘路径).map_err(|错误| format!("缓存件复核失败：{错误}"))?;
+    if !复核属性.is_file() || 复核属性.file_type().is_symlink() || 缓存字节 != 能力码段
+    {
         return 删脏件当未命中(落盘路径, "内容不符或目标被替换");
     }
     #[cfg(unix)]
@@ -162,14 +175,24 @@ fn 验证缓存件(落盘路径: &Path, 能力码段: &[u8]) -> Result<bool, Str
     Ok(true)
 }
 
-pub(super) fn 创建缓存临时件(缓存根目录: &Path, 键名: &str) -> Result<(临时件清理, fs::File), String> {
-    let 时间戳 = SystemTime::now().duration_since(UNIX_EPOCH)
-        .map_err(|错误| format!("临时件时钟读取失败：{错误}"))?.as_nanos();
+pub(super) fn 创建缓存临时件(
+    缓存根目录: &Path,
+    键名: &str,
+) -> Result<(临时件清理, fs::File), String> {
+    let 时间戳 = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map_err(|错误| format!("临时件时钟读取失败：{错误}"))?
+        .as_nanos();
     for 临时序号 in 0..128 {
         let 临时路径 = 缓存根目录.join(format!(
-            ".{键名}.{}.{时间戳}.{临时序号}.临时", std::process::id()
+            ".{键名}.{}.{时间戳}.{临时序号}.临时",
+            std::process::id()
         ));
-        match fs::OpenOptions::new().write(true).create_new(true).open(&临时路径) {
+        match fs::OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(&临时路径)
+        {
             Ok(临时文件) => return Ok((临时件清理 { 临时路径 }, 临时文件)),
             Err(错误) if 错误.kind() == std::io::ErrorKind::AlreadyExists => continue,
             Err(错误) => return Err(format!("缓存临时件创建失败：{错误}")),

@@ -11,15 +11,24 @@ use v1_contract::容器;
 use super::*;
 use std::sync::{Arc, Barrier};
 
-struct 测试目录 { 目录根: PathBuf }
+struct 测试目录 {
+    目录根: PathBuf,
+}
 impl Drop for 测试目录 {
-    fn drop(&mut self) { let _ = fs::remove_dir_all(&self.目录根); }
+    fn drop(&mut self) {
+        let _ = fs::remove_dir_all(&self.目录根);
+    }
 }
 fn 创建测试目录() -> 测试目录 {
     for 临时序号 in 0..128 {
-        let 时间戳 = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_nanos();
-        let 目录根 = std::env::temp_dir().canonicalize().unwrap()
-            .join(format!("装载件缓存验证-{}-{时间戳}-{临时序号}", std::process::id()));
+        let 时间戳 = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let 目录根 = std::env::temp_dir().canonicalize().unwrap().join(format!(
+            "装载件缓存验证-{}-{时间戳}-{临时序号}",
+            std::process::id()
+        ));
         match fs::create_dir(&目录根) {
             Ok(()) => return 测试目录 { 目录根 },
             Err(错误) if 错误.kind() == std::io::ErrorKind::AlreadyExists => continue,
@@ -34,8 +43,10 @@ fn 写测试制品(目录根: &Path, 制品字节: &[u8]) -> PathBuf {
     制品文件
 }
 fn 缓存键路径(缓存目录: &Path, 代码字节: &[u8]) -> PathBuf {
-    let 缓存键: String = 容器::算指纹(代码字节).iter()
-        .map(|字节| format!("{字节:02x}")).collect();
+    let 缓存键: String = 容器::算指纹(代码字节)
+        .iter()
+        .map(|字节| format!("{字节:02x}"))
+        .collect();
     缓存目录.join(缓存键)
 }
 
@@ -80,7 +91,10 @@ fn 完整落盘重入及内容定键() {
     let 缓存目录 = 测试目录.目录根.join("缓存");
     let 代码字节 = b"native-code";
     let 目标路径 = 缓存键路径(&缓存目录, 代码字节);
-    for 制品字节 in [容器::装包(b"interface", 代码字节), 容器::装包(b"changed", 代码字节)] {
+    for 制品字节 in [
+        容器::装包(b"interface", 代码字节),
+        容器::装包(b"changed", 代码字节),
+    ] {
         let 制品文件 = 写测试制品(&测试目录.目录根, &制品字节);
         assert_eq!(解包到缓存(&制品文件, &缓存目录).unwrap(), 目标路径);
         assert_eq!(解包到缓存(&制品文件, &缓存目录).unwrap(), 目标路径);
@@ -115,7 +129,9 @@ fn 同键并发只见完整制品() {
         }
         std::thread::yield_now();
     }
-    for 工作线程 in 线程列表 { assert_eq!(工作线程.join().unwrap(), 目标路径); }
+    for 工作线程 in 线程列表 {
+        assert_eq!(工作线程.join().unwrap(), 目标路径);
+    }
     assert_eq!(fs::read(&目标路径).unwrap(), 代码字节);
     assert_eq!(fs::read_dir(&缓存目录).unwrap().count(), 1);
 }
@@ -130,7 +146,10 @@ fn 目标位置是非普通文件即拒() {
     let 制品文件 = 写测试制品(&测试目录.目录根, &容器::装包(b"interface", b"native-code"));
     let 目标路径 = 缓存键路径(&缓存目录, b"native-code");
     fs::create_dir(&目标路径).unwrap();
-    assert!(解包到缓存(&制品文件, &缓存目录).is_err(), "目录当缓存件必须拒");
+    assert!(
+        解包到缓存(&制品文件, &缓存目录).is_err(),
+        "目录当缓存件必须拒"
+    );
     assert_eq!(fs::read_dir(&缓存目录).unwrap().count(), 1);
 }
 
@@ -194,7 +213,10 @@ fn 平台身份不符即拒且不产缓存() {
 
     // ① 制品给别的平台、本机是另一个 ⇒ 拒，且拒在缓存键之前 ⇒ 一个缓存件都不落。
     let 拒绝结果 = 解包模块执行体到缓存(&制品文件, &缓存目录, "aarch64-apple-darwin");
-    assert!(拒绝结果.is_err(), "平台身份不符必须拒，实际放过了：{拒绝结果:?}");
+    assert!(
+        拒绝结果.is_err(),
+        "平台身份不符必须拒，实际放过了：{拒绝结果:?}"
+    );
     assert!(
         拒绝结果.unwrap_err().contains(制品身份),
         "拒的理由要带上制品自称的那个身份，才定位得到是哪个制品给错了平台"
@@ -205,9 +227,12 @@ fn 平台身份不符即拒且不产缓存() {
     );
 
     // ② 报上制品那个身份 ⇒ 过，且落盘的是**纯执行体**（身份是执行体的属性，落盘前剥掉）。
-    let 落点 = 解包模块执行体到缓存(&制品文件, &缓存目录, 制品身份)
-        .expect("身份相符必须过");
-    assert_eq!(fs::read(&落点).unwrap(), b"native-code", "落盘的是执行体字节，不带身份前缀");
+    let 落点 = 解包模块执行体到缓存(&制品文件, &缓存目录, 制品身份).expect("身份相符必须过");
+    assert_eq!(
+        fs::read(&落点).unwrap(),
+        b"native-code",
+        "落盘的是执行体字节，不带身份前缀"
+    );
 }
 
 /// 四件事各判各的、互不顶替 —— 每一面各造一个**只有它该拒**的现场：

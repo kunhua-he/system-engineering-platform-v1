@@ -28,7 +28,10 @@ pub(crate) enum JSON值 {
 impl JSON值 {
     pub(crate) fn 取成员(&self, 键名: &str) -> Option<&JSON值> {
         match self {
-            JSON值::对象值(项s) => 项s.iter().find(|(名称, _)| 名称 == 键名).map(|(_, 待处理值)| 待处理值),
+            JSON值::对象值(项s) => 项s
+                .iter()
+                .find(|(名称, _)| 名称 == 键名)
+                .map(|(_, 待处理值)| 待处理值),
             _ => None,
         }
     }
@@ -65,7 +68,10 @@ impl JSON值 {
 }
 
 pub(crate) fn 解析JSON值(源文本: &str) -> Option<JSON值> {
-    let mut 顺序读器 = 顺序读器 { 字节: 源文本.as_bytes(), 游标位: 0 };
+    let mut 顺序读器 = 顺序读器 {
+        字节: 源文本.as_bytes(),
+        游标位: 0,
+    };
     顺序读器.跳空白();
     let 待处理值 = 顺序读器.读一个值()?;
     顺序读器.跳空白();
@@ -202,7 +208,8 @@ impl<'a> 顺序读器<'a> {
                     // 多字节 UTF-8：整块拷贝。
                     let 区间起点 = self.游标位;
                     self.游标位 += UTF8字节长(字节);
-                    输出缓冲.push_str(std::str::from_utf8(self.字节.get(区间起点..self.游标位)?).ok()?);
+                    输出缓冲
+                        .push_str(std::str::from_utf8(self.字节.get(区间起点..self.游标位)?).ok()?);
                 }
             }
         }
@@ -246,7 +253,10 @@ impl<'a> 顺序读器<'a> {
         if matches!(self.取当前字节(), Some(b'-' | b'+')) {
             self.游标位 += 1;
         }
-        while matches!(self.取当前字节(), Some(b'0'..=b'9' | b'.' | b'e' | b'E' | b'+' | b'-')) {
+        while matches!(
+            self.取当前字节(),
+            Some(b'0'..=b'9' | b'.' | b'e' | b'E' | b'+' | b'-')
+        ) {
             self.游标位 += 1;
         }
         if self.游标位 == 区间起点 {

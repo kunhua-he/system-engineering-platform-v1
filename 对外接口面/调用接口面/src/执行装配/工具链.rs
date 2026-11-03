@@ -48,7 +48,9 @@ const 跑命令超时毫秒: u64 = 5_000;
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum 命令错误 {
     /// 进程起不来（件不存在 / 没有执行权限 / PATH 找不到）。
-    起不来 { 程序: String, 说明文字: String },
+    起不来 {
+        程序: String, 说明文字: String
+    },
     /// 进程在 [`跑命令超时毫秒`] 内没退出，已被杀掉。
     超时 { 程序: String, 上限毫秒: u64 },
 }
@@ -66,9 +68,16 @@ impl 命令错误 {
 impl std::fmt::Display for 命令错误 {
     fn fmt(&self, 格式器: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::起不来 { 程序, 说明文字 } => write!(格式器, "起不了 {程序}：{说明文字}"),
-            Self::超时 { 程序, 上限毫秒 } => {
-                write!(格式器, "跑命令超时：{程序} 在 {上限毫秒} 毫秒内没退出（已杀）")
+            Self::起不来 {
+                程序, 说明文字
+            } => write!(格式器, "起不了 {程序}：{说明文字}"),
+            Self::超时 {
+                程序, 上限毫秒
+            } => {
+                write!(
+                    格式器,
+                    "跑命令超时：{程序} 在 {上限毫秒} 毫秒内没退出（已杀）"
+                )
             }
         }
     }
@@ -110,7 +119,11 @@ impl 读数 {
 ///
 /// 失败分两种（[`命令错误`]）：**起不来**（件不存在 / 没有执行权限）与**超时**，
 /// 调用方要能分开 —— 「跑者不存在」「跑了但超时」「跑了但退出码非零」是三件事。
-pub fn 跑命令取读数(程序: &Path, 命令行参数: &[&str], 工作目录: &Path) -> Result<读数, 命令错误> {
+pub fn 跑命令取读数(
+    程序: &Path,
+    命令行参数: &[&str],
+    工作目录: &Path,
+) -> Result<读数, 命令错误> {
     let mut 子进程 = Command::new(程序)
         .args(命令行参数)
         .current_dir(工作目录)
@@ -232,7 +245,8 @@ mod 测试 {
     /// 正向样本：一条短命令正常跑完，读数带退出码与输出（超时路不许把正常路弄坏）。
     #[test]
     fn 跑命令_短活正常返回() {
-        let 读数 = 跑命令取读数(Path::new("/bin/echo"), &["好"], Path::new(".")).expect("echo 该跑得成");
+        let 读数 =
+            跑命令取读数(Path::new("/bin/echo"), &["好"], Path::new(".")).expect("echo 该跑得成");
         assert_eq!(读数.退出码, 0);
         assert_eq!(读数.标准输出, "好");
     }
@@ -244,7 +258,11 @@ mod 测试 {
     #[test]
     fn 跑命令_孙进程持管道仍按硬顶超时() {
         let 起点 = Instant::now();
-        let 结局 = 跑命令取读数(Path::new("/bin/sh"), &["-c", "sleep 7 & exit 0"], Path::new("."));
+        let 结局 = 跑命令取读数(
+            Path::new("/bin/sh"),
+            &["-c", "sleep 7 & exit 0"],
+            Path::new("."),
+        );
         let 耗时 = 起点.elapsed();
         match 结局 {
             Err(命令错误::超时 { 上限毫秒, .. }) => assert_eq!(上限毫秒, 跑命令超时毫秒),

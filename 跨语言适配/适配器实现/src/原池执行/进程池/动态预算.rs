@@ -23,10 +23,16 @@ impl 动态预算状态 {
             Some(0..=60) | None => self.CPU承压 = false,
             _ => {}
         }
-        if 硬上限 == 0 { self.当前上限 = 0; return 0; }
+        if 硬上限 == 0 {
+            self.当前上限 = 0;
+            return 0;
+        }
         let CPU上限 = if self.CPU承压 {
-            ((u64::from(硬上限) * u64::from(100 - CPU忙碌.unwrap_or(0))).div_ceil(100) as u32).max(1)
-        } else { 硬上限 };
+            ((u64::from(硬上限) * u64::from(100 - CPU忙碌.unwrap_or(0))).div_ceil(100) as u32)
+                .max(1)
+        } else {
+            硬上限
+        };
         let 内存上限 = match 内存压力 {
             Some(2) => 硬上限.div_ceil(2),
             Some(4) => 1,
@@ -41,7 +47,10 @@ impl 动态预算状态 {
         if let Some((CPU忙碌, 内存压力)) = self.固定样本 {
             return self.重算(硬上限, CPU忙碌, 内存压力);
         }
-        if self.上次采样.is_some_and(|时刻| 时刻.elapsed() < Duration::from_millis(250)) {
+        if self
+            .上次采样
+            .is_some_and(|时刻| 时刻.elapsed() < Duration::from_millis(250))
+        {
             return self.当前上限.min(硬上限);
         }
         let (CPU计数, 内存压力) = 取系统压力样本();
@@ -50,18 +59,33 @@ impl 动态预算状态 {
         self.刷新样本(硬上限, CPU计数, 内存压力, 现在时刻)
     }
 
-    fn 刷新样本(&mut self, 硬上限: u32, CPU计数: Option<[u32; 4]>, 内存压力: Option<u32>, 现在时刻: Instant) -> u32 {
+    fn 刷新样本(
+        &mut self,
+        硬上限: u32,
+        CPU计数: Option<[u32; 4]>,
+        内存压力: Option<u32>,
+        现在时刻: Instant,
+    ) -> u32 {
         let CPU忙碌 = CPU计数.zip(self.上次CPU).and_then(|(当前计数, 上次)| {
-            let 差分: [u64; 4] = std::array::from_fn(|序号| u64::from(当前计数[序号].wrapping_sub(上次[序号])));
+            let 差分: [u64; 4] =
+                std::array::from_fn(|序号| u64::from(当前计数[序号].wrapping_sub(上次[序号])));
             let 总差: u64 = 差分.iter().sum();
             (总差 > 0).then(|| ((总差 - 差分[2]) * 100 / 总差) as u32)
         });
         let CPU新鲜 = CPU忙碌.is_some();
         self.上次CPU = CPU计数;
-        if let Some(忙碌比例) = CPU忙碌 { self.最近CPU读数 = Some((现在时刻, 忙碌比例)); }
+        if let Some(忙碌比例) = CPU忙碌 {
+            self.最近CPU读数 = Some((现在时刻, 忙碌比例));
+        }
         // 内核会缓存密集请求；零差分不是0%忙碌，最多沿用两秒已知压力且标不新鲜。
-        let CPU忙碌 = CPU忙碌.or_else(|| CPU计数.and(self.最近CPU读数)
-            .filter(|(时刻, _)| 现在时刻.saturating_duration_since(*时刻) <= Duration::from_secs(2)).map(|(_, 忙碌比例)| 忙碌比例));
+        let CPU忙碌 = CPU忙碌.or_else(|| {
+            CPU计数
+                .and(self.最近CPU读数)
+                .filter(|(时刻, _)| {
+                    现在时刻.saturating_duration_since(*时刻) <= Duration::from_secs(2)
+                })
+                .map(|(_, 忙碌比例)| 忙碌比例)
+        });
         let 当前上限 = self.重算(硬上限, CPU忙碌, 内存压力);
         self.样本可信 &= CPU新鲜;
         当前上限
@@ -75,25 +99,60 @@ fn 取系统压力样本() -> (Option<[u32; 4]>, Option<u32>) {
     unsafe extern "C" {
         fn mach_host_self() -> u32;
         fn task_self_trap() -> u32;
-        fn host_statistics(主机端口: u32, 统计类别: i32, 输出: *mut i32, 统计项数: *mut u32) -> i32;
+        fn host_statistics(
+            主机端口: u32, 统计类别: i32, 输出: *mut i32, 统计项数: *mut u32
+        ) -> i32;
         fn mach_port_deallocate(任务端口: u32, 主机端口: u32) -> i32;
-        fn sysctlbyname(名称: *const c_char, 输出: *mut c_void, 输出长度: *mut usize, 输入指针: *mut c_void, 输入长度: usize) -> i32;
+        fn sysctlbyname(
+            名称: *const c_char,
+            输出: *mut c_void,
+            输出长度: *mut usize,
+            输入指针: *mut c_void,
+            输入长度: usize,
+        ) -> i32;
     }
     let 当前任务端口 = unsafe { task_self_trap() };
     let 主机端口 = unsafe { mach_host_self() };
     let mut CPU计数 = [0u32; 4];
     let mut 统计项数 = 4u32;
-    let CPU回执 = if 主机端口 == 0 { -1 } else { unsafe { host_statistics(主机端口, 3, CPU计数.as_mut_ptr().cast(), &mut 统计项数) } };
-    if 主机端口 != 0 { unsafe { mach_port_deallocate(当前任务端口, 主机端口); } }
-    if 当前任务端口 != 0 { unsafe { mach_port_deallocate(当前任务端口, 当前任务端口); } }
+    let CPU回执 = if 主机端口 == 0 {
+        -1
+    } else {
+        unsafe {
+            host_statistics(主机端口, 3, CPU计数.as_mut_ptr().cast(), &mut 统计项数)
+        }
+    };
+    if 主机端口 != 0 {
+        unsafe {
+            mach_port_deallocate(当前任务端口, 主机端口);
+        }
+    }
+    if 当前任务端口 != 0 {
+        unsafe {
+            mach_port_deallocate(当前任务端口, 当前任务端口);
+        }
+    }
     let mut 内存压力 = 0u32;
     let mut 输出长度 = std::mem::size_of::<u32>();
-    let 内存回执 = unsafe { sysctlbyname(c"kern.memorystatus_vm_pressure_level".as_ptr(), (&mut 内存压力 as *mut u32).cast(), &mut 输出长度, std::ptr::null_mut(), 0) };
-    ((CPU回执 == 0 && 统计项数 == 4).then_some(CPU计数), (内存回执 == 0 && 输出长度 == 4).then_some(内存压力))
+    let 内存回执 = unsafe {
+        sysctlbyname(
+            c"kern.memorystatus_vm_pressure_level".as_ptr(),
+            (&mut 内存压力 as *mut u32).cast(),
+            &mut 输出长度,
+            std::ptr::null_mut(),
+            0,
+        )
+    };
+    (
+        (CPU回执 == 0 && 统计项数 == 4).then_some(CPU计数),
+        (内存回执 == 0 && 输出长度 == 4).then_some(内存压力),
+    )
 }
 
 #[cfg(not(target_os = "macos"))]
-fn 取系统压力样本() -> (Option<[u32; 4]>, Option<u32>) { (None, None) }
+fn 取系统压力样本() -> (Option<[u32; 4]>, Option<u32>) {
+    (None, None)
+}
 
 #[cfg(test)]
 #[test]
@@ -116,28 +175,49 @@ fn 真实内核采样齐全且主机端口无累积() {
     unsafe extern "C" {
         fn mach_host_self() -> u32;
         fn task_self_trap() -> u32;
-        fn mach_port_get_refs(任务端口: u32, 主机端口: u32, 权利种类: i32, 引用数: *mut u32) -> i32;
+        fn mach_port_get_refs(
+            任务端口: u32, 主机端口: u32, 权利种类: i32, 引用数: *mut u32
+        ) -> i32;
         fn mach_port_deallocate(任务端口: u32, 主机端口: u32) -> i32;
     }
     let 当前任务端口 = unsafe { task_self_trap() };
     let 主机端口 = unsafe { mach_host_self() };
     let mut 原有引用数 = 0u32;
-    assert_eq!(unsafe { mach_port_get_refs(当前任务端口, 主机端口, 0, &mut 原有引用数) }, 0);
+    assert_eq!(
+        unsafe { mach_port_get_refs(当前任务端口, 主机端口, 0, &mut 原有引用数) },
+        0
+    );
     let mut 原有任务引用数 = 0u32;
-    assert_eq!(unsafe { mach_port_get_refs(当前任务端口, 当前任务端口, 0, &mut 原有任务引用数) }, 0);
+    assert_eq!(
+        unsafe {
+            mach_port_get_refs(当前任务端口, 当前任务端口, 0, &mut 原有任务引用数)
+        },
+        0
+    );
     for _ in 0..512 {
         let (CPU计数, 内存压力) = 取系统压力样本();
         assert!(CPU计数.is_some());
         assert!(matches!(内存压力, Some(1 | 2 | 4)));
     }
     let mut 当前引用数 = 0u32;
-    assert_eq!(unsafe { mach_port_get_refs(当前任务端口, 主机端口, 0, &mut 当前引用数) }, 0);
+    assert_eq!(
+        unsafe { mach_port_get_refs(当前任务端口, 主机端口, 0, &mut 当前引用数) },
+        0
+    );
     assert_eq!(原有引用数, 当前引用数, "每次采样的主机端口必须归还");
     let mut 当前任务引用数 = 0u32;
-    assert_eq!(unsafe { mach_port_get_refs(当前任务端口, 当前任务端口, 0, &mut 当前任务引用数) }, 0);
+    assert_eq!(
+        unsafe {
+            mach_port_get_refs(当前任务端口, 当前任务端口, 0, &mut 当前任务引用数)
+        },
+        0
+    );
     assert_eq!(原有任务引用数, 当前任务引用数, "采样取得的任务端口也须归还");
     assert_eq!(unsafe { mach_port_deallocate(当前任务端口, 主机端口) }, 0);
-    assert_eq!(unsafe { mach_port_deallocate(当前任务端口, 当前任务端口) }, 0);
+    assert_eq!(
+        unsafe { mach_port_deallocate(当前任务端口, 当前任务端口) },
+        0
+    );
     let mut 预算状态 = 动态预算状态::default();
     预算状态.取上限(32);
     let 验证期限 = Instant::now() + Duration::from_secs(2);
@@ -146,9 +226,19 @@ fn 真实内核采样齐全且主机端口无累积() {
         预算状态.取上限(32);
     }
     let 当前上限 = 预算状态.当前上限;
-    assert!(预算状态.样本可信, "CPU计数={:?} 原生样本={:?} 上次采样={:?} 当前上限={}", 预算状态.上次CPU, 取系统压力样本(), 预算状态.上次采样, 当前上限);
+    assert!(
+        预算状态.样本可信,
+        "CPU计数={:?} 原生样本={:?} 上次采样={:?} 当前上限={}",
+        预算状态.上次CPU,
+        取系统压力样本(),
+        预算状态.上次采样,
+        当前上限
+    );
     assert!((1..=32).contains(&当前上限));
-    println!("真实采样512次，端口引用前后{}={}，差分CPU与内存压力齐全，预算{}", 原有引用数, 当前引用数, 当前上限);
+    println!(
+        "真实采样512次，端口引用前后{}={}，差分CPU与内存压力齐全，预算{}",
+        原有引用数, 当前引用数, 当前上限
+    );
 }
 
 #[cfg(test)]
@@ -161,7 +251,9 @@ fn 压力预算边界穷举保持硬配置护栏() {
                 let 当前上限 = 预算状态.重算(硬上限, Some(CPU忙碌), 内存压力);
                 assert!(当前上限 <= 硬上限);
                 assert!(硬上限 == 0 || 当前上限 >= 1);
-                if CPU忙碌 == 101 || !matches!(内存压力, Some(1 | 2 | 4)) { assert!(!预算状态.样本可信); }
+                if CPU忙碌 == 101 || !matches!(内存压力, Some(1 | 2 | 4)) {
+                    assert!(!预算状态.样本可信);
+                }
             }
         }
     }
@@ -172,14 +264,49 @@ fn 压力预算边界穷举保持硬配置护栏() {
 fn 内核重复计数不可当成零压力且缓存有界() {
     let mut 预算状态 = 动态预算状态::default();
     let 现在时刻 = Instant::now();
-    assert_eq!(预算状态.刷新样本(32, Some([0, 0, 100, 0]), Some(1), 现在时刻), 32);
+    assert_eq!(
+        预算状态.刷新样本(32, Some([0, 0, 100, 0]), Some(1), 现在时刻),
+        32
+    );
     assert!(!预算状态.样本可信);
-    assert_eq!(预算状态.刷新样本(32, Some([90, 0, 110, 0]), Some(1), 现在时刻 + Duration::from_millis(250)), 4);
+    assert_eq!(
+        预算状态.刷新样本(
+            32,
+            Some([90, 0, 110, 0]),
+            Some(1),
+            现在时刻 + Duration::from_millis(250)
+        ),
+        4
+    );
     assert!(预算状态.样本可信);
-    assert_eq!(预算状态.刷新样本(32, Some([90, 0, 110, 0]), Some(1), 现在时刻 + Duration::from_millis(500)), 4);
+    assert_eq!(
+        预算状态.刷新样本(
+            32,
+            Some([90, 0, 110, 0]),
+            Some(1),
+            现在时刻 + Duration::from_millis(500)
+        ),
+        4
+    );
     assert!(!预算状态.样本可信);
-    assert_eq!(预算状态.刷新样本(32, Some([90, 0, 110, 0]), Some(1), 现在时刻 + Duration::from_secs(3)), 32);
+    assert_eq!(
+        预算状态.刷新样本(
+            32,
+            Some([90, 0, 110, 0]),
+            Some(1),
+            现在时刻 + Duration::from_secs(3)
+        ),
+        32
+    );
     assert!(!预算状态.样本可信);
-    assert_eq!(预算状态.刷新样本(32, Some([100, 0, 200, 0]), Some(1), 现在时刻 + Duration::from_secs(4)), 32);
+    assert_eq!(
+        预算状态.刷新样本(
+            32,
+            Some([100, 0, 200, 0]),
+            Some(1),
+            现在时刻 + Duration::from_secs(4)
+        ),
+        32
+    );
     assert!(预算状态.样本可信);
 }

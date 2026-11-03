@@ -47,28 +47,28 @@
 // 缩写本来就是固定写法，改了更难读。与 `测试验证/测试案例/跑案例/src/main.rs` 同一处置。
 #![allow(non_snake_case)]
 
-use crate::错误形状::错误对象;
 use crate::协议值::协议值;
+use crate::错误形状::错误对象;
 use std::path::Path;
 use std::time::Instant;
 use v1_adapter::适配器;
 
-#[path = "工具响应_案例.rs"]
-mod 案例;
-#[path = "工具响应_扩展.rs"]
-mod 扩展;
 #[path = "工具响应_导出.rs"]
 mod 导出族;
-#[path = "工具响应_未落.rs"]
-mod 未落;
+#[path = "工具响应_扩展.rs"]
+mod 扩展;
 #[path = "../扩展发现/技能取文响应.rs"]
 mod 技能取文响应;
+#[path = "工具响应_未落.rs"]
+mod 未落;
+#[path = "工具响应_案例.rs"]
+mod 案例;
 
-pub use 案例::{列案例, 跑案例};
 pub use 导出族::处理导出;
-pub use 未落::程序文本;
 pub use 扩展::列扩展;
 pub use 技能取文响应::{列技能读面, 技能取文};
+pub use 未落::程序文本;
+pub use 案例::{列案例, 跑案例};
 
 /// 查找提示号（见文件头「一处结构性限制」）。
 const 提示号: u32 = 0;
@@ -93,7 +93,12 @@ pub(super) fn 造成功应答(应答数据: 协议值, 区间起点: &Instant) -
 /// `重试判据` 一律走 [`重试判据::非能力调用`]：本族的失败**不是一次能力调用**
 /// （工具链 / 网关面自身的失败，段位 9），「有没有进入扩展」对它无意义 —— 如实报
 /// `执行阶段 = 非能力调用`，**不拿一个假的扩展阶段糊过去**（方案 §九：「不靠薄壳掩盖底层缺口」）。
-pub(super) fn 造失败应答(适配器: &适配器, 错误码: u32, 应答数据: Option<协议值>, 区间起点: &Instant) -> 协议值 {
+pub(super) fn 造失败应答(
+    适配器: &适配器,
+    错误码: u32,
+    应答数据: Option<协议值>,
+    区间起点: &Instant,
+) -> 协议值 {
     let mut 对象成员 = vec![
         ("成功".to_owned(), 协议值::假值),
         (
@@ -132,7 +137,8 @@ pub(super) fn 造键文对(键名: &str, 待处理值: &str) -> (String, 协议�
 /// 回执里报路径一律报**相对工具根**的（绝对路径会把部署位置写进回执，
 /// 而回执要能跨机器比对）。
 pub(super) fn 取相对路径(工具根: &Path, 路径: &Path) -> String {
-    路径.strip_prefix(工具根)
+    路径
+        .strip_prefix(工具根)
         .unwrap_or(路径)
         .display()
         .to_string()
@@ -140,17 +146,26 @@ pub(super) fn 取相对路径(工具根: &Path, 路径: &Path) -> String {
 
 /// 读一件 JSON。读不到 / 解不了都**原样带回**（不吞、不给默认值）。
 pub(super) fn 读JSON件(路径: &Path) -> Result<协议值, String> {
-    let 文本值 = std::fs::read_to_string(路径).map_err(|错误| format!("读不到 {}：{错误}", 路径.display()))?;
-    crate::协议解析::解析协议值(&文本值)
-        .map_err(|错误| format!("{} 不是合法 JSON：{}（第 {} 字节）", 路径.display(), 错误.说明文字, 错误.出错位置))
+    let 文本值 = std::fs::read_to_string(路径)
+        .map_err(|错误| format!("读不到 {}：{错误}", 路径.display()))?;
+    crate::协议解析::解析协议值(&文本值).map_err(|错误| {
+        format!(
+            "{} 不是合法 JSON：{}（第 {} 字节）",
+            路径.display(),
+            错误.说明文字,
+            错误.出错位置
+        )
+    })
 }
 
 /// 列一个目录下的**子目录名**，按名排序（顺序确定 ⇒ 读数可比）。
 pub(super) fn 列子目录(扩展根目录: &Path) -> Result<Vec<String>, String> {
-    let 目录读器 = std::fs::read_dir(扩展根目录).map_err(|错误| format!("读不到目录 {}：{错误}", 扩展根目录.display()))?;
+    let 目录读器 = std::fs::read_dir(扩展根目录)
+        .map_err(|错误| format!("读不到目录 {}：{错误}", 扩展根目录.display()))?;
     let mut 输出缓冲 = Vec::new();
     for 目录项 in 目录读器 {
-        let 目录项 = 目录项.map_err(|错误| format!("列目录 {} 失败：{错误}", 扩展根目录.display()))?;
+        let 目录项 =
+            目录项.map_err(|错误| format!("列目录 {} 失败：{错误}", 扩展根目录.display()))?;
         if !目录项.path().is_dir() {
             continue;
         }

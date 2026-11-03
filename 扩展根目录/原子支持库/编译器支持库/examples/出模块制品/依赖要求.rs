@@ -1,10 +1,10 @@
 //! 依赖要求：`包声明.json` 的 依赖清单 / 依赖版本要求 → 版本门槛；
 //! 并按装载侧同一份合同（`版本三元组::满足`）核对被选包的 `实现版本`。
 
-use v1_contract::{版本要求, 版本三元组};
+use v1_contract::{版本三元组, 版本要求};
 
-use super::声明读取::声明值;
 use super::声明取值::取文本;
+use super::声明读取::声明值;
 
 /// 一条依赖要求：标识串 + 版本门槛（主 · 次）。
 ///
@@ -17,8 +17,14 @@ pub(super) struct 依赖要求 {
 /// 依赖清单 / 依赖版本要求：两张表按下标一一对应，项数不等即拒；
 /// 每项按正式形状 `{主, 次}` 解析（未知键 / 缺键 / 越 i32 一律拒，不猜 semver）。
 pub(super) fn 取依赖要求表(包声明: &声明值) -> Result<Vec<依赖要求>, String> {
-    let 依赖清单 = 包声明.取键("依赖清单").and_then(声明值::取文本表).unwrap_or_default();
-    let 版本要求表 = 包声明.取键("依赖版本要求").and_then(声明值::取表).unwrap_or_default();
+    let 依赖清单 = 包声明
+        .取键("依赖清单")
+        .and_then(声明值::取文本表)
+        .unwrap_or_default();
+    let 版本要求表 = 包声明
+        .取键("依赖版本要求")
+        .and_then(声明值::取表)
+        .unwrap_or_default();
     if 依赖清单.len() != 版本要求表.len() {
         return Err(format!(
             "依赖清单与依赖版本要求项数不等（{} vs {}）—— 两张表按下标一一对应",
@@ -30,7 +36,10 @@ pub(super) fn 取依赖要求表(包声明: &声明值) -> Result<Vec<依赖要�
     let mut 要求表: Vec<依赖要求> = Vec::with_capacity(依赖清单.len());
     for (序号, (标识串, 要求项)) in 依赖清单.iter().zip(版本要求表).enumerate() {
         if !是合法依赖标识(标识串) {
-            return Err(format!("依赖清单第 {} 项不是 32 位十六进制标识串：{标识串}", 序号 + 1));
+            return Err(format!(
+                "依赖清单第 {} 项不是 32 位十六进制标识串：{标识串}",
+                序号 + 1
+            ));
         }
         if 标识串.as_str() == 自身标识串 {
             return Err(format!("依赖清单含自身标识串 {标识串}"));
@@ -47,7 +56,9 @@ pub(super) fn 取依赖要求表(包声明: &声明值) -> Result<Vec<依赖要�
 }
 
 /// `{主, 次}` → `版本要求`（正式形状只有两键，无修订段；未知键即拒）。
-pub(super) fn 取版本要求(要求项: &声明值, 序号: usize) -> Result<版本要求, String> {
+pub(super) fn 取版本要求(
+    要求项: &声明值, 序号: usize
+) -> Result<版本要求, String> {
     let 出处 = format!("依赖版本要求第 {} 项", 序号 + 1);
     let 声明值::对象项(成员表) = 要求项 else {
         return Err(format!("{出处} 不是对象"));
@@ -57,13 +68,17 @@ pub(super) fn 取版本要求(要求项: &声明值, 序号: usize) -> Result<�
             return Err(format!("{出处} 有未知键 {键名}（正式形状只有 主 / 次）"));
         }
     }
-    let 主段 = i32::try_from(取整数字段(要求项, "主", &出处)?).map_err(|_| format!("{出处} 的 主 超出 i32"))?;
-    let 次段 = i32::try_from(取整数字段(要求项, "次", &出处)?).map_err(|_| format!("{出处} 的 次 超出 i32"))?;
+    let 主段 = i32::try_from(取整数字段(要求项, "主", &出处)?)
+        .map_err(|_| format!("{出处} 的 主 超出 i32"))?;
+    let 次段 = i32::try_from(取整数字段(要求项, "次", &出处)?)
+        .map_err(|_| format!("{出处} 的 次 超出 i32"))?;
     Ok(版本要求::构造(主段, 次段))
 }
 
 /// 被选依赖包的 `实现版本` → `版本三元组`（正式形状 `{主, 次, 构建}`）。
-pub(super) fn 取实现版本(包声明: &声明值, 标识串: &str) -> Result<版本三元组, String> {
+pub(super) fn 取实现版本(
+    包声明: &声明值, 标识串: &str
+) -> Result<版本三元组, String> {
     let 出处 = format!("依赖包 {标识串} 的 实现版本");
     let Some(版本项) = 包声明.取键("实现版本") else {
         return Err(format!("{出处} 缺失"));
@@ -73,17 +88,24 @@ pub(super) fn 取实现版本(包声明: &声明值, 标识串: &str) -> Result<
     };
     for (键名, _) in 成员表 {
         if 键名.as_str() != "主" && 键名.as_str() != "次" && 键名.as_str() != "构建" {
-            return Err(format!("{出处} 有未知键 {键名}（正式形状只有 主 / 次 / 构建）"));
+            return Err(format!(
+                "{出处} 有未知键 {键名}（正式形状只有 主 / 次 / 构建）"
+            ));
         }
     }
-    let 主段 = i32::try_from(取整数字段(版本项, "主", &出处)?).map_err(|_| format!("{出处} 的 主 超出 i32"))?;
-    let 次段 = i32::try_from(取整数字段(版本项, "次", &出处)?).map_err(|_| format!("{出处} 的 次 超出 i32"))?;
-    let 构建段 = i32::try_from(取整数字段(版本项, "构建", &出处)?).map_err(|_| format!("{出处} 的 构建 超出 i32"))?;
+    let 主段 = i32::try_from(取整数字段(版本项, "主", &出处)?)
+        .map_err(|_| format!("{出处} 的 主 超出 i32"))?;
+    let 次段 = i32::try_from(取整数字段(版本项, "次", &出处)?)
+        .map_err(|_| format!("{出处} 的 次 超出 i32"))?;
+    let 构建段 = i32::try_from(取整数字段(版本项, "构建", &出处)?)
+        .map_err(|_| format!("{出处} 的 构建 超出 i32"))?;
     Ok(版本三元组::构造(主段, 次段, 构建段))
 }
 
 /// 一个整数键（缺键 / 非整数即拒）。
-pub(super) fn 取整数字段(声明对象: &声明值, 键名: &str, 出处: &str) -> Result<i64, String> {
+pub(super) fn 取整数字段(
+    声明对象: &声明值, 键名: &str, 出处: &str
+) -> Result<i64, String> {
     声明对象
         .取键(键名)
         .and_then(声明值::取数值)

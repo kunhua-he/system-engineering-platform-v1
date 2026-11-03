@@ -12,7 +12,11 @@ use super::契约产物;
 ///
 /// 依据 `项目文档/决策记录/2026-10-12_模块执行体承载与编译裁决.md`：
 /// 执行体放段 20 · **构建侧编译**（运行侧不现编）· 制品带平台身份。
-pub(super) fn 出执行体(产物组: &[(u32, 本机生成::本机源码产物)], 工具链命令: &Path, 平台身份: &str) -> Result<Vec<u8>, String> {
+pub(super) fn 出执行体(
+    产物组: &[(u32, 本机生成::本机源码产物)],
+    工具链命令: &Path,
+    平台身份: &str,
+) -> Result<Vec<u8>, String> {
     let (契约产物, 依赖目录) = 找契约产物()?;
     let 暂存根目录 = 取暂存目录()?;
     let 调用暂存目录 = 暂存根目录.join(format!(
@@ -25,7 +29,8 @@ pub(super) fn 出执行体(产物组: &[(u32, 本机生成::本机源码产物)]
     ));
     fs::create_dir(&调用暂存目录).map_err(|错误| format!("建独立暂存目录失败：{错误}"))?;
     let 输出路径 = 调用暂存目录.join("模块执行体.dylib");
-    let 编译结果 = 本机生成::编译模块源码组(产物组, 工具链命令, &契约产物, &依赖目录, &输出路径);
+    let 编译结果 =
+        本机生成::编译模块源码组(产物组, 工具链命令, &契约产物, &依赖目录, &输出路径);
     if let Err(错误) = 编译结果 {
         let _清理结果 = fs::remove_dir_all(&调用暂存目录);
         return Err(错误);
@@ -38,9 +43,16 @@ pub(super) fn 出执行体(产物组: &[(u32, 本机生成::本机源码产物)]
         }
     };
     let 清理结果 = fs::remove_dir_all(&调用暂存目录);
-    if let Err(错误) = 清理结果 { return Err(format!("执行体已读出，但暂存目录清理失败：{错误}")); }
-    if 执行体.is_empty() { return Err("编出来的执行体是空的".to_owned()); }
-    Ok(v1_contract::容器::打包执行体载荷(平台身份, &执行体))
+    if let Err(错误) = 清理结果 {
+        return Err(format!("执行体已读出，但暂存目录清理失败：{错误}"));
+    }
+    if 执行体.is_empty() {
+        return Err("编出来的执行体是空的".to_owned());
+    }
+    Ok(v1_contract::容器::打包执行体载荷(
+        平台身份,
+        &执行体,
+    ))
 }
 
 /// 编执行体用的暂存目录：**只从环境变量来，没有默认值**。
@@ -69,7 +81,9 @@ pub(super) fn 取暂存目录() -> Result<PathBuf, String> {
 pub(super) fn 取工具链() -> (String, String, PathBuf) {
     let 工具链命令 = PathBuf::from(std::env::var_os("RUSTC").unwrap_or_else(|| "rustc".into()));
     let 输出 = std::process::Command::new(&工具链命令).arg("-vV").output();
-    let Ok(输出) = 输出 else { return (String::new(), String::new(), 工具链命令) };
+    let Ok(输出) = 输出 else {
+        return (String::new(), String::new(), 工具链命令);
+    };
     let 工具链身份 = String::from_utf8_lossy(&输出.stdout).to_string();
     let 平台身份 = 工具链身份
         .lines()
