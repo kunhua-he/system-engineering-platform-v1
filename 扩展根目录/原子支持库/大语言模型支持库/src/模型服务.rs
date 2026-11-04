@@ -84,8 +84,8 @@ fn 探状态码(端口: u16, 路径: &str) -> Option<u16> {
 /// 收口成五个词，不做自由文本 —— 自由文本等于没校验。别名按「去掉空格+小写」比对。
 pub(crate) const 模型类型表: [&str; 5] = ["文本", "看图", "向量", "重排", "语音"];
 
-fn 规整模型类型(原文: &str) -> Result<String, u32> {
-    let 紧凑: String = 原文.chars().filter(|c| !c.is_whitespace()).collect();
+pub(crate) fn 规整模型类型(原文: &str) -> Result<String, u32> {
+    let 紧凑: String = 原文.chars().filter(|c| !c.is_whitespace() && *c != '\0').collect();
     let 候选 = if 紧凑.is_empty() { "文本".to_owned() } else { 紧凑 };
     // 常见别名一律归一，避免「LLM」「VLM」这种写法各传各的。
     let 归一 = match 候选.as_str() {
