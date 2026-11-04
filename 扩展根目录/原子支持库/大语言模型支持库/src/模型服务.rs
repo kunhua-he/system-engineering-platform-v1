@@ -178,7 +178,9 @@ pub(crate) fn 等待就绪(句柄: u64, 超时毫秒: u64) -> Result<bool, u32> 
         let 条目 = 表.get(&句柄).ok_or(错误码::服务无效)?;
         条目.监听端口
     };
-    let 截止 = Instant::now() + Duration::from_millis(超时毫秒.min(300_000));
+    // 单次等待封顶 3 秒：顶到 5 秒会先撞内核调用预算，调用方拿到的是内核 `4 超时`
+    // 而不是本能力的判定（实测踩过）。模型加载慢就多次调用，不靠一次长等。
+    let 截止 = Instant::now() + Duration::from_millis(超时毫秒.min(3_000));
     loop {
         if 端口就绪(端口) {
             return Ok(true);
