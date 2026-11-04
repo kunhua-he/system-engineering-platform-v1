@@ -61,6 +61,40 @@ fn 端口就绪(端口: u16) -> bool {
     TcpStream::connect_timeout(&地址, Duration::from_millis(200)).is_ok()
 }
 
+/// 手写一个 HTTP GET 只取状态码（不引第三方依赖：这是底座，少一个依赖少一份风险）。
+fn 探状态码(端口: u16, 路径: &str) -> Option<u16> {
+    use std::io::{Read, Write};
+    use std::net::{SocketAddr, TcpStream};
+    let 地址 = SocketAddr::from(([127, 0, 0, 1], 端口));
+    let mut 流 = TcpStream::connect_timeout(&地址, Duration::from_millis(300)).ok()?;
+    流.set_read_timeout(Some(Duration::from_millis(800))).ok()?;
+    let 请求 = format!("GET {路径} HTTP/1.0\r\nHost: 127.0.0.1\r\n\r\n");
+    流.write_all(请求.as_bytes()).ok()?;
+    let mut 缓冲 = [0u8; 64];
+    let 读入 = 流.read(&mut 缓冲).ok()?;
+    std::str::from_utf8(&缓冲[..读入]).ok()?.split_whitespace().nth(1)?.parse().ok()
+}
+
+/// 真就绪 = 端口在听 + 就绪路径回 200 + （服务若有 `/health`，它也必须是 200）。
+///
+/// 为什么不能只看端口、也不能只看 `/v1/models`：llama-server 在**模型还没加载完**时
+/// `/v1/models` 就回 200，但 `/v1/chat/completions` 直接 **503** —— 表现是「显示已就绪、
+/// 一问就挂」（2026-11-04 实测）。`/health` 才是真判据：加载中 503、加载完 200。
+/// 对没有 `/health` 的服务（回 404 或连不上），退回到只看就绪路径，不误判。
+fn 真就绪(端口: u16, 就绪路径: &str) -> bool {
+    if !端口就绪(端口) {
+        return false;
+    }
+    if 探状态码(端口, 就绪路径) != Some(200) {
+        return false;
+    }
+    match 探状态码(端口, "/health") {
+        Some(200) => true,
+        Some(503) => false,
+        _ => true,
+    }
+}
+
 /// 进程是否**还在跑**。
 ///
 /// 为什么不用 `kill(pid, 0)`：那个对**僵尸进程**返回成功（僵尸仍占着进程号），
@@ -173,16 +207,16 @@ pub(crate) fn 服务存在(句柄: u64) -> bool {
 
 /// 等待就绪：轮询「端口在听」，超时即假（不把超时说成成功）。
 pub(crate) fn 等待就绪(句柄: u64, 超时毫秒: u64) -> Result<bool, u32> {
-    let 端口 = {
+    let (端口, 就绪路径) = {
         let 表 = 取锁(服务表()).map_err(|_| 错误码::资源受限)?;
         let 条目 = 表.get(&句柄).ok_or(错误码::服务无效)?;
-        条目.监听端口
+        (条目.监听端口, 条目.就绪路径.clone())
     };
     // 单次等待封顶 3 秒：顶到 5 秒会先撞内核调用预算，调用方拿到的是内核 `4 超时`
     // 而不是本能力的判定（实测踩过）。模型加载慢就多次调用，不靠一次长等。
     let 截止 = Instant::now() + Duration::from_millis(超时毫秒.min(3_000));
     loop {
-        if 端口就绪(端口) {
+        if 真就绪(端口, &就绪路径) {
             return Ok(true);
         }
         let 仍在跑 = {
