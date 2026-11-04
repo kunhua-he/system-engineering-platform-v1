@@ -113,6 +113,73 @@ fn 默认就绪路径(模型类型: &str) -> &'static str {
     }
 }
 
+/// 内存预算：按模型文件大小估算需要多少，再看本机还剩多少，不够就回 `资源受限`。
+///
+/// 估算口径：权重按文件大小（GGUF 基本就是实际占用），再乘 `1.15` 覆盖上下文 KV 与运行时开销。
+/// 判定口径：可用内存取 `vm_stat` 的空闲 + 非活跃页，再打八折当安全余量 —— 打得紧一点，
+/// 因为 macOS 会拿「空闲」去做缓存，看着还有很多其实一压就换页。
+///
+/// 模型文件未知（调用方传的是纯名字）就跳过预算：外部模型不在本机，无从估算。
+fn 内存预算够吗(模型文件: Option<&str>) -> Result<(), u32> {
+    let 路径 = match 模型文件 {
+        Some(路径) => 路径,
+        None => return Ok(()),
+    };
+    let 文件字节 = match std::fs::metadata(路径) {
+        Ok(元) => 元.len(),
+        Err(_) => return Ok(()), // 文件问题由上游解析那一步报，这里不重复判
+    };
+    let 需求字节 = (文件字节 as f64 * 1.15) as u64 + 512 * 1024 * 1024;
+    let 可用字节 = 可用内存字节();
+    if 可用字节 == 0 {
+        return Ok(()); // 读不到内存就放行，不用「读不到」当拒绝理由
+    }
+    if 需求字节 > (可用字节 as f64 * 0.8) as u64 {
+        return Err(错误码::资源受限);
+    }
+    Ok(())
+}
+
+/// 可用内存 = `vm_stat` 的空闲页 + 非活跃页（非活跃页可以立刻回收，算得上可用）。
+/// 读不到返回 0，由调用方决定放行。
+fn 可用内存字节() -> u64 {
+    let 输出 = match std::process::Command::new("/usr/bin/vm_stat").output() {
+        Ok(输出) => 输出,
+        Err(_) => return 0,
+    };
+    let 文本 = String::from_utf8_lossy(&输出.stdout);
+    let mut 空闲页 = 0u64;
+    let mut 非活跃页 = 0u64;
+    let mut 页大小 = 4096u64;
+    for 行 in 文本.lines() {
+        if 行.contains("page size of") {
+            // 形如：Mach Virtual Memory Statistics: (page size of 16384 bytes)
+            if let Some(起) = 行.find("page size of") {
+                let 剩余 = &行[起 + 12..];
+                页大小 = 剩余
+                    .split_whitespace()
+                    .next()
+                    .and_then(|数| 数.parse::<u64>().ok())
+                    .unwrap_or(4096);
+            }
+            continue;
+        }
+        let 取数 = |键: &str| -> u64 {
+            if !行.starts_with(键) {
+                return 0;
+            }
+            行.split(':')
+                .nth(1)
+                .map(|尾| 尾.trim().trim_end_matches('.').to_owned())
+                .and_then(|数| 数.parse::<u64>().ok())
+                .unwrap_or(0)
+        };
+        空闲页 += 取数("Pages free");
+        非活跃页 += 取数("Pages inactive");
+    }
+    (空闲页 + 非活跃页) * 页大小
+}
+
 /// 分配一个空闲端口：40000-49999 里既没在听、也没被服务表占用的第一个。
 fn 分配空闲端口(表: &HashMap<u64, 服务条目>) -> Option<u16> {
     (40000..50000u16).find(|候选| {
@@ -211,6 +278,9 @@ pub(crate) fn 拉起(
         return Err(错误码::参数不合法);
     }
     let 模型类型 = 规整模型类型(模型类型)?;
+    // 内存预算先过一遍：不够就当场拒，不「先拉起再说」。
+    // 撑爆内存的后果是整机变卡、别人正在跑的模型一起遭殃，而且事后查不出是谁拉起来的。
+    内存预算够吗(模型文件)?;
     // 端口 0 = 由底座分配：调用方不必先找空端口，也就不会撞。（服务表已登记的端口一并避开）
     let (端口, 就绪路径) = {
         let 表 = 取锁(服务表()).map_err(|_| 错误码::资源受限)?;
