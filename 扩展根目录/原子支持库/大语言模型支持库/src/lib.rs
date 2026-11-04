@@ -13,10 +13,13 @@ mod 命令声明面;
 mod 执行函数面;
 #[path = "模型服务.rs"]
 mod 模型服务;
+
 #[path = "生成任务.rs"]
 mod 生成任务;
 #[path = "编号与码面.rs"]
 mod 编号与码面;
+#[path = "推理许可.rs"]
+mod 推理许可;
 #[path = "连接与句柄.rs"]
 mod 连接与句柄;
 #[path = "静态声明.rs"]

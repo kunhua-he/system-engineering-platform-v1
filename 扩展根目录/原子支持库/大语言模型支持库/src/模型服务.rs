@@ -163,6 +163,14 @@ pub(crate) fn 拉起(
     Ok(句柄)
 }
 
+/// 该服务句柄是否仍在表内（许可申请前用它挡住「已释放的服务」）。
+pub(crate) fn 服务存在(句柄: u64) -> bool {
+    match 服务表().lock() {
+        Ok(表) => 表.contains_key(&句柄),
+        Err(_) => false,
+    }
+}
+
 /// 等待就绪：轮询「端口在听」，超时即假（不把超时说成成功）。
 pub(crate) fn 等待就绪(句柄: u64, 超时毫秒: u64) -> Result<bool, u32> {
     let 端口 = {

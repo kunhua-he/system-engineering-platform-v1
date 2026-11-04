@@ -15,6 +15,9 @@ pub mod 能力号 {
     pub const 释放模型服务: u32 = 2513;
     pub const 取模型服务状态: u32 = 2514;
     pub const 等待模型就绪: u32 = 2515;
+    pub const 申请推理许可: u32 = 2516;
+    pub const 归还推理许可: u32 = 2517;
+    pub const 取推理排队快照: u32 = 2518;
 }
 pub mod 错误码 {
     pub const 参数不合法: u32 = 2501;
@@ -27,6 +30,8 @@ pub mod 错误码 {
     pub const 服务无效: u32 = 2508;
     pub const 拉起失败: u32 = 2509;
     pub const 端口已被占用: u32 = 2510;
+    pub const 排队超时: u32 = 2511;
+    pub const 许可无效: u32 = 2512;
 }
 pub const fn 码项(
     错误码: u32,
@@ -48,7 +53,7 @@ pub const fn 码项(
     }
 }
 
-pub const 错误码信息表: [错误码信息; 10] = [
+pub const 错误码信息表: [错误码信息; 12] = [
     码项(
         错误码::参数不合法,
         "参数不合法\0".as_bytes(),
@@ -130,7 +135,23 @@ pub const 错误码信息表: [错误码信息; 10] = [
         0,
         1,
     ),
+    码项(
+        错误码::排队超时,
+        "排队超时\0".as_bytes(),
+        "等待推理许可超过给定毫秒仍未轮到；可加大等待或稍后重试\0".as_bytes(),
+        1,
+        0,
+        0,
+    ),
+    码项(
+        错误码::许可无效,
+        "许可无效\0".as_bytes(),
+        "许可句柄不存在、已被归还或已被超租约回收\0".as_bytes(),
+        0,
+        0,
+        0,
+    ),
 ];
 pub const fn 错误码信息表段() -> v1_contract::表段<错误码信息> {
-    v1_contract::表段::构造(错误码信息表.as_ptr(), 10)
+    v1_contract::表段::构造(错误码信息表.as_ptr(), 12)
 }
