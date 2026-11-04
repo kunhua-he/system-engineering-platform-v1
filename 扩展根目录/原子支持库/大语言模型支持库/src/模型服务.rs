@@ -30,6 +30,8 @@ use crate::编号与码面::错误码;
 
 /// 一条已登记的模型服务。
 pub(crate) struct 服务条目 {
+    /// 这个服务跑的是哪个模型 —— 由调用方传的标识或绝对路径解析而来（路径会被校验）。
+    pub(crate) 模型标识: String,
     pub(crate) 进程号: u32,
     pub(crate) 监听端口: u16,
     /// 模型类型：文本 / 看图 / 向量 / 重排 / 语音。决定默认就绪路径与后续该用哪对能力。
@@ -243,6 +245,7 @@ pub(crate) fn 拉起(
     表.insert(
         句柄,
         服务条目 {
+            模型标识: 模型标识.to_owned(),
             进程号,
             监听端口,
             模型类型: 模型类型.clone(),
@@ -310,6 +313,9 @@ pub(crate) fn 取状态(句柄: u64) -> Result<serde_json::Value, u32> {
         "存活": 存活,
         "端口就绪": 就绪,
         "运行秒": 条目.启动时刻.elapsed().as_secs(),
+        // 底座把「模型标识 / 绝对路径」翻译成了哪个 model 名 —— 得让人看得见，
+        // 否则调用方没法确认传进来那条路径到底被认成了什么。
+        "模型标识": 条目.模型标识,
         "模型类型": 条目.模型类型,
         "就绪路径": 条目.就绪路径,
         "CPU毫秒": CPU毫秒,
@@ -375,4 +381,73 @@ fn CPU时间解析认得厘秒与天段() {
     assert_eq!(解析CPU时间(""), None);
     assert_eq!(解析CPU时间("   "), None);
     assert_eq!(解析CPU时间("abc"), None);
+}
+
+/// 模型的「引用」解析结果：调用方给什么都能认，最后落到一个确定的标识上。
+pub(crate) struct 模型引用 {
+    /// 请求体里该写的 model 名（由路径或名字解析出来的）
+    pub(crate) 标识: String,
+    /// 当引用是绝对路径时带回原路径，供拉起时用
+    pub(crate) 文件路径: Option<String>,
+    /// 从文件名推断出来的类型（推不出就是 None，由调用方决定）
+    pub(crate) 推断类型: Option<&'static str>,
+}
+
+/// 把「模型引用」翻译成确定标识 —— 这就是那个转化器。
+///
+/// * 传纯名字（`qwen3`）：原样返回，无从校验（外部模型本来就不在本机）。
+/// * 传绝对路径（`/…/Qwen3-8B-Q4_K_M.gguf`）：**先校验文件真的在**，再把文件名
+///   （去扩展名）当作 model 名，并从文件名推断模型类型。
+///
+/// 为什么非要校验：把模型名当自由文本传，模型在不在本机没人知道，要等推理时才炸；
+/// 传路径则当场炸，错得早、错得准。
+pub(crate) fn 解析模型引用(引用: &str) -> Result<模型引用, u32> {
+    let 去空 = 引用.trim();
+    if 去空.is_empty() {
+        return Err(错误码::参数不合法);
+    }
+    let 看着像路径 = 去空.contains('/')
+        || 去空.contains('\\')
+        || 去空.to_lowercase().ends_with(".gguf")
+        || 去空.to_lowercase().ends_with(".ggml")
+        || 去空.to_lowercase().ends_with(".bin");
+    if !看着像路径 {
+        return Ok(模型引用 {
+            标识: 去空.to_owned(),
+            文件路径: None,
+            推断类型: 从文件名推断类型(去空),
+        });
+    }
+    match std::fs::metadata(去空) {
+        Ok(元) if 元.is_file() && 元.len() > 0 => {}
+        _ => return Err(错误码::模型文件不存在),
+    }
+    let 文件名 = 去空.rsplit(['/', '\\']).next().unwrap_or(去空);
+    let 基名 = 文件名.rsplit_once('.').map(|(前, _)| 前).unwrap_or(文件名);
+    if 基名.trim().is_empty() {
+        return Err(错误码::参数不合法);
+    }
+    Ok(模型引用 {
+        标识: 基名.to_owned(),
+        文件路径: Some(去空.to_owned()),
+        推断类型: 从文件名推断类型(基名),
+    })
+}
+
+/// 从文件名猜它是什么模型。猜不出返回 None（当作调用方没表态）。
+fn 从文件名推断类型(名: &str) -> Option<&'static str> {
+    let 小写 = 名.to_lowercase();
+    if 小写.contains("vl") || 小写.contains("vision") || 小写.contains("llava") {
+        return Some("看图");
+    }
+    if 小写.contains("rerank") {
+        return Some("重排");
+    }
+    if 小写.contains("bge") || 小写.contains("embed") || 小写.contains("minilm") {
+        return Some("向量");
+    }
+    if 小写.contains("whisper") || 小写.contains("asr") || 小写.contains("sensevoice") {
+        return Some("语音");
+    }
+    None
 }
