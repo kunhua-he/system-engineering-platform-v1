@@ -315,20 +315,32 @@ fn 取接口描述_内容与能力清单一致() {
 // ════════════════════════════════════════════════════════════════════════════
 
 use core::alloc::{GlobalAlloc, Layout};
+use core::cell::Cell;
 use core::sync::atomic::{AtomicUsize, Ordering};
 use std::alloc::System;
 
 /// 活字节（alloc 加、dealloc 减）。**只在测试二进制里**，不是生产状态。
+///
+/// ★ 进程级状态：只有 `读数_取多次_不归还涨_归还平` 读它，而那条用例带 `#[ignore]`
+/// 且要求 `--test-threads=1` 单跑（量的是整进程净增长，并行时别的用例的分配必然混进来）。
 static 泄漏读数_活字节: AtomicUsize = AtomicUsize::new(0);
 
-/// 计数分配器要**盯住**的那一个地址（0 = 不盯）。
-///
-/// 用途：审计发现 1 的**身份证** —— 证「指定返回地址真的发生了 free」，而不是只证「槽空了」。
-/// 旧行为（只清槽）下这条恒为 0，根因即于此可见。
-static 泄漏读数_盯住地址: AtomicUsize = AtomicUsize::new(0);
-
-/// 被盯地址上的 `dealloc` 命中数（命中即 +1）。
-static 泄漏读数_命中次数: AtomicUsize = AtomicUsize::new(0);
+// ── 单地址观察器：**线程局部**，不是进程级 ──
+//
+// 为什么必须线程局部（2026-11-03 实测）：`cargo test` 默认并行，同一测试二进制里
+// 有 4 处用例用这组观察器（`进程调用.rs` · `工作进程.rs` 两处 · `调用测试.rs`）。
+// 早先用两个进程级 `static`（`盯住地址` / `命中次数`）⇒ 后开跑的用例把前一个的盯住
+// 地址覆盖掉，读数又被别线程的 `dealloc` 计进来，两种错都会出：
+//   · 假红：本用例读到本线程那 1 次 + 别线程释放同一复用地址的 1 次 = 2（实测 20 轮里 4 轮）。
+//   · 假绿（更坏）：本用例的地址被覆盖后命中恒为 0，该报的「没归还」报不出来。
+// 观察语义本来就是「我这一个线程盯我这一个块」⇒ 状态归属线程，跨线程一律不认。
+// `const` 初始化的 TLS 不触发分配，所以能在 `dealloc` 里安全访问（见 `try_with` 那段）。
+thread_local! {
+    /// 本线程正在盯住的那一个堆地址（0 = 不盯）。
+    static 本线程盯住地址: Cell<usize> = const { Cell::new(0) };
+    /// 被盯地址在本线程上发生的 `dealloc` 次数（命中即 +1）。
+    static 本线程命中次数: Cell<usize> = const { Cell::new(0) };
+}
 
 struct 泄漏读数_计数分配器;
 
@@ -341,9 +353,16 @@ unsafe impl GlobalAlloc for 泄漏读数_计数分配器 {
         指针
     }
     unsafe fn dealloc(&self, 指针: *mut u8, 内存布局: Layout) {
-        if 指针 as usize != 0 && 指针 as usize == 泄漏读数_盯住地址.load(Ordering::SeqCst)
-        {
-            泄漏读数_命中次数.fetch_add(1, Ordering::SeqCst);
+        let 释放地址 = 指针 as usize;
+        if 释放地址 != 0 {
+            // 只认**本线程**的命中：别的线程释放同一地址（堆复用）不算本线程的读数。
+            // `try_with` 而不是 `with`：线程本地存储已析构时 `with` 会 panic，
+            // 而这里在分配器内部 —— 那种时机只能降级成「不计数」，不能把进程炸掉。
+            let _ = 本线程盯住地址.try_with(|盯住| {
+                if 盯住.get() == 释放地址 {
+                    let _ = 本线程命中次数.try_with(|命中| 命中.set(命中.get() + 1));
+                }
+            });
         }
         unsafe { System.dealloc(指针, 内存布局) };
         泄漏读数_活字节.fetch_sub(内存布局.size(), Ordering::SeqCst);
@@ -362,13 +381,17 @@ fn 泄漏读数_读活字节() -> usize {
 /// 只在**单用例内**用：全局地址复用可能让别的用例的分配/释放也落在同一地址上，
 /// 故本腿只在该地址**还活着**（负向）或**由本用例泄露、不会被别处释放**（正向）时断言。
 pub(crate) fn 泄漏读数_盯住(堆地址: usize) {
-    泄漏读数_命中次数.store(0, Ordering::SeqCst);
-    泄漏读数_盯住地址.store(堆地址, Ordering::SeqCst);
+    let _ = 本线程命中次数.try_with(|命中| 命中.set(0));
+    let _ = 本线程盯住地址.try_with(|盯住| 盯住.set(堆地址));
 }
 
-/// 读被盯地址上的 `dealloc` 命中数。
+/// 读**本线程**在被盯地址上的 `dealloc` 命中数。
+///
+/// 口径：只有在**与 `泄漏读数_盯住` 同一个线程**里发生的归还才会被计入。
+/// 若将来某条用例把归还搬到别的线程（子线程 / 执行域线程），本读数会恒为 0 ——
+/// 那是「观察点失效」，必须先改成按令牌记账，不能当成「没泄漏」。
 pub(crate) fn 泄漏读数_命中() -> usize {
-    泄漏读数_命中次数.load(Ordering::SeqCst)
+    本线程命中次数.try_with(Cell::get).unwrap_or(0)
 }
 
 /// 一次「取接口描述」拿到的字节数（顺手归还，不留账）。
