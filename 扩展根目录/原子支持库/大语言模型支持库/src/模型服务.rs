@@ -82,45 +82,24 @@ fn 探状态码(端口: u16, 路径: &str) -> Option<u16> {
 /// 模型类型受控枚举：类型不认识就直接拒（不等到调用时才发现拿错能力）。
 ///
 /// 收口成五个词，不做自由文本 —— 自由文本等于没校验。别名按「去掉空格+小写」比对。
-pub(crate) const 模型类型表: [&str; 5] = ["文本", "看图", "向量", "重排", "语音"];
+/// 模型类型的**唯一词表**。传参、服务表、状态回执全用这五个词，不许再出现第二套写法。
+///
+/// 为什么只留五个、不认别名：别名一开口，下游就会各写各的（文本 / LLM / 文本模型 / 大模型…），
+/// 最后没人确定该传哪个，反而变成四不像。要加类型就改这张表，别在调用方发明新词。
+pub(crate) const 模型类型表: [&str; 5] = [
+    "LLM文本模型",
+    "VLM看图模型",
+    "EM向量模型",
+    "Rerank重排模型",
+    "ASR语音识别模型",
+];
 
-pub(crate) fn 规整模型类型(原文: &str) -> Result<String, u32> {
+pub(crate) fn 规整模型类型(原文: &str) -> Result<&'static str, u32> {
     let 紧凑: String = 原文.chars().filter(|c| !c.is_whitespace() && *c != '\0').collect();
-    if 紧凑.is_empty() {
-        return Ok("文本".to_owned());
-    }
-    let 小写 = 紧凑.to_lowercase();
-    // 先认中文：中文词各不互为子串，不会误判。
-    // 这样「LLM文本模型」「VLM看图模型」这种「缩写 + 中文」的组合写法也一眼认出。
-    let 中文归类: [(&[&str], &str); 5] = [
-        (&["看图", "视觉"], "看图"),
-        (&["向量", "嵌入"], "向量"),
-        (&["重排", "重排"], "重排"),
-        (&["语音", "识别"], "语音"),
-        (&["文本", "文本"], "文本"),
-    ];
-    for (关键词组, 归一) in 中文归类 {
-        if 关键词组.iter().any(|词| 紧凑.contains(词)) {
-            return Ok(归一.to_owned());
+    for 允许 in 模型类型表 {
+        if 紧凑 == 允许 {
+            return Ok(允许);
         }
-    }
-    // 中文没写，再认英文缩写（含在长串里也认，比如 OpenAIEmbedding）。
-    for (关键词, 归一) in [
-        ("vlm", "看图"),
-        ("vision", "看图"),
-        ("llm", "文本"),
-        ("chat", "文本"),
-        ("rerank", "重排"),
-        ("asr", "语音"),
-        ("whisper", "语音"),
-        ("embed", "向量"),
-    ] {
-        if 小写.contains(关键词) {
-            return Ok(归一.to_owned());
-        }
-    }
-    if 小写 == "em" {
-        return Ok("向量".to_owned());
     }
     Err(错误码::参数不合法)
 }
@@ -129,7 +108,7 @@ pub(crate) fn 规整模型类型(原文: &str) -> Result<String, u32> {
 /// 语音常见服务只认根路径。
 fn 默认就绪路径(模型类型: &str) -> &'static str {
     match 模型类型 {
-        "语音" => "/",
+        "ASR语音识别模型" => "/",
         _ => "/health",
     }
 }
@@ -282,7 +261,7 @@ pub(crate) fn 拉起(
             模型标识: 模型标识.to_owned(),
             进程号,
             监听端口,
-            模型类型: 模型类型.clone(),
+            模型类型: 模型类型.to_owned(),
             就绪路径: 就绪路径.to_owned(),
             启动时刻: Instant::now(),
             子进程,
@@ -472,16 +451,19 @@ pub(crate) fn 解析模型引用(引用: &str) -> Result<模型引用, u32> {
 fn 从文件名推断类型(名: &str) -> Option<&'static str> {
     let 小写 = 名.to_lowercase();
     if 小写.contains("vl") || 小写.contains("vision") || 小写.contains("llava") {
-        return Some("看图");
+        return Some("VLM看图模型");
     }
     if 小写.contains("rerank") {
-        return Some("重排");
+        return Some("Rerank重排模型");
     }
     if 小写.contains("bge") || 小写.contains("embed") || 小写.contains("minilm") {
-        return Some("向量");
+        return Some("EM向量模型");
     }
     if 小写.contains("whisper") || 小写.contains("asr") || 小写.contains("sensevoice") {
-        return Some("语音");
+        return Some("ASR语音识别模型");
     }
+    // 猜不出就不猜：交给本口的默认（LLM文本模型 / EM向量模型 / Rerank重排模型）。
+    // 文件名里没有明确特征时硬猜成文本，等于给调用方一个假答案。
     None
 }
+
