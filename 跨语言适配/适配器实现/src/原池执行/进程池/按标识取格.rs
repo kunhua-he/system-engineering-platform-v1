@@ -19,7 +19,28 @@ use super::{
 impl 进程池 {
     #[cfg(test)]
     pub(crate) fn 设置压力样本(&self, CPU忙碌: Option<u32>, 内存压力: Option<u32>) {
-        crate::线程安全::取锁(&self.动态预算).固定样本 = Some((CPU忙碌, 内存压力));
+        crate::线程安全::取锁(&self.动态预算).固定样本 =
+            Some(super::动态预算::固定压力样本 {
+                CPU忙碌,
+                内存压力,
+                GPU忙碌: None,
+            });
+    }
+
+    /// 同 [`进程池::设置压力样本`]，额外注入 GPU 一路（验「GPU 高位才收紧」这条规则）。
+    #[cfg(test)]
+    pub(crate) fn 设置压力样本含GPU(
+        &self,
+        CPU忙碌: Option<u32>,
+        内存压力: Option<u32>,
+        GPU忙碌: Option<u32>,
+    ) {
+        crate::线程安全::取锁(&self.动态预算).固定样本 =
+            Some(super::动态预算::固定压力样本 {
+                CPU忙碌,
+                内存压力,
+                GPU忙碌,
+            });
     }
 
     /// 当前准入数量及样本是否齐全。未知不伪造正常值；配置仍是硬护栏。

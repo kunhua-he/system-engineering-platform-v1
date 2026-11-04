@@ -9,12 +9,31 @@ pub(crate) struct 动态预算状态 {
     上次采样: Option<Instant>,
     上次CPU: Option<[u32; 4]>,
     最近CPU读数: Option<(Instant, u32)>,
+    /// GPU 利用率的上次采样时刻与读数（采样代价高，单独 2 秒节流）。
+    上次GPU采样: Option<Instant>,
+    最近GPU利用率: Option<u32>,
+    /// 测试注入的固定压力样本（三路都给，缺哪路就按「读不到」处理）。
     #[cfg(test)]
-    pub(super) 固定样本: Option<(Option<u32>, Option<u32>)>,
+    pub(super) 固定样本: Option<固定压力样本>,
+}
+
+/// 测试注入的压力样本：三路压力各一条，`None` = 该路读不到。
+#[cfg(test)]
+#[derive(Clone, Copy, Default)]
+pub(super) struct 固定压力样本 {
+    pub(super) CPU忙碌: Option<u32>,
+    pub(super) 内存压力: Option<u32>,
+    pub(super) GPU忙碌: Option<u32>,
 }
 
 impl 动态预算状态 {
-    fn 重算(&mut self, 硬上限: u32, CPU忙碌: Option<u32>, 内存压力: Option<u32>) -> u32 {
+    fn 重算(
+        &mut self,
+        硬上限: u32,
+        CPU忙碌: Option<u32>,
+        内存压力: Option<u32>,
+        GPU忙碌: Option<u32>,
+    ) -> u32 {
         let CPU忙碌 = CPU忙碌.filter(|值| *值 <= 100);
         let 内存压力 = 内存压力.filter(|值| matches!(*值, 1 | 2 | 4));
         self.样本可信 = CPU忙碌.is_some() && 内存压力.is_some();
@@ -38,14 +57,24 @@ impl 动态预算状态 {
             Some(4) => 1,
             _ => 硬上限,
         };
-        self.当前上限 = 硬上限.min(CPU上限).min(内存上限);
+        // GPU 一路：只在**高位**才收紧 —— 本地大模型/截图编码会把 GPU 拉到 90%+ 而 CPU 还有余量，
+        // 只看 CPU 就会继续起进程。阈值定 90：80 以下属于正常负载，不该因为「在算图」就掐并发。
+        // 读不到 GPU（没这张卡 / 系统不给计数）⇒ 一律不缩：不猜，也不假装 0。
+        let GPU忙碌 = GPU忙碌.filter(|值| *值 <= 100);
+        let GPU上限 = match GPU忙碌 {
+            Some(忙碌比例 @ 90..=100) => {
+                ((u64::from(硬上限) * u64::from(100 - 忙碌比例)).div_ceil(100) as u32).max(1)
+            }
+            _ => 硬上限,
+        };
+        self.当前上限 = 硬上限.min(CPU上限).min(内存上限).min(GPU上限);
         self.当前上限
     }
 
     pub(super) fn 取上限(&mut self, 硬上限: u32) -> u32 {
         #[cfg(test)]
-        if let Some((CPU忙碌, 内存压力)) = self.固定样本 {
-            return self.重算(硬上限, CPU忙碌, 内存压力);
+        if let Some(样本) = self.固定样本 {
+            return self.重算(硬上限, 样本.CPU忙碌, 样本.内存压力, 样本.GPU忙碌);
         }
         if self
             .上次采样
@@ -55,8 +84,9 @@ impl 动态预算状态 {
         }
         let (CPU计数, 内存压力) = 取系统压力样本();
         let 现在时刻 = Instant::now();
+        let GPU忙碌 = self.取GPU忙碌(现在时刻);
         self.上次采样 = Some(现在时刻);
-        self.刷新样本(硬上限, CPU计数, 内存压力, 现在时刻)
+        self.刷新样本(硬上限, CPU计数, 内存压力, GPU忙碌, 现在时刻)
     }
 
     fn 刷新样本(
@@ -64,6 +94,7 @@ impl 动态预算状态 {
         硬上限: u32,
         CPU计数: Option<[u32; 4]>,
         内存压力: Option<u32>,
+        GPU忙碌: Option<u32>,
         现在时刻: Instant,
     ) -> u32 {
         let CPU忙碌 = CPU计数.zip(self.上次CPU).and_then(|(当前计数, 上次)| {
@@ -86,10 +117,93 @@ impl 动态预算状态 {
                 })
                 .map(|(_, 忙碌比例)| 忙碌比例)
         });
-        let 当前上限 = self.重算(硬上限, CPU忙碌, 内存压力);
+        let 当前上限 = self.重算(硬上限, CPU忙碌, 内存压力, GPU忙碌);
         self.样本可信 &= CPU新鲜;
         当前上限
     }
+}
+
+impl 动态预算状态 {
+    /// GPU 利用率（带 2 秒缓存）。
+    ///
+    /// 为什么单独节流：读 GPU 要起 `ioreg` 子进程（约几毫秒），而本口每 250 ms 就被
+    /// `申请进程额度` 摸一次；不缓存的话，并发首拉会在预算锁里排长队。
+    /// 读不到 ⇒ `None`，交给 `重算` 当「不缩」处理 —— 不猜、不假装 0。
+    fn 取GPU忙碌(&mut self, 现在时刻: Instant) -> Option<u32> {
+        if let Some(上次) = self.上次GPU采样
+            && 现在时刻.saturating_duration_since(上次) < Duration::from_secs(2)
+        {
+            return self.最近GPU利用率;
+        }
+        self.上次GPU采样 = Some(现在时刻);
+        self.最近GPU利用率 = 取GPU利用率();
+        self.最近GPU利用率
+    }
+}
+
+/// 读 GPU 利用率（0–100）：取所有加速器里最忙的那一张。
+///
+/// 走 `ioreg` 而不是 IOKit FFI：系统自带、输出稳定、无需额外权限；2 秒一次可以接受。
+/// 多卡时取**最大**值 —— 压力由最忙的那张决定，取平均会把瓶颈抹平。
+#[cfg(target_os = "macos")]
+fn 取GPU利用率() -> Option<u32> {
+    let 输出 = std::process::Command::new("ioreg")
+        .args(["-r", "-c", "IOAccelerator", "-d", "1"])
+        .output()
+        .ok()?;
+    if !输出.status.success() {
+        return None;
+    }
+    解析GPU利用率(&String::from_utf8_lossy(&输出.stdout))
+}
+
+#[cfg(not(target_os = "macos"))]
+fn 取GPU利用率() -> Option<u32> {
+    None
+}
+
+/// 从 `ioreg` 文本里取所有 `"Device Utilization %"=NN` 的最大值。
+fn 解析GPU利用率(文本: &str) -> Option<u32> {
+    const 键: &str = "\"Device Utilization %\"=";
+    let mut 最忙: Option<u32> = None;
+    for 行 in 文本.lines() {
+        let Some(位置) = 行.find(键) else {
+            continue;
+        };
+        let 尾部 = &行[位置 + 键.len()..];
+        let 数字: String = 尾部.chars().take_while(char::is_ascii_digit).collect();
+        let Ok(读数) = 数字.parse::<u32>() else {
+            continue;
+        };
+        if 读数 > 100 {
+            continue;
+        }
+        最忙 = Some(最忙.map_or(读数, |已有| 已有.max(读数)));
+    }
+    最忙
+}
+
+/// 解析：多卡取**最忙**的一张；非数字与越界（>100）直接跳过，不猜。
+#[cfg(test)]
+#[test]
+fn GPU读数解析取最忙且忽略坏值() {
+    let 文本 =
+        "\"Device Utilization %\"=12\n\"Device Utilization %\"=88\n\"Device Utilization %\"=abc";
+    assert_eq!(解析GPU利用率(文本), Some(88));
+    assert_eq!(解析GPU利用率("\"Device Utilization %\"=140"), None);
+    assert_eq!(解析GPU利用率("没有任何统计"), None);
+    assert_eq!(解析GPU利用率(""), None);
+}
+
+/// 真实读数（手工跑）：确认**本机**读得到 GPU 利用率。
+#[cfg(test)]
+#[ignore = "读真实 GPU：cargo test --lib -- --ignored GPU真实读数 --nocapture"]
+#[test]
+fn GPU真实读数() {
+    println!(
+        "GPU 利用率 = {:?}（None = 本机读不到，预算按不缩处理）",
+        取GPU利用率()
+    );
 }
 
 /// 只读系统压力；主机端口每次归还，不启动进程、不管理其他应用。
@@ -158,13 +272,13 @@ fn 取系统压力样本() -> (Option<[u32; 4]>, Option<u32>) {
 #[test]
 fn 压力预算收缩恢复不超过配置() {
     let mut 预算状态 = 动态预算状态::default();
-    assert_eq!(预算状态.重算(32, Some(90), Some(1)), 4);
-    assert_eq!(预算状态.重算(32, Some(65), Some(1)), 12);
-    assert_eq!(预算状态.重算(32, Some(50), Some(1)), 32);
-    assert_eq!(预算状态.重算(32, Some(10), Some(2)), 16);
-    assert_eq!(预算状态.重算(32, Some(10), Some(4)), 1);
-    assert_eq!(预算状态.重算(0, Some(10), Some(4)), 0);
-    assert_eq!(预算状态.重算(32, None, None), 32);
+    assert_eq!(预算状态.重算(32, Some(90), Some(1), None), 4);
+    assert_eq!(预算状态.重算(32, Some(65), Some(1), None), 12);
+    assert_eq!(预算状态.重算(32, Some(50), Some(1), None), 32);
+    assert_eq!(预算状态.重算(32, Some(10), Some(2), None), 16);
+    assert_eq!(预算状态.重算(32, Some(10), Some(4), None), 1);
+    assert_eq!(预算状态.重算(0, Some(10), Some(4), None), 0);
+    assert_eq!(预算状态.重算(32, None, None, None), 32);
     assert!(!预算状态.样本可信);
 }
 
@@ -248,7 +362,7 @@ fn 压力预算边界穷举保持硬配置护栏() {
     for 硬上限 in 0..=128u32 {
         for CPU忙碌 in 0..=101u32 {
             for 内存压力 in [None, Some(1), Some(2), Some(4), Some(7)] {
-                let 当前上限 = 预算状态.重算(硬上限, Some(CPU忙碌), 内存压力);
+                let 当前上限 = 预算状态.重算(硬上限, Some(CPU忙碌), 内存压力, None);
                 assert!(当前上限 <= 硬上限);
                 assert!(硬上限 == 0 || 当前上限 >= 1);
                 if CPU忙碌 == 101 || !matches!(内存压力, Some(1 | 2 | 4)) {
@@ -265,7 +379,7 @@ fn 内核重复计数不可当成零压力且缓存有界() {
     let mut 预算状态 = 动态预算状态::default();
     let 现在时刻 = Instant::now();
     assert_eq!(
-        预算状态.刷新样本(32, Some([0, 0, 100, 0]), Some(1), 现在时刻),
+        预算状态.刷新样本(32, Some([0, 0, 100, 0]), Some(1), None, 现在时刻),
         32
     );
     assert!(!预算状态.样本可信);
@@ -274,6 +388,7 @@ fn 内核重复计数不可当成零压力且缓存有界() {
             32,
             Some([90, 0, 110, 0]),
             Some(1),
+            None,
             现在时刻 + Duration::from_millis(250)
         ),
         4
@@ -284,6 +399,7 @@ fn 内核重复计数不可当成零压力且缓存有界() {
             32,
             Some([90, 0, 110, 0]),
             Some(1),
+            None,
             现在时刻 + Duration::from_millis(500)
         ),
         4
@@ -294,6 +410,7 @@ fn 内核重复计数不可当成零压力且缓存有界() {
             32,
             Some([90, 0, 110, 0]),
             Some(1),
+            None,
             现在时刻 + Duration::from_secs(3)
         ),
         32
@@ -304,6 +421,7 @@ fn 内核重复计数不可当成零压力且缓存有界() {
             32,
             Some([100, 0, 200, 0]),
             Some(1),
+            None,
             现在时刻 + Duration::from_secs(4)
         ),
         32
