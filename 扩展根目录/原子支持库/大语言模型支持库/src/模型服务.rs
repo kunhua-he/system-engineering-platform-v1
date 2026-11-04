@@ -402,15 +402,13 @@ pub(crate) struct 模型引用 {
     pub(crate) 标识: String,
     /// 当引用是绝对路径时带回原路径，供拉起时用
     pub(crate) 文件路径: Option<String>,
-    /// 从文件名推断出来的类型（推不出就是 None，由调用方决定）
-    pub(crate) 推断类型: Option<&'static str>,
 }
 
 /// 把「模型引用」翻译成确定标识 —— 这就是那个转化器。
 ///
 /// * 传纯名字（`qwen3`）：原样返回，无从校验（外部模型本来就不在本机）。
 /// * 传绝对路径（`/…/Qwen3-8B-Q4_K_M.gguf`）：**先校验文件真的在**，再把文件名
-///   （去扩展名）当作 model 名，并从文件名推断模型类型。
+///   （去扩展名）当作 model 名。
 ///
 /// 为什么非要校验：把模型名当自由文本传，模型在不在本机没人知道，要等推理时才炸；
 /// 传路径则当场炸，错得早、错得准。
@@ -428,7 +426,6 @@ pub(crate) fn 解析模型引用(引用: &str) -> Result<模型引用, u32> {
         return Ok(模型引用 {
             标识: 去空.to_owned(),
             文件路径: None,
-            推断类型: 从文件名推断类型(去空),
         });
     }
     match std::fs::metadata(去空) {
@@ -443,27 +440,6 @@ pub(crate) fn 解析模型引用(引用: &str) -> Result<模型引用, u32> {
     Ok(模型引用 {
         标识: 基名.to_owned(),
         文件路径: Some(去空.to_owned()),
-        推断类型: 从文件名推断类型(基名),
     })
-}
-
-/// 从文件名猜它是什么模型。猜不出返回 None（当作调用方没表态）。
-fn 从文件名推断类型(名: &str) -> Option<&'static str> {
-    let 小写 = 名.to_lowercase();
-    if 小写.contains("vl") || 小写.contains("vision") || 小写.contains("llava") {
-        return Some("VLM看图模型");
-    }
-    if 小写.contains("rerank") {
-        return Some("Rerank重排模型");
-    }
-    if 小写.contains("bge") || 小写.contains("embed") || 小写.contains("minilm") {
-        return Some("EM向量模型");
-    }
-    if 小写.contains("whisper") || 小写.contains("asr") || 小写.contains("sensevoice") {
-        return Some("ASR语音识别模型");
-    }
-    // 猜不出就不猜：交给本口的默认（LLM文本模型 / EM向量模型 / Rerank重排模型）。
-    // 文件名里没有明确特征时硬猜成文本，等于给调用方一个假答案。
-    None
 }
 
