@@ -20,7 +20,7 @@
 //! - 不猜端口：`监听端口` 由调用方给，本件只探活，不做「找一个空端口」这种魔法。
 //! - 不按端口或进程名盲杀：释放只认本表登记的进程号。
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::process::{Child, Command, Stdio};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Mutex, OnceLock};
@@ -181,10 +181,38 @@ fn 可用内存字节() -> u64 {
 }
 
 /// 分配一个空闲端口：40000-49999 里既没在听、也没被服务表占用的第一个。
-fn 分配空闲端口(表: &HashMap<u64, 服务条目>) -> Option<u16> {
+fn 分配空闲端口(表: &HashMap<u64, 服务条目>, 预占: &HashSet<u16>) -> Option<u16> {
     (40000..50000u16).find(|候选| {
-        !端口就绪(*候选) && !表.values().any(|条目| 条目.监听端口 == *候选)
+        !端口就绪(*候选)
+            && !表.values().any(|条目| 条目.监听端口 == *候选)
+            && !预占.contains(候选)
     })
+}
+
+/// 预占端口表：「已经分配出去、但进程还没起来」的那一段窗口。
+///
+/// 为什么需要它：端口释放锁以后到进程真正 listen 之前有一段空窗，这期间 `端口就绪()`
+/// 探不到、服务表里也还没登记 —— 并发的第二个请求会算出同一个「第一个空闲端口」。
+/// 实测同时拉起 8 个，8 个全分到 `40002`，只有第一个真能服务。
+static 预占表: OnceLock<Mutex<HashSet<u16>>> = OnceLock::new();
+
+fn 预占锁() -> Result<std::sync::MutexGuard<'static, HashSet<u16>>, u32> {
+    预占表
+        .get_or_init(Default::default)
+        .lock()
+        .map_err(|_| 错误码::资源受限)
+}
+
+/// 预占守卫：无论拉起成功、失败还是中途返回，离开作用域都把这个端口还回去，
+/// 不靠每条失败路径记得写一次 `remove`（漏一处就等于永久泄漏一个端口）。
+struct 预占守卫(u16);
+
+impl Drop for 预占守卫 {
+    fn drop(&mut self) {
+        if let Ok(mut 占) = 预占锁() {
+            占.remove(&self.0);
+        }
+    }
 }
 
 /// 真就绪 = 端口在听 + 就绪路径回 200 + （服务若有 `/health`，它也必须是 200）。
@@ -287,11 +315,21 @@ pub(crate) fn 拉起(
         if 表.len() >= 服务上限 {
             return Err(错误码::资源受限);
         }
+        // 分配和预占必须在同一把锁内做完：先算再占，中间不能让别的请求插进来。
+        let mut 占 = 预占锁()?;
         let 端口 = if 监听端口 == 0 {
-            分配空闲端口(&表).ok_or(错误码::资源受限)?
+            分配空闲端口(&表, &占).ok_or(错误码::资源受限)?
         } else {
             监听端口
         };
+        if 占.contains(&端口) {
+            return Err(错误码::端口已被占用);
+        }
+        if 表.values().any(|条目| 条目.监听端口 == 端口) {
+            return Err(错误码::端口已被占用);
+        }
+        占.insert(端口);
+        drop(占);
         let 路径 = if 就绪路径.trim().is_empty() {
             默认就绪路径(&模型类型)
         } else {
@@ -299,6 +337,8 @@ pub(crate) fn 拉起(
         };
         (端口, 路径)
     };
+    // 从这一刻起端口被预占；拉起结束（成功或失败）守卫销毁时自动还回去。
+    let _端口守卫 = 预占守卫(端口);
     let 监听端口 = 端口;
     if 端口就绪(监听端口) {
         // 端口已被占：不许再起一个同端口的进程（那是典型的孤儿来源）。
