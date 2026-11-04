@@ -1,0 +1,276 @@
+//! 模型服务生命周期：拉起 · 就绪等待 · 状态读数 · 释放。
+//!
+//! # 为什么这口必须在底座里
+//!
+//! 2026-11-04 现场抓到的问题：调用方直接 `llama-server …` 起模型，进程父是调用方，
+//! 既不归空闲回收、也不归任何登记表，空转 22 小时白占内存。根因不是「没人写回收」，
+//! 而是**拉起这件事没有唯一入口**。本件就是那个入口：
+//! 只有经 `拉起模型服务` 起的进程才进本表，表内进程才有状态读数、才归 `释放模型服务` 收。
+//!
+//! # 状态机
+//!
+//! ```text
+//! 拉起 ──► 启动中 ──(端口就绪)──► 就绪 ──(释放)──► 已退出
+//!            └──(超时/进程退)──► 失败（条目保留，状态里可读出原因）
+//! ```
+//!
+//! # 边界（不做的事）
+//!
+//! - 不代理推理请求：请求仍走 `连接模型` / `提交生成任务`，本件只管进程。
+//! - 不猜端口：`监听端口` 由调用方给，本件只探活，不做「找一个空端口」这种魔法。
+//! - 不按端口或进程名盲杀：释放只认本表登记的进程号。
+
+use std::collections::HashMap;
+use std::process::{Child, Command, Stdio};
+use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::{Mutex, OnceLock};
+use std::time::{Duration, Instant};
+
+use crate::编号与码面::错误码;
+
+/// 一条已登记的模型服务。
+pub(crate) struct 服务条目 {
+    pub(crate) 进程号: u32,
+    pub(crate) 监听端口: u16,
+    pub(crate) 就绪路径: String,
+    pub(crate) 启动时刻: Instant,
+    pub(crate) 子进程: Child,
+}
+
+/// 取表锁：中毒即视为资源受限（不 panic —— 扩展里 panic 会带垮整个调用）。
+fn 取锁(
+    锁: &'static Mutex<HashMap<u64, 服务条目>>,
+) -> Result<std::sync::MutexGuard<'static, HashMap<u64, 服务条目>>, u32> {
+    锁.lock().map_err(|_| 错误码::资源受限)
+}
+
+fn 服务表() -> &'static Mutex<HashMap<u64, 服务条目>> {
+    模型服务表.get_or_init(|| Mutex::new(HashMap::new()))
+}
+
+static 模型服务表: OnceLock<Mutex<HashMap<u64, 服务条目>>> = OnceLock::new();
+static 下一句柄: AtomicU64 = AtomicU64::new(900_001);
+
+/// 句柄上限：与连接句柄同一量级（64），防止调用方无节制拉起进程。
+const 服务上限: usize = 16;
+
+/// 端口就绪探测：连得上即算端口在听（不要求 HTTP 语义，健康口各模型自定）。
+fn 端口就绪(端口: u16) -> bool {
+    use std::net::{SocketAddr, TcpStream};
+    let 地址 = SocketAddr::from(([127, 0, 0, 1], 端口));
+    TcpStream::connect_timeout(&地址, Duration::from_millis(200)).is_ok()
+}
+
+/// 进程是否**还在跑**。
+///
+/// 为什么不用 `kill(pid, 0)`：那个对**僵尸进程**返回成功（僵尸仍占着进程号），
+/// 会让我们把「已经死了、只是还没被回收」判成存活 —— 实测症状是释放一直等到超时、
+/// 状态永远显示「启动中」。`try_wait` 顺便把僵尸回收掉，语义是「还在跑」而非「进程表里有这行」。
+fn 判存活(子进程: &mut Child) -> bool {
+    match 子进程.try_wait() {
+        Ok(None) => true,
+        Ok(Some(_)) => false,
+        Err(_) => false,
+    }
+}
+
+/// 进程累计 CPU 时间（毫秒）：读 `ps -o time=`，取不到回 `None`（不猜 0）。
+///
+/// 为什么不走 `proc_pid_rusage`：那是 macOS 私有结构，字段随系统版本变；
+/// `ps` 的输出稳定、代价约 5 毫秒，而本口只在**主动查状态**时调一次，不在高频路径上。
+pub(crate) fn 取CPU毫秒(进程号: u32) -> Option<u64> {
+    // 绝对路径：扩展进程的环境不一定带 PATH（实测用裸 `ps` 取不到读数，CPU毫秒 恒为 null）。
+    let 输出 = Command::new("/bin/ps")
+        .args(["-o", "time=", "-p", &进程号.to_string()])
+        .output()
+        .ok()?;
+    if !输出.status.success() {
+        return None;
+    }
+    let 文本 = String::from_utf8_lossy(&输出.stdout);
+    解析CPU时间(文本.trim())
+}
+
+/// `[[日-]时:]分:秒[.厘秒]` → 毫秒。
+///
+/// `ps -o time=` 的真形状（macOS 实测）：`105:27.90` / `0:04.11` / `1:02:03.45` / `1-02:03:04.56`。
+/// **秒段带两位小数**（厘秒），按整数解析会一律失败 —— 那正是「CPU毫秒 恒为 null」的真因。
+pub(crate) fn 解析CPU时间(文本: &str) -> Option<u64> {
+    let 文本 = 文本.trim();
+    if 文本.is_empty() {
+        return None;
+    }
+    let (天数, 剩余) = match 文本.split_once('-') {
+        Some((天数字, 尾部)) => (天数字.parse::<u64>().ok()?, 尾部),
+        None => (0, 文本),
+    };
+    let 段: Vec<&str> = 剩余.split(':').collect();
+    let 秒段: f64 = 段.last()?.parse().ok()?;
+    let 毫秒 = match 段.len() {
+        2 => 段[0].parse::<u64>().ok()? * 60_000 + (秒段 * 1_000.0).round() as u64,
+        3 => {
+            段[0].parse::<u64>().ok()? * 3_600_000
+                + 段[1].parse::<u64>().ok()? * 60_000
+                + (秒段 * 1_000.0).round() as u64
+        }
+        _ => return None,
+    };
+    Some(天数 * 86_400_000 + 毫秒)
+}
+
+/// 拉起：起进程 → 登记 → 返回句柄。**就绪要另调 `等待模型就绪`**（拉起不干等）。
+pub(crate) fn 拉起(
+    模型标识: &str,
+    可执行文件: &str,
+    启动参数: &str,
+    监听端口: u16,
+    就绪路径: &str,
+) -> Result<u64, u32> {
+    if 模型标识.trim().is_empty() || 可执行文件.trim().is_empty() || 监听端口 == 0 {
+        return Err(错误码::参数不合法);
+    }
+    if 端口就绪(监听端口) {
+        // 端口已被占：不许再起一个同端口的进程（那是典型的孤儿来源）。
+        return Err(错误码::端口已被占用);
+    }
+    {
+        let 表 = 取锁(服务表()).map_err(|_| 错误码::资源受限)?;
+        if 表.len() >= 服务上限 {
+            return Err(错误码::资源受限);
+        }
+    }
+    let 参数向量: Vec<String> = 启动参数.split_whitespace().map(str::to_owned).collect();
+    let 子进程 = Command::new(可执行文件)
+        .args(参数向量.iter())
+        .stdin(Stdio::null())
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .spawn()
+        .map_err(|_| 错误码::拉起失败)?;
+    let 进程号 = 子进程.id();
+    let 句柄 = 下一句柄.fetch_add(1, Ordering::AcqRel);
+    let mut 表 = 取锁(服务表()).map_err(|_| 错误码::资源受限)?;
+    表.insert(
+        句柄,
+        服务条目 {
+            进程号,
+            监听端口,
+            就绪路径: 就绪路径.to_owned(),
+            启动时刻: Instant::now(),
+            子进程,
+        },
+    );
+    Ok(句柄)
+}
+
+/// 等待就绪：轮询「端口在听」，超时即假（不把超时说成成功）。
+pub(crate) fn 等待就绪(句柄: u64, 超时毫秒: u64) -> Result<bool, u32> {
+    let 端口 = {
+        let 表 = 取锁(服务表()).map_err(|_| 错误码::资源受限)?;
+        let 条目 = 表.get(&句柄).ok_or(错误码::服务无效)?;
+        条目.监听端口
+    };
+    let 截止 = Instant::now() + Duration::from_millis(超时毫秒.min(300_000));
+    loop {
+        if 端口就绪(端口) {
+            return Ok(true);
+        }
+        let 仍在跑 = {
+            let mut 表 = 取锁(服务表()).map_err(|_| 错误码::资源受限)?;
+            let 条目 = 表.get_mut(&句柄).ok_or(错误码::服务无效)?;
+            判存活(&mut 条目.子进程)
+        };
+        if !仍在跑 {
+            // 进程已退：不是「还没起来」，是起不来 —— 明确报失败。
+            return Err(错误码::拉起失败);
+        }
+        if Instant::now() >= 截止 {
+            return Ok(false);
+        }
+        std::thread::sleep(Duration::from_millis(200));
+    }
+}
+
+/// 取状态：存活 / 端口就绪 / CPU 毫秒 / 运行秒数。读数取不到给 `null`，不给 0。
+pub(crate) fn 取状态(句柄: u64) -> Result<serde_json::Value, u32> {
+    let mut 表 = 取锁(服务表()).map_err(|_| 错误码::资源受限)?;
+    let 条目 = 表.get_mut(&句柄).ok_or(错误码::服务无效)?;
+    let 存活 = 判存活(&mut 条目.子进程);
+    let 就绪 = 存活 && 端口就绪(条目.监听端口);
+    let CPU毫秒 = if 存活 {
+        serde_json::json!(取CPU毫秒(条目.进程号))
+    } else {
+        serde_json::json!(null)
+    };
+    Ok(serde_json::json!({
+        "服务句柄": 句柄,
+        "进程号": 条目.进程号,
+        "监听端口": 条目.监听端口,
+        "存活": 存活,
+        "端口就绪": 就绪,
+        "运行秒": 条目.启动时刻.elapsed().as_secs(),
+        "就绪路径": 条目.就绪路径,
+        "CPU毫秒": CPU毫秒,
+        "状态": if 就绪 { "就绪" } else if 存活 { "启动中" } else { "已退出" },
+    }))
+}
+
+/// 释放：先 SIGTERM，短暂等待，仍不退再 SIGKILL；条目出表。
+///
+/// 返回真 = 确认进程已不在（不是「信号已发送」）；假 = 进程仍在跑，条目保留待重试。
+pub(crate) fn 释放(句柄: u64) -> Result<bool, u32> {
+    unsafe extern "C" {
+        fn kill(进程号: i32, 信号: i32) -> i32;
+    }
+    const 终止信号: i32 = 15;
+    const 强杀信号: i32 = 9;
+    // 第一阶段只发信号、不持锁（等进程退出期间别的调用还要读状态）。
+    let (进程号, 仍在跑) = {
+        let mut 表 = 取锁(服务表()).map_err(|_| 错误码::资源受限)?;
+        let 条目 = 表.get_mut(&句柄).ok_or(错误码::服务无效)?;
+        let 仍在跑 = 判存活(&mut 条目.子进程);
+        (条目.进程号, 仍在跑)
+    };
+    if 仍在跑 {
+        // SAFETY: 只向本表登记的进程号发信号。
+        unsafe { kill(进程号 as i32, 终止信号) };
+    }
+    // 第二阶段：轮询「真的退出了没有」（try_wait 会顺手回收僵尸，不会被僵尸骗成存活）。
+    let mut 已退 = !仍在跑;
+    for _ in 0..25 {
+        if 已退 {
+            break;
+        }
+        std::thread::sleep(Duration::from_millis(200));
+        let mut 表 = 取锁(服务表()).map_err(|_| 错误码::资源受限)?;
+        let 条目 = 表.get_mut(&句柄).ok_or(错误码::服务无效)?;
+        已退 = !判存活(&mut 条目.子进程);
+    }
+    if !已退 {
+        // SAFETY: 同上；此时已确认是本表登记的、仍在运行的进程。
+        unsafe { kill(进程号 as i32, 强杀信号) };
+        std::thread::sleep(Duration::from_millis(400));
+        let mut 表 = 取锁(服务表()).map_err(|_| 错误码::资源受限)?;
+        let 条目 = 表.get_mut(&句柄).ok_or(错误码::服务无效)?;
+        已退 = !判存活(&mut 条目.子进程);
+    }
+    if 已退 {
+        let mut 表 = 取锁(服务表()).map_err(|_| 错误码::资源受限)?;
+        表.remove(&句柄);
+    }
+    Ok(已退)
+}
+
+#[cfg(test)]
+#[test]
+fn CPU时间解析认得厘秒与天段() {
+    // macOS `ps -o time=` 的真实形状（带两位小数）。
+    assert_eq!(解析CPU时间("105:27.90"), Some(6_327_900));
+    assert_eq!(解析CPU时间("0:04.11"), Some(4_110));
+    assert_eq!(解析CPU时间("1:02:03.45"), Some(3_723_450));
+    assert_eq!(解析CPU时间("1-02:03:04.56"), Some(93_784_560));
+    // 取不到就给 None，不猜 0。
+    assert_eq!(解析CPU时间(""), None);
+    assert_eq!(解析CPU时间("   "), None);
+    assert_eq!(解析CPU时间("abc"), None);
+}
