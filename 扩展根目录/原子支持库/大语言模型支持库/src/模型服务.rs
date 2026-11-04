@@ -86,17 +86,43 @@ pub(crate) const 模型类型表: [&str; 5] = ["文本", "看图", "向量", "�
 
 pub(crate) fn 规整模型类型(原文: &str) -> Result<String, u32> {
     let 紧凑: String = 原文.chars().filter(|c| !c.is_whitespace() && *c != '\0').collect();
-    let 候选 = if 紧凑.is_empty() { "文本".to_owned() } else { 紧凑 };
-    // 常见别名一律归一，避免「LLM」「VLM」这种写法各传各的。
-    let 归一 = match 候选.as_str() {
-        "文本" | "LLM" | "llm" | "文本模型" => "文本",
-        "看图" | "VLM" | "vlm" | "视觉" | "看图模型" => "看图",
-        "向量" | "EM" | "em" | "嵌入" | "embedding" => "向量",
-        "重排" | "rerank" | "Rerank" => "重排",
-        "语音" | "ASR" | "asr" | "识别" => "语音",
-        _ => return Err(错误码::参数不合法),
-    };
-    Ok(归一.to_owned())
+    if 紧凑.is_empty() {
+        return Ok("文本".to_owned());
+    }
+    let 小写 = 紧凑.to_lowercase();
+    // 先认中文：中文词各不互为子串，不会误判。
+    // 这样「LLM文本模型」「VLM看图模型」这种「缩写 + 中文」的组合写法也一眼认出。
+    let 中文归类: [(&[&str], &str); 5] = [
+        (&["看图", "视觉"], "看图"),
+        (&["向量", "嵌入"], "向量"),
+        (&["重排", "重排"], "重排"),
+        (&["语音", "识别"], "语音"),
+        (&["文本", "文本"], "文本"),
+    ];
+    for (关键词组, 归一) in 中文归类 {
+        if 关键词组.iter().any(|词| 紧凑.contains(词)) {
+            return Ok(归一.to_owned());
+        }
+    }
+    // 中文没写，再认英文缩写（含在长串里也认，比如 OpenAIEmbedding）。
+    for (关键词, 归一) in [
+        ("vlm", "看图"),
+        ("vision", "看图"),
+        ("llm", "文本"),
+        ("chat", "文本"),
+        ("rerank", "重排"),
+        ("asr", "语音"),
+        ("whisper", "语音"),
+        ("embed", "向量"),
+    ] {
+        if 小写.contains(关键词) {
+            return Ok(归一.to_owned());
+        }
+    }
+    if 小写 == "em" {
+        return Ok("向量".to_owned());
+    }
+    Err(错误码::参数不合法)
 }
 
 /// 默认就绪路径：给空就按类型取。文本/看图/向量/重排都是 llama-server 家族，认 `/health`；
