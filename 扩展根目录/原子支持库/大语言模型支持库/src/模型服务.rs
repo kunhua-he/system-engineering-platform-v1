@@ -32,6 +32,8 @@ use crate::编号与码面::错误码;
 pub(crate) struct 服务条目 {
     pub(crate) 进程号: u32,
     pub(crate) 监听端口: u16,
+    /// 模型类型：文本 / 看图 / 向量 / 重排 / 语音。决定默认就绪路径与后续该用哪对能力。
+    pub(crate) 模型类型: String,
     pub(crate) 就绪路径: String,
     pub(crate) 启动时刻: Instant,
     pub(crate) 子进程: Child,
@@ -73,6 +75,42 @@ fn 探状态码(端口: u16, 路径: &str) -> Option<u16> {
     let mut 缓冲 = [0u8; 64];
     let 读入 = 流.read(&mut 缓冲).ok()?;
     std::str::from_utf8(&缓冲[..读入]).ok()?.split_whitespace().nth(1)?.parse().ok()
+}
+
+/// 模型类型受控枚举：类型不认识就直接拒（不等到调用时才发现拿错能力）。
+///
+/// 收口成五个词，不做自由文本 —— 自由文本等于没校验。别名按「去掉空格+小写」比对。
+pub(crate) const 模型类型表: [&str; 5] = ["文本", "看图", "向量", "重排", "语音"];
+
+fn 规整模型类型(原文: &str) -> Result<String, u32> {
+    let 紧凑: String = 原文.chars().filter(|c| !c.is_whitespace()).collect();
+    let 候选 = if 紧凑.is_empty() { "文本".to_owned() } else { 紧凑 };
+    // 常见别名一律归一，避免「LLM」「VLM」这种写法各传各的。
+    let 归一 = match 候选.as_str() {
+        "文本" | "LLM" | "llm" | "文本模型" => "文本",
+        "看图" | "VLM" | "vlm" | "视觉" | "看图模型" => "看图",
+        "向量" | "EM" | "em" | "嵌入" | "embedding" => "向量",
+        "重排" | "rerank" | "Rerank" => "重排",
+        "语音" | "ASR" | "asr" | "识别" => "语音",
+        _ => return Err(错误码::参数不合法),
+    };
+    Ok(归一.to_owned())
+}
+
+/// 默认就绪路径：给空就按类型取。文本/看图/向量/重排都是 llama-server 家族，认 `/health`；
+/// 语音常见服务只认根路径。
+fn 默认就绪路径(模型类型: &str) -> &'static str {
+    match 模型类型 {
+        "语音" => "/",
+        _ => "/health",
+    }
+}
+
+/// 分配一个空闲端口：40000-49999 里既没在听、也没被服务表占用的第一个。
+fn 分配空闲端口(表: &HashMap<u64, 服务条目>) -> Option<u16> {
+    (40000..50000u16).find(|候选| {
+        !端口就绪(*候选) && !表.values().any(|条目| 条目.监听端口 == *候选)
+    })
 }
 
 /// 真就绪 = 端口在听 + 就绪路径回 200 + （服务若有 `/health`，它也必须是 200）。
@@ -159,21 +197,39 @@ pub(crate) fn 拉起(
     启动参数: &str,
     监听端口: u16,
     就绪路径: &str,
+    模型类型: &str,
 ) -> Result<u64, u32> {
-    if 模型标识.trim().is_empty() || 可执行文件.trim().is_empty() || 监听端口 == 0 {
+    if 模型标识.trim().is_empty() || 可执行文件.trim().is_empty() {
         return Err(错误码::参数不合法);
     }
-    if 端口就绪(监听端口) {
-        // 端口已被占：不许再起一个同端口的进程（那是典型的孤儿来源）。
-        return Err(错误码::端口已被占用);
-    }
-    {
+    let 模型类型 = 规整模型类型(模型类型)?;
+    // 端口 0 = 由底座分配：调用方不必先找空端口，也就不会撞。（服务表已登记的端口一并避开）
+    let (端口, 就绪路径) = {
         let 表 = 取锁(服务表()).map_err(|_| 错误码::资源受限)?;
         if 表.len() >= 服务上限 {
             return Err(错误码::资源受限);
         }
+        let 端口 = if 监听端口 == 0 {
+            分配空闲端口(&表).ok_or(错误码::资源受限)?
+        } else {
+            监听端口
+        };
+        let 路径 = if 就绪路径.trim().is_empty() {
+            默认就绪路径(&模型类型)
+        } else {
+            就绪路径
+        };
+        (端口, 路径)
+    };
+    let 监听端口 = 端口;
+    if 端口就绪(监听端口) {
+        // 端口已被占：不许再起一个同端口的进程（那是典型的孤儿来源）。
+        return Err(错误码::端口已被占用);
     }
-    let 参数向量: Vec<String> = 启动参数.split_whitespace().map(str::to_owned).collect();
+    // `{端口}` 占位符换成实际端口：端口 0 自动分配时，模型进程也必须知道落到哪个端口，
+    // 否则模型监听它内置的默认端口、和底座登记的对不上。不猜各家的端口参数名，只做占位替换。
+    let 实际参数 = 启动参数.replace("{端口}", &监听端口.to_string());
+    let 参数向量: Vec<String> = 实际参数.split_whitespace().map(str::to_owned).collect();
     let 子进程 = Command::new(可执行文件)
         .args(参数向量.iter())
         .stdin(Stdio::null())
@@ -189,6 +245,7 @@ pub(crate) fn 拉起(
         服务条目 {
             进程号,
             监听端口,
+            模型类型: 模型类型.clone(),
             就绪路径: 就绪路径.to_owned(),
             启动时刻: Instant::now(),
             子进程,
@@ -253,6 +310,7 @@ pub(crate) fn 取状态(句柄: u64) -> Result<serde_json::Value, u32> {
         "存活": 存活,
         "端口就绪": 就绪,
         "运行秒": 条目.启动时刻.elapsed().as_secs(),
+        "模型类型": 条目.模型类型,
         "就绪路径": 条目.就绪路径,
         "CPU毫秒": CPU毫秒,
         "状态": if 就绪 { "就绪" } else if 存活 { "启动中" } else { "已退出" },
