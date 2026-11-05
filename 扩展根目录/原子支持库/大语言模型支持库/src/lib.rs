@@ -1,4 +1,6 @@
 #![allow(non_snake_case)]
+#[path = "一次对话.rs"]
+mod 一次对话;
 #[path = "业务实现.rs"]
 mod 业务实现;
 #[path = "协议构造.rs"]

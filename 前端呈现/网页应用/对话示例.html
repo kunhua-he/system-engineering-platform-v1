@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>一次对话 · 一个请求</title>
+<style>
+  :root { color-scheme: light dark; }
+  body { font-family: -apple-system, "PingFang SC", sans-serif; max-width: 760px; margin: 40px auto; padding: 0 20px; line-height: 1.7; }
+  h1 { font-size: 20px; margin-bottom: 4px; }
+  p.提示 { color: #888; font-size: 13px; margin-top: 0; }
+  textarea { width: 100%; box-sizing: border-box; font: inherit; padding: 10px; border: 1px solid #ccc; border-radius: 8px; min-height: 76px; }
+  button { margin-top: 10px; padding: 9px 22px; font: inherit; border: 0; border-radius: 8px; background: #2b6cf6; color: #fff; cursor: pointer; }
+  button:disabled { background: #9bb; cursor: default; }
+  #状态 { font-size: 13px; color: #888; margin-top: 10px; min-height: 20px; }
+  #答复 { white-space: pre-wrap; background: #f6f6f6; border-radius: 8px; padding: 14px; margin-top: 10px; min-height: 40px; }
+  @media (prefers-color-scheme: dark) {
+    textarea { background: #1c1c1e; color: #eee; border-color: #444; }
+    #答复 { background: #1c1c1e; }
+  }
+</style>
+</head>
+<body>
+<h1>一次对话</h1>
+<p class="提示">整页只有一个请求：POST /接口/调用，编号 2519。模型没起会自动拉起，起了就复用。</p>
+
+<textarea id="问题">用一句话介绍你自己</textarea>
+<button id="发送">发送</button>
+<div id="状态"></div>
+<div id="答复"></div>
+
+<script>
+const 状态 = document.getElementById('状态');
+const 答复 = document.getElementById('答复');
+const 按钮 = document.getElementById('发送');
+
+按钮.onclick = async () => {
+  按钮.disabled = true;
+  答复.textContent = '';
+  状态.textContent = '请求中…（第一次可能要先拉起模型）';
+  const 起 = performance.now();
+  try {
+    const 回 = await fetch('/接口/调用', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        编号: 2519,
+        命名值: {
+          消息列表: { 类型标签: 100, 值: [
+            { 类型标签: 101, 值: {
+              role: { 类型标签: 4, 值: 'user' },
+              content: { 类型标签: 4, 值: document.getElementById('问题').value }
+            } }
+          ] },
+          系统提示词: '',
+          温度: 0.7,
+          最大令牌数: 2048,
+          模型类型: 'LLM文本模型',
+          模型引用: '',
+          等待毫秒: 90000
+        }
+      })
+    });
+    const 壳 = await 回.json();
+    const 秒 = ((performance.now() - 起) / 1000).toFixed(2);
+
+    // 平台信封 { 成功, 值, 错误 }；值本身还套着 { 类型标签, 值 }，一层层剥到底
+    const 剥 = (x) => {
+      while (x && typeof x === 'object' && !Array.isArray(x) && '类型标签' in x && '值' in x) x = x['值'];
+      if (Array.isArray(x)) x = x[0] ? 剥(x[0]) : '';
+      return x;
+    };
+
+    if (!壳.成功) {
+      状态.textContent = '失败 · ' + 秒 + ' 秒';
+      答复.textContent = JSON.stringify(壳.错误, null, 2);
+      return;
+    }
+    const 体 = 剥(壳.值);
+    const 内容 = 体 && typeof 体 === 'object' ? 剥(体.内容) : '';
+    状态.textContent = '完成 · ' + 秒 + ' 秒' + (体 && 体.状态 ? ' · ' + 剥(体.状态) : '');
+    答复.textContent = 内容 || ('（没拿到内容）' + JSON.stringify(体, null, 2));
+  } catch (e) {
+    状态.textContent = '请求失败';
+    答复.textContent = String(e);
+  } finally {
+    按钮.disabled = false;
+  }
+};
+
+// URL 带 ?问题=… 时自动发一次（无头浏览器验收用）
+const 参数 = new URLSearchParams(location.search);
+if (参数.has('问题')) {
+  document.getElementById('问题').value = 参数.get('问题');
+  按钮.click();
+}
+</script>
+</body>
+</html>

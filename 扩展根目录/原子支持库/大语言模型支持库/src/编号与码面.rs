@@ -18,6 +18,7 @@ pub mod 能力号 {
     pub const 申请推理许可: u32 = 2516;
     pub const 归还推理许可: u32 = 2517;
     pub const 取推理排队快照: u32 = 2518;
+    pub const 一次对话: u32 = 2519;
 }
 pub mod 错误码 {
     pub const 参数不合法: u32 = 2501;
