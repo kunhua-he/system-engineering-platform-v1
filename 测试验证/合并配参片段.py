@@ -35,8 +35,8 @@ def 主():
             print('  %s 格式不对，跳过' % 片段.name)
             continue
         for 号, 参 in 数据.items():
-            if not isinstance(参, dict):
-                continue
+            if not isinstance(参, dict) or not 参:
+                continue   # 空字典不许覆盖已有配置
             按号[str(号)] = 参
             新增 += 1
 

@@ -150,10 +150,44 @@ def 造参(声明, 库名='', 配=None):
 上下文 = {'服务句柄': 0, '任务句柄': 0, '许可句柄': 0, '句柄': 0}
 
 
+def 找已载入服务():
+    """先找平台上已经载入的模型服务复用。
+    为什么：每轮都调 2512 起新服务，旧的没释放，累积到内存/端口不够时新服务
+    起不来（句柄登记了但进程没起），后面所有链式接口全报「服务无效」。"""
+    for 号 in range(900001, 900101):
+        判, _, 值 = 发一次带值(2514, {'服务句柄': 号})
+        if 判 != '成功':
+            continue
+        if isinstance(值, str):
+            try:
+                值 = json.loads(值)
+            except Exception:
+                continue
+        if isinstance(值, dict) and 值.get('状态') == '已载入' and 值.get('存活'):
+            return 号
+    return 0
+
+
+def 服务还活着(号):
+    判, _, 值 = 发一次带值(2514, {'服务句柄': 号})
+    if 判 != '成功':
+        return False
+    if isinstance(值, str):
+        try:
+            值 = json.loads(值)
+        except Exception:
+            return False
+    return isinstance(值, dict) and 值.get('状态') == '已载入' and bool(值.get('存活'))
+
+
 def 前置准备(配=None):
     """链式接口（连接→提交→读结果）单独调必然「句柄无效」，先把前置资源备好。"""
     配 = 配 or {}
     表 = 配.get('全局') or {}
+    复用 = 找已载入服务()
+    if 复用:
+        上下文['服务句柄'] = 复用
+        return
     判, 说, 值 = 发一次带值(2512, {
         '模型引用': 表.get('模型引用', ''),
         '可执行文件': 表.get('可执行文件', '/opt/homebrew/bin/llama-server'),
@@ -212,6 +246,89 @@ def 发一次(编号, 参):
         return '连不上', type(e).__name__
 
 
+def 取前置值(值, 规则):
+    """从上一个接口的返回值里取出要给下一个用的句柄。"""
+    if isinstance(值, list) and len(值) == 1:
+        值 = 值[0]
+    if isinstance(值, dict) and set(值) == {'类型标签', '值'}:
+        值 = 值['值']
+    if 规则.get('取法') == 'JSON字段':
+        if isinstance(值, str):
+            try:
+                值 = json.loads(值)
+            except Exception:
+                return None
+        if not isinstance(值, dict):
+            return None
+        取 = 值.get(规则.get('字段'))
+        if 取 is None:
+            return None
+        模板 = 规则.get('模板')
+        return 模板 % 取 if 模板 else 取
+    if 规则.get('取法') == '直取':
+        return 值
+    if 规则.get('取法') == 'HTML属性':
+        属性 = 规则.get('属性', 'data-hs-h')
+        if not isinstance(值, str):
+            return None
+        m = re.search(re.escape(属性) + '="(\\d+)"', 值)
+        return int(m.group(1)) if m else None
+    return 值
+
+
+已解前置 = {}
+
+
+def 前置链(配, 编号):
+    """有些接口的入参是上一步产出的句柄，独立调用必然「句柄无效」。
+    按 配['链式'] 声明的依赖先跑前置，把句柄填进参数里。"""
+    链 = (配.get('链式') or {}).get(str(编号))
+    if not 链:
+        return None
+    前置号 = 链.get('前置')
+    if 前置号 == '服务句柄':
+        号 = 上下文.get('服务句柄')
+        if not 号 or not 服务还活着(号):
+            号 = 找已载入服务()
+            if not 号:
+                return None
+            上下文['服务句柄'] = 号
+        return 号
+    if 前置号 == '服务状态':
+        号 = 上下文.get('服务句柄')
+        if not 号:
+            号 = 找已载入服务()
+            if not 号:
+                return None
+            上下文['服务句柄'] = 号
+        判, _, 值 = 发一次带值(2514, {'服务句柄': 号})
+        if 判 != '成功':
+            return None
+        return 取前置值(值, 链)
+    if 前置号 not in 已解前置:
+        前置参 = dict((配.get('按编号') or {}).get(str(前置号)) or {})
+        # 前置自己也可能要解链（比如 2501 要先拿服务端口），递归补上
+        前置链规则 = (配.get('链式') or {}).get(str(前置号))
+        if 前置链规则:
+            前置值 = 前置链(配, 前置号)
+            if 前置值 is None:
+                已解前置[前置号] = ('参数错', None)
+                return None
+            前置参[前置链规则['填']] = 前置值
+        else:
+            # 没声明链但参数里还有未替换的模板，说明前置条件不满足
+            for v in 前置参.values():
+                if isinstance(v, str) and v.startswith('{') and v.endswith('}'):
+                    已解前置[前置号] = ('参数错', None)
+                    return None
+        判, _, 值 = 发一次带值(前置号, 前置参)
+        已解前置[前置号] = (判, 值)
+    判, 值 = 已解前置[前置号]
+    if 判 != '成功':
+        return None
+    return 取前置值(值, 链)
+
+
 def 主():
     配 = 读配置()
     # 冒烟要读的文件先备好，免得「文件不存在」掩盖真问题
@@ -238,7 +355,17 @@ def 主():
     for 库 in 库们:
         for f in sorted(库.glob('能力声明/*.json')):
             声明 = json.loads(f.read_text(encoding='utf-8'))
-            判, 说 = 发一次(声明['编号'], 造参(声明, 库.name, 配))
+            参 = 造参(声明, 库.name, 配)
+            链 = (配.get('链式') or {}).get(str(声明['编号']))
+            if 链:
+                句柄 = 前置链(配, 声明['编号'])
+                if 句柄 is None:
+                    判, 说 = '参数错', '前置未就绪'
+                else:
+                    参[链['填']] = 句柄
+                    判, 说 = 发一次(声明['编号'], 参)
+            else:
+                判, 说 = 发一次(声明['编号'], 参)
             结果.append({'库': 库.name, '编号': 声明['编号'],
                          '名': 声明['名称'].split('_')[-1], '判': 判, '说': 说})
 
