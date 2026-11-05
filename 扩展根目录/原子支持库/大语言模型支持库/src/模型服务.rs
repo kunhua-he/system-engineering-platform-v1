@@ -482,13 +482,43 @@ pub(crate) fn 找已载入(模型路径: &str) -> Option<(u64, u16)> {
             .collect()
     };
     // 探测放在锁外：真就绪要发 HTTP，持表锁做网络请求会把整张表卡住。
-    for (句柄, 端口, 就绪路径) in 候选 {
-        if 真就绪(端口, &就绪路径) {
-            触摸(句柄);
-            return Some((句柄, 端口));
+    for (句柄, 端口, 就绪路径) in &候选 {
+        if 真就绪(*端口, 就绪路径) {
+            触摸(*句柄);
+            return Some((*句柄, *端口));
+        }
+    }
+    // 还在载入的也算命中 —— 交给上层循环等就绪。
+    // 不这样做的话，模型载入那 1–3 秒里再来一个请求就会重复拉起一个新进程，
+    // 同一份 5–18G 权重在内存里躺两份（实测踩到过：900001 还在载入又起了 900002）。
+    for (句柄, 端口, _) in &候选 {
+        if 进程还活着(*句柄) {
+            触摸(*句柄);
+            return Some((*句柄, *端口));
         }
     }
     None
+}
+
+/// 该服务的进程还在不在（不看端口、不发请求，纯本地判定）。
+fn 进程还活着(句柄: u64) -> bool {
+    let 进程号 = match 服务表().lock() {
+        Ok(表) => match 表.get(&句柄) {
+            Some(条目) => 条目.进程号,
+            None => return false,
+        },
+        Err(_) => return false,
+    };
+    if 进程号 == 0 {
+        return false;
+    }
+    // kill -0 语义：进程在就成功。`ps -p` 在 macOS 上对不存在的 pid 返回非零。
+    std::process::Command::new("kill")
+        .arg("-0")
+        .arg(进程号.to_string())
+        .status()
+        .map(|状态| 状态.success())
+        .unwrap_or(false)
 }
 
 pub(crate) fn 服务存在(句柄: u64) -> bool {

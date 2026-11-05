@@ -18,7 +18,41 @@ use crate::{连接与句柄, 推理许可, 生成任务, 模型服务};
 
 /// 推理引擎与启动参数也一起兜底 —— 「一眼就会用」意味着连这个都不用记。
 const 推理引擎: &str = "/opt/homebrew/bin/llama-server";
-const 启动参数: &str = "-m {模型文件} --host 127.0.0.1 --port {端口} -c 4096 --no-webui";
+/// 推理引擎的启动参数。看图模型必须另带视觉投影层（`--mmproj`），
+/// 少了它上游不认图片，报出来只是一句「上游失败」，看不出是缺投影层。
+const 基础启动参数: &str = "-m {模型文件} --host 127.0.0.1 --port {端口} -c 8192 --no-webui";
+
+/// 按模型类型出启动参数。投影层不写死路径：同目录里按模型名推，
+/// 规则是「去掉量化后缀、前面加 mmproj-、后面加 -F16.gguf」
+/// （`Qwen3VL-8B-Instruct-Q4_K_M.gguf` → `mmproj-Qwen3VL-8B-Instruct-F16.gguf`）。
+fn 启动参数(模型类型: &str, 模型文件: &str) -> String {
+    if 模型类型 != "VLM看图模型" {
+        return 基础启动参数.to_owned();
+    }
+    match 推投影层(模型文件) {
+        Some(投影) => format!("{基础启动参数} --mmproj {投影}"),
+        None => 基础启动参数.to_owned(),
+    }
+}
+
+fn 推投影层(模型文件: &str) -> Option<String> {
+    let 路径 = std::path::Path::new(模型文件);
+    let 目录 = 路径.parent()?;
+    let 文件名 = 路径.file_stem()?.to_str()?;
+    // 去掉 -Q4_K_M / .Q8_0 这类量化尾巴
+    let mut 基名 = 文件名;
+    for 标记 in ["-Q4_K_M", "-Q5_K_M", "-Q8_0", "-Q4_0", ".Q8_0", ".Q4_K_M", "-F16", "-BF16"] {
+        if let Some(位) = 基名.find(标记) {
+            基名 = &基名[..位];
+        }
+    }
+    let 候选 = 目录.join(format!("mmproj-{基名}-F16.gguf"));
+    if 候选.exists() {
+        Some(候选.to_string_lossy().into_owned())
+    } else {
+        None
+    }
+}
 const 一次等待上限毫秒: u64 = 110000;
 
 /// 各类型的默认模型：调用方不传 `模型引用` 时用这个。
@@ -61,6 +95,22 @@ fn 未完成(服务句柄: u64, 任务句柄: Option<u64>, 状态: &str, 说明:
     })
 }
 
+/// 反复问「就绪了吗」直到过了截止时间。
+///
+/// 为什么不能只问一次：`2515` 单次等待封顶 800 毫秒（全平台单项超时 120 秒要留传回时间），
+/// 而真实载入本机模型要 1–3 秒，一轮必然回假 —— 那会让每次冷启动都白跑一趟。
+fn 循环等就绪(句柄: u64, 截止: Instant) -> Result<(), u32> {
+    loop {
+        let 剩余 = 截止.saturating_duration_since(Instant::now()).as_millis() as u64;
+        if 剩余 == 0 {
+            return Ok(());
+        }
+        if 模型服务::等待就绪(句柄, 剩余)? {
+            return Ok(());
+        }
+    }
+}
+
 pub(crate) fn 一次对话(请求: 请求<'_>) -> Result<Value, u32> {
     let 截止 = Instant::now() + Duration::from_millis(请求.等待毫秒.min(一次等待上限毫秒));
     let 模型类型: &'static str = 模型服务::规整模型类型(请求.模型类型)?;
@@ -80,15 +130,18 @@ pub(crate) fn 一次对话(请求: 请求<'_>) -> Result<Value, u32> {
                 &引用.标识,
                 引用.文件路径.as_deref(),
                 推理引擎,
-                启动参数,
+                &启动参数(模型类型, 引用.文件路径.as_deref().unwrap_or("")),
                 0,
                 "",
                 模型类型,
                 900,
                 30,
             )?;
-            let 剩余 = 截止.saturating_duration_since(Instant::now()).as_millis() as u64;
-            if 剩余 == 0 || !模型服务::等待就绪(句柄, 剩余)? {
+            // 2515 单次等待封顶 800 毫秒（全平台单项超时要留传回时间），
+            // 一轮根本盖不住真实载入（本机模型 1–3 秒），必须循环到截止。
+            循环等就绪(句柄, 截止)?;
+            let 状态 = 模型服务::取状态(句柄)?;
+            if 状态.get("状态").and_then(Value::as_str) != Some("已载入") {
                 return Ok(未完成(
                     句柄,
                     None,
@@ -96,7 +149,6 @@ pub(crate) fn 一次对话(请求: 请求<'_>) -> Result<Value, u32> {
                     "服务已拉起，模型正在载入。再发一次同样的请求就会拿到答案",
                 ));
             }
-            let 状态 = 模型服务::取状态(句柄)?;
             let 端口 = 状态
                 .get("监听端口")
                 .and_then(Value::as_u64)
