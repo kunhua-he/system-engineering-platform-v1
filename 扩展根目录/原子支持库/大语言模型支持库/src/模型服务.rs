@@ -517,7 +517,12 @@ pub(crate) fn 取状态(句柄: u64) -> Result<serde_json::Value, u32> {
     let mut 表 = 取锁(服务表()).map_err(|_| 错误码::资源受限)?;
     let 条目 = 表.get_mut(&句柄).ok_or(错误码::服务无效)?;
     let 存活 = 判存活(&mut 条目.子进程);
-    let 就绪 = 存活 && 端口就绪(条目.监听端口);
+    // `端口就绪` 只做 TCP connect —— llama-server 这类引擎**载入模型期间就已经在 listen 了**，
+    // 但 `/v1/chat/completions` 此刻回 503 `Loading model`。所以「能连上」不等于「能用」：
+    // 判「已载入」必须走真就绪探测（就绪路径 200 + /health 不是 503），否则调用方拿到
+    // 「已载入」就发请求，必然撞 503。实测踩过：状态说已载入，直连模型却回 Loading model。
+    let 端口通 = 存活 && 端口就绪(条目.监听端口);
+    let 就绪 = 端口通 && 真就绪(条目.监听端口, &条目.就绪路径);
     let CPU毫秒 = if 存活 {
         serde_json::json!(取CPU毫秒(条目.进程号))
     } else {
@@ -534,7 +539,8 @@ pub(crate) fn 取状态(句柄: u64) -> Result<serde_json::Value, u32> {
     };
     let 状态 = if !存活 {
         "已退出"
-    } else if 条目.已就绪 || 就绪 {
+    } else if 就绪 {
+        // 只认**此刻真的通**，不认「曾经就绪过」—— 引擎可能已经卡住或正在换模型。
         "已载入"
     } else if 条目.载入超时秒 > 0 && 条目.启动时刻.elapsed().as_secs() >= 条目.载入超时秒 {
         "载入失败"

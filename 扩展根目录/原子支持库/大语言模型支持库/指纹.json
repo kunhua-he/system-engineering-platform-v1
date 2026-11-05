@@ -15,7 +15,7 @@
     "src/命令声明面.rs": "d479584e773100fc1273980f4fc4130cb2ac59b3354b9b6087cb73e32c891a0f",
     "src/执行函数面.rs": "4328433eaa5ae9c9f9eafe2ac0ef2297d23971f462769fd340d00cdaa95d0086",
     "src/推理许可.rs": "49a570f6db64f21e020e3bd45bf3680ef3ade46eaccad56f00ab430b376a42a2",
-    "src/模型服务.rs": "e5cd7544bf4d25d84bdf50fae27ea979cc5bb9a478981b69576028bf5e23a83f",
+    "src/模型服务.rs": "bf5264f6cfe079f9ba6d0f53c569aae790bdb9e3930da876a6c96a59c6571af1",
     "src/生成任务.rs": "a96c9d8c3ae533fadf5b671120fd693194afabec5ba930fbb5be93f27f24c385",
     "src/编号与码面.rs": "707ce1e115d0332e3b9ffc740cac36b5993267868466a56458037140722bff9c",
     "src/连接与句柄.rs": "c87bd1ad146264a7b428f09622af4d2a18931ff4cda256ff38a5a1f6ad1f6606",
