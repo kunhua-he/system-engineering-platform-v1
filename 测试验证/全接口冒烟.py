@@ -38,9 +38,21 @@ def 读配置():
     配 = json.loads(配置路径.read_text(encoding='utf-8'))
     素材根 = Path(配.get('素材目录') or '/tmp/全接口冒烟素材')
 
+    import time as _t
+    戳 = str(_t.time_ns())[-8:]
+
     def 换(字典):
-        return {k: (v.replace('{素材}', str(素材根)) if isinstance(v, str) else v)
-                for k, v in (字典 or {}).items()}
+        out = {}
+        for k, v in (字典 or {}).items():
+            if isinstance(v, str):
+                v = v.replace('{素材}', str(素材根)).replace('{戳}', 戳)
+                # 只有「输出」类路径换新名；输入类路径换了就必然「文件不存在」
+                if k in ('输出路径', '目标路径') and v.startswith('/') and '{戳}' not in v:
+                    目录, _, 名 = v.rpartition('/')
+                    基, 点, 尾 = 名.partition('.')
+                    v = '%s/%s_%s%s%s' % (目录, 基, 戳, 点, 尾)
+            out[k] = v
+        return out
 
     配['全局'] = 换(配.get('全局'))
     配['按库'] = {库: 换(值) for 库, 值 in (配.get('按库') or {}).items()}
