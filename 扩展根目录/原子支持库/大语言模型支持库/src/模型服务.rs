@@ -298,7 +298,7 @@ pub(crate) fn 解析CPU时间(文本: &str) -> Option<u64> {
 
 /// 拉起：起进程 → 登记 → 返回句柄。**就绪要另调 `等待模型就绪`**（拉起不干等）。
 pub(crate) fn 拉起(
-    模型标识: &str,
+    模型短名: &str,
     模型文件: Option<&str>,
     可执行文件: &str,
     启动参数: &str,
@@ -306,7 +306,7 @@ pub(crate) fn 拉起(
     就绪路径: &str,
     模型类型: &str,
 ) -> Result<u64, u32> {
-    if 模型标识.trim().is_empty() || 可执行文件.trim().is_empty() {
+    if 模型短名.trim().is_empty() || 可执行文件.trim().is_empty() {
         return Err(错误码::参数不合法);
     }
     let 模型类型 = 规整模型类型(模型类型)?;
@@ -385,7 +385,7 @@ pub(crate) fn 拉起(
     表.insert(
         句柄,
         服务条目 {
-            模型短名: 模型标识.to_owned(),
+            模型短名: 模型短名.to_owned(),
             模型路径: 模型文件.unwrap_or("").to_owned(),
             进程号,
             监听端口,
