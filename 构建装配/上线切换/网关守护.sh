@@ -40,6 +40,26 @@ rotate_log() {
   fi
 }
 
+# 二进制同步：`RUNDIR/启动网关` 是运行副本，制品里的 `网关` 才是新编译的。
+#
+# 为什么必须有这一步：切换制品只改「当前.json」，不改运行副本。副本一旦落后，
+# 就会出现**旧二进制配新声明** —— 实测踩过：新声明的参数校验要求「每项带类型标签」，
+# 旧二进制不认，整条调用链全 400，而日志里看不出任何「版本不一致」的线索。
+# 只比大小与 mtime，一致就不拷，避免每次重启都白写 3 MB。
+sync_binary() {
+  cur="$RUNDIR/../临时件/上线切换/当前.json"
+  [ -f "$cur" ] || return 0
+  dest=$(/usr/bin/python3 -c 'import json,sys;print(json.load(open(sys.argv[1])).get("制品落点",""))' "$cur" 2>/dev/null) || return 0
+  [ -n "$dest" ] || return 0
+  src="$dest/网关"
+  [ -x "$src" ] || return 0
+  if [ -f "$RUNDIR/启动网关" ] && [ "$(wc -c < "$src" 2>/dev/null)" = "$(wc -c < "$RUNDIR/启动网关" 2>/dev/null)" ]; then
+    return 0
+  fi
+  cp -f "$src" "$RUNDIR/启动网关" 2>/dev/null && \
+    echo "=== $(date '+%F %T') 同步网关二进制 ← $src" >> "$LOG"
+}
+
 guard() {
   cd "$REPO" || exit 1
   while :; do
@@ -48,6 +68,7 @@ guard() {
       continue
     fi
     rotate_log "$LOG"
+    sync_binary
     echo "=== $(date '+%F %T') start gateway on $PORT" >> "$LOG"
     "$RUNDIR/启动网关" \
       --声明根 扩展装载/扩展根声明.json \
