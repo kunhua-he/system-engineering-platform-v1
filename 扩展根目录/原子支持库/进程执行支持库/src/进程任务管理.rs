@@ -11,8 +11,17 @@ use std::time::{Duration, Instant};
 
 /// 单路输出上限：超出按截断标记，不再继续读。
 const 单路输出上限: usize = 1048576;
-/// 同时可挂在表里的任务上限。
-const 任务表上限: usize = 16;
+/// 同时可挂在表里的任务上限。**按本机 CPU 核数算，不写死**。
+///
+/// 为什么：每个进程任务主要吃一个核，36 核的机器压 16 个是浪费；
+/// 而 4 核小机器给 64 个又会让调度本身成为瓶颈。
+/// 下限 16 兜住小机器，封顶 256 兜住失控。
+fn 算任务表上限() -> usize {
+    let 核数 = std::thread::available_parallelism()
+        .map(|数| 数.get())
+        .unwrap_or(4);
+    (核数 * 4).clamp(16, 256)
+}
 /// 完成后结果可读窗口。
 const 结果保留时长: Duration = Duration::from_secs(10);
 /// 单命令预算上限（秒）。
@@ -207,7 +216,7 @@ pub(crate) fn 提交执行(参数值: Value) -> Result<u64, u32> {
         return Err(错误码::资源受限);
     }
     总表.清到期();
-    if 总表.条目表.len() >= 任务表上限 {
+    if 总表.条目表.len() >= 算任务表上限() {
         return Err(错误码::资源受限);
     }
     let 任务句柄 = loop {

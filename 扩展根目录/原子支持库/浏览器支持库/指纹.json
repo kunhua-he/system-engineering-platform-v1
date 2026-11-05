@@ -10,7 +10,7 @@
     "src/lib.rs": "b83d56ff580afbbfc8f1731f9af96067eea6454f06fd493690e0a3801e651cd4",
     "src/命令声明面.rs": "31a793194c06e8ac32d7d5ab1e41f671796aadf8ccd23e43507274b3ac759a23",
     "src/执行函数面.rs": "45ec3be82fe5639d39fcafc397a0e40886cdb032844b3ea899a79b2af9d33d6e",
-    "src/浏览器会话.rs": "08a2201bac193e1583f77331c0c2f7a52402d933d0afd0343a1842cd28cf3c67",
+    "src/浏览器会话.rs": "d3a7fe8329644d95c7f8bef943c77cbe77fbd9eb72673b07f8390f2d30b9167e",
     "src/浏览器动作.rs": "dd401d64e9063acdf93a28096ecc4d6d039c1b0d8cfadcfd74c8af59babf177b",
     "src/浏览器提供者.rs": "1f2a1871159e7724d2c56f77e60f19b2d48331a3cc254adde6ae5f1ea786ae03",
     "src/浏览器通道.rs": "311f3fac50dfc48757f62d7e1321e3a6bc382f6903bbadb7bd475cff7db4979f",

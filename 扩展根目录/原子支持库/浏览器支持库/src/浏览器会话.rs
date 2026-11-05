@@ -27,7 +27,119 @@ fn 表() -> &'static Mutex<HashMap<u32, 会话>> {
     会话表.get_or_init(|| Mutex::new(HashMap::new()))
 }
 
-const 会话上限: usize = 8;
+const 会话下限: usize = 8;
+const 会话上限封顶: usize = 64;
+/// 一个无头 Chrome 实测常驻约 300MB（实测 12 个并发时每进程 RSS 250-350MB）。
+const 单会话预估字节: u64 = 300 * 1024 * 1024;
+
+/// 会话上限按本机真实可用内存算，**不写死**。
+///
+/// 为什么：写死 8 会让 256GB 的工作站和 16GB 的笔记本拿到同一个上限，
+/// 机器明明跑得动却报「资源超限」。下限 8 兜住小机器，封顶 64 兜住失控。
+fn 算会话上限() -> usize {
+    let 可用 = 可用内存字节();
+    if 可用 == 0 {
+        return 会话下限; // 读不到内存就退回保守值，不用「读不到」当拒绝理由
+    }
+    let 算得出 = (可用 / 单会话预估字节) as usize;
+    算得出.clamp(会话下限, 会话上限封顶)
+}
+
+/// 可用内存 = `vm_stat` 的空闲页 + 非活跃页（非活跃页可立刻回收，算得上可用）。
+///
+/// 与大语言模型支持库 `模型服务.rs` 的同名函数同源。契约层 `v1_contract` 要求
+/// 零依赖、签名冻结，放不进去；两边都是 20 行纯读，逻辑必须保持一致，
+/// 改动时两边一起改。
+fn 可用内存字节() -> u64 {
+    let 输出 = match std::process::Command::new("/usr/bin/vm_stat").output() {
+        Ok(输出) => 输出,
+        Err(_) => return 0,
+    };
+    let 文本 = String::from_utf8_lossy(&输出.stdout);
+    let mut 空闲页 = 0u64;
+    let mut 非活跃页 = 0u64;
+    let mut 页大小 = 4096u64;
+    for 行 in 文本.lines() {
+        if 行.contains("page size of") {
+            if let Some(起) = 行.find("page size of") {
+                let 剩余 = &行[起 + 12..];
+                页大小 = 剩余
+                    .split_whitespace()
+                    .next()
+                    .and_then(|数| 数.parse::<u64>().ok())
+                    .unwrap_or(4096);
+            }
+            continue;
+        }
+        let 取数 = |键: &str| -> u64 {
+            if !行.starts_with(键) {
+                return 0;
+            }
+            行.split(':')
+                .nth(1)
+                .map(|尾| 尾.trim().trim_end_matches('.').to_owned())
+                .and_then(|数| 数.parse::<u64>().ok())
+                .unwrap_or(0)
+        };
+        空闲页 += 取数("Pages free");
+        非活跃页 += 取数("Pages inactive");
+    }
+    (空闲页 + 非活跃页) * 页大小
+}
+
+/// 清掉进程已经没了的会话。
+///
+/// 为什么必须清：会话表只按条数算上限，Chrome 崩掉或被人从外面 kill 之后
+/// 条目还挂在表里，永远占着坑位 —— 进程清光了仍然报「资源超限」。
+/// 模型服务那边 `找已载入` 做了 `kill -0` 二次判断，这里之前漏了。
+fn 清死会话(表锁: &mut HashMap<u32, 会话>) {
+    let 死号: Vec<u32> = 表锁
+        .iter_mut()
+        .filter_map(|(号, 条)| match 条.进程.try_wait() {
+            Ok(Some(_)) => Some(*号), // 已退出
+            _ => None,
+        })
+        .collect();
+    for 号 in 死号 {
+        if let Some(mut 条) = 表锁.remove(&号) {
+            let _ = 条.进程.kill();
+            let _ = 条.进程.wait();
+            let _ = std::fs::remove_dir_all(&条.临时目录);
+        }
+    }
+}
+
+/// 造一个新会话，返回句柄
+pub(crate) fn 创建会话(临时根: &str) -> Result<u32, u32> {
+    let mut 表锁 = 表().lock().map_err(|_| 错误码::处理失败)?;
+    清死会话(&mut 表锁);
+    let 上限 = 算会话上限();
+    if 表锁.len() >= 上限 {
+        return Err(错误码::资源超限);
+    }
+    let 目录 = format!("{}/v1-browser-{}", 临时根, 时间戳());
+    std::fs::create_dir_all(&目录).map_err(|_| 错误码::启动失败)?;
+    let (进程, 端口) = 起浏览器(&目录)?;
+    let 标签路径 = match 开标签(端口) {
+        Ok(路径) => 路径,
+        Err(码) => {
+            let mut 进程 = 进程;
+            let _ = 进程.kill();
+            return Err(码);
+        }
+    };
+    let 连接 = match 调试连接::建连(端口, &标签路径) {
+        Ok(连接) => 连接,
+        Err(码) => {
+            let mut 进程 = 进程;
+            let _ = 进程.kill();
+            return Err(码);
+        }
+    };
+    let 句柄 = 下一个句柄(&表锁);
+    表锁.insert(句柄, 会话 { 进程, 标签连接: 连接, 指令序: 0, 临时目录: 目录 });
+    Ok(句柄)
+}
 
 /// Chrome 可执行文件位置；找不到就如实报平台不支持
 fn 查浏览器路径() -> Result<String, u32> {
@@ -121,34 +233,7 @@ fn 开标签(端口: u16) -> Result<String, u32> {
 }
 
 /// 造一个新会话，返回句柄
-pub(crate) fn 创建会话(临时根: &str) -> Result<u32, u32> {
-    let mut 表锁 = 表().lock().map_err(|_| 错误码::处理失败)?;
-    if 表锁.len() >= 会话上限 {
-        return Err(错误码::资源超限);
-    }
-    let 目录 = format!("{}/v1-browser-{}", 临时根, 时间戳());
-    std::fs::create_dir_all(&目录).map_err(|_| 错误码::启动失败)?;
-    let (进程, 端口) = 起浏览器(&目录)?;
-    let 标签路径 = match 开标签(端口) {
-        Ok(路径) => 路径,
-        Err(码) => {
-            let mut 进程 = 进程;
-            let _ = 进程.kill();
-            return Err(码);
-        }
-    };
-    let 连接 = match 调试连接::建连(端口, &标签路径) {
-        Ok(连接) => 连接,
-        Err(码) => {
-            let mut 进程 = 进程;
-            let _ = 进程.kill();
-            return Err(码);
-        }
-    };
-    let 句柄 = 下一个句柄(&表锁);
-    表锁.insert(句柄, 会话 { 进程, 标签连接: 连接, 指令序: 0, 临时目录: 目录 });
-    Ok(句柄)
-}
+
 
 fn 下一个句柄(表: &HashMap<u32, 会话>) -> u32 {
     let mut 候选 = 1u32;
