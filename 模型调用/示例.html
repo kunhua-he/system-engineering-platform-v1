@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>模型对话 —— 一个请求搞定</title>
+<style>
+  :root { --前景:#1a1a1a; --弱:#777; --线:#ddd; --底:#fafafa; }
+  body { font-family: -apple-system, "PingFang SC", sans-serif; max-width: 720px;
+         margin: 40px auto; padding: 0 20px; color: var(--前景); }
+  h1 { font-size: 20px; font-weight: 600; }
+  .提示 { color: var(--弱); font-size: 13px; line-height: 1.7; }
+  textarea { width: 100%; box-sizing: border-box; height: 80px; padding: 10px; font-size: 15px;
+             font-family: inherit; border: 1px solid var(--线); border-radius: 8px; resize: vertical; }
+  button { margin-top: 10px; padding: 9px 22px; font-size: 15px; font-family: inherit;
+           border: 0; border-radius: 8px; background: #222; color: #fff; cursor: pointer; }
+  button:disabled { background: #bbb; cursor: default; }
+  #结果 { margin-top: 18px; padding: 16px; background: var(--底); border-radius: 8px;
+          min-height: 60px; white-space: pre-wrap; line-height: 1.7; font-size: 15px; }
+  #耗时 { color: var(--弱); font-size: 12px; margin-top: 8px; }
+  code { background: var(--底); padding: 2px 6px; border-radius: 4px; font-size: 13px; }
+</style>
+</head>
+<body>
+
+<h1>模型对话 —— 一个请求搞定</h1>
+<p class="提示">
+  页面就发<strong>一个</strong>请求：<code>POST http://127.0.0.1:43111/对话</code>。<br>
+  模型有没有起、要多少内存、端口多少、许可怎么拿，全在那一层办完了。
+</p>
+
+<textarea id="输入">用一句话介绍你自己</textarea>
+<button id="发送">发送</button>
+<div id="结果">（结果显示在这里）</div>
+<div id="耗时"></div>
+
+<script>
+const 接口 = "http://127.0.0.1:43111/对话";
+const 按钮 = document.getElementById("发送");
+const 结果 = document.getElementById("结果");
+const 耗时 = document.getElementById("耗时");
+
+async function 发送() {
+  按钮.disabled = true;
+  结果.textContent = "思考中…";
+  耗时.textContent = "";
+  const 起 = Date.now();
+
+  try {
+    const 回 = await fetch(接口, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ 消息: document.getElementById("输入").value })
+    }).then(r => r.json());
+
+    结果.textContent = 回.成功 ? 回.内容 : "出错了：" + 回.错误;
+  } catch (错) {
+    结果.textContent = "连不上模型接口： " + 错.message +
+      "\n\n先把门面起起来：\npython3 /Users/hekunhua/Documents/Agent/PHP/系统工程平台V1/模型调用/模型接口.py";
+  } finally {
+    耗时.textContent = "耗时 " + ((Date.now() - 起) / 1000).toFixed(1) + " 秒";
+    按钮.disabled = false;
+  }
+}
+
+按钮.addEventListener("click", 发送);
+</script>
+</body>
+</html>
