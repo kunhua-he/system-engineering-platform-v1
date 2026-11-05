@@ -52,6 +52,15 @@ from pathlib import Path
     '文本列表': {'类型标签': 100, '值': [{'类型标签': 4, '值': '第一段'},
                                         {'类型标签': 4, '值': '第二段'}]},
     '分隔符': ',', '表头': 'a,b,c', '前缀': '货号-', '查找': '示例',
+    # 大语言模型连接
+    '模型': '/Users/hekunhua/Documents/AI模型/文本模型/Qwen3-8B-Q4_K_M.gguf',
+    '服务器地址': 'http://127.0.0.1:40001', '接口密钥': '',
+    '协议': 'chat_completions', '模型类型': 'LLM文本模型',
+    '静态请求头': {'类型标签': 101, '值': {}},
+    '模型引用': '/Users/hekunhua/Documents/AI模型/文本模型/Qwen3-8B-Q4_K_M.gguf',
+    '可执行文件': '/opt/homebrew/bin/llama-server',
+    '启动参数': '-m {模型文件} --host 127.0.0.1 --port {端口} -c 4096 --no-webui',
+    '监听端口': 0, '就绪路径': '', '闲置超时秒': 900, '载入超时秒': 60,
     # 编码
     '编码': 'utf-8', '待编码文本': '示例文本', '待解码文本': '5L2g5aW9',
     '十六进制编解码_编码文本': 'E7A4BAE4BE8B',
@@ -74,19 +83,109 @@ from pathlib import Path
     (r'十六进制|HEX|hex', 'E7A4BA'),
 ]
 
-兜底 = {'类型1': 1, '类型2': 1.5, '类型3': False, '类型4': '示例', '类型6': 1}
+
+# 素材目录：冒烟要真文件、真图片，没有就先备好
+素材 = Path('/tmp/全接口冒烟素材')
+
+# 按库区分：同名参数在不同库要不同的东西（PDF 的文件路径要 pdf，代码解析要源码）
+库专属 = {
+    'PDF支持库': {'文件路径': str(素材 / '样例.pdf'), '页序号': 1, '倍率': 1.5,
+                  '输出路径': str(素材 / 'pdf页.png'),
+                  '页参数': '{"页序号":1,"倍率":1.5,"输出路径":"%s"}' % (素材 / 'pdf页.png')},
+    '办公文档支持库': {'输入路径': str(素材 / '样例.docx'),
+                       'DOCX文件路径': str(素材 / '样例.docx'),
+                       'XLSX文件路径': str(素材 / '样例.xlsx'),
+                       'PPTX文件路径': str(素材 / '样例.pptx'),
+                       '输出路径': str(素材 / '输出.docx'),
+                       '输出目录': str(素材),
+                       '目标格式': 'md',
+                       '超时秒': 60,
+                       'Markdown源文本': '# 标题\n\n正文一段。',
+                       '内容文本': '正文一段。',
+                       '公式文本': 'x^2+1',
+                       '变量文本': '{"x": 2}'},
+    '代码解析支持库': {'文件路径': str(素材 / '样例.py'),
+                       '规则文件路径': str(素材 / '切块规则.json'),
+                       '规则文本': '{"块类型": ["函数"]}',
+                       '文件格式': 'py', '扩展名': '.py',
+                       '原始字节': {'类型标签': 5, '值': 'ZGVmIGYoKToKICAgIHJldHVybiAxCg=='},
+                       '编码名': 'utf-8', '强制重载': False,
+                       '内容': 'def f():\n    return 1\n'},
+    '文件支持库': {'受控根目录': str(素材), '受控工作区': str(素材),
+                   '相对路径': '样例.txt', '文件路径': str(素材 / '样例.txt'),
+                   '路径': str(素材 / '样例.txt'), '目录路径': str(素材),
+                   '目标路径': str(素材) + '/副本.txt',
+                   '文本内容': '写入的内容',
+                   '字节内容': {'类型标签': 5, '值': '5YaF5a65'},
+                   '字节数': 30, '最大字节数': 1024, '操作': '读取',
+                   '提交范围': '已提交', '偏移': 0, '长度': 30},
+}
+
+# 图像处理库的图统一用同一张 PNG
+_图 = (素材 / '样例png_base64.txt')
+_图值 = _图.read_text().strip() if _图.is_file() else ''
+库专属['图像处理支持库'] = {
+    '图像base64': _图值, '底图base64': _图值, '叠加base64': _图值,
+    '宽度': 320, '高度': 240, '目标宽': 160, '目标高': 120,
+    '背景颜色': '#FFFFFF', '前景颜色': '#000000', '文本': '示例',
+    '占位类型': '纯色', '转置方式': '顺时针90',
+}
+
+# 类型 5 是字节集，必须是长度 4 倍数的合法 base64 —— 给「示例」三个字会直接判协议错
+兜底 = {'类型1': 1, '类型2': 1.5, '类型3': False, '类型4': '示例', '类型5': '5YaF5a65', '类型6': 1}
 
 
-def 造参(声明):
+def _换新名(路径):
+    """输出类路径每次换新，否则第二轮必然「文件已存在」。"""
+    import time
+    from pathlib import Path as _P
+    p = _P(路径)
+    return str(p.with_name('%s_%d%s' % (p.stem, time.time_ns() % 100000, p.suffix)))
+
+
+def 包标签(值, 类型):
+    """复合参数必须逐层带 {"类型标签":N,"值":…}，裸 {} / [] 会被判「输入形状不符」。"""
+    if isinstance(值, dict) and '类型标签' in 值 and '值' in 值:
+        return 值
+    if 类型 == 100:
+        return {'类型标签': 100, '值': 值 if isinstance(值, list) else []}
+    if 类型 == 101:
+        return {'类型标签': 101, '值': 值 if isinstance(值, dict) else {}}
+    if 类型 == 5:
+        import base64 as _b64
+        串 = 值 if isinstance(值, str) else ''
+        try:
+            _b64.b64decode(串, validate=True)
+            if len(串) % 4:
+                raise ValueError
+        except Exception:
+            串 = _b64.b64encode(b'\xe7\xa4\xba\xe4\xbe\x8b').decode()
+        return {'类型标签': 5, '值': 串}
+    return 值
+
+
+def 造参(声明, 库名=''):
     参 = {}
+    专属 = 库专属.get(库名, {})
     for p in 声明.get('参数表') or []:
         名 = p['名称']
         说 = p.get('说明') or ''
         类型 = p.get('类型标签', 4)
         默认 = p.get('默认值') or {}
 
+        类型 = p.get('类型标签', 4)
+        if 名 in ('输出路径', '目标路径', '输出目录') and isinstance(专属.get(名), str):
+            参[名] = 包标签(_换新名(专属[名]), 类型)
+            continue
+        if 名 in ('服务句柄', '句柄', '任务句柄', '许可句柄', '连接句柄'):
+            值 = 上下文.get(名) or 上下文.get({'任务句柄': '任务句柄', '许可句柄': '许可句柄'}.get(名, '服务句柄')) or 1
+            参[名] = 包标签(值, 类型)
+            continue
+        if 名 in 专属:
+            参[名] = 包标签(专属[名], 类型)
+            continue
         if 名 in 真值:
-            参[名] = 真值[名]
+            参[名] = 包标签(真值[名], 类型)
             continue
         if 默认.get('类型标签'):
             参[名] = 默认.get('值', 默认.get('逻辑', ''))
@@ -100,8 +199,49 @@ def 造参(声明):
                 break
         if 取值 is None:
             取值 = 兜底.get('类型%d' % 类型, '示例')
-        参[名] = 取值
+        参[名] = 包标签(取值, 类型)
     return 参
+
+
+上下文 = {'服务句柄': 0, '任务句柄': 0, '许可句柄': 0, '句柄': 0}
+
+
+def 前置准备():
+    """链式接口（连接→提交→读结果）单独调必然「句柄无效」，先把前置资源备好。"""
+    判, 说, 值 = 发一次带值(2512, {
+        '模型引用': 真值['模型引用'],
+        '可执行文件': 真值['可执行文件'],
+        '启动参数': 真值['启动参数'],
+        '监听端口': 0, '就绪路径': '', '模型类型': 'LLM文本模型',
+        '闲置超时秒': 900, '载入超时秒': 60,
+    })
+    if 判 == '成功' and isinstance(值, int):
+        上下文['服务句柄'] = 值
+    # 等它真就绪
+    for _ in range(20):
+        判2, _, 就 = 发一次带值(2515, {'服务句柄': 上下文['服务句柄'], '超时毫秒': 800})
+        if 就 is True:
+            break
+
+
+def 发一次带值(编号, 参):
+    """同 发一次，但把成功时的值也带回来（前置准备要用）。"""
+    体 = json.dumps({'编号': 编号, '命名值': 参}, ensure_ascii=False).encode()
+    try:
+        with urllib.request.urlopen(
+                 urllib.request.Request(接口, 体, {'Content-Type': 'application/json'}),
+                 timeout=60) as 回:
+            数据 = json.loads(回.read())
+        if not 数据.get('成功'):
+            return '参数错', (数据.get('错误') or {}).get('名称', ''), None
+        值 = 数据.get('值')
+        if isinstance(值, list) and len(值) == 1:
+            值 = 值[0]
+        if isinstance(值, dict) and set(值) == {'类型标签', '值'}:
+            值 = 值['值']
+        return '成功', '', 值
+    except Exception as e:
+        return '连不上', type(e).__name__, None
 
 
 def 发一次(编号, 参):
@@ -111,7 +251,10 @@ def 发一次(编号, 参):
                  urllib.request.Request(接口, 体, {'Content-Type': 'application/json'}),
                  timeout=30) as 回:
             数据 = json.loads(回.read())
-        return '成功' if 数据.get('成功') else '参数错', (数据.get('错误') or {}).get('名称', '')
+        错名 = (数据.get('错误') or {}).get('名称', '')
+        if 错名 == '文件已存在':
+            错名 = '文件已存在（输出路径撞名，非缺陷）'
+        return '成功' if 数据.get('成功') else '参数错', 错名
     except urllib.error.HTTPError as e:
         文 = e.read().decode()
         try:
@@ -129,16 +272,25 @@ def 主():
     if not 样本.is_file():
         样本.write_text('第一行\n第二行\n第三行\n', encoding='utf-8')
 
+    素材.mkdir(parents=True, exist_ok=True)
+    if not (素材 / '样例.py').is_file():
+        (素材 / '样例.py').write_text('def f():\n    return 1\n', encoding='utf-8')
+    if not (素材 / '切块规则.json').is_file():
+        (素材 / '切块规则.json').write_text('{"块类型": ["函数"], "按行切": true}', encoding='utf-8')
+
     指定 = sys.argv[1] if len(sys.argv) > 1 else ''
     库们 = sorted(d for d in 声明根.iterdir() if d.is_dir() and not d.name.startswith('.'))
     if 指定:
         库们 = [d for d in 库们 if 指定 in d.name]
 
+    前置准备()
+    print('前置服务句柄: %s' % (上下文['服务句柄'] or '没拉起'))
+
     结果 = []
     for 库 in 库们:
         for f in sorted(库.glob('能力声明/*.json')):
             声明 = json.loads(f.read_text(encoding='utf-8'))
-            判, 说 = 发一次(声明['编号'], 造参(声明))
+            判, 说 = 发一次(声明['编号'], 造参(声明, 库.name))
             结果.append({'库': 库.name, '编号': 声明['编号'],
                          '名': 声明['名称'].split('_')[-1], '判': 判, '说': 说})
 
