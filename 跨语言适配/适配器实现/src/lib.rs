@@ -123,8 +123,8 @@ mod 图任务测试;
 #[path = "验证样本/子进程环境测试.rs"]
 mod 子进程环境测试;
 #[cfg(test)]
-#[path = "验证样本/持久化测试.rs"]
-mod 持久化测试;
+#[path = "验证样本/任务表与重启测试.rs"]
+mod 任务表与重启测试;
 #[cfg(test)]
 #[path = "验证样本/测试夹具.rs"]
 pub(crate) mod 测试夹具;

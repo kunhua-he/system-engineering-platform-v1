@@ -99,6 +99,7 @@ impl crate::适配器 {
             实例,
             节点标识表: 建图.节点标识表,
             取消: false,
+            提交微秒: u64::try_from(self.进程零时.elapsed().as_micros()).unwrap_or(u64::MAX),
             末次访问: 0,
             失败表,
             产出表,
