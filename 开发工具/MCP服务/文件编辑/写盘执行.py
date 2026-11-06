@@ -146,7 +146,7 @@ def 写文件(件路径: Path, 全文: str, 预期指纹=None, 工作树=None) -
         os.close(文件描述符)
         临时路径 = Path(临时文件名)
         原模式 = 件路径.stat().st_mode & 0o7777 if 件路径.exists() else None
-        临时路径.write_text(全文, encoding="utf-8", newline="\n")
+        with 临时路径.open("w", encoding="utf-8", newline="\n") as 写: 写.write(全文)
         if 原模式 is not None:
             os.chmod(临时路径, 原模式)
         当前指纹 = 文件指纹(str(件路径)) if 件路径.is_file() else ""
@@ -400,7 +400,7 @@ def 执行写盘(连接, 工作树: Path, 开工号: str, 项表: list, 最终�
             return 完成表, "推演后指纹漂移：未写盘、未记意图", "落盘", 跳过数
         终态 = 最终态表.get(路径)
         try:
-            现有 = (件路径.read_text(encoding="utf-8", newline="\n")
+            现有 = (件路径.open(encoding="utf-8", newline="\n").read()
                   if 件路径.is_file() else None)
         except (UnicodeDecodeError, OSError):
             现有 = None

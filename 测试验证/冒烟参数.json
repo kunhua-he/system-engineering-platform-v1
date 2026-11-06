@@ -96,8 +96,8 @@
   "待匹配文本": "abc123",
   "替换文本": "X",
   "查询": "示例",
-  "路径": "/tmp/全接口冒烟样本.txt",
-  "文件路径": "/tmp/全接口冒烟样本.txt",
+  "路径": "{素材}/全接口冒烟样本.txt",
+  "文件路径": "{素材}/全接口冒烟样本.txt",
   "目录路径": "/tmp",
   "网址": "https://example.com/a?b=1",
   "基础网址": "https://example.com",
@@ -176,30 +176,30 @@
  },
  "按编号": {
   "3104": {
-   "文件路径": "/tmp/配参_1/文本甲_{戳}.txt",
+   "文件路径": "/tmp/配参_1/配参文本1_{戳}.txt",
    "文本内容": "hello 配参 3104\n"
   },
   "3105": {
-   "文件路径": "/tmp/配参_1/字节甲_{戳}.bin",
+   "文件路径": "/tmp/配参_1/配参字节1_{戳}.bin",
    "字节内容": {
     "类型标签": 5,
     "值": "AAECQUJD"
    }
   },
   "3106": {
-   "目录路径": "/tmp/配参_1/目录甲"
+   "目录路径": "/tmp/配参_1/配参目录1"
   },
   "3110": {
-   "目录路径": "/tmp/配参_1/目录甲"
+   "目录路径": "/tmp/配参_1/配参目录1"
   },
   "3111": {
    "受控根目录": "/tmp/配参_1",
-   "相对路径": "文本甲.txt",
+   "相对路径": "配参文本1.txt",
    "字节数": 12
   },
   "3112": {
    "受控根目录": "/tmp/配参_1",
-   "相对路径": "文本甲.txt",
+   "相对路径": "配参文本1.txt",
    "最大字节数": 1024
   },
   "3116": {
@@ -257,7 +257,7 @@
        },
        "content": {
         "类型标签": 4,
-        "值": "用一句话介绍你自己，不超过30字。"
+        "值": "用一句话介绍该模型，不超过30字。"
        }
       }
      }
@@ -349,6 +349,9 @@
    },
    "返回条数": 0
   },
+  "2513": {
+   "强制": true
+  },
   "2514": {},
   "2515": {
    "超时毫秒": 800
@@ -381,10 +384,10 @@
    },
    "系统提示词": "你是简洁的助手。",
    "温度": 0.7,
-   "最大令牌数": 512,
+   "最大令牌数": 16,
    "模型类型": "LLM文本模型",
    "模型引用": "/Users/hekunhua/Documents/AI模型/文本模型/Qwen3-8B-Q4_K_M.gguf",
-   "等待毫秒": 60000
+   "等待毫秒": 3000
   },
   "5202": {
    "JSON文本": "{\"a\":{\"b\":[1,2]}}",
@@ -674,15 +677,15 @@
   "3401": {
    "归档字节": {
     "类型标签": 5,
-    "值": "UEsDBBQAAAgIAOW8ZV3me4IqHgAAABkAAAAHAAAA55SyLnR4dAEZAOb/56ys5LiA5Liq5oiQ5ZGY55qE5YaF5a65ClBLAwQUAAAICADlvGVdBK057xMAAAAQAAAAEQAAAOWtkOebruW9lS/kuZkudHh0e75mzZNdPU92rHrWMeHpxBlcAFBLAQIUAxQAAAgIAOW8ZV3me4IqHgAAABkAAAAHAAAAAAAAAAAAAACAAQAAAADnlLIudHh0UEsBAhQDFAAACAgA5bxlXQStOe8TAAAAEAAAABEAAAAAAAAAAAAAAIABQwAAAOWtkOebruW9lS/kuZkudHh0UEsFBgAAAAACAAIAdAAAAIUAAAAAAA=="
+    "值": "UEsDBBQAAAgIADmdZl3me4IqHgAAABkAAAARAAAA56S65L6L5oiQ5ZGYMS50eHQBGQDm/+esrOS4gOS4quaIkOWRmOeahOWGheWuuQpQSwMEFAAACAgAOZ1mXQStOe8TAAAAEAAAABsAAADlrZDnm67lvZUv56S65L6L5oiQ5ZGYMi50eHR7vmbNk109T3asetYx4enEGVwAUEsBAhQDFAAACAgAOZ1mXeZ7gioeAAAAGQAAABEAAAAAAAAAAAAAAIABAAAAAOekuuS+i+aIkOWRmDEudHh0UEsBAhQDFAAACAgAOZ1mXQStOe8TAAAAEAAAABsAAAAAAAAAAAAAAIABTQAAAOWtkOebruW9lS/npLrkvovmiJDlkZgyLnR4dFBLBQYAAAAAAgACAIgAAACZAAAAAAA="
    }
   },
   "3402": {
    "归档字节": {
     "类型标签": 5,
-    "值": "UEsDBBQAAAgIAOW8ZV3me4IqHgAAABkAAAAHAAAA55SyLnR4dAEZAOb/56ys5LiA5Liq5oiQ5ZGY55qE5YaF5a65ClBLAwQUAAAICADlvGVdBK057xMAAAAQAAAAEQAAAOWtkOebruW9lS/kuZkudHh0e75mzZNdPU92rHrWMeHpxBlcAFBLAQIUAxQAAAgIAOW8ZV3me4IqHgAAABkAAAAHAAAAAAAAAAAAAACAAQAAAADnlLIudHh0UEsBAhQDFAAACAgA5bxlXQStOe8TAAAAEAAAABEAAAAAAAAAAAAAAIABQwAAAOWtkOebruW9lS/kuZkudHh0UEsFBgAAAAACAAIAdAAAAIUAAAAAAA=="
+    "值": "UEsDBBQAAAgIADmdZl3me4IqHgAAABkAAAARAAAA56S65L6L5oiQ5ZGYMS50eHQBGQDm/+esrOS4gOS4quaIkOWRmOeahOWGheWuuQpQSwMEFAAACAgAOZ1mXQStOe8TAAAAEAAAABsAAADlrZDnm67lvZUv56S65L6L5oiQ5ZGYMi50eHR7vmbNk109T3asetYx4enEGVwAUEsBAhQDFAAACAgAOZ1mXeZ7gioeAAAAGQAAABEAAAAAAAAAAAAAAIABAAAAAOekuuS+i+aIkOWRmDEudHh0UEsBAhQDFAAACAgAOZ1mXQStOe8TAAAAEAAAABsAAAAAAAAAAAAAAIABTQAAAOWtkOebruW9lS/npLrkvovmiJDlkZgyLnR4dFBLBQYAAAAAAgACAIgAAACZAAAAAAA="
    },
-   "成员路径": "子目录/乙.txt"
+   "成员路径": "子目录/示例成员2.txt"
   },
   "4201": {
    "网址文本": "https://example.com/a?b=1"
@@ -723,7 +726,7 @@
      },
      {
       "类型标签": 4,
-      "值": "INSERT INTO 冒烟 VALUES(1, '甲')"
+      "值": "INSERT INTO 冒烟 VALUES(1, '配参项1')"
      }
     ]
    }
@@ -782,7 +785,7 @@
    "保护参数JSON": "{\"保护端口\": [43110], \"保护程序\": [\"launchd\"]}"
   },
   "4928": {
-   "树定义原文": "{\"页面标识\": \"冒烟-网页界面\", \"根\": {\"类型\": \"列\", \"子\": [{\"类型\": \"行\", \"子\": [{\"类型\": \"文字\", \"文字\": \"冒烟页面\"}, {\"类型\": \"按钮\", \"预设\": \"主按钮\", \"文字\": \"确定\"}]}, {\"类型\": \"表格\", \"预设\": \"数据表\", \"列\": [\"编号\", \"名称\", \"数量\"], \"行\": [[1, \"甲\", 10], [2, \"乙\", 20], [3, \"丙\", 30]], \"可排序\": true, \"每页行数\": 2}]}}"
+   "树定义原文": "{\"页面标识\": \"冒烟-网页界面\", \"根\": {\"类型\": \"列\", \"子\": [{\"类型\": \"行\", \"子\": [{\"类型\": \"文字\", \"文字\": \"冒烟页面\"}, {\"类型\": \"按钮\", \"预设\": \"主按钮\", \"文字\": \"确定\"}]}, {\"类型\": \"表格\", \"预设\": \"数据表\", \"列\": [\"编号\", \"名称\", \"数量\"], \"行\": [[1, \"示例项1\", 10], [2, \"示例项2\", 20], [3, \"示例项3\", 30]], \"可排序\": true, \"每页行数\": 2}]}}"
   },
   "4929": {
    "组件句柄": 100015,

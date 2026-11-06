@@ -104,7 +104,7 @@ def 扫一遍(工作树: Path, 认领表: dict, 改动表: list) -> tuple:
             退出码 = 退出码 or 5
         try:
             全文 = 结果表[路径] if 路径 in 结果表 else (
-                件路径.read_text(encoding="utf-8", newline="\n") if 件路径.is_file() else None)
+                件路径.open(encoding="utf-8", newline="\n").read() if 件路径.is_file() else None)
             错误 = 禁改原因(路径, 新内容 if 功能号 == 修改.功能_新建 else (全文 or ""))
             if 错误:
                 输出表.append("禁写拒绝：%s" % 错误)

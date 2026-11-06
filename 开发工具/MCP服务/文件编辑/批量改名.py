@@ -172,7 +172,7 @@ def 派发(参数表: dict, 仓根) -> tuple:
         # 禁改面：生成物 / 冻结公开面 —— 拒，并说明正路。
         禁改表 = {}
         for 路径 in 待改表:
-            失败原因 = 禁改原因(路径, (工作树 / 路径).read_text(encoding="utf-8", newline="\n"))
+            失败原因 = 禁改原因(路径, (工作树 / 路径).open(encoding="utf-8", newline="\n").read())
             if 失败原因:
                 禁改表[路径] = 失败原因
         if 禁改表:
@@ -203,7 +203,7 @@ def 派发(参数表: dict, 仓根) -> tuple:
         for 路径, 次数表 in sorted(待改表.items()):
             件路径 = 工作树 / 路径
             写前指纹 = 对得上表.get(路径) or 文件指纹(str(件路径))
-            全文 = 件路径.read_text(encoding="utf-8", newline="\n")
+            全文 = 件路径.open(encoding="utf-8", newline="\n").read()
             新全文, 换数表 = 换整词(全文, 名对表, "." + 路径.rsplit(".", 1)[-1], 冻结名集)
             if 新全文 == 全文:
                 完成表.append("%s（0 处）" % 路径)

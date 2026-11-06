@@ -277,8 +277,8 @@ def 修改一次(参数表: dict, 仓根) -> tuple:
             if 功能号 != 功能_新建 and not (工作树 / 路径).is_file():
                 continue
             try:
-                全文 = 新内容 if 功能号 == 功能_新建 else (工作树 / 路径).read_text(
-                    encoding="utf-8", newline="\n")
+                全文 = 新内容 if 功能号 == 功能_新建 else (工作树 / 路径).open(
+                    encoding="utf-8", newline="\n").read()
                 失败原因 = 禁改原因(路径, 全文)
             except UnicodeDecodeError:
                 失败原因 = ("不是 utf-8 文本（二进制件）⇒ `v1_edit` 只改文本件；"

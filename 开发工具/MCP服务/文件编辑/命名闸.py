@@ -171,7 +171,7 @@ def 映射文件行(工作树: Path, 路径: str, 是整件: bool, 旧内容: st
     if not 件路径.is_file():
         return 片段行
     try:
-        全文 = 件路径.read_text(encoding="utf-8", newline="\n")
+        全文 = 件路径.open(encoding="utf-8", newline="\n").read()
     except (UnicodeDecodeError, OSError):
         return 片段行
     if not 旧内容 or 全文.count(旧内容) != 1:

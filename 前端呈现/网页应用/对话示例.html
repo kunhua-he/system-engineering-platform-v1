@@ -22,9 +22,9 @@
 </head>
 <body>
 <h1>一次对话</h1>
-<p class="提示">整页只有一个请求：POST /接口/调用，编号 2519。模型没起会自动拉起，起了就复用。</p>
+<p class="提示">整页只有一个请求：POST /接口/调用。<b>能力号本页不写死</b> —— 点发送时按能力名向底座现查（GET /接口/运维/检索），声明改了页面跟着改。模型没起会自动拉起，起了就复用。</p>
 
-<textarea id="问题">用一句话介绍你自己</textarea>
+<textarea id="问题">用一句话介绍本平台</textarea>
 <button id="发送">发送</button>
 <div id="状态"></div>
 <div id="答复"></div>
@@ -33,18 +33,39 @@
 const 状态 = document.getElementById('状态');
 const 答复 = document.getElementById('答复');
 const 按钮 = document.getElementById('发送');
+const 能力名 = '一次对话';
+
+// 平台信封 { 成功, 数据 / 值, 错误 }；值本身还可能套着 { 类型标签, 值 }，一层层剥到底
+const 剥 = (x) => {
+  while (x && typeof x === 'object' && !Array.isArray(x) && '类型标签' in x && '值' in x) x = x['值'];
+  if (Array.isArray(x)) x = x[0] ? 剥(x[0]) : '';
+  return x;
+};
+
+// 能力号从声明面现取：GET /接口/运维/检索?关键词=<能力名> 回该能力的「编号 · 名称 · 参数个数 · 返回类型」。
+// 底座把号改掉、或同名的号换了，本页不用改即可跟上；查不到就明确报出来，不猜一个号发出去。
+async function 取能力号() {
+  const 回 = await fetch('/接口/运维/检索?关键词=' + encodeURIComponent(能力名));
+  const 壳 = await 回.json();
+  if (!壳.成功) throw new Error('查能力号失败：' + JSON.stringify(壳.错误));
+  const 命中表 = (壳.数据 && 壳.数据.命中) || (壳.值 && 壳.值.命中) || [];
+  const 命中项 = 命中表.find((行) => 行.名称 === 能力名);
+  if (!命中项) throw new Error('底座没有名为「' + 能力名 + '」的能力（清单里 ' + 命中表.length + ' 条命中）');
+  return 命中项.编号;
+}
 
 按钮.onclick = async () => {
   按钮.disabled = true;
   答复.textContent = '';
-  状态.textContent = '请求中…（第一次可能要先拉起模型）';
+  状态.textContent = '请求中…（先按名称查能力号，第一次可能还要先拉起模型）';
   const 起 = performance.now();
   try {
+    const 编号 = await 取能力号();
     const 回 = await fetch('/接口/调用', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        编号: 2519,
+        编号: 编号,
         命名值: {
           消息列表: { 类型标签: 100, 值: [
             { 类型标签: 101, 值: {
@@ -63,13 +84,6 @@ const 按钮 = document.getElementById('发送');
     });
     const 壳 = await 回.json();
     const 秒 = ((performance.now() - 起) / 1000).toFixed(2);
-
-    // 平台信封 { 成功, 值, 错误 }；值本身还套着 { 类型标签, 值 }，一层层剥到底
-    const 剥 = (x) => {
-      while (x && typeof x === 'object' && !Array.isArray(x) && '类型标签' in x && '值' in x) x = x['值'];
-      if (Array.isArray(x)) x = x[0] ? 剥(x[0]) : '';
-      return x;
-    };
 
     if (!壳.成功) {
       状态.textContent = '失败 · ' + 秒 + ' 秒';

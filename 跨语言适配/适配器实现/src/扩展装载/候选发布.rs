@@ -40,6 +40,7 @@ use crate::适配器;
 impl Clone for 适配器 {
     fn clone(&self) -> Self {
         Self {
+            叶子标记: self.叶子标记.clone(),
             装载单元s: self.装载单元s.clone(),
             台账: 由装载单元重建台账(&self.装载单元s),
             账本: Arc::clone(&self.账本),
