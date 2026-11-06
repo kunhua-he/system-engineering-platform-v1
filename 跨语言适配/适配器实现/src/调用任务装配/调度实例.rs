@@ -42,11 +42,15 @@ pub enum 装配错误 {
 }
 
 /// 任务结局。**成功与失败都带槽**：执行后失败的槽里可能有半个值，原路怎么留这里怎么留。
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum 任务结局 {
     成功(数据槽),
     失败 {
-        错误: 调度错误,
+        /// 失败段位。`None` = **业务失败**（扩展把 4 位码写进返回槽，协议层照旧成功）：
+        /// 那种失败没有调度段位可用，如实留空；调用口按平台口径把它当「协议成功 + 错误槽」回。
+        错误: Option<调度错误>,
+        /// 失败说明（哪个节点、扩展回了什么码 / 内核为什么没收这次完成）。
+        说明: String,
         槽: 数据槽,
     },
     已取消,
@@ -149,7 +153,7 @@ impl 调度实例 {
         let 起点 = Instant::now();
         let mut 状态 = 取锁(&self.实例);
         loop {
-            if let Some(结局) = 状态.结局 {
+            if let Some(结局) = 状态.结局.clone() {
                 return Some(结局);
             }
             let 剩余 = 时限.checked_sub(起点.elapsed())?;
