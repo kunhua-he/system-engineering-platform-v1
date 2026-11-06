@@ -87,6 +87,13 @@ impl 任务表 {
         self.下一号.fetch_add(1, Ordering::Relaxed)
     }
 
+    /// 把计数器抬到「至少从这里接着发」（重启时用：历史号不许再发一遍）。
+    ///
+    /// **只抬不降**：进程内已经发过的号绝不回收，哪怕落盘的更小。
+    pub(crate) fn 设起始号(&self, 起始: u64) {
+        self.下一号.fetch_max(起始, Ordering::Relaxed);
+    }
+
     pub(crate) fn 按请求标识(&self, 请求标识: &str) -> Option<u64> {
         self.幂等.get(请求标识).copied()
     }
