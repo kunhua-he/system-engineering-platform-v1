@@ -337,15 +337,44 @@ pub(crate) fn 渲染单节点(节点: &Value) -> Result<String, u32> {
     拼装树节点(节点, 0, &mut 状态)
 }
 
-/// 整页模式自带的宿主实现：`window.hs组件操作({句柄, 操作, 参数})` → POST → 原位替换。
-///
-/// 为什么放在底座：每个项目都各自写一遍这段，等于把「交互」这件事的实现散成多份。
-/// 默认地址是同源的 `/组件操作`（V4 就是这个）；要换地址在树定义里给 `组件操作地址`。
+/// 整页宿主保留组件事件签名，统一调用平台入口并解开文本结果信封。
+/// 自定义组件操作地址也必须接收同一平台协议，不支持旧请求合同。
 fn 默认宿主脚本(操作地址: &str) -> String {
-    let 地址 = 转义网页文本(操作地址);
-    format!(
-        "<script>(function(){{if(typeof window.hs组件操作==='function'){{return}}window.hs组件操作=function(请求){{return fetch('{地址}',{{method:'POST',headers:{{'Content-Type':'application/json'}},body:JSON.stringify(请求)}}).then(function(回){{return 回.json()}}).then(function(回执){{if(!回执||!回执.片段){{return}}var 旧=document.querySelector('[data-hs-h=\"'+请求.句柄+'\"]');if(!旧){{return}}var 盒=document.createElement('div');盒.innerHTML=回执.片段;var 新=盒.firstElementChild;if(新){{旧.replaceWith(新);if(请求.操作==='选中'||请求.操作==='选择表项'){{var 聚焦目标=新.querySelector('table');if(聚焦目标){{聚焦目标.focus()}}}}window.__未刷新=1}}}})}}}})();</script>"
-    )
+    let 地址原文 = serde_json::to_string(操作地址).expect("文本地址可序列化")
+        .replace('<', "\\u003c");
+    let 操作编号 = crate::编号与码面::能力号::操作组件;
+    format!(r#"<script>(function(){{
+if(typeof window.hs组件操作==='function'){{return}}
+function 显示操作失败(失败原因){{
+ var 提示元素=document.querySelector('[data-hs-operation-error]');
+ if(!提示元素){{提示元素=document.createElement('div');提示元素.setAttribute('data-hs-operation-error','');提示元素.setAttribute('role','alert');document.body.appendChild(提示元素)}}
+ 提示元素.textContent='组件操作失败：'+失败原因.message;提示元素.hidden=false;
+}}
+window.hs组件操作=function(请求){{
+ return Promise.resolve().then(function(){{
+  var 请求体={{编号:{操作编号},命名值:{{组件句柄:请求.句柄,操作名:请求.操作,参数原文:JSON.stringify(请求.参数===undefined?{{}}:请求.参数)}}}};
+  return fetch({地址原文},{{method:'POST',headers:{{'Content-Type':'application/json'}},body:JSON.stringify(请求体)}});
+ }}).then(function(响应结果){{
+  if(!响应结果.ok){{throw new Error('HTTP '+响应结果.status)}}
+  return 响应结果.json();
+ }}).then(function(平台信封){{
+  if(!平台信封||平台信封.成功!==true){{throw new Error(JSON.stringify(平台信封&&平台信封.错误||'平台未返回成功信封'))}}
+  if(!Array.isArray(平台信封.值)||平台信封.值.length!==1||平台信封.值[0].类型标签!==4||typeof 平台信封.值[0].值!=='string'){{throw new Error('平台返回值不符合组件文本合同')}}
+  var 回执=JSON.parse(平台信封.值[0].值);
+  if(!回执||typeof 回执.片段!=='string'||!Array.isArray(回执.句柄组)){{throw new Error('组件回执缺少片段或句柄组')}}
+  if(!回执.片段){{if(请求.操作==='记录事件'){{return 回执}}throw new Error('组件返回空片段')}}
+  var 旧组件=document.querySelector('[data-hs-h="'+请求.句柄+'"]');
+  if(!旧组件){{throw new Error('页面中找不到组件句柄 '+请求.句柄)}}
+  var 片段容器=document.createElement('div');片段容器.innerHTML=回执.片段;var 新组件=片段容器.firstElementChild;
+  if(!新组件){{throw new Error('组件片段没有根元素')}}
+  旧组件.replaceWith(新组件);
+  if(请求.操作==='选中'||请求.操作==='选择表项'){{var 聚焦目标=新组件.querySelector('table');if(聚焦目标){{聚焦目标.focus()}}}}
+  window.__未刷新=1;
+  var 提示元素=document.querySelector('[data-hs-operation-error]');if(提示元素){{提示元素.hidden=true}}
+  return 回执;
+ }}).catch(function(失败原因){{显示操作失败(失败原因);throw 失败原因}});
+}};
+}})();</script>"#)
 }
 
 /// 4928 渲染组件树：一棵可无限嵌套的节点树 → HTML 片段。
@@ -372,7 +401,7 @@ pub(crate) fn 渲染组件树(树定义原文: &str) -> Result<(u32, Vec<u8>), u
         // 回来只替换这一段的片段。没有它，整页里的交互按钮点了没反应。
         let 操作地址 = 取对象文本(&树定义值, "组件操作地址");
         let 操作地址 = if 操作地址.is_empty() {
-            "/组件操作".to_string()
+            "/接口/调用".to_string()
         } else {
             操作地址
         };
@@ -396,6 +425,11 @@ pub(crate) fn 渲染组件树(树定义原文: &str) -> Result<(u32, Vec<u8>), u
         .into_bytes(),
     ))
 }
+
+
+#[cfg(test)]
+#[path = "组件树/宿主合同测试.rs"]
+mod 宿主合同测试;
 
 /// 空串兜底的小工具（画布定位用）。
 pub(crate) trait 空值兜底 {
