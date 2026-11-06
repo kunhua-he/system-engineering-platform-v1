@@ -111,6 +111,9 @@ pub use 跨进程装配::{
 #[path = "验证样本/依赖序装载测试.rs"]
 mod 依赖序装载测试;
 #[cfg(test)]
+#[path = "接口面测试/图任务分发测试.rs"]
+mod 图任务分发测试;
+#[cfg(test)]
 #[path = "验证样本/并发测试.rs"]
 mod 并发测试;
 #[cfg(test)]

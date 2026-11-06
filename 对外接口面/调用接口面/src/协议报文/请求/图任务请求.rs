@@ -48,7 +48,6 @@ pub mod 图任务字段名 {
     pub const 节点阶段: &str = "节点阶段";
     pub const 错误: &str = "错误";
     pub const 说明: &str = "说明";
-    pub const 缺什么: &str = "缺什么";
 }
 
 /// 图任务的四种操作（闭合枚举：不按前缀猜、不认别名）。

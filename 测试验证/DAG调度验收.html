@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DAG 调度黑盒验收</title>
+<style>
+  :root {
+    --底: #0f1115;
+    --面板: #171a21;
+    --边: #262b36;
+    --字: #d8dde6;
+    --弱: #8a93a3;
+    --绿: #2f9e63;
+    --红: #c2453f;
+    --灰: #5b626f;
+    --蓝: #3f7bd6;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 18px 20px 60px;
+    background: var(--底);
+    color: var(--字);
+    font: 13px/1.55 -apple-system, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  }
+  h1 { font-size: 18px; margin: 0 0 6px; }
+  h2 { font-size: 14px; margin: 0 0 8px; }
+  .说明 { color: var(--弱); margin: 0 0 14px; max-width: 1100px; }
+  .说明 b { color: var(--字); }
+  .栏 {
+    display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end;
+    background: var(--面板); border: 1px solid var(--边); border-radius: 8px;
+    padding: 12px 14px; margin-bottom: 12px;
+  }
+  .栏 label { display: flex; flex-direction: column; gap: 4px; color: var(--弱); font-size: 12px; }
+  .栏 input {
+    background: #0d1016; color: var(--字); border: 1px solid var(--边);
+    border-radius: 5px; padding: 5px 8px; font: inherit; min-width: 190px;
+  }
+  button {
+    background: var(--蓝); color: #fff; border: 0; border-radius: 6px;
+    padding: 7px 14px; font: inherit; cursor: pointer;
+  }
+  button.次 { background: #2b3140; }
+  button:disabled { opacity: .55; cursor: default; }
+  .汇总 {
+    display: flex; flex-wrap: wrap; gap: 18px; align-items: baseline;
+    background: var(--面板); border: 1px solid var(--边); border-radius: 8px;
+    padding: 12px 14px; margin-bottom: 14px;
+  }
+  .数字 { font-size: 22px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .数字.绿 { color: var(--绿); }
+  .数字.红 { color: var(--红); }
+  .数字.灰 { color: var(--灰); }
+  .探测 { color: var(--弱); font-size: 12px; flex-basis: 100%; }
+  .格区 { display: grid; grid-template-columns: repeat(auto-fill, minmax(520px, 1fr)); gap: 14px; }
+  .格 {
+    background: var(--面板); border: 1px solid var(--边); border-left-width: 4px;
+    border-radius: 8px; padding: 12px 14px; min-width: 0;
+  }
+  .格.通过 { border-left-color: var(--绿); }
+  .格.失败 { border-left-color: var(--红); }
+  .格.阻塞 { border-left-color: var(--灰); }
+  .格头 { display: flex; gap: 10px; align-items: baseline; justify-content: space-between; }
+  .格名 { font-weight: 600; }
+  .徽 {
+    font-size: 12px; padding: 1px 8px; border-radius: 10px; white-space: nowrap;
+    border: 1px solid currentColor;
+  }
+  .徽.通过 { color: var(--绿); }
+  .徽.失败 { color: var(--红); }
+  .徽.阻塞 { color: #9aa3b2; }
+  .意图 { color: var(--弱); font-size: 12px; margin: 4px 0 8px; }
+  .理由 { font-size: 12px; margin: 8px 0 0; padding: 6px 8px; border-radius: 5px; background: #0d1016; }
+  .理由.通过 { color: #7ed3a4; }
+  .理由.失败 { color: #f0958f; }
+  .理由.阻塞 { color: #a3abba; }
+  details { margin-top: 8px; }
+  summary { cursor: pointer; color: var(--弱); font-size: 12px; }
+  pre {
+    background: #0b0e14; border: 1px solid #1e232d; border-radius: 5px;
+    padding: 7px 9px; overflow: auto; max-height: 220px; margin: 6px 0;
+    font: 11.5px/1.5 "SF Mono", Menlo, Consolas, monospace; color: #c6d0e0;
+    white-space: pre-wrap; word-break: break-all;
+  }
+  table { width: 100%; border-collapse: collapse; margin: 6px 0; font-size: 11.5px; }
+  th, td { text-align: left; padding: 3px 6px; border-bottom: 1px solid #1e232d; vertical-align: top; }
+  th { color: var(--弱); font-weight: 500; }
+  .步 { margin: 8px 0 0; }
+  .步名 { font-size: 12px; }
+  .码 { font-family: "SF Mono", Menlo, monospace; }
+  .码.好 { color: var(--绿); }
+  .码.坏 { color: var(--红); }
+  .码.中 { color: #cfa14a; }
+  .断言 { margin: 6px 0 0; padding: 0; list-style: none; font-size: 12px; }
+  .断言 li { padding: 1px 0; }
+  .断言 li.好::before { content: "✓ "; color: var(--绿); }
+  .断言 li.坏::before { content: "✗ "; color: var(--红); }
+  .空 { color: var(--弱); font-size: 12px; }
+  .轨 { max-height: 190px; overflow: auto; }
+</style>
+</head>
+<body>
+
+<h1>DAG 调度黑盒验收</h1>
+<p class="说明">
+  全部走平台唯一业务入口 <b>POST /接口/调用</b>（同源相对路径，不写死端口）。每一格都发真请求、拿真任务标识、
+  按平台信封（<b>成功 / 错误 / 值</b>）与节点阶段的真实跃迁与时间区间下结论。
+  <b>HTTP 200 不等于通过</b>：业务失败也是 200 + 成功=false。拿不到真任务标识、拿不到阶段轨迹的格一律记
+  <b>阻塞</b>（灰），不记通过（绿）。判定逻辑全在 <b>DAG调度断言.js</b>，本页只渲染与触发。
+</p>
+
+<div class="栏">
+  <label>入口路径（相对同源）
+    <input id="入口" value="接口/调用" spellcheck="false">
+  </label>
+  <label>资源键测试编号（同键排队用）
+    <input id="资源键编号" value="1108" spellcheck="false">
+  </label>
+  <label>单格采样预算（毫秒）
+    <input id="采样预算" value="6000" spellcheck="false">
+  </label>
+  <button id="开跑">全量开跑（十三格并发）</button>
+  <button id="探测" class="次">重探平台</button>
+</div>
+
+<div class="汇总">
+  <span>通过 <span id="数通过" class="数字 绿">0</span></span>
+  <span>失败 <span id="数失败" class="数字 红">0</span></span>
+  <span>阻塞 <span id="数阻塞" class="数字 灰">0</span></span>
+  <span>总耗时 <span id="总耗时" class="数字">—</span></span>
+  <span id="状态" class="空">待开跑</span>
+  <div id="探测读数" class="探测">平台探测：待探</div>
+</div>
+
+<div id="格区" class="格区"></div>
+
+<script src="./DAG调度断言.js"></script>
+<script>
+'use strict';
+
+const 断言模块 = window.DAG断言;
+const 格区 = document.getElementById('格区');
+const 卡片 = {};
+
+function 取元素(编号) { return document.getElementById(编号); }
+
+function 截断(文, 上限) {
+  const 串 = typeof 文 === 'string' ? 文 : JSON.stringify(文, null, 1);
+  if (!串) return '';
+  if (串.length <= 上限) return 串;
+  return 串.slice(0, 上限) + '\n……（共 ' + 串.length + ' 字，已截断）';
+}
+
+function 码类(条) {
+  if (条.信封通道 === '受理成功') return '好';
+  if (条.信封通道 === '业务失败') return '中';
+  return '坏';
+}
+
+function 造卡片(记录) {
+  const 格 = document.createElement('div');
+  格.className = '格 ' + 记录.判定;
+
+  const 头 = document.createElement('div');
+  头.className = '格头';
+  const 名 = document.createElement('span');
+  名.className = '格名';
+  名.textContent = 记录.名称;
+  const 徽 = document.createElement('span');
+  徽.className = '徽 ' + 记录.判定;
+  徽.textContent = 记录.判定 + ' · ' + 记录.耗时毫秒 + 'ms';
+  头.appendChild(名);
+  头.appendChild(徽);
+  格.appendChild(头);
+
+  const 意图 = document.createElement('div');
+  意图.className = '意图';
+  意图.textContent = '意图：' + 记录.意图 + (记录.任务标识 ? ' · 任务标识 ' + 记录.任务标识 : ' · 无任务标识');
+  格.appendChild(意图);
+
+  const 要 = document.createElement('div');
+  要.className = '理由 ' + 记录.判定;
+  要.textContent = '判定依据：' + (记录.理由 || '（无）');
+  格.appendChild(要);
+
+  const 断言块 = document.createElement('ul');
+  断言块.className = '断言';
+  记录.断言.forEach(function (条) {
+    const 项 = document.createElement('li');
+    项.className = 条.通过 ? '好' : '坏';
+    项.textContent = 条.说明;
+    断言块.appendChild(项);
+  });
+  if (记录.断言.length === 0) {
+    const 项 = document.createElement('li');
+    项.className = '空';
+    项.textContent = '没有断言被执行';
+    断言块.appendChild(项);
+  }
+  格.appendChild(断言块);
+
+  const 流水块 = document.createElement('details');
+  流水块.open = 记录.判定 !== '通过';
+  const 流水头 = document.createElement('summary');
+  流水头.textContent = '请求流水（' + 记录.流水.length + ' 步：真请求体 · HTTP 码 · 信封）';
+  流水块.appendChild(流水头);
+  记录.流水.forEach(function (条) {
+    const 段 = document.createElement('div');
+    段.className = '步';
+    const 题 = document.createElement('div');
+    题.className = '步名';
+    const 码 = document.createElement('span');
+    码.className = '码 ' + 码类(条);
+    码.textContent = 'HTTP ' + 条.HTTP码 + ' · ' + 条.信封通道;
+    题.appendChild(document.createTextNode(条.步 + ' → '));
+    题.appendChild(码);
+    题.appendChild(document.createTextNode(
+      ' · 成功=' + (条.成功 ? '真' : '假')
+      + (条.错误名 ? ' · 错误=' + 条.错误名 : '')
+      + (条.错误码 === null || 条.错误码 === undefined ? '' : '（码 ' + 条.错误码 + '）')
+      + ' · ' + 条.耗时毫秒 + 'ms'));
+    段.appendChild(题);
+
+    const 请 = document.createElement('pre');
+    请.textContent = 截断(条.请求体, 1400);
+    段.appendChild(请);
+
+    if (条.说明) {
+      const 说 = document.createElement('div');
+      说.className = '空';
+      说.textContent = '信封：' + 条.说明;
+      段.appendChild(说);
+    }
+    if (条.值 !== null && 条.值 !== undefined) {
+      const 值 = document.createElement('pre');
+      值.textContent = 截断(条.值, 1600);
+      段.appendChild(值);
+    }
+    流水块.appendChild(段);
+  });
+  if (记录.流水.length === 0) {
+    const 空 = document.createElement('div');
+    空.className = '空';
+    空.textContent = '这一步没有发出请求';
+    流水块.appendChild(空);
+  }
+  格.appendChild(流水块);
+
+  if (记录.轨迹.length > 0) {
+    const 轨块 = document.createElement('details');
+    const 轨头 = document.createElement('summary');
+    轨头.textContent = '阶段采样（' + 记录.轨迹.length + ' 次' + (记录.轨迹来源 ? ' · 来源 ' + 记录.轨迹来源 : ' · 来源 轮询') + '）';
+    轨块.appendChild(轨头);
+    const 表 = document.createElement('table');
+    表.innerHTML = '<thead><tr><th>第几次</th><th>任务阶段</th><th>节点阶段</th></tr></thead>';
+    const 体 = document.createElement('tbody');
+    记录.轨迹.forEach(function (样本, 序) {
+      const 行 = document.createElement('tr');
+      const 节 = 样本.节点.map(function (项) { return 项.标识 + '=' + (项.阶段 || '未报'); }).join(' · ');
+      [String(序 + 1), 样本.任务阶段 || '未报', 节 || '未报'].forEach(function (字) {
+        const 格 = document.createElement('td');
+        格.textContent = 字;
+        行.appendChild(格);
+      });
+      体.appendChild(行);
+    });
+    表.appendChild(体);
+    const 框 = document.createElement('div');
+    框.className = '轨';
+    框.appendChild(表);
+    轨块.appendChild(框);
+    格.appendChild(轨块);
+  }
+
+  return 格;
+}
+
+function 重画(记录) {
+  const 旧 = 卡片[记录.片键];
+  const 新卡 = 造卡片(记录);
+  if (旧 && 旧.parentNode) 旧.parentNode.replaceChild(新卡, 旧);
+  else 格区.appendChild(新卡);
+  卡片[记录.片键] = 新卡;
+}
+
+function 算汇总(结果) {
+  const 数 = { 通过: 0, 失败: 0, 阻塞: 0 };
+  结果.forEach(function (记录) {
+    if (记录) 数[记录.判定] = (数[记录.判定] || 0) + 1;
+  });
+  取元素('数通过').textContent = String(数.通过);
+  取元素('数失败').textContent = String(数.失败);
+  取元素('数阻塞').textContent = String(数.阻塞);
+  return 数;
+}
+
+function 摆空位() {
+  格区.innerHTML = '';
+  断言模块.格表.forEach(function (定义) {
+    const 占位 = document.createElement('div');
+    占位.className = '格 阻塞';
+    占位.innerHTML = '<div class="格头"><span class="格名"></span><span class="徽 阻塞">待跑</span></div>'
+      + '<div class="意图"></div><div class="理由 阻塞">未发出请求</div>';
+    占位.querySelector('.格名').textContent = 定义.名称;
+    占位.querySelector('.意图').textContent = '意图：' + 定义.意图;
+    格区.appendChild(占位);
+    卡片[定义.片键] = 占位;
+  });
+}
+
+function 读配置() {
+  断言模块.页面设置.入口 = 取元素('入口').value.trim() || '接口/调用';
+  const 号 = Number(取元素('资源键编号').value.trim());
+  断言模块.页面设置.资源键编号 = isFinite(号) && 号 > 0 ? 号 : 1108;
+  const 预算 = Number(取元素('采样预算').value.trim());
+  断言模块.页面设置.采样预算毫秒 = isFinite(预算) && 预算 >= 500 ? 预算 : 6000;
+}
+
+async function 探测一次() {
+  const 读数 = await 断言模块.探测平台();
+  取元素('探测读数').textContent = '平台探测：' + 读数.说明
+    + (读数.能力候选.length > 0 ? ' · 图任务能力候选 ' + 读数.能力候选.join(' / ') : ' · 能力清单里没有图任务能力');
+  return 读数;
+}
+
+async function 开跑() {
+  读配置();
+  const 按钮 = 取元素('开跑');
+  按钮.disabled = true;
+  取元素('状态').textContent = '正在发请求……';
+  摆空位();
+  await 探测一次();
+  const 结果位 = [];
+  const 起 = performance.now();
+  try {
+    const 全部 = await 断言模块.跑全部(function (记录) {
+      结果位.push(记录);
+      重画(记录);
+      算汇总(结果位);
+      取元素('状态').textContent = '已回 ' + 结果位.length + ' 格 / ' + 断言模块.格表.length + ' 格';
+    });
+    全部.结果集.forEach(function (记录) { 重画(记录); });
+    const 数 = 算汇总(全部.结果集);
+    取元素('总耗时').textContent = 全部.汇总.总耗时毫秒 + 'ms';
+    取元素('状态').textContent = '收口：通过 ' + 数.通过 + ' · 失败 ' + 数.失败 + ' · 阻塞 ' + 数.阻塞
+      + '（总计 ' + 全部.结果集.length + ' 格，浏览器侧 ' + Math.round(performance.now() - 起) + 'ms）';
+  } catch (错) {
+    取元素('状态').textContent = '调度异常：' + (错 && 错.message ? 错.message : String(错));
+  } finally {
+    按钮.disabled = false;
+  }
+}
+
+取元素('开跑').addEventListener('click', 开跑);
+取元素('探测').addEventListener('click', 探测一次);
+摆空位();
+探测一次();
+/* 自动化取证用：带 ?自动跑=1 打开即跑一轮（命令行无头浏览器取证走这条，不改判定口径）。 */
+if (new URLSearchParams(location.search).get('自动跑') === '1') 开跑();
+</script>
+</body>
+</html>
