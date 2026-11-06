@@ -108,6 +108,9 @@ pub use 跨进程装配::{
 };
 
 #[cfg(test)]
+#[path = "验证样本/体上限测试.rs"]
+mod 体上限测试;
+#[cfg(test)]
 #[path = "验证样本/依赖序装载测试.rs"]
 mod 依赖序装载测试;
 #[cfg(test)]

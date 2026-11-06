@@ -34,9 +34,8 @@
 use crate::分发::{处理请求, 拒绝状态码, 请求环境, 造应答};
 use crate::协议解析;
 use crate::契约级常量::{工具根默认, 接口端口, 监听地址, 静态根};
-use crate::报文读写::{写响应, 报文, 读报文};
+use crate::报文读写::{写响应, 报文, 排空剩余请求体, 读报文};
 use crate::端点路由;
-use std::io::Read;
 use std::net::{TcpListener, TcpStream};
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
@@ -217,22 +216,12 @@ impl 服务 {
             Err(错误) => {
                 let 造应答 = 造应答::协议错误带种类(400, 错误.说明(), 错误.种类名());
                 写响应(&mut 输出流, &造应答)?;
-                // 先交出应答再有限排空，避免未读请求体导致TCP复位吞掉拒收对象。
-                // 排空超时**先武装**：macOS 上「对端已半关闭写侧」之后再 `setsockopt(SO_RCVTIMEO)`
-                // 返回 EINVAL（受控探针：4 种组合里只有这一种红）⇒ 顺序反了会让排空退回 2 s
-                // 读超时、并把本函数的 Err 带出去。先设 50 ms 再交 shutdown，排空上限与关闭边界都不动。
-                输出流.set_read_timeout(Some(Duration::from_millis(50)))?;
-                let _ = 输出流.shutdown(std::net::Shutdown::Write);
-                let 排空截止 = std::time::Instant::now() + Duration::from_millis(200);
-                let mut 排空字节数 = 0usize;
-                let mut 排空缓冲 = [0u8; 4096];
-                while std::time::Instant::now() < 排空截止 && 排空字节数 < 4 * 1024 * 1024
-                {
-                    match 输出流.read(&mut 排空缓冲) {
-                        Ok(0) | Err(_) => break,
-                        Ok(排空长度) => 排空字节数 += 排空长度,
-                    }
-                }
+                // 回包之后**有限**排空调用方还在发的请求体：不排空就 `close()`，内核回 RST，
+                // 调用方只看到「连接复位」而拿不到上面这条 400。三个界（字节硬顶 / 截止 /
+                // 停顿）都在 `报文读写::排空剩余请求体` 里，本处不复制数值。
+                // 关闭口径**明确**：排空完随本函数返回而关闭，连接**不复用**（与 `写响应` 的
+                // `Connection: close` 同一句话，不存在「一会儿关一会儿不关」）。
+                排空剩余请求体(&mut 输出流);
                 return Ok(());
             }
         };
