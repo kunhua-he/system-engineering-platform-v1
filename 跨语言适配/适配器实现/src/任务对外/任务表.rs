@@ -34,6 +34,7 @@
 use std::collections::BTreeMap;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
+use std::time::{Duration, Instant};
 
 use v1_dispatch::{调用任务阶段, 调用节点阶段};
 
@@ -213,6 +214,11 @@ pub(crate) fn 阶段(条目: &任务条目) -> 调用任务阶段 {
         }
     }
     if 有在跑 {
+        // 取消旗置了但节点还没收口 ⇒ 「收尾中」：它不是「已取消」（节点还在跑、结果还没定），
+        // 也不是「执行中」（不再启动新节点了）。这三句是这一档的全部意义。
+        if 条目.取消 {
+            return 调用任务阶段::收尾中;
+        }
         return 调用任务阶段::执行中;
     }
     if 有取消 {
@@ -305,8 +311,47 @@ pub(crate) fn 取消(条目: &mut 任务条目) -> 取消读数 {
     取消读数 {
         任务标识: 条目.任务标识,
         任务存在: true,
-        阶段: 调用任务阶段::已取消,
+        阶段: 阶段(条目),
         已取消节点,
         在跑节点: 在跑,
+    }
+}
+
+/// `等收口` 档：在窗口内观察，直到任务不再停在「收尾中」。
+///
+/// **只观察、不改状态**：收口由在跑节点跑完自然发生，这里一个字节都不写。
+/// 为什么归本件：这是存储层的等待策略（拿锁、看阶段、放锁、再睡），接缝层只该转调它；
+/// 判断留在接缝层，就会与内核两套判定，必然漂移。
+pub(crate) fn 等收口(
+    表锁: &Mutex<任务表>,
+    读数: 取消读数,
+    窗口: Option<Duration>,
+) -> 取消读数 {
+    // 窗口是 `None` 就不等（「放弃」档），是 `Some` 才等（「等收口」档）。
+    // 档位名字怎么翻成窗口是**协议翻译**，在接口面做；本件只认窗口，不认档位名。
+    let Some(窗口) = 窗口 else {
+        return 读数;
+    };
+    if 读数.阶段 != 调用任务阶段::收尾中 {
+        return 读数;
+    }
+    let 起点 = Instant::now();
+    loop {
+        let Some(剩余) = 窗口.checked_sub(起点.elapsed()) else {
+            return 读数;
+        };
+        std::thread::sleep(Duration::from_millis(2).min(剩余));
+        let 现 = {
+            let mut 表 = 表锁.lock().unwrap_or_else(|中毒| 中毒.into_inner());
+            表.取(读数.任务标识).map(|条目| 阶段(条目))
+        };
+        match 现 {
+            Some(阶段) if 阶段 != 调用任务阶段::收尾中 => {
+                return 取消读数 { 阶段, ..读数 };
+            }
+            Some(_) => {}
+            // 记录没了（被释放）⇒ 照实回取消那一刻的读数，不编一个新阶段。
+            None => return 读数,
+        }
     }
 }
