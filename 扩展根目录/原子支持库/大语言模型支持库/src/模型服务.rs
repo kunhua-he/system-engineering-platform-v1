@@ -521,6 +521,17 @@ fn 进程还活着(句柄: u64) -> bool {
         .unwrap_or(false)
 }
 
+/// 只把登记过的本机监听端点解析为服务句柄，不把连接号当服务号。
+pub(crate) fn 找端点服务(请求地址: &str) -> Option<u64> {
+    let 地址主体 = 请求地址.strip_prefix("http://")?;
+    let 监听地址 = 地址主体.split('/').next()?;
+    let (主机文本, 端口文本) = 监听地址.rsplit_once(':')?;
+    if !matches!(主机文本, "127.0.0.1" | "localhost" | "[::1]") { return None; }
+    let 端口数值 = 端口文本.parse::<u16>().ok()?;
+    服务表().lock().ok()?.iter().find(|(_, 服务记录)| 服务记录.监听端口 == 端口数值)
+        .map(|(服务编号, _)| *服务编号)
+}
+
 pub(crate) fn 服务存在(句柄: u64) -> bool {
     match 服务表().lock() {
         Ok(表) => 表.contains_key(&句柄),

@@ -3,7 +3,7 @@
 //!
 //! 为什么要有它：调用方（尤其网页）只该发一个请求。原来这条链要打二十次底座请求
 //! （2512/2514×N/2516/2501/2502/2503×N/2517/2505/2506/2513），而且每一步的参数形状
-//! 都要调用方自己拼 —— 那不是「一个能力」，是把底座内部结构摊给外面看。
+//! 都要调用方自身拼 —— 那不是「一个能力」，是把底座内部结构摊给外面看。
 //!
 //! **短等待设计**：全平台单项超时 1000 毫秒（`契约声明/常量表.json`），所以这里不等到底。
 //! 在 `等待毫秒` 内完成就直接回内容；没完成就回任务句柄，调用方再用 2503 取。
@@ -11,10 +11,10 @@
 
 use std::time::{Duration, Instant};
 
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 
 use crate::编号与码面::错误码;
-use crate::{连接与句柄, 推理许可, 生成任务, 模型服务};
+use crate::{模型服务, 生成任务, 连接与句柄};
 
 /// 推理引擎与启动参数也一起兜底 —— 「一眼就会用」意味着连这个都不用记。
 const 推理引擎: &str = "/opt/homebrew/bin/llama-server";
@@ -41,7 +41,9 @@ fn 推投影层(模型文件: &str) -> Option<String> {
     let 文件名 = 路径.file_stem()?.to_str()?;
     // 去掉 -Q4_K_M / .Q8_0 这类量化尾巴
     let mut 基名 = 文件名;
-    for 标记 in ["-Q4_K_M", "-Q5_K_M", "-Q8_0", "-Q4_0", ".Q8_0", ".Q4_K_M", "-F16", "-BF16"] {
+    for 标记 in [
+        "-Q4_K_M", "-Q5_K_M", "-Q8_0", "-Q4_0", ".Q8_0", ".Q4_K_M", "-F16", "-BF16",
+    ] {
         if let Some(位) = 基名.find(标记) {
             基名 = &基名[..位];
         }
@@ -68,7 +70,9 @@ fn 默认模型(模型类型: &str) -> Option<&'static str> {
         "EM向量模型" => {
             Some("/Users/hekunhua/Documents/AI模型/Embedding模型/Qwen3-Embedding-8B-Q8_0.gguf")
         }
-        "Rerank重排模型" => Some("/Users/hekunhua/Documents/AI模型/排序模型/Qwen3-Reranker-4B.Q8_0.gguf"),
+        "Rerank重排模型" => {
+            Some("/Users/hekunhua/Documents/AI模型/排序模型/Qwen3-Reranker-4B.Q8_0.gguf")
+        }
         _ => None,
     }
 }
@@ -157,12 +161,8 @@ pub(crate) fn 一次对话(请求: 请求<'_>) -> Result<Value, u32> {
         }
     };
 
-    // ② 许可：同模型内排队，不同模型并行。
-    let 许可 = 推理许可::申请(服务句柄, 3_000, 5_000)?;
-    let 结果 = 跑一次生成(服务句柄, 端口, &引用.标识, &请求, 截止);
-    // 不管成功失败都要还许可，否则租约到期前这个模型对别人是锁住的。
-    let _ = 推理许可::归还(许可);
-    结果
+    // 许可由真实生成任务取得并持有；HTTP 短等返回不能归还在途许可。
+    跑一次生成(服务句柄, 端口, &引用.标识, &请求, 截止)
 }
 
 fn 跑一次生成(
@@ -196,6 +196,8 @@ fn 跑一次生成(
         },
     );
 
+    // 生成线程已经复制连接配置，不让内部连接随短等待返回后遗留。
+    let _ = 连接与句柄::释放(连接);
     let 任务句柄 = match 提交结果 {
         Ok(句柄) => 句柄,
         Err(码) => {
@@ -208,7 +210,10 @@ fn 跑一次生成(
     loop {
         let 读数 = 生成任务::读取(任务句柄)?;
         let 已完成 = 读数.get("已完成").and_then(Value::as_bool).unwrap_or(false)
-            && !读数.get("资源在途").and_then(Value::as_bool).unwrap_or(true);
+            && !读数
+                .get("资源在途")
+                .and_then(Value::as_bool)
+                .unwrap_or(true);
         if 已完成 {
             let 内容 = 读数.get("内容").cloned().unwrap_or_else(|| json!(""));
             let 错误信息 = 读数
