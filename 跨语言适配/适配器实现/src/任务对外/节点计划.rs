@@ -30,7 +30,6 @@ use crate::调用任务装配::{叶子请求, 节点素材, 资源键};
 pub(crate) struct 补位 {
     pub 行序: usize,
     pub 来源节点: String,
-    pub 来源参数: Option<String>,
 }
 
 /// 一个节点的执行计划：编号 + 行序入参 + 补位。
@@ -164,13 +163,6 @@ fn 建节点计划(
                 引用.来源节点
             )));
         }
-        if 引用.来源参数.is_some() {
-            return Err(报(format!(
-                "输入引用「{}」给了来源参数：上游只交一个返回槽，按名字取复合值的哪一项本层拿不到 —— \
-                 不猜（去掉来源参数即取首返回值）",
-                引用.目标参数
-            )));
-        }
     }
     let mut 入参 = Vec::with_capacity(契约.参数表.len());
     let mut 补位 = Vec::new();
@@ -188,7 +180,6 @@ fn 建节点计划(
             补位.push(补位 {
                 行序,
                 来源节点: 引用.来源节点.clone(),
-                来源参数: 引用.来源参数.clone(),
             });
             continue;
         }
