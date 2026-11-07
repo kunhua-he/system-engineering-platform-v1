@@ -180,6 +180,105 @@ impl crate::调用任务装配::任务存储回调 for 必失败存储 {
     }
 }
 
+struct 可控落盘存储 { 日志故障开关: Arc<std::sync::atomic::AtomicBool> }
+impl crate::调用任务装配::任务存储回调 for 可控落盘存储 {
+    fn 写入(&mut self, 当前任务记录: &crate::调用任务装配::任务记录) -> Result<(), crate::调用任务装配::存储错误> {
+        if self.日志故障开关.load(std::sync::atomic::Ordering::SeqCst)
+            && 当前任务记录.节点阶段.get("完成节点") == Some(&调用节点阶段::成功)
+        {
+            return Err(crate::调用任务装配::存储错误::持久故障("完成节点保存故障".to_owned()));
+        }
+        Ok(())
+    }
+}
+
+struct 双节点闩锁执行口 {
+    节点闩锁集合: Arc<(Mutex<std::collections::BTreeSet<String>>, Condvar)>,
+    节点到达接收器: mpsc::Sender<String>,
+    标记: 叶子标记,
+}
+impl 叶子执行口 for 双节点闩锁执行口 {
+    fn 标记(&self) -> &叶子标记 { &self.标记 }
+    fn 执行(&self, 请求: &叶子请求) -> 叶子产出 {
+        self.节点到达接收器.send(请求.节点标识.clone()).unwrap();
+        let mut 已放行 = self.节点闩锁集合.0.lock().unwrap();
+        while !已放行.contains(&请求.节点标识) {
+            已放行 = self.节点闩锁集合.1.wait(已放行).unwrap();
+        }
+        叶子产出 {
+            结果: crate::转发结果::成功(数据槽::空槽()),
+            槽: 数据槽::空槽(),
+            业务错误码: None,
+        }
+    }
+}
+
+#[test]
+fn 存储故障仍有独立活节点时报收尾中() {
+    let 节点闩锁集合 = Arc::new((Mutex::new(std::collections::BTreeSet::new()), Condvar::new()));
+    let (节点到达接收器, 节点到达回报) = mpsc::channel();
+    let 日志故障开关 = Arc::new(std::sync::atomic::AtomicBool::new(false));
+    let 执行口 = Arc::new(双节点闩锁执行口 {
+        节点闩锁集合: Arc::clone(&节点闩锁集合),
+        节点到达接收器,
+        标记: 叶子标记::default(),
+    });
+    let 节点素材表 = ["完成节点", "独立活节点"]
+        .into_iter()
+        .map(|节点标识| 节点素材::单能力(
+            叶子请求 { 节点标识: 节点标识.to_owned(), 执行批号: 0, 编号: 0, 入参: vec![] },
+            vec![],
+        ))
+        .collect();
+    let 活动任务实例 = Arc::new(调度实例::装配带注入(
+        节点素材表,
+        执行口,
+        "A11 存储故障活节点",
+        Some(Box::new(可控落盘存储 { 日志故障开关: Arc::clone(&日志故障开关) })),
+    ).unwrap());
+    活动任务实例.提交().unwrap();
+    let mut 活节点到达表 = std::collections::BTreeSet::new();
+    for _ in 0..2 {
+        活节点到达表.insert(节点到达回报.recv_timeout(Duration::from_secs(2)).unwrap());
+    }
+    assert_eq!(活节点到达表.len(), 2, "两节点都必须真实进入执行体");
+    日志故障开关.store(true, std::sync::atomic::Ordering::SeqCst);
+    {
+        let mut 已放行 = 节点闩锁集合.0.lock().unwrap();
+        已放行.insert("完成节点".to_owned());
+        节点闩锁集合.1.notify_all();
+    }
+    let 运行起始时刻 = Instant::now();
+    while 活动任务实例.存储故障().is_none() {
+        assert!(运行起始时刻.elapsed() < Duration::from_secs(2), "完成节点的持久化故障必须真实触发");
+        std::thread::yield_now();
+    }
+    let 收尾任务条目 = 任务条目 {
+        任务标识: 1,
+        请求标识: None,
+        摘要: 0,
+        实例: Arc::clone(&活动任务实例),
+        节点标识表: vec!["完成节点".to_owned(), "独立活节点".to_owned()],
+        取消: false,
+        提交微秒: 0,
+        末次访问: 0,
+        失败表: Arc::new(Mutex::new(BTreeMap::new())),
+        产出表: Arc::new(Mutex::new(BTreeMap::new())),
+    };
+    assert_eq!(阶段(&收尾任务条目), 调用任务阶段::收尾中, "存储故障不能盖过仍执行中的节点");
+    assert_eq!(节点报读(&收尾任务条目, "完成节点"), 调用节点阶段::成功);
+    assert_eq!(节点报读(&收尾任务条目, "独立活节点"), 调用节点阶段::执行中);
+    {
+        let mut 已放行 = 节点闩锁集合.0.lock().unwrap();
+        已放行.insert("独立活节点".to_owned());
+        节点闩锁集合.1.notify_all();
+    }
+    let 终态等待结果 = 活动任务实例.等待任务(Duration::from_secs(2));
+    assert!(终态等待结果.is_some(), "放行后任务必须真实收口");
+    drop(收尾任务条目);
+    drop(活动任务实例);
+}
+
 #[test]
 fn 存储故障下确认失败优先于未确认() {
     let 素材表 = vec![节点素材::单能力(
