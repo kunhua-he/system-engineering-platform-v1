@@ -280,6 +280,73 @@ fn 存储故障仍有独立活节点时报收尾中() {
 }
 
 #[test]
+fn 存储故障且全节点成功不报成功() {
+    let 节点放行闩锁 = Arc::new((Mutex::new(std::collections::BTreeSet::new()), Condvar::new()));
+    let (节点接收口, 节点到达回报) = mpsc::channel();
+    let 日志故障开关 = Arc::new(std::sync::atomic::AtomicBool::new(false));
+    let 执行口 = Arc::new(双节点闩锁执行口 {
+        节点闩锁集合: Arc::clone(&节点放行闩锁),
+        节点到达接收器: 节点接收口,
+        标记: 叶子标记::default(),
+    });
+    let 节点计划表 = ["完成节点", "后续节点"]
+        .into_iter()
+        .map(|节点标识| 节点素材::单能力(
+            叶子请求 { 节点标识: 节点标识.to_owned(), 执行批号: 0, 编号: 0, 入参: vec![] },
+            vec![],
+        ))
+        .collect();
+    let 调度任务实例 = Arc::new(调度实例::装配带注入(
+        节点计划表,
+        执行口,
+        "A12 存储故障全成功",
+        Some(Box::new(可控落盘存储 { 日志故障开关: Arc::clone(&日志故障开关) })),
+    ).unwrap());
+    调度任务实例.提交().unwrap();
+    let mut 已进入节点 = std::collections::BTreeSet::new();
+    for _ in 0..2 {
+        已进入节点.insert(节点到达回报.recv_timeout(Duration::from_secs(2)).unwrap());
+    }
+    assert_eq!(已进入节点.len(), 2, "全部节点都需真实进入执行体");
+    日志故障开关.store(true, std::sync::atomic::Ordering::SeqCst);
+    {
+        let mut 已放行 = 节点放行闩锁.0.lock().unwrap();
+        已放行.insert("完成节点".to_owned());
+        已放行.insert("后续节点".to_owned());
+        节点放行闩锁.1.notify_all();
+    }
+    let 运行起始时刻 = Instant::now();
+    while 调度任务实例.存储故障().is_none() {
+        assert!(运行起始时刻.elapsed() < Duration::from_secs(2), "终态写失败必须触发");
+        std::thread::yield_now();
+    }
+    let 终态等待结果 = 调度任务实例.等待任务(Duration::from_secs(2));
+    assert!(终态等待结果.is_some(), "两个节点已退出，任务必须有明确收尾结果");
+    
+    let 全成功任务条目 = 任务条目 {
+        任务标识: 1201,
+        请求标识: Some("全成功存储故障".to_owned()),
+        摘要: 0,
+        实例: Arc::clone(&调度任务实例),
+        节点标识表: vec!["完成节点".to_owned(), "后续节点".to_owned()],
+        取消: false,
+        提交微秒: 0,
+        末次访问: 0,
+        失败表: Arc::new(Mutex::new(BTreeMap::new())),
+        产出表: Arc::new(Mutex::new(BTreeMap::new())),
+    };
+    let 全成功查询快照 = 造快照(&全成功任务条目, None).unwrap();
+    assert_eq!(全成功查询快照.阶段, 调用任务阶段::未确认, "节点全成功不能覆盖任务终态未可靠持久化");
+    assert!(!全成功查询快照.终态(), "不可靠的持久化结局不得对外暴露为终态成功");
+    assert_eq!(全成功查询快照.节点读数表.len(), 2);
+    assert!(全成功查询快照.节点读数表.iter().all(|成功节点读数| 成功节点读数.节点阶段 == 调用节点阶段::成功));
+    assert_eq!(全成功查询快照.错误.as_ref().map(|错误| 错误.节点标识.as_str()), Some("存储"));
+    assert_eq!(全成功查询快照.错误.as_ref().map(|错误| 错误.说明.contains("完成节点保存故障")), Some(true));
+
+    drop(调度任务实例);
+}
+
+#[test]
 fn 存储故障下确认失败优先于未确认() {
     let 素材表 = vec![节点素材::单能力(
         叶子请求 {
