@@ -113,36 +113,23 @@ pub use 核心实现::{
 //
 // 为什么放文件末：一键验证按「`#[cfg(test)]` 之后第一个 `{`」求测试区边界；
 // `mod X;` 声明没有花括号，放中间会被当成「下一个 `{` 之前的代码都是测试」。
-#[cfg(test)]
-#[path = "验证样本/写出测试.rs"]
-mod 写出测试;
-#[cfg(test)]
-#[path = "验证样本/图任务测试.rs"]
-mod 图任务测试;
+#[cfg(test)] #[path = "验证样本/任务表与重启测试.rs"] mod 任务表与重启测试;
+#[cfg(test)] #[path = "验证样本/写出测试.rs"] mod 写出测试;
+#[cfg(test)] #[path = "验证样本/图任务测试.rs"] mod 图任务测试;
 #[cfg(all(test, unix))]
 #[path = "验证样本/子进程环境测试.rs"]
 mod 子进程环境测试;
-#[cfg(test)]
-#[path = "验证样本/任务表与重启测试.rs"]
-mod 任务表与重启测试;
+#[cfg(test)] #[path = "验证样本/未知语义测试.rs"] mod 未知语义测试;
 #[cfg(test)]
 #[path = "验证样本/测试夹具.rs"]
 pub(crate) mod 测试夹具;
-#[cfg(test)]
-#[path = "验证样本/生命周期协商测试.rs"]
-mod 生命周期协商测试;
+#[cfg(test)] #[path = "验证样本/生命周期协商测试.rs"] mod 生命周期协商测试;
 #[cfg(all(test, unix))]
 #[path = "验证样本/线协议测试.rs"]
 mod 线协议测试;
-#[cfg(test)]
-#[path = "验证样本/调用任务装配测试.rs"]
-mod 调用任务装配测试;
-#[cfg(test)]
-#[path = "验证样本/调用测试.rs"]
-mod 调用测试;
-#[cfg(test)]
-#[path = "验证样本/边界测试.rs"]
-mod 边界测试;
+#[cfg(test)] #[path = "验证样本/调用任务装配测试.rs"] mod 调用任务装配测试;
+#[cfg(test)] #[path = "验证样本/调用测试.rs"] mod 调用测试;
+#[cfg(test)] #[path = "验证样本/边界测试.rs"] mod 边界测试;
 #[cfg(all(test, unix))]
 #[path = "验证样本/进程帧测试.rs"]
 mod 进程帧测试;
@@ -155,6 +142,4 @@ mod 进程监督测试;
 #[cfg(all(test, unix))]
 #[path = "验证样本/进程调用测试.rs"]
 mod 进程调用测试;
-#[cfg(test)]
-#[path = "适配器测试.rs"]
-mod 适配器测试;
+#[cfg(test)] #[path = "适配器测试.rs"] mod 适配器测试;
