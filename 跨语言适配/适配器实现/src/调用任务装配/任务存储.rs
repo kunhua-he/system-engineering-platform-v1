@@ -201,7 +201,17 @@ mod 可靠存储反证 {
             let 执行计数 = Arc::new(计数执行口::default());
             let 装配结果 = 调度实例::装配带注入(反证素材(), 执行计数.clone(), "900", Some(Box::new(故障存储 { 写入次数: 0, 拒绝次数 })));
             if 拒绝次数 == 1 { assert!(装配结果.is_err()); }
-            else { let mut 调度实体 = 装配结果.unwrap(); assert!(调度实体.提交().is_err()); assert!(调度实体.存储故障().is_some()); 调度实体.停止(); }
+            else {
+                let mut 调度实体 = 装配结果.unwrap();
+                assert!(调度实体.提交().is_err());
+                assert!(调度实体.存储故障().is_some());
+                assert_eq!(调度实体.节点阶段("存储节点"), Some(调用节点阶段::失败));
+                assert!(调度实体.节点时刻("存储节点").is_none(), "保存执行意图失败，工作线程不得编起跑时刻");
+                let 实际结局 = 调度实体.等待任务(std::time::Duration::from_millis(50));
+                println!("启动保存故障后的任务结局：{实际结局:?}");
+                assert!(实际结局.is_some(), "确定未执行的节点必须闭合任务");
+                assert!(调度实体.停止());
+            }
             assert_eq!(执行计数.叶子次数.load(Ordering::SeqCst), 0);
         }
     }
