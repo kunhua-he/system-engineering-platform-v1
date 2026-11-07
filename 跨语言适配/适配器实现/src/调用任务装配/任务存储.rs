@@ -216,18 +216,21 @@ mod 可靠存储反证 {
         }
     }
     #[test]
-    fn 完成保存失败保留事实且不假成功() {
-        let 执行计数 = Arc::new(计数执行口::default());
-        let mut 调度实体 = 调度实例::装配带注入(反证素材(), 执行计数.clone(), "901", Some(Box::new(故障存储 { 写入次数: 0, 拒绝次数: 3 }))).unwrap();
-        调度实体.提交().unwrap();
-        assert!(matches!(调度实体.等待任务(std::time::Duration::from_secs(2)), Some(任务结局::未确认 { .. })));
-        assert_eq!(调度实体.节点阶段("存储节点"), Some(调用节点阶段::成功));
-        assert_eq!(调度实体.记录节点阶段("存储节点"), Some(调用节点阶段::成功));
-        assert!(调度实体.节点时刻("存储节点").is_some(), "叶子确已执行，完成保存失败不得擦除已确认时刻");
-        assert!(调度实体.存储故障().is_some());
-        assert!(调度实体.提交().is_err());
-        调度实体.停止();
-        assert_eq!(执行计数.叶子次数.load(Ordering::SeqCst), 1);
+    fn 完成与终态保存失败保留节点事实且不假成功() {
+        for 拒绝次数 in [3, 4] {
+            let 执行计数 = Arc::new(计数执行口::default());
+            let mut 调度实体 = 调度实例::装配带注入(反证素材(), 执行计数.clone(), "901", Some(Box::new(故障存储 { 写入次数: 0, 拒绝次数 }))).unwrap();
+            调度实体.提交().unwrap();
+            let 结局 = 调度实体.等待任务(std::time::Duration::from_secs(2));
+            assert!(matches!(结局, Some(任务结局::未确认 { .. })), "节点或任务终态保存失败都不能报成功：{结局:?}");
+            assert_eq!(调度实体.节点阶段("存储节点"), Some(调用节点阶段::成功));
+            assert_eq!(调度实体.记录节点阶段("存储节点"), Some(调用节点阶段::成功));
+            assert!(调度实体.节点时刻("存储节点").is_some(), "叶子确已执行，保存失败不得擦除已确认时刻");
+            assert!(调度实体.存储故障().is_some());
+            assert!(调度实体.提交().is_err());
+            调度实体.停止();
+            assert_eq!(执行计数.叶子次数.load(Ordering::SeqCst), 1);
+        }
     }
 
     #[test]
