@@ -7,15 +7,20 @@ import subprocess
 import time
 from 构建装配.门禁.硬顶常量 import 效率目标毫秒
 
-def 准备执行映像(仓根,代码缓存根,日志路径,制品根目录=None):
+def 准备执行映像(仓根,代码缓存根,日志路径,制品根目录=None,预算毫秒=None):
     仓根=Path(仓根).resolve();代码缓存根=Path(代码缓存根).resolve();日志路径=Path(日志路径).resolve()
     日志路径.parent.mkdir(parents=True,exist_ok=True)
     制品根目录=Path(制品根目录).resolve() if 制品根目录 is not None else None
     网关路径=制品根目录/'网关' if 制品根目录 is not None else 仓根/'构建环境/构建缓存/release/examples/启动网关'
     声明根路径=制品根目录/'扩展根声明.json' if 制品根目录 is not None else 仓根/'扩展装载/扩展根声明.json'
     命令表=[str(网关路径),'--声明根',str(声明根路径),'--后缀表',str(仓根/'扩展装载/后缀表.json'),'--缓存根',str(代码缓存根),'--端口','0','--工具根',str(仓根)]
-    起始时刻=time.monotonic();预算秒=效率目标毫秒/1000;截止时刻=起始时刻+预算秒
+    起始时刻=time.monotonic();预算秒=(效率目标毫秒 if 预算毫秒 is None else 预算毫秒)/1000;截止时刻=起始时刻+预算秒
     日志字节=bytearray();已就绪=False
+    # 阶段读数（单调时钟）：看一眼就知道钱花在哪一段，而不是只有一个总秒数。
+    #   首字节 = exec + dyld + 底座自身装载（冷缓存时这一段的 dlopen/page-in 最贵）
+    #   扩展装载 = 首个「装上」到最后一个「装上」之间的累计（逐个 dlopen 扩展库）
+    #   就绪收尾 = 最后一个「装上」到「监听 127.0.0.1」之间（绑端口 + 就绪宣告）
+    首字节时刻=None;末个装上时刻=None;装上计数=0
     进程=subprocess.Popen(命令表,cwd=制品根目录 or 仓根,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,start_new_session=True)
     try:
         with selectors.DefaultSelector() as 选择器,open(日志路径,'wb') as 日志文件:
@@ -25,6 +30,9 @@ def 准备执行映像(仓根,代码缓存根,日志路径,制品根目录=None)
                 if not 选择器.select(max(0,剩余预算)):break
                 输出块=os.read(进程.stdout.fileno(),65536)
                 if not 输出块:break
+                现在时刻=time.monotonic()
+                if 首字节时刻 is None:首字节时刻=现在时刻
+                if '装上 '.encode() in 输出块:末个装上时刻=现在时刻;装上计数+=输出块.count('装上 '.encode())
                 日志文件.write(输出块);日志文件.flush();日志字节.extend(输出块)
                 if b'127.0.0.1:' in 日志字节 and '监听 127.0.0.1:'.encode() in 日志字节:
                     已就绪=True;break
@@ -41,4 +49,10 @@ def 准备执行映像(仓根,代码缓存根,日志路径,制品根目录=None)
             except subprocess.TimeoutExpired:
                 os.killpg(进程.pid,signal.SIGKILL);进程.wait(timeout=3)
         进程.stdout.close()
-    return dict(环境准备秒=准备秒,代码缓存根=str(代码缓存根),日志路径=str(日志路径),准备进程已退出=进程.poll() is not None)
+    首字节秒=round((首字节时刻 if 首字节时刻 is not None else 起始时刻)-起始时刻,3)
+    扩展装载秒=round(((末个装上时刻 if 末个装上时刻 is not None else 起始时刻)-(首字节时刻 if 首字节时刻 is not None else 起始时刻)),3)
+    就绪收尾秒=round(准备秒-首字节秒-扩展装载秒,3)
+    读数=dict(环境准备秒=准备秒,首字节秒=首字节秒,扩展装载秒=扩展装载秒,就绪收尾秒=就绪收尾秒,装上扩展数=装上计数)
+    print('映像准备读数：总计 %.3f 秒 = 首字节 %.3f + 扩展装载 %.3f（%d 个）+ 就绪收尾 %.3f'
+          %(准备秒,首字节秒,扩展装载秒,装上计数,就绪收尾秒))
+    return dict(环境准备秒=准备秒,代码缓存根=str(代码缓存根),日志路径=str(日志路径),准备进程已退出=进程.poll() is not None,阶段读数=读数)

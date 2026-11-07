@@ -33,7 +33,9 @@ def 执行自检(仓根):
              mock.patch.object(实例模块, '准备执行映像', return_value={}) as 准备引擎, \
              mock.patch.object(实例模块.subprocess, 'Popen') as 起进程, \
              mock.patch.object(实例模块, '等端口', return_value=45678), \
-             mock.patch.object(实例模块, '写指针'):
+             mock.patch.object(实例模块, '写指针'), \
+             mock.patch.object(实例模块, '读进程指纹', return_value='隔离模拟指纹'):
+            起进程.return_value.pid = 999999
             实例模块.准备实例映像('目标制品')
             实例模块.起实例('目标制品', 0)
             启动命令 = 起进程.call_args.args[0]

@@ -58,9 +58,38 @@ pub fn 跑案例入口() -> i32 {
         }
     };
     let 案例根 = 仓根.join("测试验证/测试案例");
-    let 回执路 = 案例根.join(回执件::案例回执件);
+    let 回执路 = match std::env::args().skip(1).collect::<Vec<_>>().as_slice() {
+        [] => 案例根.join(回执件::案例回执件),
+        [操作, 路径] if 操作 == "--回执路径" => std::path::PathBuf::from(路径),
+        _ => {
+            eprintln!("工具错误：仅支持 --回执路径 <绝对路径>");
+            return 2;
+        }
+    };
+    if !回执路.is_absolute() {
+        eprintln!("工具错误：回执路径必须为绝对路径");
+        return 2;
+    }
     match 跑案例(&仓根, &案例根, &回执路) {
         Ok(汇总值) => {
+            // 独立回执用于调用归属，共享日志仍保留审计历史。
+            if 回执路 != 案例根.join(回执件::案例回执件) {
+                let 文本值 = match std::fs::read_to_string(&回执路) {
+                    Ok(文本值) => 文本值,
+                    Err(错误) => {
+                        eprintln!("工具错误：{错误}");
+                        return 2;
+                    }
+                };
+                if let Err(错误) = 回执件::追加一行(&案例根.join(回执件::案例回执件), 文本值.trim_end()) {
+                    eprintln!("工具错误：{错误}"); return 2;
+                }
+                if let Err(错误) = 回执件::收敛回执(&案例根.join(回执件::案例回执件))
+                {
+                    eprintln!("工具错误：{错误}");
+                    return 2;
+                }
+            }
             println!(
                 "通过 {} 例 · 失败 {} 例 · 耗时 {} ms · 回执 {} · 跳过坏行 {}",
                 汇总值.通过,
@@ -72,7 +101,11 @@ pub fn 跑案例入口() -> i32 {
             for 明细行 in &汇总值.失败明细 {
                 println!("- {明细行}");
             }
-            if 汇总值.失败 == 0 { 0 } else { 1 }
+            if 汇总值.失败 == 0 {
+                0
+            } else {
+                1
+            }
         }
         Err(错误) => {
             eprintln!("工具错误（不写回执）：{错误}");

@@ -16,6 +16,7 @@ use v1_dispatch::{调用任务阶段, 调用状态存储回调, 调用节点阶�
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum 存储错误 {
     未登记任务(String),
+    持久故障(String),
 }
 
 /// 一条任务记录：任务阶段 + 逐节点阶段。**没有第三个字段**（记录只答「到哪一步了」）。
@@ -68,6 +69,7 @@ pub struct 任务存储 {
     任务标识: String,
     内存: 内存任务存储,
     注入: Option<Box<dyn 任务存储回调>>,
+    故障: Option<存储错误>,
 }
 
 impl 任务存储 {
@@ -76,6 +78,7 @@ impl 任务存储 {
             任务标识: 任务标识.into(),
             内存: 内存任务存储::新建(),
             注入: None,
+            故障: None,
         }
     }
 
@@ -105,10 +108,14 @@ impl 任务存储 {
 
     /// 落一条完整记录（内存 + 注入）。
     pub fn 写入记录(&mut self, 记录: 任务记录) -> Result<(), 存储错误> {
-        if let Some(注入) = self.注入.as_mut() {
-            注入.写入(&记录)?;
+        self.内存.写入(记录.clone());
+        if let Some(错误) = &self.故障 { return Err(错误.clone()); }
+        if let Some(注入) = self.注入.as_mut()
+            && let Err(错误) = 注入.写入(&记录)
+        {
+            self.故障 = Some(错误.clone());
+            return Err(错误);
         }
-        self.内存.写入(记录);
         Ok(())
     }
 
@@ -119,6 +126,8 @@ impl 任务存储 {
         };
         self.写入记录(任务记录 { 阶段, ..记录 })
     }
+
+    pub fn 故障(&self) -> Option<存储错误> { self.故障.clone() }
 
     pub fn 取(&self) -> Option<&任务记录> {
         self.内存.取(&self.任务标识)
@@ -158,5 +167,73 @@ impl 调用状态存储回调 for 任务存储 {
         执行批号: u64,
     ) -> Result<(), Self::错误> {
         self.写节点阶段(节点标识, 阶段, 执行批号)
+    }
+}
+
+#[cfg(test)]
+mod 可靠存储反证 {
+    use super::*;
+    use std::sync::{Arc, atomic::{AtomicUsize, Ordering}};
+    use crate::调用任务装配::{叶子执行口, 叶子标记, 叶子请求, 叶子产出, 调度实例, 节点素材, 任务结局};
+    struct 故障存储 { 写入次数: usize, 拒绝次数: usize }
+    impl 任务存储回调 for 故障存储 {
+        fn 写入(&mut self, _任务记录: &任务记录) -> Result<(), 存储错误> {
+            self.写入次数 += 1;
+            if self.写入次数 == self.拒绝次数 { return Err(存储错误::持久故障("定向保存故障".to_owned())); }
+            Ok(())
+        }
+    }
+    #[derive(Default)]
+    struct 计数执行口 { 叶子次数: AtomicUsize, 执行标记: 叶子标记 }
+    impl 叶子执行口 for 计数执行口 {
+        fn 标记(&self) -> &叶子标记 { &self.执行标记 }
+        fn 执行(&self, _请求: &叶子请求) -> 叶子产出 {
+            self.叶子次数.fetch_add(1, Ordering::SeqCst);
+            叶子产出 { 结果: crate::转发结果::成功(crate::数据槽::空槽()), 槽: crate::数据槽::空槽(), 业务错误码: None }
+        }
+    }
+    fn 反证素材() -> Vec<节点素材> {
+        vec![节点素材::单能力(叶子请求 { 节点标识: "存储节点".to_owned(), 执行批号: 0, 编号: 1000, 入参: Vec::new() }, Vec::new())]
+    }
+    #[test]
+    fn 登记及执行意图失败不执行叶子() {
+        for 拒绝次数 in [1, 2] {
+            let 执行计数 = Arc::new(计数执行口::default());
+            let 装配结果 = 调度实例::装配带注入(反证素材(), 执行计数.clone(), "900", Some(Box::new(故障存储 { 写入次数: 0, 拒绝次数 })));
+            if 拒绝次数 == 1 { assert!(装配结果.is_err()); }
+            else { let mut 调度实体 = 装配结果.unwrap(); assert!(调度实体.提交().is_err()); assert!(调度实体.存储故障().is_some()); 调度实体.停止(); }
+            assert_eq!(执行计数.叶子次数.load(Ordering::SeqCst), 0);
+        }
+    }
+    #[test]
+    fn 完成保存失败保留事实且不假成功() {
+        let 执行计数 = Arc::new(计数执行口::default());
+        let mut 调度实体 = 调度实例::装配带注入(反证素材(), 执行计数.clone(), "901", Some(Box::new(故障存储 { 写入次数: 0, 拒绝次数: 3 }))).unwrap();
+        调度实体.提交().unwrap();
+        assert!(matches!(调度实体.等待任务(std::time::Duration::from_secs(2)), Some(任务结局::未确认 { .. })));
+        assert_eq!(调度实体.记录节点阶段("存储节点"), Some(调用节点阶段::成功));
+        assert!(调度实体.存储故障().is_some());
+        assert!(调度实体.提交().is_err());
+        调度实体.停止();
+        assert_eq!(执行计数.叶子次数.load(Ordering::SeqCst), 1);
+    }
+
+    #[test]
+    fn 第二根启动保存失败时全队列收口且不编起跑() {
+        let 执行计数 = Arc::new(计数执行口::default());
+        let 先行就绪任务 = 节点素材::单能力(叶子请求 { 节点标识: "先行就绪任务".to_owned(), 执行批号: 0, 编号: 1000, 入参: Vec::new() }, Vec::new());
+        let 写入受阻任务 = 节点素材::单能力(叶子请求 { 节点标识: "写入受阻任务".to_owned(), 执行批号: 0, 编号: 1000, 入参: Vec::new() }, Vec::new());
+        let 依赖后继任务 = 节点素材 { 节点标识: "依赖后继任务".to_owned(), 依赖节点: vec!["写入受阻任务".to_owned()], 资源键: Vec::new(), 请求: 叶子请求 { 节点标识: "依赖后继任务".to_owned(), 执行批号: 0, 编号: 1000, 入参: Vec::new() } };
+        let mut 调度实体 = 调度实例::装配带注入(vec![先行就绪任务, 写入受阻任务, 依赖后继任务], 执行计数.clone(), "902", Some(Box::new(故障存储 { 写入次数: 0, 拒绝次数: 3 }))).unwrap();
+        assert!(调度实体.提交().is_err());
+        assert!(matches!(调度实体.等待任务(std::time::Duration::from_millis(50)), Some(任务结局::未确认 { .. })));
+        assert_eq!(执行计数.叶子次数.load(Ordering::SeqCst), 0);
+        assert_eq!(调度实体.记录节点阶段("先行就绪任务"), Some(调用节点阶段::执行中));
+        assert_eq!(调度实体.记录节点阶段("写入受阻任务"), Some(调用节点阶段::执行中));
+        assert_eq!(调度实体.节点阶段("依赖后继任务"), Some(调用节点阶段::跳过));
+        assert!(调度实体.节点时刻("先行就绪任务").is_none());
+        assert!(调度实体.节点时刻("写入受阻任务").is_none());
+        assert!(调度实体.节点时刻("依赖后继任务").is_none());
+        assert!(调度实体.停止());
     }
 }
