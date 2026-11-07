@@ -85,6 +85,7 @@ impl JSON值 {
 /// 解析。错误信息带**字节位置**——案例文件写错时要能直接找到那一处。
 pub fn 解析JSON值(来源: &str) -> Result<JSON值, String> {
     let mut 位读游标 = 位读游标 {
+        原文: 来源,
         字节: 来源.as_bytes(),
         游标位: 0,
     };
@@ -101,6 +102,7 @@ pub fn 解析JSON值(来源: &str) -> Result<JSON值, String> {
 }
 
 struct 位读游标<'a> {
+    原文: &'a str,
     字节: &'a [u8],
     游标位: usize,
 }
@@ -266,8 +268,9 @@ impl 位读游标<'_> {
                 Some(_) => {
                     // 多字节 UTF-8：整字搬。源是 &str ⇒ 剩下的字节一定是合法 UTF-8，
                     // 取首字符再按它的字节长前进，天然落在字符边界上。
-                    let 剩余文本 = std::str::from_utf8(&self.字节[区间起点..])
-                        .map_err(|错误| format!("第 {区间起点} 字节：不是合法 UTF-8（{错误}）"))?;
+                    // 来源已是有效 UTF-8；按字符边界切原文，不为每个汉字反复校验整个尾段。
+                    let 剩余文本 = self.原文.get(区间起点..)
+                        .ok_or_else(|| format!("第 {区间起点} 字节：不在字符边界"))?;
                     let 首字符 = 剩余文本
                         .chars()
                         .next()
@@ -420,6 +423,14 @@ mod 测试 {
         assert_eq!(解析JSON("3.5").取整数(), None);
         assert_eq!(解析JSON("3.0").取整数(), Some(3));
         assert_eq!(解析JSON("-1").取整数(), None);
+    }
+
+    #[test]
+    fn 长串多字节字符逐字保真() {
+        let 来源文本 = "é汉😀".repeat(16000);
+        let mut 编码文本 = String::new();
+        写串(&mut 编码文本, &来源文本);
+        assert_eq!(解析JSON(&编码文本).取字符串(), Some(来源文本.as_str()));
     }
 
     #[test]

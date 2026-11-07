@@ -580,125 +580,83 @@ pub(crate) fn 等待就绪(句柄: u64, 超时毫秒: u64) -> Result<bool, u32> 
 
 /// 取状态：存活 / 端口就绪 / CPU 毫秒 / 运行秒数。读数取不到给 `null`，不给 0。
 pub(crate) fn 取状态(句柄: u64) -> Result<serde_json::Value, u32> {
-    let mut 表 = 取锁(服务表()).map_err(|_| 错误码::资源受限)?;
-    let 条目 = 表.get_mut(&句柄).ok_or(错误码::服务无效)?;
-    let 存活 = 判存活(&mut 条目.子进程);
-    // `端口就绪` 只做 TCP connect —— llama-server 这类引擎**载入模型期间就已经在 listen 了**，
-    // 但 `/v1/chat/completions` 此刻回 503 `Loading model`。所以「能连上」不等于「能用」：
-    // 判「已载入」必须走真就绪探测（就绪路径 200 + /health 不是 503），否则调用方拿到
-    // 「已载入」就发请求，必然撞 503。实测踩过：状态说已载入，直连模型却回 Loading model。
-    let 端口通 = 存活 && 端口就绪(条目.监听端口);
-    let 就绪 = 端口通 && 真就绪(条目.监听端口, &条目.就绪路径);
-    let CPU毫秒 = if 存活 {
-        serde_json::json!(取CPU毫秒(条目.进程号))
-    } else {
-        serde_json::json!(null)
+    let (存活, 监听端口, 就绪路径, 进程号, 启动时刻, 载入超时秒, mut 状态快照) = {
+        let mut 服务记录表 = 取锁(服务表())?;
+        let 条目 = 服务记录表.get_mut(&句柄).ok_or(错误码::服务无效)?;
+        let 存活 = 条目.子进程.try_wait().map_err(|_| 错误码::资源受限)?.is_none();
+        let 闲置秒 = 条目.最后使用时刻.elapsed().as_secs();
+        let 距自动退出秒 = if 条目.闲置超时秒 == 0 {
+            serde_json::Value::Null
+        } else {
+            serde_json::json!(条目.闲置超时秒.saturating_sub(闲置秒))
+        };
+        let 状态快照 = serde_json::json!({
+            "服务句柄": 句柄, "进程号": 条目.进程号, "监听端口": 条目.监听端口,
+            "存活": 存活, "运行秒": 条目.启动时刻.elapsed().as_secs(),
+            "闲置秒": 闲置秒, "闲置超时秒": 条目.闲置超时秒,
+            "载入超时秒": 条目.载入超时秒, "距自动退出秒": 距自动退出秒,
+            "模型短名": 条目.模型短名, "模型路径": 条目.模型路径,
+            "模型类型": 条目.模型类型, "就绪路径": 条目.就绪路径,
+        });
+        (存活, 条目.监听端口, 条目.就绪路径.clone(), 条目.进程号,
+            条目.启动时刻, 条目.载入超时秒, 状态快照)
     };
-    // 状态只有四种，按「进程在不在 -> 载入完没完 -> 载入是否超时」判：
-    // 已退出 = 进程没了；载入中 = 进程在但还没真就绪；载入失败 = 过了载入超时仍未就绪；
-    // 已载入 = 真就绪过一次。调用方据此决定「继续轮询」还是「可以发请求」。
-    let 闲置秒 = 条目.最后使用时刻.elapsed().as_secs();
-    let 距自动退出秒 = if 条目.闲置超时秒 == 0 {
-        serde_json::json!(null)
-    } else {
-        serde_json::json!(条目.闲置超时秒.saturating_sub(闲置秒))
-    };
-    let 状态 = if !存活 {
+    // 网络与进程读数只消费快照，不让慢健康口挡住所有服务的释放。
+    let 就绪 = 存活 && 真就绪(监听端口, &就绪路径);
+    状态快照["端口就绪"] = serde_json::json!(就绪);
+    状态快照["CPU毫秒"] = if 存活 { serde_json::json!(取CPU毫秒(进程号)) } else { serde_json::Value::Null };
+    状态快照["状态"] = serde_json::json!(if !存活 {
         "已退出"
     } else if 就绪 {
-        // 只认**此刻真的通**，不认「曾经就绪过」—— 引擎可能已经卡住或正在换模型。
         "已载入"
-    } else if 条目.载入超时秒 > 0 && 条目.启动时刻.elapsed().as_secs() >= 条目.载入超时秒 {
+    } else if 载入超时秒 > 0 && 启动时刻.elapsed().as_secs() >= 载入超时秒 {
         "载入失败"
     } else {
         "载入中"
-    };
-    Ok(serde_json::json!({
-        "服务句柄": 句柄,
-        "进程号": 条目.进程号,
-        "监听端口": 条目.监听端口,
-        "存活": 存活,
-        "端口就绪": 就绪,
-        "运行秒": 条目.启动时刻.elapsed().as_secs(),
-        "闲置秒": 闲置秒,
-        "闲置超时秒": 条目.闲置超时秒,
-        "载入超时秒": 条目.载入超时秒,
-        "距自动退出秒": 距自动退出秒,
-        // 底座把「模型引用」翻成了哪个 model 名 —— 得让人看得见，
-        // 否则调用方没法确认传进来那条路径到底被认成了什么。
-        "模型短名": 条目.模型短名,
-        "模型路径": 条目.模型路径,
-        "模型类型": 条目.模型类型,
-        "就绪路径": 条目.就绪路径,
-        "CPU毫秒": CPU毫秒,
-        "状态": 状态,
-    }))
+    });
+    Ok(状态快照)
 }
 
-/// 释放：先 SIGTERM，短暂等待，仍不退再 SIGKILL；条目出表。
-///
-/// 返回真 = 确认进程已不在（不是「信号已发送」）；假 = 进程仍在跑，条目保留待重试。
-/// 释放：**幂等**，且给得出「进程真不退」时的逃生口。
-///
-/// * 句柄本来就不在表里 ⇒ 回真。目标状态是「这个进程不在」，已经达成了，重复释放不算错。
-/// * `强制` = 假：SIGTERM → 等 → SIGKILL → 仍不退就**保留条目**（回假，等下次重试）。
-/// * `强制` = 真：不管进程退没退，一律从表里摘除并回真。用于进程彻底卡死（D 状态）时
-///   解封句柄与端口 —— 代价是可能留下一个孤儿进程，所以要调用方明确选择才做。
+/// 释放只终止登记的子进程；强制跳过温和等待，不跳过退出确认。
 pub(crate) fn 释放(句柄: u64, 强制: bool) -> Result<bool, u32> {
-    unsafe extern "C" {
-        fn kill(进程号: i32, 信号: i32) -> i32;
-    }
-    const 终止信号: i32 = 15;
-    const 强杀信号: i32 = 9;
-    // 第一阶段只发信号、不持锁（等进程退出期间别的调用还要读状态）。
-    let (进程号, 仍在跑) = {
-        let mut 表 = 取锁(服务表()).map_err(|_| 错误码::资源受限)?;
-        // 幂等：句柄不在表里（从没起过 / 已经被别人释放掉）都回真。
-        // 报「服务无效」会让并发释放的后到者以为失败，实际上目标状态早就达成了。
-        let 条目 = match 表.get_mut(&句柄) {
-            Some(条目) => 条目,
-            None => return Ok(true),
-        };
-        let 仍在跑 = 判存活(&mut 条目.子进程);
-        (条目.进程号, 仍在跑)
-    };
-    if 仍在跑 {
-        // SAFETY: 只向本表登记的进程号发信号。
-        unsafe { kill(进程号 as i32, 终止信号) };
-    }
-    // 第二阶段：轮询「真的退出了没有」（try_wait 会顺手回收僵尸，不会被僵尸骗成存活）。
-    let mut 已退 = !仍在跑;
-    for _ in 0..25 {
-        if 已退 {
-            break;
+    unsafe extern "C" { fn kill(进程号: i32, 信号: i32) -> i32; }
+    let mut 已强杀 = 强制;
+    let mut 截止时刻 = Instant::now() + Duration::from_millis(if 强制 { 400 } else { 5000 });
+    {
+        let mut 服务记录表 = 取锁(服务表())?;
+        let Some(条目) = 服务记录表.get_mut(&句柄) else { return Ok(true); };
+        if 条目.进程号 != 条目.子进程.id() { return Err(错误码::服务无效); }
+        if 条目.子进程.try_wait().map_err(|_| 错误码::资源受限)?.is_some() {
+            服务记录表.remove(&句柄);
+            return Ok(true);
         }
-        std::thread::sleep(Duration::from_millis(200));
-        let mut 表 = 取锁(服务表()).map_err(|_| 错误码::资源受限)?;
-        match 表.get_mut(&句柄) {
-            Some(条目) => 已退 = !判存活(&mut 条目.子进程),
-            // 别人先释放掉了：同样算已退，不报错。
-            None => {
-                已退 = true;
-                break;
+        if 强制 {
+            条目.子进程.kill().map_err(|_| 错误码::资源受限)?;
+        } else if unsafe { kill(条目.子进程.id() as i32, 15) } != 0 {
+            return Err(错误码::资源受限);
+        }
+    }
+    loop {
+        {
+            let mut 服务记录表 = 取锁(服务表())?;
+            let Some(条目) = 服务记录表.get_mut(&句柄) else { return Ok(true); };
+            if 条目.进程号 != 条目.子进程.id() { return Err(错误码::服务无效); }
+            if 条目.子进程.try_wait().map_err(|_| 错误码::资源受限)?.is_some() {
+                服务记录表.remove(&句柄);
+                return Ok(true);
+            }
+            if Instant::now() >= 截止时刻 {
+                if 已强杀 { return Err(错误码::资源受限); }
+                条目.子进程.kill().map_err(|_| 错误码::资源受限)?;
+                已强杀 = true;
+                截止时刻 = Instant::now() + Duration::from_millis(400);
             }
         }
+        std::thread::sleep(Duration::from_millis(20));
     }
-    if !已退 {
-        // SAFETY: 同上；此时已确认是本表登记的、仍在运行的进程。
-        unsafe { kill(进程号 as i32, 强杀信号) };
-        std::thread::sleep(Duration::from_millis(400));
-        let mut 表 = 取锁(服务表()).map_err(|_| 错误码::资源受限)?;
-        match 表.get_mut(&句柄) {
-            Some(条目) => 已退 = !判存活(&mut 条目.子进程),
-            None => 已退 = true,
-        }
-    }
-    let mut 表 = 取锁(服务表()).map_err(|_| 错误码::资源受限)?;
-    if 已退 || 强制 {
-        表.remove(&句柄);
-    }
-    Ok(已退 || 强制)
 }
+
+#[cfg(test)] #[path = "模型服务/释放验证.rs"] mod 释放验证;
 
 #[cfg(test)]
 #[test]

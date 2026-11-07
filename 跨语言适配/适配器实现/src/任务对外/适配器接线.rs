@@ -45,8 +45,11 @@ impl crate::适配器 {
         节点表: &[图任务节点请求],
         选项: 任务选项,
     ) -> Result<u64, 图任务拒绝> {
+        if let Some(错误) = self.重启快照.lock().unwrap_or_else(|中毒| 中毒.into_inner()).故障.clone() { return Err(图任务拒绝::存储不可用 { 说明: 错误 }); }
+        if let Some(落盘) = &self.运行态 { 落盘.检查().map_err(|错误| 图任务拒绝::存储不可用 { 说明: 错误 })?; }
         let 建图 = 计划::建任务图(self, 节点表, self.实例号)?;
         let mut 表 = 取任务表锁(&self.任务表);
+        if let Some(落盘) = &self.运行态 { 表.接上落盘(Arc::clone(落盘)); }
         // 判重先看内存，再看重启快照：上一个进程受理过的请求标识也算数
         // （否则重启后同一个请求标识会被当成新图，重跑一遍）。
         let 重启判重 = 选项.请求标识.as_deref().and_then(|键| {
@@ -72,14 +75,18 @@ impl crate::适配器 {
         let 任务标识 = 表.发号();
         let 产出表 = std::sync::Arc::new(Mutex::new(Default::default()));
         let 失败表 = std::sync::Arc::new(Mutex::new(Default::default()));
+        let mut 执行快照 = self.clone();
+        // 执行快照仅持路由，不强持任务表或持久写者，避免任务所有权成环。
+        执行快照.任务表 = Arc::new(Mutex::new(任务表::新建(默认任务容量)));
+        执行快照.运行态 = None;
         let 执行口: std::sync::Arc<dyn 叶子执行口> = std::sync::Arc::new(图任务叶子::新建(
-            self.clone(),
+            执行快照,
             self.叶子标记.clone(),
             建图.计划表,
             产出表.clone(),
             失败表.clone(),
         ));
-        // 落盘注入：运行态日志在就带上，不在就纯内存（行为不退化）。
+        // 生产启动先接存储；纯内存仅留给未接生产存储的装配与测试。
         let 注入: Option<Box<dyn crate::调用任务装配::任务存储回调>> =
             self.运行态.as_ref().map(|落盘| {
                 Box::new(落盘注入::新建(
@@ -92,6 +99,7 @@ impl crate::适配器 {
             .map_err(拒绝映射)?;
         实例.提交().map_err(拒绝映射)?;
         let 实例 = std::sync::Arc::new(实例);
+        let 提交微秒 = u64::try_from(实例.任务零时().saturating_duration_since(self.进程零时).as_micros()).unwrap_or(u64::MAX);
         表.插入(任务条目 {
             任务标识,
             请求标识: 选项.请求标识,
@@ -99,7 +107,7 @@ impl crate::适配器 {
             实例,
             节点标识表: 建图.节点标识表,
             取消: false,
-            提交微秒: u64::try_from(self.进程零时.elapsed().as_micros()).unwrap_or(u64::MAX),
+            提交微秒,
             末次访问: 0,
             失败表,
             产出表,
@@ -171,9 +179,6 @@ impl crate::适配器 {
         if 可释放 {
             let 成了 = 表.移除(任务标识);
             drop(表);
-            if 成了 && let Some(落盘) = self.运行态.as_ref() {
-                落盘.追加释放(任务标识, None);
-            }
             return 成了;
         }
         drop(表);
@@ -182,16 +187,15 @@ impl crate::适配器 {
         let Ok(mut 快照) = self.重启快照.lock() else {
             return false;
         };
-        let Some(恢复) = 快照.任务.remove(&任务标识) else {
+        let Some(恢复) = 快照.任务.get(&任务标识) else { return false; };
+        if 恢复.阶段 == 调用任务阶段::未确认 || 恢复.节点.values().any(|阶段| *阶段 == 调用节点阶段::未知) { return false; }
+        if let Some(落盘) = self.运行态.as_ref()
+            && 落盘.追加释放(任务标识, 恢复.请求标识.as_deref()).is_err()
+        {
             return false;
-        };
-        if let Some(键) = 恢复.请求标识.as_deref() {
-            快照.幂等.remove(键);
         }
-        drop(快照);
-        if let Some(落盘) = self.运行态.as_ref() {
-            落盘.追加释放(任务标识, 恢复.请求标识.as_deref());
-        }
+        快照.任务.remove(&任务标识);
+        快照.幂等.retain(|_, 凭据| 凭据.0 != 任务标识);
         true
     }
 
