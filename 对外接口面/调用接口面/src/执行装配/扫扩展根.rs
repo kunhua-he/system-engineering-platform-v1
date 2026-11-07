@@ -113,6 +113,15 @@ unsafe extern "C" {
     fn dlopen(路径: *const c_char, 模式: c_int) -> *mut c_void;
     fn dlsym(句柄: *mut c_void, 符号名: *const c_char) -> *mut c_void;
     fn dlerror() -> *mut c_char;
+    fn mmap(
+        映射地址: *mut c_void,
+        文件字节数: usize,
+        映射保护: c_int,
+        映射标记: c_int,
+        文件描述符: c_int,
+        页偏移: i64,
+    ) -> *mut c_void;
+    fn munmap(映射地址: *mut c_void, 文件字节数: usize) -> c_int;
 }
 
 /// `RTLD_NOW`：装载时把符号全部解析掉 —— 缺符号当场失败，不留到调用时才炸（macOS / Linux 都是 2）。
@@ -132,6 +141,16 @@ pub fn 取扩展声明(
     后缀表: &后缀表,
     缓存根目录: &Path,
 ) -> Result<&'static 平台信息, String> {
+    // ①②③：找制品 + 解包取能力码段落缓存件（模块 / 技能没有码段 ⇒ 报因，不进 dlopen）。
+    从缓存件取接缝(&解包一份(扩展目录, 后缀表, 缓存根目录)?)
+}
+
+/// 一个扩展目录 → 它在缓存里的可加载件路径（找制品 + 解包，**不含 dlopen**）。
+pub fn 解包一份(
+    扩展目录: &Path,
+    后缀表: &后缀表,
+    缓存根目录: &Path,
+) -> Result<PathBuf, String> {
     let 制品文件: Vec<PathBuf> = fs::read_dir(扩展目录)
         .map_err(|错误| format!("读不到目录：{错误}"))?
         .filter_map(|目录项| 目录项.ok())
@@ -141,8 +160,11 @@ pub fn 取扩展声明(
     if 制品文件.len() != 1 {
         return Err(format!("本平台制品 {} 个（要求恰好 1 个）", 制品文件.len()));
     }
-    // ②③：解包取能力码段 → 落仓外缓存件（模块 / 技能没有码段 ⇒ 这一步报因，不进 dlopen）。
-    let 落盘路径 = v1_adapter::装载件缓存::解包到缓存(&制品文件[0], 缓存根目录)?;
+    v1_adapter::装载件缓存::解包到缓存(&制品文件[0], 缓存根目录)
+}
+
+/// 缓存件 → 接缝（④ 那一步：`dlopen` + 取符号 + 调它）。
+fn 从缓存件取接缝(落盘路径: &Path) -> Result<&'static 平台信息, String> {
     let 路径串 = CString::new(落盘路径.as_os_str().as_encoded_bytes())
         .map_err(|_| "库路径含 NUL".to_owned())?;
     // SAFETY: 路径串是 NUL 结尾的合法 C 串；句柄只装载不释放（本进程活到服务停）。
@@ -165,6 +187,101 @@ pub fn 取扩展声明(
     // SAFETY: 接缝规定「返回静态常量指针，终生有效；调用方不得释放、不得修改」
     // ⇒ 解引用得到 `'static` 只读引用是契约本身担保的事，不是本文件的假设。
     Ok(unsafe { &*指针 })
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// 五 冷态可执行映射预热（只加速，不改任何装载判定）
+// ════════════════════════════════════════════════════════════════════════════
+
+// 冷态里最贵的一步不是 `dlopen` 本身，而是「某个 vnode 第一次被映射成可执行」的
+// 一次性检查，**按镜像个数计价**：本机 3 个库实测，不预热串行 `dlopen` 941 ms，
+// 先预热再 `dlopen` 合计 3 ms（预热 104 ms · 16 线程）。
+// 这一步本身能并发，只是被 dyld 的全局装载锁串起来 —— 所以在 `dlopen` **之前**
+// 用线程池各自 `mmap(PROT_READ|PROT_EXEC)` 一次再立刻 `munmap`（只当探针，不留映射）。
+// best-effort：预热失败一律无视（装载成败仍由后面的 `dlopen` 判，语义一字不改）。
+
+const 只要可读: c_int = 1;
+const 可执行: c_int = 4;
+const 私有映射: c_int = 2;
+
+/// 对一个文件做一次「可执行映射」探针（成功与否都不影响后续装载）。
+fn 预热一个(库文件路径: &Path) {
+    use std::os::fd::AsRawFd;
+    let Ok(库文件) = fs::File::open(库文件路径) else {
+        return;
+    };
+    let Ok(文件元数据) = 库文件.metadata() else {
+        return;
+    };
+    let Ok(文件字节数) = usize::try_from(文件元数据.len()) else {
+        return;
+    };
+    if 文件字节数 == 0 {
+        return;
+    }
+    // SAFETY: 只读映射一个真实存在的文件，长度取自元数据；映射随即解开，不留悬空指针。
+    let 映射地址 = unsafe {
+        mmap(
+            core::ptr::null_mut(),
+            文件字节数,
+            只要可读 | 可执行,
+            私有映射,
+            库文件.as_raw_fd(),
+            0,
+        )
+    };
+    if !映射地址.is_null() && 映射地址 as isize != -1 {
+        // SAFETY: 与上面 mmap 成功返回的是同一段地址与长度。
+        unsafe {
+            munmap(映射地址, 文件字节数);
+        }
+    }
+}
+
+/// 并发预热一批缓存件（best-effort：没有返回值，预热不参与装载判因）。
+pub fn 预热库文件(缓存件路径表: &[PathBuf], 并列数: usize) {
+    if 缓存件路径表.len() < 2 || 并列数 < 2 {
+        for 缓存件路径 in 缓存件路径表 {
+            预热一个(缓存件路径);
+        }
+        return;
+    }
+    let 线程数 = 并列数.min(缓存件路径表.len());
+    std::thread::scope(|线程域| {
+        for 线程序号 in 0..线程数 {
+            线程域.spawn(move || {
+                let mut 跨步下标 = 线程序号;
+                while 跨步下标 < 缓存件路径表.len() {
+                    预热一个(&缓存件路径表[跨步下标]);
+                    跨步下标 += 线程数;
+                }
+            });
+        }
+    });
+}
+
+/// 一批扩展目录 → 一批接缝：**解包串行 · 预热并发 · 取接缝串行**。
+///
+/// 结果**按入参下标一一对应**（含每个失败项的原始原因文本），与逐个调用
+/// `取扩展声明` 等价 —— 差别只有「`dlopen` 之前先并发预热过一轮」。
+pub fn 批量取扩展声明(
+    扩展目录表: &[PathBuf],
+    后缀表: &后缀表,
+    缓存根目录: &Path,
+) -> Vec<Result<&'static 平台信息, String>> {
+    let 解包结果表: Vec<Result<PathBuf, String>> = 扩展目录表
+        .iter()
+        .map(|扩展目录| 解包一份(扩展目录, 后缀表, 缓存根目录))
+        .collect();
+    let 待预热表: Vec<PathBuf> = 解包结果表
+        .iter()
+        .filter_map(|解包结果项| 解包结果项.as_ref().ok().cloned())
+        .collect();
+    预热库文件(&待预热表, 16);
+    解包结果表
+        .into_iter()
+        .map(|解包结果项| 解包结果项.and_then(|缓存件路径| 从缓存件取接缝(&缓存件路径)))
+        .collect()
 }
 
 /// 最近一次 `dlopen` / `dlsym` 的错误说明（没有就给一句兜底）。
