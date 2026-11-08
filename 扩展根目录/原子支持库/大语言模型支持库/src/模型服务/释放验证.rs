@@ -140,3 +140,43 @@ fn 忽略温和信号仍能并发强制释放() {
     assert!(!服务存在(句柄));
     assert!(!Command::new("/bin/ps").args(["-p", &进程号.to_string()]).stdout(Stdio::null()).status().unwrap().success());
 }
+#[test]
+fn 常规释放强杀抗终止信号并收归属() {
+    use std::io::BufRead;
+
+    let 句柄 = 登记轻量进程(0);
+    let mut 抗终止进程 = Command::new("/usr/bin/perl")
+        .args([
+            "-e",
+            r#"$SIG{TERM} = 'IGNORE'; $| = 1; print qq(ready\n); sleep 60 while 1"#,
+        ])
+        .stdout(Stdio::piped())
+        .spawn()
+        .unwrap();
+    let mut 就绪输出行 = String::new();
+    std::io::BufReader::new(抗终止进程.stdout.take().unwrap())
+        .read_line(&mut 就绪输出行)
+        .unwrap();
+    assert_eq!(就绪输出行.trim(), "ready");
+    let 进程号 = 抗终止进程.id();
+    {
+        let mut 服务记录表 = 服务表().lock().unwrap();
+        let 条目 = 服务记录表.get_mut(&句柄).unwrap();
+        条目.子进程.kill().unwrap();
+        条目.子进程.wait().unwrap();
+        条目.进程号 = 进程号;
+        条目.子进程 = 抗终止进程;
+    }
+
+    let 释放结果 = 释放(句柄, false);
+    let 进程已退出 = !Command::new("/bin/ps")
+        .args(["-p", &进程号.to_string()])
+        .stdout(Stdio::null())
+        .status()
+        .unwrap()
+        .success();
+
+    assert_eq!(释放结果, Ok(true), "常规释放须在强杀后确认退出");
+    assert!(进程已退出, "强杀后登记进程不得残留");
+    assert!(!服务存在(句柄), "确认退出后必须移除模型服务归属");
+}
