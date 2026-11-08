@@ -131,6 +131,98 @@ fn 失败根与独立活根先收尾取消仍列在跑() {
 }
 
 #[test]
+fn 存储故障后取消仍阻后继且活节点照实收口() {
+    let 剩余活节点闩锁 = Arc::new((Mutex::new(std::collections::BTreeSet::new()), Condvar::new()));
+    let (取消等待接收器, 节点进入回报) = mpsc::channel();
+    let 日志故障开关 = Arc::new(std::sync::atomic::AtomicBool::new(false));
+    let 执行口 = Arc::new(双节点闩锁执行口 {
+        节点闩锁集合: Arc::clone(&剩余活节点闩锁),
+        节点到达接收器: 取消等待接收器,
+        标记: 叶子标记::default(),
+    });
+    let 取消后继素材 = vec![
+        节点素材::单能力(
+            叶子请求 { 节点标识: "完成节点".to_owned(), 执行批号: 0, 编号: 0, 入参: vec![] },
+            vec![],
+        ),
+        节点素材::单能力(
+            叶子请求 { 节点标识: "独立活节点".to_owned(), 执行批号: 0, 编号: 0, 入参: vec![] },
+            vec![],
+        ),
+        节点素材 {
+            节点标识: "取消后继节点".to_owned(),
+            依赖节点: vec!["独立活节点".to_owned()],
+            资源键: vec![],
+            请求: 叶子请求 { 节点标识: "取消后继节点".to_owned(), 执行批号: 0, 编号: 0, 入参: vec![] },
+        },
+    ];
+    let 取消存储故障任务 = Arc::new(调度实例::装配带注入(
+        取消后继素材,
+        执行口,
+        "A15 存储故障后取消",
+        Some(Box::new(可控落盘存储 { 日志故障开关: Arc::clone(&日志故障开关) })),
+    ).unwrap());
+    取消存储故障任务.提交().unwrap();
+    let mut 进入叶子节点集合 = std::collections::BTreeSet::new();
+    for _ in 0..2 {
+        进入叶子节点集合.insert(节点进入回报.recv_timeout(Duration::from_secs(2)).unwrap());
+    }
+    assert_eq!(进入叶子节点集合, std::collections::BTreeSet::from(["完成节点".to_owned(), "独立活节点".to_owned()]));
+    assert!(matches!(节点进入回报.try_recv(), Err(mpsc::TryRecvError::Empty)), "后继依赖未收口前不得进入叶子");
+
+    日志故障开关.store(true, std::sync::atomic::Ordering::SeqCst);
+    {
+        let mut 已放行节点 = 剩余活节点闩锁.0.lock().unwrap();
+        已放行节点.insert("完成节点".to_owned());
+        剩余活节点闩锁.1.notify_all();
+    }
+    let 故障等待起点 = Instant::now();
+    while 取消存储故障任务.存储故障().is_none() {
+        assert!(故障等待起点.elapsed() < Duration::from_secs(2), "完成节点的存储故障必须先真实触发");
+        std::thread::yield_now();
+    }
+
+    let mut 活动任务视图 = 任务条目 {
+        任务标识: 1501,
+        请求标识: None,
+        摘要: 0,
+        实例: Arc::clone(&取消存储故障任务),
+        节点标识表: vec!["完成节点".to_owned(), "独立活节点".to_owned(), "取消后继节点".to_owned()],
+        取消: false,
+        提交微秒: 0,
+        末次访问: 0,
+        失败表: Arc::new(Mutex::new(BTreeMap::new())),
+        产出表: Arc::new(Mutex::new(BTreeMap::new())),
+    };
+    let 取消回执 = 取消(&mut 活动任务视图);
+    assert_eq!(取消回执.阶段, 调用任务阶段::收尾中, "尚有在跑节点，取消与存储故障均不得抢先报终态");
+    assert_eq!(取消回执.在跑节点, vec!["独立活节点".to_owned()]);
+    assert!(取消回执.已取消节点.contains(&"取消后继节点".to_owned()));
+    let 取消后任务快照 = 造快照(&活动任务视图, None).unwrap();
+    assert_eq!(取消后任务快照.阶段, 调用任务阶段::收尾中);
+    assert_eq!(取消后任务快照.节点阶段("独立活节点"), Some(调用节点阶段::执行中));
+    assert_eq!(取消后任务快照.节点阶段("取消后继节点"), Some(调用节点阶段::已取消));
+
+    {
+        let mut 已放行节点 = 剩余活节点闩锁.0.lock().unwrap();
+        已放行节点.insert("独立活节点".to_owned());
+        剩余活节点闩锁.1.notify_all();
+    }
+    let 收尾确认结局 = 取消存储故障任务.等待任务(Duration::from_secs(2)).expect("放行活节点后必须收口");
+    assert!(matches!(收尾确认结局, 任务结局::未确认 { .. }), "存储故障仍在，不得伪报取消已持久化或成功");
+    let 终态任务快照 = 造快照(&活动任务视图, None).unwrap();
+    assert_eq!(终态任务快照.阶段, 调用任务阶段::失败, "故障收束确认后继未执行，任务不得伪报成功");
+    assert_eq!(终态任务快照.节点阶段("完成节点"), Some(调用节点阶段::成功));
+    assert_eq!(终态任务快照.节点阶段("独立活节点"), Some(调用节点阶段::成功), "叶子已正常返回，不能把它改成失败或取消");
+    assert_eq!(终态任务快照.节点阶段("取消后继节点"), Some(调用节点阶段::失败), "任务存储故障收束时，未启动后继作为确认未执行失败收口");
+    assert!(终态任务快照.节点读数("取消后继节点").unwrap().开始微秒.is_none(), "后继无起跑时刻，证明没有进入叶子");
+    assert!(matches!(节点进入回报.try_recv(), Err(mpsc::TryRecvError::Empty)), "取消后继从未进入叶子");
+    assert_eq!(终态任务快照.错误.as_ref().map(|错误| 错误.节点标识.as_str()), Some("存储"));
+    drop(活动任务视图);
+    drop(取消存储故障任务);
+}
+
+#[test]
 fn 未知不写确认失败且取消不改未知() {
     let (mut 条目, 闩锁) = 造闩锁条目(true);
     let 读数 = 取消(&mut 条目);
