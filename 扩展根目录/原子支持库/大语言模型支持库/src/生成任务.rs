@@ -203,7 +203,10 @@ fn 跑流式请求(
             return Ok(());
         }
         let Ok(事件行文本) = 行结果 else {
-            break;
+            if 取消标志.load(Ordering::Acquire) {
+                return Ok(());
+            }
+            return Err(错误码::上游失败);
         };
         let mut 状态值 = 状态容器.lock().map_err(|_| 错误码::资源受限)?;
         if 状态值.回复内容.len() + 状态值.思考内容.len() > 内容上限 {
@@ -216,7 +219,14 @@ fn 跑流式请求(
             break;
         }
     }
-    Ok(())
+    if 取消标志.load(Ordering::Acquire) {
+        return Ok(());
+    }
+    if 状态容器.lock().map_err(|_| 错误码::资源受限)?.已完成 {
+        Ok(())
+    } else {
+        Err(错误码::上游失败)
+    }
 }
 
 pub(crate) fn 读取(任务句柄: u64) -> Result<Value, u32> {
@@ -411,6 +421,99 @@ mod 生成生命周期回归 {
             std::thread::sleep(Duration::from_millis(2));
         }
     }
+    #[test]
+    fn 无上游响应取消不释放在途归属() {
+        let 无响应监听器 = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        let 无响应地址文本 = format!("http://{}", 无响应监听器.local_addr().unwrap());
+        let (无响应请求到达发送端, 无响应请求到达接收端) = std::sync::mpsc::channel();
+        let (无响应放行发送端, 无响应放行接收端) = std::sync::mpsc::channel();
+        let 无响应服务线程 = std::thread::spawn(move || {
+            let (mut 网络连接, _) = 无响应监听器.accept().unwrap();
+            网络连接
+                .set_read_timeout(Some(Duration::from_secs(2)))
+                .unwrap();
+            let mut 请求缓冲 = [0u8; 8192];
+            let _ = std::io::Read::read(&mut 网络连接, &mut 请求缓冲);
+            无响应请求到达发送端.send(()).unwrap();
+            无响应放行接收端
+                .recv_timeout(Duration::from_secs(2))
+                .unwrap();
+        });
+        let 无响应连接编号 = 连接与句柄::连接对话模型(
+            "无响应测试模型",
+            &无响应地址文本,
+            "",
+            "chat_completions",
+            vec![],
+        )
+        .unwrap();
+        let 无响应任务句柄 = 提交模拟(无响应连接编号);
+        无响应请求到达接收端
+            .recv_timeout(Duration::from_secs(2))
+            .unwrap();
+        let 无响应任务读数 = 读取(无响应任务句柄).unwrap();
+        assert!(!无响应任务读数["已完成"].as_bool().unwrap());
+        assert!(
+            无响应任务读数["资源在途"].as_bool().unwrap(),
+            "未收到远端回执，不能释放本地在途归属"
+        );
+        let 取消回执 = 取消(无响应任务句柄).unwrap();
+        assert!(!取消回执, "取消请求不是线程退场证明");
+        let 释放回执 = 释放(无响应任务句柄).unwrap();
+        assert!(!释放回执, "仍等待远端响应时不许移除任务归属");
+        无响应放行发送端.send(()).unwrap();
+        无响应服务线程.join().unwrap();
+        等待退场(无响应任务句柄);
+        let 无响应结束读数 = 读取(无响应任务句柄).unwrap();
+        assert!(无响应结束读数["已完成"].as_bool().unwrap());
+        assert!(!无响应结束读数["资源在途"].as_bool().unwrap());
+        assert_eq!(无响应结束读数["错误码"], 错误码::上游失败);
+        assert!(释放(无响应任务句柄).unwrap());
+        assert!(连接与句柄::释放(无响应连接编号).unwrap());
+    }
+
+    #[test]
+    fn 上游流提前断开报失败() {
+        let 断流监听器 = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        let 断流地址文本 = format!("http://{}", 断流监听器.local_addr().unwrap());
+        let (断流请求到达发送端, 断流请求到达接收端) = std::sync::mpsc::channel();
+        let 断流服务线程 = std::thread::spawn(move || {
+            let (mut 网络连接, _) = 断流监听器.accept().unwrap();
+            网络连接
+                .set_read_timeout(Some(Duration::from_secs(2)))
+                .unwrap();
+            let mut 请求缓冲 = [0u8; 8192];
+            let _ = std::io::Read::read(&mut 网络连接, &mut 请求缓冲);
+            网络连接.write_all(b"HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\nConnection: close\r\n\r\n").unwrap();
+            断流请求到达发送端.send(()).unwrap();
+        });
+        let 断流连接编号 = 连接与句柄::连接对话模型(
+            "断流测试模型",
+            &断流地址文本,
+            "",
+            "chat_completions",
+            vec![],
+        )
+        .unwrap();
+        let 断流任务句柄 = 提交模拟(断流连接编号);
+        断流请求到达接收端
+            .recv_timeout(Duration::from_secs(2))
+            .unwrap();
+        断流服务线程.join().unwrap();
+        等待退场(断流任务句柄);
+        let 断流任务读数 = 读取(断流任务句柄).unwrap();
+        assert!(断流任务读数["已完成"].as_bool().unwrap());
+        assert!(!断流任务读数["资源在途"].as_bool().unwrap());
+        assert_eq!(
+            断流任务读数["错误码"],
+            错误码::上游失败,
+            "缺少流终止事件不得伪报成功"
+        );
+        assert!(!断流任务读数["错误信息"].as_str().unwrap().is_empty());
+        assert!(释放(断流任务句柄).unwrap());
+        assert!(连接与句柄::释放(断流连接编号).unwrap());
+    }
+
     #[test]
     fn 返回任务句柄后超过五秒仍独占且取消须退场() {
         let 模拟实例 = 模拟服务::启动模拟();
