@@ -305,18 +305,25 @@ pub(crate) fn 解析CPU时间(文本: &str) -> Option<u64> {
     Some(天数 * 86_400_000 + 毫秒)
 }
 
+/// 将模型服务启动所需的配置集中传入，避免位置参数错位。
+pub(crate) struct 模型启动参数<'a> {
+    pub(crate) 模型短名: &'a str,
+    pub(crate) 模型文件: Option<&'a str>,
+    pub(crate) 可执行文件: &'a str,
+    pub(crate) 启动参数: &'a str,
+    pub(crate) 监听端口: u16,
+    pub(crate) 就绪路径: &'a str,
+    pub(crate) 模型类型: &'a str,
+    pub(crate) 闲置超时秒: u64,
+    pub(crate) 载入超时秒: u64,
+}
+
 /// 拉起：起进程 → 登记 → 返回句柄。**就绪要另调 `等待模型就绪`**（拉起不干等）。
-pub(crate) fn 拉起(
-    模型短名: &str,
-    模型文件: Option<&str>,
-    可执行文件: &str,
-    启动参数: &str,
-    监听端口: u16,
-    就绪路径: &str,
-    模型类型: &str,
-    闲置超时秒: u64,
-    载入超时秒: u64,
-) -> Result<u64, u32> {
+pub(crate) fn 拉起(启动配置: 模型启动参数<'_>) -> Result<u64, u32> {
+    let 模型启动参数 {
+        模型短名, 模型文件, 可执行文件, 启动参数, 监听端口, 就绪路径,
+        模型类型, 闲置超时秒, 载入超时秒,
+    } = 启动配置;
     // 巡检线程随第一次拉起启动：没人拉起过就不该有后台线程空转。
     启动巡检();
     if 模型短名.trim().is_empty() || 可执行文件.trim().is_empty() {
@@ -350,7 +357,7 @@ pub(crate) fn 拉起(
         占.insert(端口);
         drop(占);
         let 路径 = if 就绪路径.trim().is_empty() {
-            默认就绪路径(&模型类型)
+            默认就绪路径(模型类型)
         } else {
             就绪路径
         };
@@ -420,10 +427,10 @@ pub(crate) fn 拉起(
 /// 每一处「用到了这个模型」的地方都要调它：查状态、申请推理许可、发起推理请求。
 /// 少调一处的后果是那个动作不算数，模型可能正在被调用却被判成闲置退出。
 pub(crate) fn 触摸(句柄: u64) {
-    if let Ok(mut 表) = 服务表().lock() {
-        if let Some(条目) = 表.get_mut(&句柄) {
-            条目.最后使用时刻 = Instant::now();
-        }
+    if let Ok(mut 表) = 服务表().lock()
+        && let Some(条目) = 表.get_mut(&句柄)
+    {
+        条目.最后使用时刻 = Instant::now();
     }
 }
 
@@ -554,11 +561,11 @@ pub(crate) fn 等待就绪(句柄: u64, 超时毫秒: u64) -> Result<bool, u32> 
     loop {
         if 真就绪(端口, &就绪路径) {
             // 打上「载入完成」标 + 刷新使用时刻：刚载入完不能立刻被判成闲置。
-            if let Ok(mut 表) = 服务表().lock() {
-                if let Some(条目) = 表.get_mut(&句柄) {
-                    条目.已就绪 = true;
-                    条目.最后使用时刻 = Instant::now();
-                }
+            if let Ok(mut 表) = 服务表().lock()
+                && let Some(条目) = 表.get_mut(&句柄)
+            {
+                条目.已就绪 = true;
+                条目.最后使用时刻 = Instant::now();
             }
             return Ok(true);
         }
