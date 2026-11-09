@@ -12,7 +12,7 @@
     "src/引擎封装.rs": "17ba69f1f377320cc6a50bc16bcec8fef46da48d32284fbd3670f38edfaef6e0",
     "src/执行函数面.rs": "2b88b643145ded95b26e13728999c9dd492cbfbc8461cfc1f074f003a40223fe",
     "src/编号与码面.rs": "1cdbd639b81e86751b786abd2f853f4aa71f6c6cc5e559259b77082126d100ee",
-    "src/连接与句柄.rs": "68a3f2eb1fb3dea8daab2f8b9c0c4592ec217a363f54a78016b733b04877130c",
+    "src/连接与句柄.rs": "dea00c54856f71269862556d2e9dfa27a9a54b0c3fb940e01ba6f1cc69e53a47",
     "src/静态声明.rs": "d0ed150caae064640869a55782c79afebbecf27663d3e4e480ca2d4c24a475f0",
     "包声明.json": "cea4fb51ccac4fd2cc9e6bf837d226c36ad38e669858485def3e58321ec49aa4",
     "能力声明/5401.json": "b70f9dd107b2b98821ec9a6a4c2e1296152375abe472ffba2a15bc53ca5bec21",
